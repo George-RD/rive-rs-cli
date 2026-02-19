@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use crate::objects::core::{property_backing_type, BackingType};
 
 pub struct BinaryReader<'a> {
@@ -73,14 +75,14 @@ impl<'a> BinaryReader<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RivHeader {
     pub major_version: u64,
     pub minor_version: u64,
     pub file_id: u64,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum PropertyValueRead {
     UInt(u64),
     String(String),
@@ -88,22 +90,23 @@ pub enum PropertyValueRead {
     Color(u32),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RivProperty {
     pub key: u16,
     pub value: PropertyValueRead,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RivObject {
     pub type_key: u16,
     pub properties: Vec<RivProperty>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ParsedRiv {
     pub header: RivHeader,
     pub toc_property_keys: Vec<u16>,
+    #[serde(skip)]
     pub toc_backing_types: Vec<BackingType>,
     pub objects: Vec<RivObject>,
 }
@@ -251,7 +254,7 @@ pub fn parse_riv(data: &[u8]) -> Result<ParsedRiv, String> {
     })
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ValidationReport {
     pub header: RivHeader,
     pub object_count: usize,

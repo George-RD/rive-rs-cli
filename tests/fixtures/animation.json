@@ -1,0 +1,46 @@
+{
+  "artboard": {
+    "name": "Animated",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Ball",
+        "children": [
+          { "type": "ellipse", "name": "BallPath", "width": 50, "height": 50 },
+          { "type": "fill", "name": "BallFill", "children": [
+            { "type": "solid_color", "name": "Red", "color": "FFFF0000" }
+          ]}
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "bounce",
+        "fps": 60,
+        "duration": 120,
+        "keyframes": [
+          {
+            "object": "BallPath",
+            "property": "x",
+            "frames": [
+              { "frame": 0, "value": 0.0 },
+              { "frame": 60, "value": 200.0 },
+              { "frame": 119, "value": 0.0 }
+            ]
+          },
+          {
+            "object": "BallPath",
+            "property": "y",
+            "frames": [
+              { "frame": 0, "value": 0.0 },
+              { "frame": 30, "value": -100.0 },
+              { "frame": 60, "value": 0.0 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
