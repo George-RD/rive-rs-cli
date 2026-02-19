@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rive-harness</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        background: #f6f7f9;
+      }
+      #canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script src="https://unpkg.com/@rive-app/canvas@latest"></script>
+    <script>
+      window.__RIVE_OK = false;
+      window.__RIVE_ERROR = "";
+
+      const file = new URLSearchParams(window.location.search).get("file");
+      if (!file) {
+        window.__RIVE_ERROR = "missing file query param";
+      } else {
+        try {
+          new rive.Rive({
+            src: file,
+            canvas: document.getElementById("canvas"),
+            autoplay: true,
+            onLoad: () => {
+              window.__RIVE_OK = true;
+            },
+            onLoadError: (error) => {
+              window.__RIVE_ERROR = String(error || "rive load error");
+            },
+          });
+        } catch (error) {
+          window.__RIVE_ERROR = String(error || "rive init error");
+        }
+      }
+    </script>
+  </body>
+</html>

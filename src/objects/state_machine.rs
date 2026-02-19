@@ -1,4 +1,4 @@
-use super::core::{property_keys, type_keys, Property, PropertyValue, RiveObject};
+use super::core::{Property, PropertyValue, RiveObject, property_keys, type_keys};
 
 pub struct StateMachine {
     pub name: String,

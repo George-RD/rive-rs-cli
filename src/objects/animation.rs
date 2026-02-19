@@ -1,4 +1,4 @@
-use crate::objects::core::{property_keys, type_keys, Property, PropertyValue, RiveObject};
+use crate::objects::core::{Property, PropertyValue, RiveObject, property_keys, type_keys};
 
 pub struct LinearAnimation {
     pub name: String,
@@ -305,12 +305,16 @@ mod tests {
             .find(|p| p.key == property_keys::LINEAR_ANIMATION_DURATION)
             .unwrap();
         assert_eq!(dur_prop.value, PropertyValue::UInt(120));
-        assert!(props
-            .iter()
-            .all(|p| p.key != property_keys::LINEAR_ANIMATION_SPEED));
-        assert!(props
-            .iter()
-            .all(|p| p.key != property_keys::LINEAR_ANIMATION_QUANTIZE));
+        assert!(
+            props
+                .iter()
+                .all(|p| p.key != property_keys::LINEAR_ANIMATION_SPEED)
+        );
+        assert!(
+            props
+                .iter()
+                .all(|p| p.key != property_keys::LINEAR_ANIMATION_QUANTIZE)
+        );
     }
 
     #[test]

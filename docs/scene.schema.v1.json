@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/George-RD/rive-rs-cli/docs/scene.schema.v1.json",
+  "title": "rive-cli SceneSpec v1",
+  "type": "object",
+  "required": ["scene_format_version", "artboard"],
+  "properties": {
+    "scene_format_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "artboard": {
+      "$ref": "#/$defs/artboard"
+    }
+  },
+  "$defs": {
+    "artboard": {
+      "type": "object",
+      "required": ["name", "width", "height", "children"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/object" }
+        },
+        "animations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/animation" }
+        },
+        "state_machines": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/state_machine" }
+        }
+      }
+    },
+    "object": {
+      "oneOf": [
+        { "$ref": "#/$defs/shape" },
+        { "$ref": "#/$defs/ellipse" },
+        { "$ref": "#/$defs/rectangle" },
+        { "$ref": "#/$defs/fill" },
+        { "$ref": "#/$defs/stroke" },
+        { "$ref": "#/$defs/solid_color" },
+        { "$ref": "#/$defs/linear_gradient" },
+        { "$ref": "#/$defs/radial_gradient" },
+        { "$ref": "#/$defs/gradient_stop" },
+        { "$ref": "#/$defs/node" },
+        { "$ref": "#/$defs/path" }
+      ]
+    },
+    "base_object": {
+      "type": "object",
+      "required": ["type", "name"],
+      "properties": {
+        "type": { "type": "string" },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "shape": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "properties": {
+            "type": { "const": "shape" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+          }
+        }
+      ]
+    },
+    "ellipse": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "required": ["width", "height"],
+          "properties": {
+            "type": { "const": "ellipse" },
+            "width": { "type": "number", "minimum": 0 },
+            "height": { "type": "number", "minimum": 0 },
+            "origin_x": { "type": "number" },
+            "origin_y": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "rectangle": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "required": ["width", "height"],
+          "properties": {
+            "type": { "const": "rectangle" },
+            "width": { "type": "number", "minimum": 0 },
+            "height": { "type": "number", "minimum": 0 },
+            "corner_radius": { "type": "number", "minimum": 0 },
+            "origin_x": { "type": "number" },
+            "origin_y": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "fill": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "properties": {
+            "type": { "const": "fill" },
+            "fill_rule": { "type": "integer", "minimum": 0 },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+          }
+        }
+      ]
+    },
+    "stroke": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "properties": {
+            "type": { "const": "stroke" },
+            "thickness": { "type": "number", "minimum": 0 },
+            "cap": { "type": "integer", "minimum": 0 },
+            "join": { "type": "integer", "minimum": 0 },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+          }
+        }
+      ]
+    },
+    "solid_color": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "required": ["color"],
+          "properties": {
+            "type": { "const": "solid_color" },
+            "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" }
+          }
+        }
+      ]
+    },
+    "linear_gradient": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "required": ["start_x", "start_y", "end_x", "end_y"],
+          "properties": {
+            "type": { "const": "linear_gradient" },
+            "start_x": { "type": "number" },
+            "start_y": { "type": "number" },
+            "end_x": { "type": "number" },
+            "end_y": { "type": "number" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+          }
+        }
+      ]
+    },
+    "radial_gradient": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "required": ["start_x", "start_y", "end_x", "end_y"],
+          "properties": {
+            "type": { "const": "radial_gradient" },
+            "start_x": { "type": "number" },
+            "start_y": { "type": "number" },
+            "end_x": { "type": "number" },
+            "end_y": { "type": "number" },
+            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+          }
+        }
+      ]
+    },
+    "gradient_stop": {
+      "type": "object",
+      "required": ["type", "color", "position"],
+      "properties": {
+        "type": { "const": "gradient_stop" },
+        "name": { "type": "string", "minLength": 1 },
+        "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" },
+        "position": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "node": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "properties": {
+            "type": { "const": "node" },
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "path": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "properties": {
+            "type": { "const": "path" },
+            "path_flags": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    },
+    "animation": {
+      "type": "object",
+      "required": ["name", "fps", "duration", "keyframes"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "fps": { "type": "integer", "minimum": 1 },
+        "duration": { "type": "integer", "minimum": 1 },
+        "speed": { "type": "number" },
+        "loop_type": { "type": "integer", "minimum": 0 },
+        "keyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/keyframe_group" }
+        }
+      }
+    },
+    "keyframe_group": {
+      "type": "object",
+      "required": ["object", "property", "frames"],
+      "properties": {
+        "object": { "type": "string", "minLength": 1 },
+        "property": {
+          "type": "string",
+          "enum": ["x", "y", "rotation", "scale_x", "scale_y", "opacity", "width", "height", "color"]
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["frame", "value"],
+            "properties": {
+              "frame": { "type": "integer", "minimum": 0 },
+              "value": {}
+            }
+          }
+        }
+      }
+    },
+    "state_machine": {
+      "type": "object",
+      "required": ["name", "layers"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/input" } },
+        "layers": { "type": "array", "items": { "$ref": "#/$defs/layer" } }
+      }
+    },
+    "input": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "name", "value"],
+          "properties": {
+            "type": { "const": "number" },
+            "name": { "type": "string", "minLength": 1 },
+            "value": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "name", "value"],
+          "properties": {
+            "type": { "const": "bool" },
+            "name": { "type": "string", "minLength": 1 },
+            "value": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type", "name"],
+          "properties": {
+            "type": { "const": "trigger" },
+            "name": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "layer": {
+      "type": "object",
+      "required": ["states"],
+      "properties": {
+        "states": { "type": "array", "items": { "$ref": "#/$defs/state" } },
+        "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } }
+      }
+    },
+    "state": {
+      "oneOf": [
+        { "type": "object", "required": ["type"], "properties": { "type": { "const": "entry" } } },
+        { "type": "object", "required": ["type"], "properties": { "type": { "const": "exit" } } },
+        { "type": "object", "required": ["type"], "properties": { "type": { "const": "any" } } },
+        {
+          "type": "object",
+          "required": ["type", "animation"],
+          "properties": {
+            "type": { "const": "animation" },
+            "animation": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "transition": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": { "type": "integer", "minimum": 0 },
+        "to": { "type": "integer", "minimum": 0 },
+        "duration": { "type": "integer", "minimum": 0 },
+        "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["input"],
+      "properties": {
+        "input": { "type": "string", "minLength": 1 },
+        "op": { "type": "string" },
+        "value": {}
+      }
+    }
+  }
+}

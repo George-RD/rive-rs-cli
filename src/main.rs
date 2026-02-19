@@ -25,7 +25,10 @@ fn main() {
                 eprintln!("error parsing JSON: {}", e);
                 std::process::exit(1);
             });
-            let scene = builder::build_scene(&spec);
+            let scene = builder::build_scene(&spec).unwrap_or_else(|e| {
+                eprintln!("invalid scene spec: {}", e);
+                std::process::exit(1);
+            });
             let refs: Vec<&dyn objects::core::RiveObject> = scene.iter().map(|o| &**o).collect();
             let bytes = encoder::encode_riv(&refs, file_id);
             std::fs::write(&output, &bytes).unwrap_or_else(|e| {

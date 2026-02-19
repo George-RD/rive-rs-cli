@@ -26,12 +26,13 @@ src/
 │   ├── animation.rs     # LinearAnimation, KeyFrame types
 │   └── state_machine.rs # StateMachine, Layer, States, Transitions, Conditions
 ├── builder/
-│   └── scene.rs         # JSON → Vec<Box<dyn RiveObject>> via SceneSpec
+│   └── scene.rs         # JSON → Result<Vec<Box<dyn RiveObject>>, String> via SceneSpec
 └── validator/
     └── mod.rs           # BinaryReader, parse_riv, validate_riv, inspect_riv
 tests/
 ├── e2e.rs               # Integration tests (cargo run subprocess)
-└── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine)
+├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path)
+└── playwright/          # Runtime load harness + regression script
 ```
 
 ## CURRENT WORKTREE SNAPSHOT
@@ -107,7 +108,7 @@ cli/mod.rs
 
 ```bash
 cargo build
-cargo test                                    # 126 tests (117 unit + 9 e2e)
+cargo test                                    # 131 tests (121 unit + 10 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
@@ -118,10 +119,10 @@ cargo fmt --check                             # format check
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **126 tests total**: **117 unit tests** + **9 e2e tests**
+- `cargo test` currently runs **131 tests total**: **121 unit tests** + **10 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
-- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`)
-- Visual/manual runtime verification harness is available at `/tmp/rive-visual-test/` (Playwright-driven browser checks and screenshots)
+- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`)
+- Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
 
 ## BINARY FORMAT QUICK REF
 
@@ -138,6 +139,7 @@ cargo fmt --check                             # format check
 - `.claudeignore` excludes `README.md` from context
 - C++ runtime source cloned to `/tmp/rive-runtime/` for reference
 - Visual test harness at `/tmp/rive-visual-test/` with Playwright automation
+- Scene input is versioned with `scene_format_version` (current value `1`) and JSON schema lives at `docs/scene.schema.v1.json`
 - **Active bug**: StateMachineLayer (type 57) causes WASM runtime "may be corrupt" error — under investigation
 - No CI/CD pipeline yet — no `.github/workflows/`
 - `thiserror` v2 is a dependency but not yet used (validator uses `String` errors)

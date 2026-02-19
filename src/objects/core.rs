@@ -170,14 +170,87 @@ pub mod property_keys {
 
 pub fn property_backing_type(key: u16) -> Option<BackingType> {
     match key {
-        4 | 55 | 138 => Some(BackingType::String),
-        7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 20 | 21 | 31 | 33 | 34 | 35
-        | 39 | 42 | 46 | 47 | 58 | 70 | 123 | 124 | 140 | 157 | 161 | 162 | 163 | 706 | 707
-        | 781 => Some(BackingType::Float),
-        5 | 23 | 40 | 41 | 48 | 49 | 50 | 51 | 53 | 56 | 57 | 59 | 60 | 61 | 62 | 67 | 68 | 69
-        | 128 | 129 | 141 | 149 | 151 | 152 | 155 | 156 | 158 | 160 | 164 | 196 | 236 | 376
-        | 494 | 536 | 537 | 583 | 747 | 770 => Some(BackingType::UInt),
-        37 | 38 | 88 => Some(BackingType::Color),
+        property_keys::COMPONENT_NAME
+        | property_keys::ANIMATION_NAME
+        | property_keys::STATE_MACHINE_COMPONENT_NAME => Some(BackingType::String),
+
+        property_keys::LAYOUT_COMPONENT_WIDTH
+        | property_keys::LAYOUT_COMPONENT_HEIGHT
+        | property_keys::NODE_X_ARTBOARD
+        | property_keys::NODE_Y_ARTBOARD
+        | property_keys::ARTBOARD_ORIGIN_X
+        | property_keys::ARTBOARD_ORIGIN_Y
+        | property_keys::NODE_X
+        | property_keys::NODE_Y
+        | property_keys::TRANSFORM_ROTATION
+        | property_keys::TRANSFORM_SCALE_X
+        | property_keys::TRANSFORM_SCALE_Y
+        | property_keys::WORLD_TRANSFORM_OPACITY
+        | property_keys::PARAMETRIC_PATH_WIDTH
+        | property_keys::PARAMETRIC_PATH_HEIGHT
+        | property_keys::RECTANGLE_CORNER_RADIUS_TL
+        | property_keys::LINEAR_GRADIENT_START_Y
+        | property_keys::LINEAR_GRADIENT_END_X
+        | property_keys::LINEAR_GRADIENT_END_Y
+        | property_keys::GRADIENT_STOP_POSITION
+        | property_keys::LINEAR_GRADIENT_START_X
+        | property_keys::LINEAR_GRADIENT_OPACITY
+        | property_keys::STROKE_THICKNESS
+        | property_keys::LINEAR_ANIMATION_SPEED
+        | property_keys::KEY_FRAME_DOUBLE_VALUE
+        | property_keys::PARAMETRIC_PATH_ORIGIN_X
+        | property_keys::PARAMETRIC_PATH_ORIGIN_Y
+        | property_keys::STATE_MACHINE_NUMBER_VALUE
+        | property_keys::TRANSITION_NUMBER_CONDITION_VALUE
+        | property_keys::RECTANGLE_CORNER_RADIUS_TR
+        | property_keys::RECTANGLE_CORNER_RADIUS_BL
+        | property_keys::RECTANGLE_CORNER_RADIUS_BR
+        | property_keys::LAYOUT_COMPONENT_FRACTIONAL_WIDTH
+        | property_keys::LAYOUT_COMPONENT_FRACTIONAL_HEIGHT
+        | property_keys::SHAPE_LENGTH => Some(BackingType::Float),
+
+        property_keys::COMPONENT_PARENT_ID
+        | property_keys::DRAWABLE_BLEND_MODE
+        | property_keys::FILL_RULE
+        | property_keys::SHAPE_PAINT_IS_VISIBLE
+        | property_keys::STROKE_CAP
+        | property_keys::STROKE_JOIN
+        | property_keys::STROKE_TRANSFORM_AFFECTS
+        | property_keys::KEYED_OBJECT_ID
+        | property_keys::KEYED_PROPERTY_KEY
+        | property_keys::LINEAR_ANIMATION_FPS
+        | property_keys::LINEAR_ANIMATION_DURATION
+        | property_keys::LINEAR_ANIMATION_LOOP
+        | property_keys::LINEAR_ANIMATION_WORK_START
+        | property_keys::LINEAR_ANIMATION_WORK_END
+        | property_keys::LINEAR_ANIMATION_ENABLE_WORK_AREA
+        | property_keys::KEY_FRAME_FRAME
+        | property_keys::INTERPOLATING_KEY_FRAME_TYPE
+        | property_keys::INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID
+        | property_keys::PATH_FLAGS
+        | property_keys::DRAWABLE_FLAGS
+        | property_keys::STATE_MACHINE_BOOL_VALUE
+        | property_keys::ANIMATION_STATE_ANIMATION_ID
+        | property_keys::STATE_TRANSITION_STATE_TO_ID
+        | property_keys::STATE_TRANSITION_FLAGS
+        | property_keys::TRANSITION_INPUT_CONDITION_INPUT_ID
+        | property_keys::TRANSITION_VALUE_CONDITION_OP
+        | property_keys::STATE_TRANSITION_DURATION
+        | property_keys::STATE_TRANSITION_EXIT_TIME
+        | property_keys::RECTANGLE_LINK_CORNER_RADIUS
+        | property_keys::LAYOUT_COMPONENT_CLIP
+        | property_keys::ARTBOARD_DEFAULT_STATE_MACHINE_ID
+        | property_keys::LINEAR_ANIMATION_QUANTIZE
+        | property_keys::LAYOUT_COMPONENT_STYLE_ID
+        | property_keys::LAYER_STATE_FLAGS
+        | property_keys::STATE_TRANSITION_RANDOM_WEIGHT
+        | property_keys::ARTBOARD_VIEW_MODEL_ID
+        | property_keys::SHAPE_PAINT_BLEND_MODE
+        | property_keys::PATH_IS_HOLE => Some(BackingType::UInt),
+
+        property_keys::SOLID_COLOR_VALUE
+        | property_keys::GRADIENT_STOP_COLOR
+        | property_keys::KEY_FRAME_COLOR_VALUE => Some(BackingType::Color),
         _ => None,
     }
 }

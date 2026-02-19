@@ -1,2 +1,2 @@
 pub mod scene;
-pub use scene::{build_scene, SceneSpec};
+pub use scene::{SceneSpec, build_scene};
