@@ -69,13 +69,13 @@ impl RiveObject for TransformComponent {
                 value: PropertyValue::Float(self.rotation),
             });
         }
-        if self.scale_x != 0.0 {
+        if self.scale_x != 1.0 {
             props.push(Property {
                 key: property_keys::TRANSFORM_SCALE_X,
                 value: PropertyValue::Float(self.scale_x),
             });
         }
-        if self.scale_y != 0.0 {
+        if self.scale_y != 1.0 {
             props.push(Property {
                 key: property_keys::TRANSFORM_SCALE_Y,
                 value: PropertyValue::Float(self.scale_y),
@@ -998,6 +998,10 @@ mod tests {
             scale_y: 1.0,
         };
         assert_eq!(tc.type_key(), 38);
+        let props = tc.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
     }
 
     #[test]
