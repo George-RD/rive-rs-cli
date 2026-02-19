@@ -1,0 +1,1125 @@
+use super::core::{property_keys, type_keys, Property, PropertyValue, RiveObject};
+
+pub struct Node {
+    pub name: String,
+    pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
+}
+
+impl RiveObject for Node {
+    fn type_key(&self) -> u16 {
+        type_keys::NODE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        props
+    }
+}
+
+pub struct TransformComponent {
+    pub name: String,
+    pub parent_id: u64,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+}
+
+impl RiveObject for TransformComponent {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSFORM_COMPONENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_X,
+                value: PropertyValue::Float(self.scale_x),
+            });
+        }
+        if self.scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_Y,
+                value: PropertyValue::Float(self.scale_y),
+            });
+        }
+        props
+    }
+}
+
+pub struct Shape {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl Shape {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Shape { name, parent_id }
+    }
+}
+
+impl RiveObject for Shape {
+    fn type_key(&self) -> u16 {
+        type_keys::SHAPE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct Ellipse {
+    pub name: String,
+    pub parent_id: u64,
+    pub width: f32,
+    pub height: f32,
+    pub origin_x: f32,
+    pub origin_y: f32,
+}
+
+impl Ellipse {
+    pub fn new(name: String, parent_id: u64, width: f32, height: f32) -> Self {
+        Ellipse {
+            name,
+            parent_id,
+            width,
+            height,
+            origin_x: 0.0,
+            origin_y: 0.0,
+        }
+    }
+}
+
+impl RiveObject for Ellipse {
+    fn type_key(&self) -> u16 {
+        type_keys::ELLIPSE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_WIDTH,
+                value: PropertyValue::Float(self.width),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_HEIGHT,
+                value: PropertyValue::Float(self.height),
+            },
+        ];
+        if self.origin_x != 0.0 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
+                value: PropertyValue::Float(self.origin_x),
+            });
+        }
+        if self.origin_y != 0.0 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_Y,
+                value: PropertyValue::Float(self.origin_y),
+            });
+        }
+        props
+    }
+}
+
+pub struct Rectangle {
+    pub name: String,
+    pub parent_id: u64,
+    pub width: f32,
+    pub height: f32,
+    pub origin_x: f32,
+    pub origin_y: f32,
+    pub corner_radius_tl: f32,
+    pub corner_radius_tr: f32,
+    pub corner_radius_bl: f32,
+    pub corner_radius_br: f32,
+    pub link_corner_radius: u64,
+}
+
+impl Rectangle {
+    pub fn new(name: String, parent_id: u64, width: f32, height: f32) -> Self {
+        Rectangle {
+            name,
+            parent_id,
+            width,
+            height,
+            origin_x: 0.0,
+            origin_y: 0.0,
+            corner_radius_tl: 0.0,
+            corner_radius_tr: 0.0,
+            corner_radius_bl: 0.0,
+            corner_radius_br: 0.0,
+            link_corner_radius: 0,
+        }
+    }
+}
+
+impl RiveObject for Rectangle {
+    fn type_key(&self) -> u16 {
+        type_keys::RECTANGLE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_WIDTH,
+                value: PropertyValue::Float(self.width),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_HEIGHT,
+                value: PropertyValue::Float(self.height),
+            },
+        ];
+        if self.origin_x != 0.0 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
+                value: PropertyValue::Float(self.origin_x),
+            });
+        }
+        if self.origin_y != 0.0 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_Y,
+                value: PropertyValue::Float(self.origin_y),
+            });
+        }
+        if self.corner_radius_tl != 0.0 {
+            props.push(Property {
+                key: property_keys::RECTANGLE_CORNER_RADIUS_TL,
+                value: PropertyValue::Float(self.corner_radius_tl),
+            });
+        }
+        if self.corner_radius_tr != 0.0 {
+            props.push(Property {
+                key: property_keys::RECTANGLE_CORNER_RADIUS_TR,
+                value: PropertyValue::Float(self.corner_radius_tr),
+            });
+        }
+        if self.corner_radius_bl != 0.0 {
+            props.push(Property {
+                key: property_keys::RECTANGLE_CORNER_RADIUS_BL,
+                value: PropertyValue::Float(self.corner_radius_bl),
+            });
+        }
+        if self.corner_radius_br != 0.0 {
+            props.push(Property {
+                key: property_keys::RECTANGLE_CORNER_RADIUS_BR,
+                value: PropertyValue::Float(self.corner_radius_br),
+            });
+        }
+        if self.link_corner_radius != 0 {
+            props.push(Property {
+                key: property_keys::RECTANGLE_LINK_CORNER_RADIUS,
+                value: PropertyValue::UInt(self.link_corner_radius),
+            });
+        }
+        props
+    }
+}
+
+pub struct Fill {
+    pub name: String,
+    pub parent_id: u64,
+    pub fill_rule: u64,
+    pub is_visible: u64,
+}
+
+impl Fill {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Fill {
+            name,
+            parent_id,
+            fill_rule: 0,
+            is_visible: 1,
+        }
+    }
+}
+
+impl RiveObject for Fill {
+    fn type_key(&self) -> u16 {
+        type_keys::FILL
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.fill_rule != 0 {
+            props.push(Property {
+                key: property_keys::FILL_RULE,
+                value: PropertyValue::UInt(self.fill_rule),
+            });
+        }
+        if self.is_visible != 0 {
+            props.push(Property {
+                key: property_keys::SHAPE_PAINT_IS_VISIBLE,
+                value: PropertyValue::UInt(self.is_visible),
+            });
+        }
+        props
+    }
+}
+
+pub struct Stroke {
+    pub name: String,
+    pub parent_id: u64,
+    pub thickness: f32,
+    pub cap: u64,
+    pub join: u64,
+    pub is_visible: u64,
+    pub transform_affects: u64,
+}
+
+impl Stroke {
+    pub fn new(name: String, parent_id: u64, thickness: f32) -> Self {
+        Stroke {
+            name,
+            parent_id,
+            thickness,
+            cap: 0,
+            join: 0,
+            is_visible: 1,
+            transform_affects: 0,
+        }
+    }
+}
+
+impl RiveObject for Stroke {
+    fn type_key(&self) -> u16 {
+        type_keys::STROKE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.thickness != 0.0 {
+            props.push(Property {
+                key: property_keys::STROKE_THICKNESS,
+                value: PropertyValue::Float(self.thickness),
+            });
+        }
+        if self.cap != 0 {
+            props.push(Property {
+                key: property_keys::STROKE_CAP,
+                value: PropertyValue::UInt(self.cap),
+            });
+        }
+        if self.join != 0 {
+            props.push(Property {
+                key: property_keys::STROKE_JOIN,
+                value: PropertyValue::UInt(self.join),
+            });
+        }
+        if self.is_visible != 0 {
+            props.push(Property {
+                key: property_keys::SHAPE_PAINT_IS_VISIBLE,
+                value: PropertyValue::UInt(self.is_visible),
+            });
+        }
+        if self.transform_affects != 0 {
+            props.push(Property {
+                key: property_keys::STROKE_TRANSFORM_AFFECTS,
+                value: PropertyValue::UInt(self.transform_affects),
+            });
+        }
+        props
+    }
+}
+
+pub struct SolidColor {
+    pub name: String,
+    pub parent_id: u64,
+    pub color_value: u32,
+}
+
+impl SolidColor {
+    pub fn new(name: String, parent_id: u64, color_value: u32) -> Self {
+        SolidColor {
+            name,
+            parent_id,
+            color_value,
+        }
+    }
+}
+
+impl RiveObject for SolidColor {
+    fn type_key(&self) -> u16 {
+        type_keys::SOLID_COLOR
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.color_value != 0 {
+            props.push(Property {
+                key: property_keys::SOLID_COLOR_VALUE,
+                value: PropertyValue::Color(self.color_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct LinearGradient {
+    pub name: String,
+    pub parent_id: u64,
+    pub start_x: f32,
+    pub start_y: f32,
+    pub end_x: f32,
+    pub end_y: f32,
+    pub opacity: f32,
+}
+
+impl RiveObject for LinearGradient {
+    fn type_key(&self) -> u16 {
+        type_keys::LINEAR_GRADIENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.start_x != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_START_X,
+                value: PropertyValue::Float(self.start_x),
+            });
+        }
+        if self.start_y != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_START_Y,
+                value: PropertyValue::Float(self.start_y),
+            });
+        }
+        if self.end_x != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_END_X,
+                value: PropertyValue::Float(self.end_x),
+            });
+        }
+        if self.end_y != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_END_Y,
+                value: PropertyValue::Float(self.end_y),
+            });
+        }
+        if self.opacity != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_OPACITY,
+                value: PropertyValue::Float(self.opacity),
+            });
+        }
+        props
+    }
+}
+
+pub struct RadialGradient {
+    pub name: String,
+    pub parent_id: u64,
+    pub start_x: f32,
+    pub start_y: f32,
+    pub end_x: f32,
+    pub end_y: f32,
+    pub opacity: f32,
+}
+
+impl RiveObject for RadialGradient {
+    fn type_key(&self) -> u16 {
+        type_keys::RADIAL_GRADIENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.start_x != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_START_X,
+                value: PropertyValue::Float(self.start_x),
+            });
+        }
+        if self.start_y != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_START_Y,
+                value: PropertyValue::Float(self.start_y),
+            });
+        }
+        if self.end_x != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_END_X,
+                value: PropertyValue::Float(self.end_x),
+            });
+        }
+        if self.end_y != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_END_Y,
+                value: PropertyValue::Float(self.end_y),
+            });
+        }
+        if self.opacity != 0.0 {
+            props.push(Property {
+                key: property_keys::LINEAR_GRADIENT_OPACITY,
+                value: PropertyValue::Float(self.opacity),
+            });
+        }
+        props
+    }
+}
+
+pub struct GradientStop {
+    pub name: String,
+    pub parent_id: u64,
+    pub color: u32,
+    pub position: f32,
+}
+
+impl RiveObject for GradientStop {
+    fn type_key(&self) -> u16 {
+        type_keys::GRADIENT_STOP
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.color != 0 {
+            props.push(Property {
+                key: property_keys::GRADIENT_STOP_COLOR,
+                value: PropertyValue::Color(self.color),
+            });
+        }
+        if self.position != 0.0 {
+            props.push(Property {
+                key: property_keys::GRADIENT_STOP_POSITION,
+                value: PropertyValue::Float(self.position),
+            });
+        }
+        props
+    }
+}
+
+pub struct PathObject {
+    pub name: String,
+    pub parent_id: u64,
+    pub path_flags: u64,
+}
+
+impl RiveObject for PathObject {
+    fn type_key(&self) -> u16 {
+        type_keys::PATH
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.path_flags != 0 {
+            props.push(Property {
+                key: property_keys::PATH_FLAGS,
+                value: PropertyValue::UInt(self.path_flags),
+            });
+        }
+        props
+    }
+}
+
+pub struct Drawable {
+    pub name: String,
+    pub parent_id: u64,
+    pub blend_mode: u64,
+    pub drawable_flags: u64,
+}
+
+impl RiveObject for Drawable {
+    fn type_key(&self) -> u16 {
+        type_keys::DRAWABLE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.blend_mode != 0 {
+            props.push(Property {
+                key: property_keys::DRAWABLE_BLEND_MODE,
+                value: PropertyValue::UInt(self.blend_mode),
+            });
+        }
+        if self.drawable_flags != 0 {
+            props.push(Property {
+                key: property_keys::DRAWABLE_FLAGS,
+                value: PropertyValue::UInt(self.drawable_flags),
+            });
+        }
+        props
+    }
+}
+
+pub struct ShapePaint {
+    pub name: String,
+    pub parent_id: u64,
+    pub is_visible: u64,
+}
+
+impl RiveObject for ShapePaint {
+    fn type_key(&self) -> u16 {
+        type_keys::SHAPE_PAINT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.is_visible != 0 {
+            props.push(Property {
+                key: property_keys::SHAPE_PAINT_IS_VISIBLE,
+                value: PropertyValue::UInt(self.is_visible),
+            });
+        }
+        props
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_shape_type_key() {
+        let shape = Shape::new("TestShape".to_string(), 1);
+        assert_eq!(shape.type_key(), 3);
+    }
+
+    #[test]
+    fn test_shape_properties() {
+        let shape = Shape::new("MyShape".to_string(), 2);
+        let props = shape.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[0].value, PropertyValue::String("MyShape".to_string()));
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(2));
+    }
+
+    #[test]
+    fn test_ellipse_type_key() {
+        let ellipse = Ellipse::new("E".to_string(), 1, 100.0, 50.0);
+        assert_eq!(ellipse.type_key(), 4);
+    }
+
+    #[test]
+    fn test_ellipse_properties_defaults() {
+        let ellipse = Ellipse::new("Circle".to_string(), 3, 200.0, 200.0);
+        let props = ellipse.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[0].value, PropertyValue::String("Circle".to_string()));
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(3));
+        assert_eq!(props[2].key, property_keys::PARAMETRIC_PATH_WIDTH);
+        assert_eq!(props[2].value, PropertyValue::Float(200.0));
+        assert_eq!(props[3].key, property_keys::PARAMETRIC_PATH_HEIGHT);
+        assert_eq!(props[3].value, PropertyValue::Float(200.0));
+    }
+
+    #[test]
+    fn test_ellipse_properties_with_origin() {
+        let mut ellipse = Ellipse::new("E".to_string(), 1, 100.0, 50.0);
+        ellipse.origin_x = 0.5;
+        ellipse.origin_y = 0.5;
+        let props = ellipse.properties();
+        assert_eq!(props.len(), 6);
+        assert_eq!(props[4].key, property_keys::PARAMETRIC_PATH_ORIGIN_X);
+        assert_eq!(props[4].value, PropertyValue::Float(0.5));
+        assert_eq!(props[5].key, property_keys::PARAMETRIC_PATH_ORIGIN_Y);
+        assert_eq!(props[5].value, PropertyValue::Float(0.5));
+    }
+
+    #[test]
+    fn test_rectangle_type_key() {
+        let rect = Rectangle::new("R".to_string(), 1, 100.0, 50.0);
+        assert_eq!(rect.type_key(), 7);
+    }
+
+    #[test]
+    fn test_rectangle_properties_defaults() {
+        let rect = Rectangle::new("Rect".to_string(), 2, 300.0, 150.0);
+        let props = rect.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[2].key, property_keys::PARAMETRIC_PATH_WIDTH);
+        assert_eq!(props[2].value, PropertyValue::Float(300.0));
+        assert_eq!(props[3].key, property_keys::PARAMETRIC_PATH_HEIGHT);
+        assert_eq!(props[3].value, PropertyValue::Float(150.0));
+    }
+
+    #[test]
+    fn test_rectangle_properties_with_corners() {
+        let mut rect = Rectangle::new("R".to_string(), 1, 100.0, 100.0);
+        rect.corner_radius_tl = 10.0;
+        rect.corner_radius_tr = 20.0;
+        rect.corner_radius_bl = 30.0;
+        rect.corner_radius_br = 40.0;
+        rect.link_corner_radius = 1;
+        let props = rect.properties();
+        assert_eq!(props.len(), 9);
+        let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
+        assert!(keys.contains(&property_keys::RECTANGLE_CORNER_RADIUS_TL));
+        assert!(keys.contains(&property_keys::RECTANGLE_CORNER_RADIUS_TR));
+        assert!(keys.contains(&property_keys::RECTANGLE_CORNER_RADIUS_BL));
+        assert!(keys.contains(&property_keys::RECTANGLE_CORNER_RADIUS_BR));
+        assert!(keys.contains(&property_keys::RECTANGLE_LINK_CORNER_RADIUS));
+    }
+
+    #[test]
+    fn test_fill_type_key() {
+        let fill = Fill::new("F".to_string(), 1);
+        assert_eq!(fill.type_key(), 20);
+    }
+
+    #[test]
+    fn test_fill_properties_defaults() {
+        let fill = Fill::new("Fill".to_string(), 5);
+        let props = fill.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(5));
+        assert_eq!(props[2].key, property_keys::SHAPE_PAINT_IS_VISIBLE);
+        assert_eq!(props[2].value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_fill_properties_with_fill_rule() {
+        let mut fill = Fill::new("F".to_string(), 1);
+        fill.fill_rule = 1;
+        let props = fill.properties();
+        assert_eq!(props.len(), 4);
+        let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
+        assert!(keys.contains(&property_keys::FILL_RULE));
+    }
+
+    #[test]
+    fn test_stroke_type_key() {
+        let stroke = Stroke::new("S".to_string(), 1, 2.0);
+        assert_eq!(stroke.type_key(), 24);
+    }
+
+    #[test]
+    fn test_stroke_properties_defaults() {
+        let stroke = Stroke::new("Stroke".to_string(), 3, 5.0);
+        let props = stroke.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(3));
+        assert_eq!(props[2].key, property_keys::STROKE_THICKNESS);
+        assert_eq!(props[2].value, PropertyValue::Float(5.0));
+        assert_eq!(props[3].key, property_keys::SHAPE_PAINT_IS_VISIBLE);
+        assert_eq!(props[3].value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_stroke_properties_all_set() {
+        let mut stroke = Stroke::new("S".to_string(), 1, 3.0);
+        stroke.cap = 1;
+        stroke.join = 2;
+        stroke.transform_affects = 1;
+        let props = stroke.properties();
+        assert_eq!(props.len(), 7);
+        let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
+        assert!(keys.contains(&property_keys::STROKE_CAP));
+        assert!(keys.contains(&property_keys::STROKE_JOIN));
+        assert!(keys.contains(&property_keys::STROKE_TRANSFORM_AFFECTS));
+    }
+
+    #[test]
+    fn test_solid_color_type_key() {
+        let sc = SolidColor::new("SC".to_string(), 1, 0xFF0000FF);
+        assert_eq!(sc.type_key(), 18);
+    }
+
+    #[test]
+    fn test_solid_color_properties() {
+        let sc = SolidColor::new("Red".to_string(), 4, 0xFFFF0000);
+        let props = sc.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(4));
+        assert_eq!(props[2].key, property_keys::SOLID_COLOR_VALUE);
+        assert_eq!(props[2].value, PropertyValue::Color(0xFFFF0000));
+    }
+
+    #[test]
+    fn test_solid_color_zero_color_skipped() {
+        let sc = SolidColor::new("Transparent".to_string(), 1, 0);
+        let props = sc.properties();
+        assert_eq!(props.len(), 2);
+    }
+
+    #[test]
+    fn test_linear_gradient_type_key() {
+        let lg = LinearGradient {
+            name: "LG".to_string(),
+            parent_id: 1,
+            start_x: 0.0,
+            start_y: 0.0,
+            end_x: 100.0,
+            end_y: 100.0,
+            opacity: 1.0,
+        };
+        assert_eq!(lg.type_key(), 22);
+    }
+
+    #[test]
+    fn test_linear_gradient_properties() {
+        let lg = LinearGradient {
+            name: "Grad".to_string(),
+            parent_id: 2,
+            start_x: 10.0,
+            start_y: 20.0,
+            end_x: 30.0,
+            end_y: 40.0,
+            opacity: 0.8,
+        };
+        let props = lg.properties();
+        assert_eq!(props.len(), 7);
+        assert_eq!(props[2].key, property_keys::LINEAR_GRADIENT_START_X);
+        assert_eq!(props[2].value, PropertyValue::Float(10.0));
+        assert_eq!(props[3].key, property_keys::LINEAR_GRADIENT_START_Y);
+        assert_eq!(props[3].value, PropertyValue::Float(20.0));
+        assert_eq!(props[4].key, property_keys::LINEAR_GRADIENT_END_X);
+        assert_eq!(props[4].value, PropertyValue::Float(30.0));
+        assert_eq!(props[5].key, property_keys::LINEAR_GRADIENT_END_Y);
+        assert_eq!(props[5].value, PropertyValue::Float(40.0));
+        assert_eq!(props[6].key, property_keys::LINEAR_GRADIENT_OPACITY);
+        assert_eq!(props[6].value, PropertyValue::Float(0.8));
+    }
+
+    #[test]
+    fn test_linear_gradient_defaults_skipped() {
+        let lg = LinearGradient {
+            name: "LG".to_string(),
+            parent_id: 1,
+            start_x: 0.0,
+            start_y: 0.0,
+            end_x: 0.0,
+            end_y: 0.0,
+            opacity: 0.0,
+        };
+        let props = lg.properties();
+        assert_eq!(props.len(), 2);
+    }
+
+    #[test]
+    fn test_gradient_stop_type_key() {
+        let gs = GradientStop {
+            name: "GS".to_string(),
+            parent_id: 1,
+            color: 0xFF0000FF,
+            position: 0.5,
+        };
+        assert_eq!(gs.type_key(), 19);
+    }
+
+    #[test]
+    fn test_gradient_stop_properties() {
+        let gs = GradientStop {
+            name: "Stop".to_string(),
+            parent_id: 3,
+            color: 0xFF00FF00,
+            position: 0.75,
+        };
+        let props = gs.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[2].key, property_keys::GRADIENT_STOP_COLOR);
+        assert_eq!(props[2].value, PropertyValue::Color(0xFF00FF00));
+        assert_eq!(props[3].key, property_keys::GRADIENT_STOP_POSITION);
+        assert_eq!(props[3].value, PropertyValue::Float(0.75));
+    }
+
+    #[test]
+    fn test_gradient_stop_defaults_skipped() {
+        let gs = GradientStop {
+            name: "GS".to_string(),
+            parent_id: 1,
+            color: 0,
+            position: 0.0,
+        };
+        let props = gs.properties();
+        assert_eq!(props.len(), 2);
+    }
+
+    #[test]
+    fn test_node_type_key() {
+        let node = Node {
+            name: "N".to_string(),
+            parent_id: 1,
+            x: 0.0,
+            y: 0.0,
+        };
+        assert_eq!(node.type_key(), 2);
+    }
+
+    #[test]
+    fn test_transform_component_type_key() {
+        let tc = TransformComponent {
+            name: "TC".to_string(),
+            parent_id: 1,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+        };
+        assert_eq!(tc.type_key(), 38);
+        let props = tc.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+    }
+
+    #[test]
+    fn test_radial_gradient_type_key() {
+        let rg = RadialGradient {
+            name: "RG".to_string(),
+            parent_id: 1,
+            start_x: 0.0,
+            start_y: 0.0,
+            end_x: 50.0,
+            end_y: 50.0,
+            opacity: 1.0,
+        };
+        assert_eq!(rg.type_key(), 17);
+    }
+
+    #[test]
+    fn test_path_object_type_key() {
+        let po = PathObject {
+            name: "P".to_string(),
+            parent_id: 1,
+            path_flags: 0,
+        };
+        assert_eq!(po.type_key(), 12);
+    }
+
+    #[test]
+    fn test_drawable_type_key() {
+        let d = Drawable {
+            name: "D".to_string(),
+            parent_id: 1,
+            blend_mode: 0,
+            drawable_flags: 0,
+        };
+        assert_eq!(d.type_key(), 13);
+    }
+
+    #[test]
+    fn test_shape_paint_type_key() {
+        let sp = ShapePaint {
+            name: "SP".to_string(),
+            parent_id: 1,
+            is_visible: 1,
+        };
+        assert_eq!(sp.type_key(), 21);
+    }
+
+    #[test]
+    fn test_node_properties_with_position() {
+        let node = Node {
+            name: "Positioned".to_string(),
+            parent_id: 2,
+            x: 50.0,
+            y: 75.0,
+        };
+        let props = node.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[2].key, property_keys::NODE_X);
+        assert_eq!(props[2].value, PropertyValue::Float(50.0));
+        assert_eq!(props[3].key, property_keys::NODE_Y);
+        assert_eq!(props[3].value, PropertyValue::Float(75.0));
+    }
+
+    #[test]
+    fn test_transform_component_properties() {
+        let tc = TransformComponent {
+            name: "TC".to_string(),
+            parent_id: 1,
+            rotation: 1.5,
+            scale_x: 2.0,
+            scale_y: 3.0,
+        };
+        let props = tc.properties();
+        assert_eq!(props.len(), 5);
+        assert_eq!(props[2].key, property_keys::TRANSFORM_ROTATION);
+        assert_eq!(props[3].key, property_keys::TRANSFORM_SCALE_X);
+        assert_eq!(props[4].key, property_keys::TRANSFORM_SCALE_Y);
+    }
+
+    #[test]
+    fn test_drawable_properties_with_blend_mode() {
+        let d = Drawable {
+            name: "D".to_string(),
+            parent_id: 1,
+            blend_mode: 3,
+            drawable_flags: 1,
+        };
+        let props = d.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[2].key, property_keys::DRAWABLE_BLEND_MODE);
+        assert_eq!(props[2].value, PropertyValue::UInt(3));
+        assert_eq!(props[3].key, property_keys::DRAWABLE_FLAGS);
+        assert_eq!(props[3].value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_path_object_properties_with_flags() {
+        let po = PathObject {
+            name: "P".to_string(),
+            parent_id: 1,
+            path_flags: 2,
+        };
+        let props = po.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[2].key, property_keys::PATH_FLAGS);
+        assert_eq!(props[2].value, PropertyValue::UInt(2));
+    }
+
+    #[test]
+    fn test_shape_paint_properties() {
+        let sp = ShapePaint {
+            name: "SP".to_string(),
+            parent_id: 1,
+            is_visible: 1,
+        };
+        let props = sp.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[2].key, property_keys::SHAPE_PAINT_IS_VISIBLE);
+        assert_eq!(props[2].value, PropertyValue::UInt(1));
+    }
+}
