@@ -88,6 +88,9 @@ fn test_generate_animation() {
         "generate failed: {}",
         String::from_utf8_lossy(&result.stderr)
     );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
     cleanup(&output);
 }
 
@@ -108,6 +111,9 @@ fn test_generate_state_machine() {
         "generate failed: {}",
         String::from_utf8_lossy(&result.stderr)
     );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
     cleanup(&output);
 }
 
