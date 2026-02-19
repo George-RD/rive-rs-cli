@@ -13,6 +13,7 @@
       "$ref": "#/$defs/artboard"
     }
   },
+  "unevaluatedProperties": false,
   "$defs": {
     "artboard": {
       "type": "object",
@@ -33,7 +34,8 @@
           "type": "array",
           "items": { "$ref": "#/$defs/state_machine" }
         }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "object": {
       "oneOf": [
@@ -48,7 +50,8 @@
         { "$ref": "#/$defs/gradient_stop" },
         { "$ref": "#/$defs/node" },
         { "$ref": "#/$defs/path" }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "base_object": {
       "type": "object",
@@ -56,23 +59,28 @@
       "properties": {
         "type": { "type": "string" },
         "name": { "type": "string", "minLength": 1 }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "shape": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "properties": {
             "type": { "const": "shape" },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "ellipse": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "required": ["width", "height"],
           "properties": {
             "type": { "const": "ellipse" },
@@ -80,14 +88,17 @@
             "height": { "type": "number", "minimum": 0 },
             "origin_x": { "type": "number" },
             "origin_y": { "type": "number" }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "rectangle": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "required": ["width", "height"],
           "properties": {
             "type": { "const": "rectangle" },
@@ -96,52 +107,64 @@
             "corner_radius": { "type": "number", "minimum": 0 },
             "origin_x": { "type": "number" },
             "origin_y": { "type": "number" }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "fill": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "properties": {
             "type": { "const": "fill" },
             "fill_rule": { "type": "integer", "minimum": 0 },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "stroke": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "properties": {
             "type": { "const": "stroke" },
             "thickness": { "type": "number", "minimum": 0 },
             "cap": { "type": "integer", "minimum": 0 },
             "join": { "type": "integer", "minimum": 0 },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "solid_color": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "required": ["color"],
           "properties": {
             "type": { "const": "solid_color" },
             "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "linear_gradient": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "required": ["start_x", "start_y", "end_x", "end_y"],
           "properties": {
             "type": { "const": "linear_gradient" },
@@ -150,14 +173,17 @@
             "end_x": { "type": "number" },
             "end_y": { "type": "number" },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "radial_gradient": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "required": ["start_x", "start_y", "end_x", "end_y"],
           "properties": {
             "type": { "const": "radial_gradient" },
@@ -166,9 +192,11 @@
             "end_x": { "type": "number" },
             "end_y": { "type": "number" },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "gradient_stop": {
       "type": "object",
@@ -178,30 +206,37 @@
         "name": { "type": "string", "minLength": 1 },
         "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" },
         "position": { "type": "number", "minimum": 0, "maximum": 1 }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "node": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "properties": {
             "type": { "const": "node" },
             "x": { "type": "number" },
             "y": { "type": "number" }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "path": {
       "allOf": [
         { "$ref": "#/$defs/base_object" },
         {
+          "type": "object",
           "properties": {
             "type": { "const": "path" },
             "path_flags": { "type": "integer", "minimum": 0 }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "animation": {
       "type": "object",
@@ -216,7 +251,8 @@
           "type": "array",
           "items": { "$ref": "#/$defs/keyframe_group" }
         }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "keyframe_group": {
       "type": "object",
@@ -235,10 +271,12 @@
             "properties": {
               "frame": { "type": "integer", "minimum": 0 },
               "value": {}
-            }
+            },
+            "unevaluatedProperties": false
           }
         }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "state_machine": {
       "type": "object",
@@ -247,7 +285,8 @@
         "name": { "type": "string", "minLength": 1 },
         "inputs": { "type": "array", "items": { "$ref": "#/$defs/input" } },
         "layers": { "type": "array", "items": { "$ref": "#/$defs/layer" } }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "input": {
       "oneOf": [
@@ -258,7 +297,8 @@
             "type": { "const": "number" },
             "name": { "type": "string", "minLength": 1 },
             "value": { "type": "number" }
-          }
+          },
+          "unevaluatedProperties": false
         },
         {
           "type": "object",
@@ -267,7 +307,8 @@
             "type": { "const": "bool" },
             "name": { "type": "string", "minLength": 1 },
             "value": { "type": "boolean" }
-          }
+          },
+          "unevaluatedProperties": false
         },
         {
           "type": "object",
@@ -275,9 +316,11 @@
           "properties": {
             "type": { "const": "trigger" },
             "name": { "type": "string", "minLength": 1 }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "layer": {
       "type": "object",
@@ -285,22 +328,40 @@
       "properties": {
         "states": { "type": "array", "items": { "$ref": "#/$defs/state" } },
         "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "state": {
       "oneOf": [
-        { "type": "object", "required": ["type"], "properties": { "type": { "const": "entry" } } },
-        { "type": "object", "required": ["type"], "properties": { "type": { "const": "exit" } } },
-        { "type": "object", "required": ["type"], "properties": { "type": { "const": "any" } } },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": { "type": { "const": "entry" } },
+          "unevaluatedProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": { "type": { "const": "exit" } },
+          "unevaluatedProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": { "type": { "const": "any" } },
+          "unevaluatedProperties": false
+        },
         {
           "type": "object",
           "required": ["type", "animation"],
           "properties": {
             "type": { "const": "animation" },
             "animation": { "type": "string", "minLength": 1 }
-          }
+          },
+          "unevaluatedProperties": false
         }
-      ]
+      ],
+      "unevaluatedProperties": false
     },
     "transition": {
       "type": "object",
@@ -310,7 +371,8 @@
         "to": { "type": "integer", "minimum": 0 },
         "duration": { "type": "integer", "minimum": 0 },
         "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
-      }
+      },
+      "unevaluatedProperties": false
     },
     "condition": {
       "type": "object",
@@ -319,7 +381,8 @@
         "input": { "type": "string", "minLength": 1 },
         "op": { "type": "string" },
         "value": {}
-      }
+      },
+      "unevaluatedProperties": false
     }
   }
 }

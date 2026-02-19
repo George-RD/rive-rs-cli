@@ -588,7 +588,7 @@ fn append_object(
         } => {
             let generated_name = name
                 .clone()
-                .unwrap_or_else(|| format!("gradient_stop_{}", object_index));
+                .unwrap_or_else(|| format!("gradient_stop_{}", name_to_index.len()));
             objects.push(Box::new(GradientStop {
                 name: generated_name.clone(),
                 parent_id,
@@ -1298,5 +1298,37 @@ mod tests {
             .find(|p| p.key == property_keys::PATH_FLAGS)
             .unwrap();
         assert_eq!(path_flags.value, PropertyValue::UInt(3));
+    }
+
+    #[test]
+    fn test_gradient_stop_generated_name_alignment() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    children: Some(vec![
+                        ObjectSpec::GradientStop {
+                            name: Some("gradient_stop_1".to_string()),
+                            color: "FFFFFFFF".to_string(),
+                            position: 0.0,
+                        },
+                        ObjectSpec::GradientStop {
+                            name: None,
+                            color: "FF000000".to_string(),
+                            position: 1.0,
+                        },
+                    ]),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert!(objects.len() >= 4);
     }
 }

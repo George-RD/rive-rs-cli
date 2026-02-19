@@ -1,6 +1,7 @@
 const { chromium } = require("playwright");
 const { spawnSync, spawn } = require("node:child_process");
 const fs = require("node:fs");
+const http = require("node:http");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..", "..");
@@ -8,13 +9,43 @@ const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const SCREENSHOT_DIR = path.join(ROOT, "target", "playwright-snapshots");
 const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path"];
-const PORT = 8765;
+const PORT = Number(process.env.PLAYWRIGHT_PORT || 8765);
 
 function run(command, args, cwd = ROOT) {
   const result = spawnSync(command, args, { cwd, stdio: "inherit" });
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}`);
   }
+}
+
+function wait(delayMs) {
+  return new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
+async function waitForServer(port, timeoutMs = 5000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      await new Promise((resolve, reject) => {
+        const request = http.get(
+          { hostname: "127.0.0.1", port, path: "/harness.html" },
+          (response) => {
+            response.resume();
+            if (response.statusCode === 200) {
+              resolve();
+            } else {
+              reject(new Error(`server returned status ${response.statusCode}`));
+            }
+          }
+        );
+        request.on("error", reject);
+      });
+      return;
+    } catch {
+      await wait(100);
+    }
+  }
+  throw new Error(`server did not start on port ${port}`);
 }
 
 async function main() {
@@ -28,14 +59,18 @@ async function main() {
     fs.copyFileSync(output, path.join(HARNESS_DIR, `${fixture}.riv`));
   }
 
-  const server = spawn("python3", ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"], {
-    cwd: HARNESS_DIR,
-    stdio: "ignore",
-  });
-
-  const browser = await chromium.launch({ headless: true });
+  let server;
+  let browser;
 
   try {
+    server = spawn("python3", ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"], {
+      cwd: HARNESS_DIR,
+      stdio: "ignore",
+    });
+
+    await waitForServer(PORT);
+    browser = await chromium.launch({ headless: true });
+
     for (const fixture of FIXTURES) {
       const page = await browser.newPage();
       const runtimeErrors = [];
@@ -49,7 +84,9 @@ async function main() {
       await page.goto(`http://127.0.0.1:${PORT}/harness.html?file=${fixture}.riv`, {
         waitUntil: "domcontentloaded",
       });
-      await page.waitForTimeout(6000);
+      await page.waitForFunction(() => window.__RIVE_OK || window.__RIVE_ERROR, {
+        timeout: 15000,
+      });
 
       const state = await page.evaluate(() => ({
         ok: window.__RIVE_OK,
@@ -67,8 +104,12 @@ async function main() {
       }
     }
   } finally {
-    await browser.close();
-    server.kill("SIGTERM");
+    if (browser) {
+      await browser.close();
+    }
+    if (server) {
+      server.kill("SIGTERM");
+    }
     for (const fixture of FIXTURES) {
       const filePath = path.join(HARNESS_DIR, `${fixture}.riv`);
       if (fs.existsSync(filePath)) {
