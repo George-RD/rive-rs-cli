@@ -663,7 +663,10 @@ fn json_value_to_f32(value: &serde_json::Value) -> Option<f32> {
 fn json_value_to_color(value: &serde_json::Value) -> Option<u32> {
     match value {
         serde_json::Value::String(s) => parse_color(s).ok(),
-        serde_json::Value::Number(n) => n.as_u64().map(|v| v as u32),
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .filter(|&v| v <= u32::MAX as u64)
+            .map(|v| v as u32),
         _ => None,
     }
 }
@@ -1330,5 +1333,11 @@ mod tests {
 
         let objects = build_scene(&spec).unwrap();
         assert!(objects.len() >= 4);
+    }
+
+    #[test]
+    fn test_json_value_to_color_rejects_overflow() {
+        let value = serde_json::json!(4294967296u64);
+        assert!(json_value_to_color(&value).is_none());
     }
 }

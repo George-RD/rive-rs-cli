@@ -59,8 +59,7 @@
       "properties": {
         "type": { "type": "string" },
         "name": { "type": "string", "minLength": 1 }
-      },
-      "unevaluatedProperties": false
+      }
     },
     "shape": {
       "allOf": [
@@ -70,8 +69,7 @@
           "properties": {
             "type": { "const": "shape" },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -88,8 +86,7 @@
             "height": { "type": "number", "minimum": 0 },
             "origin_x": { "type": "number" },
             "origin_y": { "type": "number" }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -107,8 +104,7 @@
             "corner_radius": { "type": "number", "minimum": 0 },
             "origin_x": { "type": "number" },
             "origin_y": { "type": "number" }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -122,8 +118,7 @@
             "type": { "const": "fill" },
             "fill_rule": { "type": "integer", "minimum": 0 },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -139,8 +134,7 @@
             "cap": { "type": "integer", "minimum": 0 },
             "join": { "type": "integer", "minimum": 0 },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -154,8 +148,7 @@
           "properties": {
             "type": { "const": "solid_color" },
             "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -173,8 +166,7 @@
             "end_x": { "type": "number" },
             "end_y": { "type": "number" },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
@@ -192,8 +184,7 @@
             "end_x": { "type": "number" },
             "end_y": { "type": "number" },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
-          },
-          "unevaluatedProperties": false
+          }
         }
       ],
       "unevaluatedProperties": false
