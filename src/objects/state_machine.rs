@@ -2,12 +2,11 @@ use super::core::{property_keys, type_keys, Property, PropertyValue, RiveObject}
 
 pub struct StateMachine {
     pub name: String,
-    pub parent_id: u64,
 }
 
 impl StateMachine {
-    pub fn new(name: String, parent_id: u64) -> Self {
-        Self { name, parent_id }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
 
@@ -17,16 +16,10 @@ impl RiveObject for StateMachine {
     }
 
     fn properties(&self) -> Vec<Property> {
-        vec![
-            Property {
-                key: property_keys::ANIMATION_NAME,
-                value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
-            },
-        ]
+        vec![Property {
+            key: property_keys::ANIMATION_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
     }
 }
 
@@ -440,14 +433,12 @@ mod tests {
 
     #[test]
     fn test_state_machine() {
-        let sm = StateMachine::new("SM".to_string(), 1);
+        let sm = StateMachine::new("SM".to_string());
         assert_eq!(sm.type_key(), 53);
         let props = sm.properties();
-        assert_eq!(props.len(), 2);
+        assert_eq!(props.len(), 1);
         assert_eq!(props[0].key, property_keys::ANIMATION_NAME);
         assert_eq!(props[0].value, PropertyValue::String("SM".to_string()));
-        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
-        assert_eq!(props[1].value, PropertyValue::UInt(1));
     }
 
     #[test]

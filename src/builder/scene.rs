@@ -173,20 +173,29 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
     let mut animation_name_to_index: HashMap<String, usize> = HashMap::new();
 
     objects.push(Box::new(Backboard));
-    objects.push(Box::new(Artboard::new(
+    let mut artboard = Artboard::new(
         spec.artboard.name.clone(),
         spec.artboard.width,
         spec.artboard.height,
-    )));
+    );
+    if spec
+        .artboard
+        .state_machines
+        .as_ref()
+        .is_some_and(|sms| !sms.is_empty())
+    {
+        artboard.default_state_machine_id = Some(0);
+    }
+    objects.push(Box::new(artboard));
 
     for child in &spec.artboard.children {
         append_object(child, 1, &mut objects, &mut object_name_to_index);
     }
 
     if let Some(animations) = &spec.artboard.animations {
-        for animation in animations {
+        for (animation_list_index, animation) in animations.iter().enumerate() {
             let mut linear =
-                LinearAnimation::new(animation.name.clone(), 1, animation.fps, animation.duration);
+                LinearAnimation::new(animation.name.clone(), animation.fps, animation.duration);
             if let Some(speed) = animation.speed {
                 linear.speed = speed;
             }
@@ -194,30 +203,34 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                 linear.loop_type = loop_type;
             }
 
-            let animation_index = objects.len();
             objects.push(Box::new(linear));
-            animation_name_to_index.insert(animation.name.clone(), animation_index);
+            animation_name_to_index.insert(animation.name.clone(), animation_list_index);
 
             for group in &animation.keyframes {
-                if let Some(&object_index) = object_name_to_index.get(&group.object) {
-                    objects.push(Box::new(KeyedObject {
-                        object_id: object_index as u64,
-                    }));
+                let object_index = *object_name_to_index.get(&group.object).unwrap_or_else(|| {
+                    panic!("unknown object referenced in keyframes: '{}'", group.object)
+                });
+                objects.push(Box::new(KeyedObject {
+                    object_id: (object_index - 1) as u64,
+                }));
 
-                    if let Some(property_key) = property_key_from_name(&group.property) {
-                        objects.push(Box::new(KeyedProperty {
-                            property_key: property_key as u64,
-                        }));
+                let property_key = property_key_from_name(&group.property).unwrap_or_else(|| {
+                    panic!(
+                        "unknown property referenced in keyframes: '{}'",
+                        group.property
+                    )
+                });
+                objects.push(Box::new(KeyedProperty {
+                    property_key: property_key as u64,
+                }));
 
-                        for frame in &group.frames {
-                            if property_key == 37 {
-                                if let Some(color) = json_value_to_color(&frame.value) {
-                                    objects.push(Box::new(KeyFrameColor::new(frame.frame, color)));
-                                }
-                            } else if let Some(value) = json_value_to_f32(&frame.value) {
-                                objects.push(Box::new(KeyFrameDouble::new(frame.frame, value)));
-                            }
+                for frame in &group.frames {
+                    if property_key == 37 {
+                        if let Some(color) = json_value_to_color(&frame.value) {
+                            objects.push(Box::new(KeyFrameColor::new(frame.frame, color)));
                         }
+                    } else if let Some(value) = json_value_to_f32(&frame.value) {
+                        objects.push(Box::new(KeyFrameDouble::new(frame.frame, value)));
                     }
                 }
             }
@@ -226,12 +239,11 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
 
     if let Some(state_machines) = &spec.artboard.state_machines {
         for state_machine in state_machines {
-            objects.push(Box::new(StateMachine::new(state_machine.name.clone(), 1)));
+            objects.push(Box::new(StateMachine::new(state_machine.name.clone())));
 
             let mut input_name_to_index: HashMap<String, usize> = HashMap::new();
             if let Some(inputs) = &state_machine.inputs {
-                for input in inputs {
-                    let input_index = objects.len();
+                for (input_index, input) in inputs.iter().enumerate() {
                     match input {
                         InputSpec::Number { name, value } => {
                             objects.push(Box::new(StateMachineNumber {
@@ -260,9 +272,20 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                     name: format!("Layer {}", layer_index),
                 }));
 
-                let mut layer_state_object_ids: Vec<usize> = Vec::new();
-                for state in &layer.states {
-                    let state_object_index = objects.len();
+                let has_any = layer.states.iter().any(|s| matches!(s, StateSpec::Any));
+
+                let mut user_to_final: Vec<usize> = Vec::new();
+                let mut final_idx = if has_any { 0 } else { 1 };
+                for _ in &layer.states {
+                    user_to_final.push(final_idx);
+                    final_idx += 1;
+                }
+
+                if !has_any {
+                    objects.push(Box::new(AnyState));
+                }
+
+                for (user_idx, state) in layer.states.iter().enumerate() {
                     match state {
                         StateSpec::Entry => {
                             objects.push(Box::new(EntryState));
@@ -281,76 +304,83 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                             objects.push(Box::new(AnimationState::new(animation_id)));
                         }
                     }
-                    layer_state_object_ids.push(state_object_index);
-                }
 
-                if let Some(transitions) = &layer.transitions {
-                    for transition in transitions {
-                        let state_to_id = *layer_state_object_ids
-                            .get(transition.to)
-                            .unwrap_or_else(|| {
-                                panic!(
-                                    "transition target index {} out of bounds (layer has {} states)",
-                                    transition.to,
-                                    layer_state_object_ids.len()
-                                )
-                            })
-                            as u64;
-                        let mut state_transition = StateTransition::new(state_to_id);
-                        if let Some(duration) = transition.duration {
-                            state_transition.duration = duration;
-                        }
-                        objects.push(Box::new(state_transition));
+                    if let Some(transitions) = &layer.transitions {
+                        for transition in transitions {
+                            if transition.from != user_idx {
+                                continue;
+                            }
+                            let state_to_id =
+                                *user_to_final.get(transition.to).unwrap_or_else(|| {
+                                    panic!(
+                                        "transition target index {} out of bounds (layer has {} states)",
+                                        transition.to,
+                                        user_to_final.len()
+                                    )
+                                }) as u64;
+                            let mut state_transition = StateTransition::new(state_to_id);
+                            if let Some(duration) = transition.duration {
+                                state_transition.duration = duration;
+                            }
+                            objects.push(Box::new(state_transition));
 
-                        if let Some(conditions) = &transition.conditions {
-                            for condition in conditions {
-                                if let Some(&input_index) =
-                                    input_name_to_index.get(&condition.input)
-                                {
-                                    let input_id = input_index as u64;
-                                    let op = condition
-                                        .op
-                                        .as_deref()
-                                        .map(parse_condition_op)
-                                        .unwrap_or(0);
-                                    match condition.value.as_ref() {
-                                        Some(serde_json::Value::Number(_)) => {
-                                            let value = condition
-                                                .value
-                                                .as_ref()
-                                                .and_then(json_value_to_f32)
-                                                .unwrap_or(0.0);
-                                            objects.push(Box::new(TransitionNumberCondition::new(
-                                                input_id, op, value,
-                                            )));
-                                        }
-                                        Some(serde_json::Value::Bool(_v)) => {
-                                            let bool_op = condition
-                                                .op
-                                                .as_deref()
-                                                .map(parse_condition_op)
-                                                .unwrap_or(0);
-                                            objects.push(Box::new(TransitionBoolCondition::new(
-                                                input_id, bool_op,
-                                            )));
-                                        }
-                                        _ => {
-                                            if condition.op.is_some() {
-                                                objects.push(Box::new(TransitionValueCondition {
-                                                    input_id,
-                                                    op,
-                                                }));
-                                            } else if input_is_trigger(
-                                                &condition.input,
-                                                state_machine.inputs.as_ref(),
-                                            ) {
+                            if let Some(conditions) = &transition.conditions {
+                                for condition in conditions {
+                                    let input_index = *input_name_to_index
+                                        .get(&condition.input)
+                                        .unwrap_or_else(|| {
+                                            panic!(
+                                                "unknown input referenced in condition: '{}'",
+                                                condition.input
+                                            )
+                                        });
+                                    {
+                                        let input_id = input_index as u64;
+                                        let op = condition
+                                            .op
+                                            .as_deref()
+                                            .map(parse_condition_op)
+                                            .unwrap_or(0);
+                                        match condition.value.as_ref() {
+                                            Some(serde_json::Value::Number(_)) => {
+                                                let value = condition
+                                                    .value
+                                                    .as_ref()
+                                                    .and_then(json_value_to_f32)
+                                                    .unwrap_or(0.0);
                                                 objects.push(Box::new(
-                                                    TransitionTriggerCondition { input_id },
+                                                    TransitionNumberCondition::new(
+                                                        input_id, op, value,
+                                                    ),
                                                 ));
-                                            } else {
-                                                objects.push(Box::new(TransitionInputCondition {
-                                                    input_id,
-                                                }));
+                                            }
+                                            Some(serde_json::Value::Bool(_v)) => {
+                                                let bool_op = condition
+                                                    .op
+                                                    .as_deref()
+                                                    .map(parse_condition_op)
+                                                    .unwrap_or(0);
+                                                objects.push(Box::new(
+                                                    TransitionBoolCondition::new(input_id, bool_op),
+                                                ));
+                                            }
+                                            _ => {
+                                                if condition.op.is_some() {
+                                                    objects.push(Box::new(
+                                                        TransitionValueCondition { input_id, op },
+                                                    ));
+                                                } else if input_is_trigger(
+                                                    &condition.input,
+                                                    state_machine.inputs.as_ref(),
+                                                ) {
+                                                    objects.push(Box::new(
+                                                        TransitionTriggerCondition { input_id },
+                                                    ));
+                                                } else {
+                                                    objects.push(Box::new(
+                                                        TransitionInputCondition { input_id },
+                                                    ));
+                                                }
                                             }
                                         }
                                     }
@@ -373,10 +403,11 @@ fn append_object(
     name_to_index: &mut HashMap<String, usize>,
 ) {
     let object_index = objects.len();
+    let parent_id = (parent_index - 1) as u64;
 
     match spec {
         ObjectSpec::Shape { name, children } => {
-            objects.push(Box::new(Shape::new(name.clone(), parent_index as u64)));
+            objects.push(Box::new(Shape::new(name.clone(), parent_id)));
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
@@ -391,7 +422,7 @@ fn append_object(
             origin_x,
             origin_y,
         } => {
-            let mut ellipse = Ellipse::new(name.clone(), parent_index as u64, *width, *height);
+            let mut ellipse = Ellipse::new(name.clone(), parent_id, *width, *height);
             if let Some(origin_x) = origin_x {
                 ellipse.origin_x = *origin_x;
             }
@@ -409,7 +440,7 @@ fn append_object(
             origin_x,
             origin_y,
         } => {
-            let mut rectangle = Rectangle::new(name.clone(), parent_index as u64, *width, *height);
+            let mut rectangle = Rectangle::new(name.clone(), parent_id, *width, *height);
             if let Some(origin_x) = origin_x {
                 rectangle.origin_x = *origin_x;
             }
@@ -431,7 +462,7 @@ fn append_object(
             fill_rule,
             children,
         } => {
-            let mut fill = Fill::new(name.clone(), parent_index as u64);
+            let mut fill = Fill::new(name.clone(), parent_id);
             if let Some(fill_rule) = fill_rule {
                 fill.fill_rule = *fill_rule;
             }
@@ -450,8 +481,7 @@ fn append_object(
             join,
             children,
         } => {
-            let mut stroke =
-                Stroke::new(name.clone(), parent_index as u64, thickness.unwrap_or(1.0));
+            let mut stroke = Stroke::new(name.clone(), parent_id, thickness.unwrap_or(1.0));
             if let Some(cap) = cap {
                 stroke.cap = *cap;
             }
@@ -470,7 +500,7 @@ fn append_object(
             let color_value = parse_color(color).unwrap_or(0);
             objects.push(Box::new(SolidColor::new(
                 name.clone(),
-                parent_index as u64,
+                parent_id,
                 color_value,
             )));
             name_to_index.insert(name.clone(), object_index);
@@ -485,7 +515,7 @@ fn append_object(
         } => {
             objects.push(Box::new(LinearGradient {
                 name: name.clone(),
-                parent_id: parent_index as u64,
+                parent_id,
                 start_x: *start_x,
                 start_y: *start_y,
                 end_x: *end_x,
@@ -509,7 +539,7 @@ fn append_object(
         } => {
             objects.push(Box::new(RadialGradient {
                 name: name.clone(),
-                parent_id: parent_index as u64,
+                parent_id,
                 start_x: *start_x,
                 start_y: *start_y,
                 end_x: *end_x,
@@ -533,7 +563,7 @@ fn append_object(
                 .unwrap_or_else(|| format!("gradient_stop_{}", object_index));
             objects.push(Box::new(GradientStop {
                 name: generated_name.clone(),
-                parent_id: parent_index as u64,
+                parent_id,
                 color: parse_color(color).unwrap_or(0),
                 position: *position,
             }));
@@ -542,7 +572,7 @@ fn append_object(
         ObjectSpec::Node { name, x, y } => {
             objects.push(Box::new(Node {
                 name: name.clone(),
-                parent_id: parent_index as u64,
+                parent_id,
                 x: x.unwrap_or(0.0),
                 y: y.unwrap_or(0.0),
             }));
@@ -698,12 +728,10 @@ mod tests {
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
 
-        let artboard_parent = objects[1]
-            .properties()
-            .into_iter()
-            .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
-            .unwrap();
-        assert_eq!(artboard_parent.value, PropertyValue::UInt(0));
+        let artboard_props = objects[1].properties();
+        assert!(!artboard_props
+            .iter()
+            .any(|p| p.key == property_keys::COMPONENT_PARENT_ID));
     }
 
     #[test]
@@ -752,28 +780,28 @@ mod tests {
             .into_iter()
             .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
             .unwrap();
-        assert_eq!(shape_parent.value, PropertyValue::UInt(1));
+        assert_eq!(shape_parent.value, PropertyValue::UInt(0));
 
         let ellipse_parent = objects[3]
             .properties()
             .into_iter()
             .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
             .unwrap();
-        assert_eq!(ellipse_parent.value, PropertyValue::UInt(2));
+        assert_eq!(ellipse_parent.value, PropertyValue::UInt(1));
 
         let fill_parent = objects[4]
             .properties()
             .into_iter()
             .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
             .unwrap();
-        assert_eq!(fill_parent.value, PropertyValue::UInt(2));
+        assert_eq!(fill_parent.value, PropertyValue::UInt(1));
 
         let color_parent = objects[5]
             .properties()
             .into_iter()
             .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
             .unwrap();
-        assert_eq!(color_parent.value, PropertyValue::UInt(4));
+        assert_eq!(color_parent.value, PropertyValue::UInt(3));
     }
 
     #[test]
@@ -829,11 +857,11 @@ mod tests {
         assert_eq!(objects[7].type_key(), type_keys::KEY_FRAME_DOUBLE);
         assert_eq!(objects[8].type_key(), type_keys::KEY_FRAME_DOUBLE);
 
-        let animation_parent = objects[4]
+        let keyed_object_id = objects[5]
             .properties()
             .into_iter()
-            .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+            .find(|p| p.key == property_keys::KEYED_OBJECT_ID)
             .unwrap();
-        assert_eq!(animation_parent.value, PropertyValue::UInt(1));
+        assert_eq!(keyed_object_id.value, PropertyValue::UInt(2));
     }
 }
