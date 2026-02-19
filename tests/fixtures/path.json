@@ -1,28 +1,27 @@
 {
   "scene_format_version": 1,
   "artboard": {
-    "name": "Test",
-    "width": 500,
-    "height": 500,
+    "name": "Main",
+    "width": 400.0,
+    "height": 400.0,
     "children": [
       {
         "type": "shape",
-        "name": "MyShape",
+        "name": "shape_1",
         "children": [
           {
-            "type": "ellipse",
-            "name": "Circle",
-            "width": 100,
-            "height": 100
+            "type": "path",
+            "name": "path_1",
+            "path_flags": 1
           },
           {
             "type": "fill",
-            "name": "Fill",
+            "name": "fill_1",
             "children": [
               {
                 "type": "solid_color",
-                "name": "Red",
-                "color": "FFFF0000"
+                "name": "color_1",
+                "color": "FF00AAFF"
               }
             ]
           }

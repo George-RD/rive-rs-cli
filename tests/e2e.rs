@@ -118,6 +118,29 @@ fn test_generate_state_machine() {
 }
 
 #[test]
+fn test_generate_path() {
+    let input = fixture_path("path.json");
+    let output = temp_output("path");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
 fn test_validate_generated_file() {
     let input = fixture_path("minimal.json");
     let output = temp_output("validate_gen");

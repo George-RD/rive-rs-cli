@@ -87,6 +87,36 @@ rive-cli inspect existing.riv
 echo '{"artboard": {"width": 500, "height": 500, "children": [...]}}' | rive-cli generate -o output.riv
 ```
 
+Scene specs are versioned with `scene_format_version` and currently require `1`.
+
+```json
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Main",
+    "width": 500,
+    "height": 500,
+    "children": []
+  }
+}
+```
+
+## Testing
+
+```bash
+cargo test
+
+# Runtime compatibility regression checks via official Rive web runtime
+npx -y -p playwright node tests/playwright/regression.js
+```
+
+The Playwright suite generates fixture `.riv` files, serves a local harness that loads `@rive-app/canvas`, and fails on runtime load or browser errors.
+
+## Internal Format Notes
+
+- `docs/format-spec.md` tracks encoding behaviors and compatibility constraints discovered during implementation.
+- `docs/scene.schema.v1.json` defines the versioned JSON schema for editor validation and autocompletion.
+
 ## Reference Material
 
 - [.riv format specification](https://rive.app/docs/runtimes/advanced-topic/format)

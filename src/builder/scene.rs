@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::Deserialize;
 
@@ -8,8 +8,8 @@ use crate::objects::animation::{
 use crate::objects::artboard::{Artboard, Backboard};
 use crate::objects::core::RiveObject;
 use crate::objects::shapes::{
-    Ellipse, Fill, GradientStop, LinearGradient, Node, RadialGradient, Rectangle, Shape,
-    SolidColor, Stroke,
+    Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
+    Shape, SolidColor, Stroke,
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, EntryState, ExitState, StateMachine, StateMachineBool,
@@ -18,8 +18,11 @@ use crate::objects::state_machine::{
     TransitionTriggerCondition, TransitionValueCondition,
 };
 
+const SCENE_FORMAT_VERSION: u32 = 1;
+
 #[derive(Debug, Deserialize)]
 pub struct SceneSpec {
+    pub scene_format_version: u32,
     pub artboard: ArtboardSpec,
 }
 
@@ -97,6 +100,10 @@ pub enum ObjectSpec {
         x: Option<f32>,
         y: Option<f32>,
     },
+    Path {
+        name: String,
+        path_flags: Option<u64>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -167,7 +174,9 @@ pub struct ConditionSpec {
     pub value: Option<serde_json::Value>,
 }
 
-pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
+pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String> {
+    validate_scene_spec(spec)?;
+
     let mut objects: Vec<Box<dyn RiveObject>> = Vec::new();
     let mut object_name_to_index: HashMap<String, usize> = HashMap::new();
     let mut animation_name_to_index: HashMap<String, usize> = HashMap::new();
@@ -189,7 +198,7 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
     objects.push(Box::new(artboard));
 
     for child in &spec.artboard.children {
-        append_object(child, 1, &mut objects, &mut object_name_to_index);
+        append_object(child, 1, &mut objects, &mut object_name_to_index)?;
     }
 
     if let Some(animations) = &spec.artboard.animations {
@@ -207,29 +216,39 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
             animation_name_to_index.insert(animation.name.clone(), animation_list_index);
 
             for group in &animation.keyframes {
-                let object_index = *object_name_to_index.get(&group.object).unwrap_or_else(|| {
-                    panic!("unknown object referenced in keyframes: '{}'", group.object)
-                });
+                let object_index = *object_name_to_index.get(&group.object).ok_or_else(|| {
+                    format!("unknown object referenced in keyframes: '{}'", group.object)
+                })?;
                 objects.push(Box::new(KeyedObject {
                     object_id: (object_index - 1) as u64,
                 }));
 
-                let property_key = property_key_from_name(&group.property).unwrap_or_else(|| {
-                    panic!(
+                let property_key = property_key_from_name(&group.property).ok_or_else(|| {
+                    format!(
                         "unknown property referenced in keyframes: '{}'",
                         group.property
                     )
-                });
+                })?;
                 objects.push(Box::new(KeyedProperty {
                     property_key: property_key as u64,
                 }));
 
                 for frame in &group.frames {
                     if property_key == 37 {
-                        if let Some(color) = json_value_to_color(&frame.value) {
-                            objects.push(Box::new(KeyFrameColor::new(frame.frame, color)));
-                        }
-                    } else if let Some(value) = json_value_to_f32(&frame.value) {
+                        let color = json_value_to_color(&frame.value).ok_or_else(|| {
+                            format!(
+                                "invalid color keyframe value for object '{}' property '{}' at frame {}",
+                                group.object, group.property, frame.frame
+                            )
+                        })?;
+                        objects.push(Box::new(KeyFrameColor::new(frame.frame, color)));
+                    } else {
+                        let value = json_value_to_f32(&frame.value).ok_or_else(|| {
+                            format!(
+                                "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
+                                group.object, group.property, frame.frame
+                            )
+                        })?;
                         objects.push(Box::new(KeyFrameDouble::new(frame.frame, value)));
                     }
                 }
@@ -298,9 +317,9 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                         }
                         StateSpec::Animation { animation } => {
                             let animation_id =
-                                *animation_name_to_index.get(animation).unwrap_or_else(|| {
-                                    panic!("unknown animation referenced: '{}'", animation)
-                                }) as u64;
+                                *animation_name_to_index.get(animation).ok_or_else(|| {
+                                    format!("unknown animation referenced: '{}'", animation)
+                                })? as u64;
                             objects.push(Box::new(AnimationState::new(animation_id)));
                         }
                     }
@@ -310,14 +329,13 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                             if transition.from != user_idx {
                                 continue;
                             }
-                            let state_to_id =
-                                *user_to_final.get(transition.to).unwrap_or_else(|| {
-                                    panic!(
-                                        "transition target index {} out of bounds (layer has {} states)",
-                                        transition.to,
-                                        user_to_final.len()
-                                    )
-                                }) as u64;
+                            let state_to_id = *user_to_final.get(transition.to).ok_or_else(|| {
+                                format!(
+                                    "transition target index {} out of bounds (layer has {} states)",
+                                    transition.to,
+                                    user_to_final.len()
+                                )
+                            })? as u64;
                             let mut state_transition = StateTransition::new(state_to_id);
                             if let Some(duration) = transition.duration {
                                 state_transition.duration = duration;
@@ -328,12 +346,12 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                                 for condition in conditions {
                                     let input_index = *input_name_to_index
                                         .get(&condition.input)
-                                        .unwrap_or_else(|| {
-                                            panic!(
+                                        .ok_or_else(|| {
+                                            format!(
                                                 "unknown input referenced in condition: '{}'",
                                                 condition.input
                                             )
-                                        });
+                                        })?;
                                     {
                                         let input_id = input_index as u64;
                                         let op = condition
@@ -347,7 +365,12 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                                                     .value
                                                     .as_ref()
                                                     .and_then(json_value_to_f32)
-                                                    .unwrap_or(0.0);
+                                                    .ok_or_else(|| {
+                                                        format!(
+                                                            "invalid numeric condition value for input '{}'",
+                                                            condition.input
+                                                        )
+                                                    })?;
                                                 objects.push(Box::new(
                                                     TransitionNumberCondition::new(
                                                         input_id, op, value,
@@ -393,7 +416,7 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
         }
     }
 
-    objects
+    Ok(objects)
 }
 
 fn append_object(
@@ -401,7 +424,7 @@ fn append_object(
     parent_index: usize,
     objects: &mut Vec<Box<dyn RiveObject>>,
     name_to_index: &mut HashMap<String, usize>,
-) {
+) -> Result<(), String> {
     let object_index = objects.len();
     let parent_id = (parent_index - 1) as u64;
 
@@ -411,7 +434,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index);
+                    append_object(child, object_index, objects, name_to_index)?;
                 }
             }
         }
@@ -470,7 +493,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index);
+                    append_object(child, object_index, objects, name_to_index)?;
                 }
             }
         }
@@ -492,12 +515,12 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index);
+                    append_object(child, object_index, objects, name_to_index)?;
                 }
             }
         }
         ObjectSpec::SolidColor { name, color } => {
-            let color_value = parse_color(color).unwrap_or(0);
+            let color_value = parse_color(color)?;
             objects.push(Box::new(SolidColor::new(
                 name.clone(),
                 parent_id,
@@ -525,7 +548,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index);
+                    append_object(child, object_index, objects, name_to_index)?;
                 }
             }
         }
@@ -549,7 +572,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index);
+                    append_object(child, object_index, objects, name_to_index)?;
                 }
             }
         }
@@ -560,11 +583,11 @@ fn append_object(
         } => {
             let generated_name = name
                 .clone()
-                .unwrap_or_else(|| format!("gradient_stop_{}", object_index));
+                .unwrap_or_else(|| format!("gradient_stop_{}", name_to_index.len()));
             objects.push(Box::new(GradientStop {
                 name: generated_name.clone(),
                 parent_id,
-                color: parse_color(color).unwrap_or(0),
+                color: parse_color(color)?,
                 position: *position,
             }));
             name_to_index.insert(generated_name, object_index);
@@ -578,7 +601,17 @@ fn append_object(
             }));
             name_to_index.insert(name.clone(), object_index);
         }
+        ObjectSpec::Path { name, path_flags } => {
+            objects.push(Box::new(PathObject {
+                name: name.clone(),
+                parent_id,
+                path_flags: path_flags.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
     }
+
+    Ok(())
 }
 
 fn property_key_from_name(name: &str) -> Option<u16> {
@@ -596,9 +629,23 @@ fn property_key_from_name(name: &str) -> Option<u16> {
     }
 }
 
-fn parse_color(color: &str) -> Option<u32> {
+fn parse_color(color: &str) -> Result<u32, String> {
     let hex = color.trim_start_matches('#');
-    u32::from_str_radix(hex, 16).ok()
+    if hex.len() == 8 {
+        return u32::from_str_radix(hex, 16)
+            .map_err(|_| format!("invalid 8-digit color literal: '{}'", color));
+    }
+
+    if hex.len() == 6 {
+        return u32::from_str_radix(hex, 16)
+            .map(|rgb| 0xFF00_0000 | rgb)
+            .map_err(|_| format!("invalid 6-digit color literal: '{}'", color));
+    }
+
+    Err(format!(
+        "invalid color literal '{}' (expected 6 or 8 hex digits)",
+        color
+    ))
 }
 
 fn json_value_to_f32(value: &serde_json::Value) -> Option<f32> {
@@ -610,10 +657,285 @@ fn json_value_to_f32(value: &serde_json::Value) -> Option<f32> {
 
 fn json_value_to_color(value: &serde_json::Value) -> Option<u32> {
     match value {
-        serde_json::Value::String(s) => parse_color(s),
-        serde_json::Value::Number(n) => n.as_u64().map(|v| v as u32),
+        serde_json::Value::String(s) => parse_color(s).ok(),
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .filter(|&v| v <= u32::MAX as u64)
+            .map(|v| v as u32),
         _ => None,
     }
+}
+
+fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
+    if spec.scene_format_version != SCENE_FORMAT_VERSION {
+        return Err(format!(
+            "unsupported scene_format_version {} (expected {})",
+            spec.scene_format_version, SCENE_FORMAT_VERSION
+        ));
+    }
+
+    if spec.artboard.width < 0.0 {
+        return Err("artboard width must be non-negative".to_string());
+    }
+    if spec.artboard.height < 0.0 {
+        return Err("artboard height must be non-negative".to_string());
+    }
+
+    let mut object_names: HashSet<String> = HashSet::new();
+    for child in &spec.artboard.children {
+        validate_object_spec(child, &mut object_names)?;
+    }
+
+    let mut animation_names: HashSet<String> = HashSet::new();
+    if let Some(animations) = &spec.artboard.animations {
+        for animation in animations {
+            if animation.duration == 0 {
+                return Err(format!(
+                    "animation '{}' duration must be greater than 0",
+                    animation.name
+                ));
+            }
+            if animation_names.contains(&animation.name) {
+                return Err(format!("duplicate animation name '{}'", animation.name));
+            }
+            animation_names.insert(animation.name.clone());
+
+            for group in &animation.keyframes {
+                if !object_names.contains(&group.object) {
+                    return Err(format!(
+                        "unknown object referenced in keyframes: '{}'",
+                        group.object
+                    ));
+                }
+                let property_key = property_key_from_name(&group.property).ok_or_else(|| {
+                    format!(
+                        "unknown property referenced in keyframes: '{}'",
+                        group.property
+                    )
+                })?;
+
+                for frame in &group.frames {
+                    if property_key == 37 {
+                        if json_value_to_color(&frame.value).is_none() {
+                            return Err(format!(
+                                "invalid color keyframe value for object '{}' property '{}' at frame {}",
+                                group.object, group.property, frame.frame
+                            ));
+                        }
+                    } else if json_value_to_f32(&frame.value).is_none() {
+                        return Err(format!(
+                            "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
+                            group.object, group.property, frame.frame
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(state_machines) = &spec.artboard.state_machines {
+        for state_machine in state_machines {
+            let mut input_names: HashSet<String> = HashSet::new();
+            if let Some(inputs) = &state_machine.inputs {
+                for input in inputs {
+                    let name = match input {
+                        InputSpec::Number { name, .. } => name,
+                        InputSpec::Bool { name, .. } => name,
+                        InputSpec::Trigger { name } => name,
+                    };
+                    if input_names.contains(name) {
+                        return Err(format!(
+                            "duplicate state machine input '{}' in '{}'",
+                            name, state_machine.name
+                        ));
+                    }
+                    input_names.insert(name.clone());
+                }
+            }
+
+            for layer in &state_machine.layers {
+                for state in &layer.states {
+                    if let StateSpec::Animation { animation } = state
+                        && !animation_names.contains(animation)
+                    {
+                        return Err(format!(
+                            "unknown animation referenced in state machine '{}': '{}'",
+                            state_machine.name, animation
+                        ));
+                    }
+                }
+
+                if let Some(transitions) = &layer.transitions {
+                    for transition in transitions {
+                        if transition.from >= layer.states.len() {
+                            return Err(format!(
+                                "transition source index {} out of bounds (layer has {} states)",
+                                transition.from,
+                                layer.states.len()
+                            ));
+                        }
+                        if transition.to >= layer.states.len() {
+                            return Err(format!(
+                                "transition target index {} out of bounds (layer has {} states)",
+                                transition.to,
+                                layer.states.len()
+                            ));
+                        }
+
+                        if let Some(conditions) = &transition.conditions {
+                            for condition in conditions {
+                                if !input_names.contains(&condition.input) {
+                                    return Err(format!(
+                                        "unknown input referenced in condition: '{}'",
+                                        condition.input
+                                    ));
+                                }
+                                if let Some(serde_json::Value::String(color)) =
+                                    condition.value.as_ref()
+                                {
+                                    parse_color(color)?;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_object_spec(
+    spec: &ObjectSpec,
+    object_names: &mut HashSet<String>,
+) -> Result<(), String> {
+    match spec {
+        ObjectSpec::Shape { name, children } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names)?;
+                }
+            }
+        }
+        ObjectSpec::Ellipse {
+            name,
+            width,
+            height,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if *width < 0.0 {
+                return Err(format!("ellipse '{}' width must be non-negative", name));
+            }
+            if *height < 0.0 {
+                return Err(format!("ellipse '{}' height must be non-negative", name));
+            }
+        }
+        ObjectSpec::Rectangle {
+            name,
+            width,
+            height,
+            corner_radius,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if *width < 0.0 {
+                return Err(format!("rectangle '{}' width must be non-negative", name));
+            }
+            if *height < 0.0 {
+                return Err(format!("rectangle '{}' height must be non-negative", name));
+            }
+            if let Some(corner_radius) = corner_radius
+                && *corner_radius < 0.0
+            {
+                return Err(format!(
+                    "rectangle '{}' corner_radius must be non-negative",
+                    name
+                ));
+            }
+        }
+        ObjectSpec::Fill { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names)?;
+                }
+            }
+        }
+        ObjectSpec::Stroke {
+            name,
+            thickness,
+            children,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(thickness) = thickness
+                && *thickness < 0.0
+            {
+                return Err(format!("stroke '{}' thickness must be non-negative", name));
+            }
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names)?;
+                }
+            }
+        }
+        ObjectSpec::SolidColor { name, color } => {
+            ensure_unique_name(name, object_names)?;
+            parse_color(color)?;
+        }
+        ObjectSpec::LinearGradient { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names)?;
+                }
+            }
+        }
+        ObjectSpec::RadialGradient { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names)?;
+                }
+            }
+        }
+        ObjectSpec::GradientStop {
+            name,
+            color,
+            position,
+        } => {
+            let effective_name = name
+                .clone()
+                .unwrap_or_else(|| format!("gradient_stop_{}", object_names.len()));
+            ensure_unique_name(&effective_name, object_names)?;
+            parse_color(color)?;
+            if !(0.0..=1.0).contains(position) {
+                return Err(format!(
+                    "gradient stop '{}' position must be between 0 and 1",
+                    effective_name
+                ));
+            }
+        }
+        ObjectSpec::Node { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::Path { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn ensure_unique_name(name: &str, object_names: &mut HashSet<String>) -> Result<(), String> {
+    if object_names.contains(name) {
+        return Err(format!("duplicate object name '{}'", name));
+    }
+    object_names.insert(name.to_string());
+    Ok(())
 }
 
 fn parse_condition_op(op: &str) -> u64 {
@@ -631,10 +953,10 @@ fn parse_condition_op(op: &str) -> u64 {
 fn input_is_trigger(input_name: &str, inputs: Option<&Vec<InputSpec>>) -> bool {
     if let Some(inputs) = inputs {
         for input in inputs {
-            if let InputSpec::Trigger { name } = input {
-                if name == input_name {
-                    return true;
-                }
+            if let InputSpec::Trigger { name } = input
+                && name == input_name
+            {
+                return true;
             }
         }
     }
@@ -644,11 +966,12 @@ fn input_is_trigger(input_name: &str, inputs: Option<&Vec<InputSpec>>) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::objects::core::{property_keys, type_keys, PropertyValue};
+    use crate::objects::core::{PropertyValue, property_keys, type_keys};
 
     #[test]
     fn test_parse_minimal_json() {
         let json = r#"{
+            "scene_format_version": 1,
             "artboard": {
                 "name": "Main",
                 "width": 500.0,
@@ -662,11 +985,34 @@ mod tests {
         assert_eq!(scene.artboard.width, 500.0);
         assert_eq!(scene.artboard.children.len(), 0);
         assert!(scene.artboard.animations.is_none());
+        assert_eq!(scene.scene_format_version, 1);
+    }
+
+    #[test]
+    fn test_reject_unsupported_scene_format_version() {
+        let spec = SceneSpec {
+            scene_format_version: 2,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 500.0,
+                height: 500.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected scene format version error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unsupported scene_format_version 2"));
     }
 
     #[test]
     fn test_parse_shape_with_fill() {
         let json = r#"{
+            "scene_format_version": 1,
             "artboard": {
                 "name": "Main",
                 "width": 100.0,
@@ -713,6 +1059,7 @@ mod tests {
     #[test]
     fn test_build_minimal_scene() {
         let spec = SceneSpec {
+            scene_format_version: 1,
             artboard: ArtboardSpec {
                 name: "Main".to_string(),
                 width: 500.0,
@@ -723,20 +1070,23 @@ mod tests {
             },
         };
 
-        let objects = build_scene(&spec);
+        let objects = build_scene(&spec).unwrap();
         assert_eq!(objects.len(), 2);
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
 
         let artboard_props = objects[1].properties();
-        assert!(!artboard_props
-            .iter()
-            .any(|p| p.key == property_keys::COMPONENT_PARENT_ID));
+        assert!(
+            !artboard_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+        );
     }
 
     #[test]
     fn test_build_scene_with_shape() {
         let spec = SceneSpec {
+            scene_format_version: 1,
             artboard: ArtboardSpec {
                 name: "Main".to_string(),
                 width: 500.0,
@@ -766,7 +1116,7 @@ mod tests {
             },
         };
 
-        let objects = build_scene(&spec);
+        let objects = build_scene(&spec).unwrap();
         assert_eq!(objects.len(), 6);
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
@@ -807,6 +1157,7 @@ mod tests {
     #[test]
     fn test_build_scene_with_animation() {
         let spec = SceneSpec {
+            scene_format_version: 1,
             artboard: ArtboardSpec {
                 name: "Main".to_string(),
                 width: 500.0,
@@ -846,7 +1197,7 @@ mod tests {
             },
         };
 
-        let objects = build_scene(&spec);
+        let objects = build_scene(&spec).unwrap();
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
         assert_eq!(objects[2].type_key(), type_keys::SHAPE);
@@ -863,5 +1214,127 @@ mod tests {
             .find(|p| p.key == property_keys::KEYED_OBJECT_ID)
             .unwrap();
         assert_eq!(keyed_object_id.value, PropertyValue::UInt(2));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_invalid_color() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::SolidColor {
+                    name: "bad_color".to_string(),
+                    color: "not-a-color".to_string(),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected invalid color error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("invalid color literal"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_oob_transition_index() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: None,
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "sm".to_string(),
+                    inputs: None,
+                    layers: vec![LayerSpec {
+                        states: vec![StateSpec::Entry, StateSpec::Exit],
+                        transitions: Some(vec![TransitionSpec {
+                            from: 0,
+                            to: 3,
+                            duration: None,
+                            conditions: None,
+                        }]),
+                    }],
+                }]),
+            },
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected out-of-bounds transition error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("transition target index 3 out of bounds"));
+    }
+
+    #[test]
+    fn test_build_scene_with_path_object() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Path {
+                    name: "path_1".to_string(),
+                    path_flags: Some(3),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert_eq!(objects[2].type_key(), type_keys::PATH);
+        let path_flags = objects[2]
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::PATH_FLAGS)
+            .unwrap();
+        assert_eq!(path_flags.value, PropertyValue::UInt(3));
+    }
+
+    #[test]
+    fn test_gradient_stop_generated_name_alignment() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    children: Some(vec![
+                        ObjectSpec::GradientStop {
+                            name: Some("gradient_stop_1".to_string()),
+                            color: "FFFFFFFF".to_string(),
+                            position: 0.0,
+                        },
+                        ObjectSpec::GradientStop {
+                            name: None,
+                            color: "FF000000".to_string(),
+                            position: 1.0,
+                        },
+                    ]),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert!(objects.len() >= 4);
+    }
+
+    #[test]
+    fn test_json_value_to_color_rejects_overflow() {
+        let value = serde_json::json!(4294967296u64);
+        assert!(json_value_to_color(&value).is_none());
     }
 }
