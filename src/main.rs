@@ -71,9 +71,13 @@ fn main() {
             });
             if json {
                 match validator::parse_riv(&bytes) {
-                    Ok(parsed) => {
-                        println!("{}", serde_json::to_string_pretty(&parsed).unwrap());
-                    }
+                    Ok(parsed) => match serde_json::to_string_pretty(&parsed) {
+                        Ok(json_str) => println!("{}", json_str),
+                        Err(e) => {
+                            eprintln!("JSON serialization failed: {}", e);
+                            std::process::exit(1);
+                        }
+                    },
                     Err(e) => {
                         eprintln!("parse failed: {}", e);
                         std::process::exit(1);

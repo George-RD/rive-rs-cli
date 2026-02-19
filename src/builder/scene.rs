@@ -207,25 +207,30 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
             animation_name_to_index.insert(animation.name.clone(), animation_list_index);
 
             for group in &animation.keyframes {
-                if let Some(&object_index) = object_name_to_index.get(&group.object) {
-                    objects.push(Box::new(KeyedObject {
-                        object_id: (object_index - 1) as u64,
-                    }));
+                let object_index = *object_name_to_index.get(&group.object).unwrap_or_else(|| {
+                    panic!("unknown object referenced in keyframes: '{}'", group.object)
+                });
+                objects.push(Box::new(KeyedObject {
+                    object_id: (object_index - 1) as u64,
+                }));
 
-                    if let Some(property_key) = property_key_from_name(&group.property) {
-                        objects.push(Box::new(KeyedProperty {
-                            property_key: property_key as u64,
-                        }));
+                let property_key = property_key_from_name(&group.property).unwrap_or_else(|| {
+                    panic!(
+                        "unknown property referenced in keyframes: '{}'",
+                        group.property
+                    )
+                });
+                objects.push(Box::new(KeyedProperty {
+                    property_key: property_key as u64,
+                }));
 
-                        for frame in &group.frames {
-                            if property_key == 37 {
-                                if let Some(color) = json_value_to_color(&frame.value) {
-                                    objects.push(Box::new(KeyFrameColor::new(frame.frame, color)));
-                                }
-                            } else if let Some(value) = json_value_to_f32(&frame.value) {
-                                objects.push(Box::new(KeyFrameDouble::new(frame.frame, value)));
-                            }
+                for frame in &group.frames {
+                    if property_key == 37 {
+                        if let Some(color) = json_value_to_color(&frame.value) {
+                            objects.push(Box::new(KeyFrameColor::new(frame.frame, color)));
                         }
+                    } else if let Some(value) = json_value_to_f32(&frame.value) {
+                        objects.push(Box::new(KeyFrameDouble::new(frame.frame, value)));
                     }
                 }
             }
@@ -321,8 +326,14 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
 
                             if let Some(conditions) = &transition.conditions {
                                 for condition in conditions {
-                                    if let Some(&input_index) =
-                                        input_name_to_index.get(&condition.input)
+                                    let input_index = *input_name_to_index
+                                        .get(&condition.input)
+                                        .unwrap_or_else(|| {
+                                            panic!(
+                                                "unknown input referenced in condition: '{}'",
+                                                condition.input
+                                            )
+                                        });
                                     {
                                         let input_id = input_index as u64;
                                         let op = condition
