@@ -57,9 +57,10 @@ impl<'a> BinaryReader<'a> {
     }
 
     pub fn read_bytes(&mut self, n: usize) -> Option<&'a [u8]> {
-        if self.pos + n <= self.data.len() {
-            let slice = &self.data[self.pos..self.pos + n];
-            self.pos += n;
+        let end = self.pos.checked_add(n)?;
+        if end <= self.data.len() {
+            let slice = &self.data[self.pos..end];
+            self.pos = end;
             Some(slice)
         } else {
             None
