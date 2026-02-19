@@ -35,13 +35,65 @@ fn main() {
             eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
         }
         cli::Command::Validate { file } => {
-            eprintln!("validate: not yet implemented");
-            eprintln!("  file: {:?}", file);
+            let bytes = std::fs::read(&file).unwrap_or_else(|e| {
+                eprintln!("error reading {:?}: {}", file, e);
+                std::process::exit(1);
+            });
+            match validator::validate_riv(&bytes) {
+                Ok(report) => {
+                    println!(
+                        "RIVE v{}.{} file_id={}",
+                        report.header.major_version,
+                        report.header.minor_version,
+                        report.header.file_id
+                    );
+                    println!("{} objects", report.object_count);
+                    if report.valid {
+                        println!("valid");
+                    } else {
+                        for err in &report.errors {
+                            eprintln!("error: {}", err);
+                        }
+                        eprintln!("invalid ({} errors)", report.errors.len());
+                        std::process::exit(1);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("invalid: {}", e);
+                    std::process::exit(1);
+                }
+            }
         }
         cli::Command::Inspect { file, json } => {
-            eprintln!("inspect: not yet implemented");
-            eprintln!("  file: {:?}", file);
-            eprintln!("  json: {}", json);
+            let bytes = std::fs::read(&file).unwrap_or_else(|e| {
+                eprintln!("error reading {:?}: {}", file, e);
+                std::process::exit(1);
+            });
+            if json {
+                match validator::parse_riv(&bytes) {
+                    Ok(parsed) => match serde_json::to_string_pretty(&parsed) {
+                        Ok(json_str) => println!("{}", json_str),
+                        Err(e) => {
+                            eprintln!("JSON serialization failed: {}", e);
+                            std::process::exit(1);
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("parse failed: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                match validator::inspect_riv(&bytes) {
+                    Ok(output) => {
+                        print!("{}", output);
+                    }
+                    Err(e) => {
+                        eprintln!("inspect failed: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
         }
     }
 }

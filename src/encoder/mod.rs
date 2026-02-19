@@ -22,16 +22,18 @@ pub fn encode_object(object: &dyn RiveObject) -> Vec<u8> {
 }
 
 pub fn encode_riv(objects: &[&dyn RiveObject], file_id: u64) -> Vec<u8> {
-    let mut all_keys: Vec<u16> = objects
-        .iter()
-        .flat_map(|obj| obj.properties())
-        .map(|prop| prop.key)
-        .collect();
-    all_keys.sort();
-    all_keys.dedup();
-
     let header_bytes = header::encode_header(file_id);
-    let toc_bytes = toc::encode_toc(&all_keys);
+
+    let mut toc_keys: Vec<u16> = Vec::new();
+    for obj in objects {
+        for prop in obj.properties() {
+            if prop.key == 236 && !toc_keys.contains(&prop.key) {
+                toc_keys.push(prop.key);
+            }
+        }
+    }
+
+    let toc_bytes = toc::encode_toc(&toc_keys);
 
     let mut result = Vec::new();
     result.extend_from_slice(&header_bytes);
@@ -78,7 +80,7 @@ mod tests {
         assert_eq!(&result[0..4], &[0x52, 0x49, 0x56, 0x45]);
 
         let header_bytes = header::encode_header(0);
-        let toc_bytes = toc::encode_toc(&[4, 5, 7, 8]);
+        let toc_bytes = toc::encode_toc(&[]);
         let toc_start = header_bytes.len();
         let toc_end = toc_start + toc_bytes.len();
         assert_eq!(&result[toc_start..toc_end], &toc_bytes);
@@ -106,14 +108,12 @@ mod tests {
 
         let mut writer = BinaryWriter::new();
         writer.write_varuint(1);
-        writer.write_varuint(4);
-        writer.write_string("Test");
-        writer.write_varuint(5);
-        writer.write_varuint(0);
         writer.write_varuint(7);
         writer.write_float(500.0);
         writer.write_varuint(8);
         writer.write_float(500.0);
+        writer.write_varuint(4);
+        writer.write_string("Test");
         writer.write_varuint(0);
         assert_eq!(result, writer.finish());
     }

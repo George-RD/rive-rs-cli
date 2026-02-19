@@ -2,7 +2,6 @@ use crate::objects::core::{property_keys, type_keys, Property, PropertyValue, Ri
 
 pub struct LinearAnimation {
     pub name: String,
-    pub parent_id: u64,
     pub fps: u64,
     pub duration: u64,
     pub speed: f32,
@@ -14,10 +13,9 @@ pub struct LinearAnimation {
 }
 
 impl LinearAnimation {
-    pub fn new(name: impl Into<String>, parent_id: u64, fps: u64, duration: u64) -> Self {
+    pub fn new(name: impl Into<String>, fps: u64, duration: u64) -> Self {
         Self {
             name: name.into(),
-            parent_id,
             fps,
             duration,
             speed: 1.0,
@@ -36,14 +34,10 @@ impl RiveObject for LinearAnimation {
     }
 
     fn properties(&self) -> Vec<Property> {
-        vec![
+        let mut props = vec![
             Property {
                 key: property_keys::ANIMATION_NAME,
                 value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
             },
             Property {
                 key: property_keys::LINEAR_ANIMATION_FPS,
@@ -53,31 +47,44 @@ impl RiveObject for LinearAnimation {
                 key: property_keys::LINEAR_ANIMATION_DURATION,
                 value: PropertyValue::UInt(self.duration),
             },
-            Property {
+        ];
+
+        if self.speed != 1.0 {
+            props.push(Property {
                 key: property_keys::LINEAR_ANIMATION_SPEED,
                 value: PropertyValue::Float(self.speed),
-            },
-            Property {
+            });
+        }
+
+        if self.loop_type != 0 {
+            props.push(Property {
                 key: property_keys::LINEAR_ANIMATION_LOOP,
                 value: PropertyValue::UInt(self.loop_type),
-            },
-            Property {
+            });
+        }
+
+        if self.work_start != 0 {
+            props.push(Property {
                 key: property_keys::LINEAR_ANIMATION_WORK_START,
                 value: PropertyValue::UInt(self.work_start),
-            },
-            Property {
+            });
+        }
+
+        if self.work_end != 0 {
+            props.push(Property {
                 key: property_keys::LINEAR_ANIMATION_WORK_END,
                 value: PropertyValue::UInt(self.work_end),
-            },
-            Property {
+            });
+        }
+
+        if self.enable_work_area != 0 {
+            props.push(Property {
                 key: property_keys::LINEAR_ANIMATION_ENABLE_WORK_AREA,
                 value: PropertyValue::UInt(self.enable_work_area),
-            },
-            Property {
-                key: property_keys::LINEAR_ANIMATION_QUANTIZE,
-                value: PropertyValue::UInt(self.quantize),
-            },
-        ]
+            });
+        }
+
+        props
     }
 }
 
@@ -274,14 +281,15 @@ mod tests {
 
     #[test]
     fn test_linear_animation_type_key() {
-        let anim = LinearAnimation::new("test", 0, 24, 60);
+        let anim = LinearAnimation::new("test", 24, 60);
         assert_eq!(anim.type_key(), 31);
     }
 
     #[test]
     fn test_linear_animation_properties() {
-        let anim = LinearAnimation::new("walk", 1, 24, 120);
+        let anim = LinearAnimation::new("walk", 24, 120);
         let props = anim.properties();
+        assert_eq!(props.len(), 3);
         let name_prop = props
             .iter()
             .find(|p| p.key == property_keys::ANIMATION_NAME)
@@ -297,16 +305,17 @@ mod tests {
             .find(|p| p.key == property_keys::LINEAR_ANIMATION_DURATION)
             .unwrap();
         assert_eq!(dur_prop.value, PropertyValue::UInt(120));
-        let speed_prop = props
+        assert!(props
             .iter()
-            .find(|p| p.key == property_keys::LINEAR_ANIMATION_SPEED)
-            .unwrap();
-        assert_eq!(speed_prop.value, PropertyValue::Float(1.0));
+            .all(|p| p.key != property_keys::LINEAR_ANIMATION_SPEED));
+        assert!(props
+            .iter()
+            .all(|p| p.key != property_keys::LINEAR_ANIMATION_QUANTIZE));
     }
 
     #[test]
     fn test_linear_animation_no_extra_props() {
-        let anim = LinearAnimation::new("test", 0, 24, 60);
+        let anim = LinearAnimation::new("test", 24, 60);
         let props = anim.properties();
         assert!(props.iter().all(|p| p.key != 4));
     }

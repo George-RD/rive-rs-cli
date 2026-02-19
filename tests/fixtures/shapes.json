@@ -1,0 +1,32 @@
+{
+  "artboard": {
+    "name": "Shapes",
+    "width": 800,
+    "height": 600,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Circle",
+        "children": [
+          { "type": "ellipse", "name": "CirclePath", "width": 200, "height": 200 },
+          { "type": "fill", "name": "CircleFill", "children": [
+            { "type": "solid_color", "name": "Blue", "color": "FF0000FF" }
+          ]}
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Box",
+        "children": [
+          { "type": "rectangle", "name": "BoxPath", "width": 150, "height": 100, "corner_radius": 10.0 },
+          { "type": "fill", "name": "BoxFill", "children": [
+            { "type": "solid_color", "name": "Green", "color": "FF00FF00" }
+          ]},
+          { "type": "stroke", "name": "BoxStroke", "thickness": 2.0, "children": [
+            { "type": "solid_color", "name": "Black", "color": "FF000000" }
+          ]}
+        ]
+      }
+    ]
+  }
+}

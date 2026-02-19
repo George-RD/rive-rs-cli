@@ -1,0 +1,57 @@
+{
+  "artboard": {
+    "name": "Interactive",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Indicator",
+        "children": [
+          { "type": "ellipse", "name": "Dot", "width": 30, "height": 30 },
+          { "type": "fill", "name": "DotFill", "children": [
+            { "type": "solid_color", "name": "White", "color": "FFFFFFFF" }
+          ]}
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": []
+      },
+      {
+        "name": "active",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": []
+      }
+    ],
+    "state_machines": [
+      {
+        "name": "Logic",
+        "inputs": [
+          { "type": "bool", "name": "isOn", "value": false },
+          { "type": "trigger", "name": "toggle" }
+        ],
+        "layers": [
+          {
+            "states": [
+              { "type": "entry" },
+              { "type": "animation", "animation": "idle" },
+              { "type": "animation", "animation": "active" },
+              { "type": "exit" }
+            ],
+            "transitions": [
+              { "from": 0, "to": 1 },
+              { "from": 1, "to": 2, "conditions": [{ "input": "isOn", "value": true }] },
+              { "from": 2, "to": 1, "conditions": [{ "input": "isOn", "value": false }] }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
