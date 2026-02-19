@@ -21,6 +21,7 @@ pub struct Artboard {
     pub origin_y: f32,
     pub x: f32,
     pub y: f32,
+    pub default_state_machine_id: Option<u64>,
 }
 
 impl Artboard {
@@ -34,6 +35,7 @@ impl Artboard {
             origin_y: 0.0,
             x: 0.0,
             y: 0.0,
+            default_state_machine_id: None,
         }
     }
 }
@@ -46,20 +48,16 @@ impl RiveObject for Artboard {
     fn properties(&self) -> Vec<Property> {
         let mut props = vec![
             Property {
-                key: property_keys::COMPONENT_NAME,
-                value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
-            },
-            Property {
                 key: property_keys::LAYOUT_COMPONENT_WIDTH,
                 value: PropertyValue::Float(self.width),
             },
             Property {
                 key: property_keys::LAYOUT_COMPONENT_HEIGHT,
                 value: PropertyValue::Float(self.height),
+            },
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
             },
         ];
 
@@ -88,6 +86,13 @@ impl RiveObject for Artboard {
             props.push(Property {
                 key: property_keys::NODE_Y,
                 value: PropertyValue::Float(self.y),
+            });
+        }
+
+        if let Some(sm_id) = self.default_state_machine_id {
+            props.push(Property {
+                key: property_keys::ARTBOARD_DEFAULT_STATE_MACHINE_ID,
+                value: PropertyValue::UInt(sm_id),
             });
         }
 
@@ -122,22 +127,19 @@ mod tests {
         let artboard = Artboard::new("MyArtboard".to_string(), 500.0, 500.0);
         let props = artboard.properties();
 
-        assert_eq!(props.len(), 4);
+        assert_eq!(props.len(), 3);
 
-        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[0].key, property_keys::LAYOUT_COMPONENT_WIDTH);
+        assert_eq!(props[0].value, PropertyValue::Float(500.0));
+
+        assert_eq!(props[1].key, property_keys::LAYOUT_COMPONENT_HEIGHT);
+        assert_eq!(props[1].value, PropertyValue::Float(500.0));
+
+        assert_eq!(props[2].key, property_keys::COMPONENT_NAME);
         assert_eq!(
-            props[0].value,
+            props[2].value,
             PropertyValue::String("MyArtboard".to_string())
         );
-
-        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
-        assert_eq!(props[1].value, PropertyValue::UInt(0));
-
-        assert_eq!(props[2].key, property_keys::LAYOUT_COMPONENT_WIDTH);
-        assert_eq!(props[2].value, PropertyValue::Float(500.0));
-
-        assert_eq!(props[3].key, property_keys::LAYOUT_COMPONENT_HEIGHT);
-        assert_eq!(props[3].value, PropertyValue::Float(500.0));
     }
 
     #[test]
@@ -150,7 +152,7 @@ mod tests {
 
         let props = artboard.properties();
 
-        assert_eq!(props.len(), 8);
+        assert_eq!(props.len(), 7);
 
         let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
         assert!(keys.contains(&property_keys::ARTBOARD_ORIGIN_X));
