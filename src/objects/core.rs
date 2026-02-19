@@ -1,0 +1,291 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackingType {
+    UInt = 0,
+    String = 1,
+    Float = 2,
+    Color = 3,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PropertyValue {
+    UInt(u64),
+    String(String),
+    Float(f32),
+    Color(u32),
+}
+
+impl PropertyValue {
+    pub fn backing_type(&self) -> BackingType {
+        match self {
+            PropertyValue::UInt(_) => BackingType::UInt,
+            PropertyValue::String(_) => BackingType::String,
+            PropertyValue::Float(_) => BackingType::Float,
+            PropertyValue::Color(_) => BackingType::Color,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Property {
+    pub key: u16,
+    pub value: PropertyValue,
+}
+
+pub trait RiveObject {
+    fn type_key(&self) -> u16;
+    fn properties(&self) -> Vec<Property>;
+}
+
+pub mod type_keys {
+    pub const ARTBOARD: u16 = 1;
+    pub const NODE: u16 = 2;
+    pub const SHAPE: u16 = 3;
+    pub const ELLIPSE: u16 = 4;
+    pub const RECTANGLE: u16 = 7;
+    pub const COMPONENT: u16 = 10;
+    pub const CONTAINER_COMPONENT: u16 = 11;
+    pub const PATH: u16 = 12;
+    pub const DRAWABLE: u16 = 13;
+    pub const PARAMETRIC_PATH: u16 = 15;
+    pub const RADIAL_GRADIENT: u16 = 17;
+    pub const SOLID_COLOR: u16 = 18;
+    pub const GRADIENT_STOP: u16 = 19;
+    pub const FILL: u16 = 20;
+    pub const SHAPE_PAINT: u16 = 21;
+    pub const LINEAR_GRADIENT: u16 = 22;
+    pub const BACKBOARD: u16 = 23;
+    pub const STROKE: u16 = 24;
+    pub const KEYED_OBJECT: u16 = 25;
+    pub const KEYED_PROPERTY: u16 = 26;
+    pub const ANIMATION: u16 = 27;
+    pub const KEY_FRAME: u16 = 29;
+    pub const KEY_FRAME_DOUBLE: u16 = 30;
+    pub const LINEAR_ANIMATION: u16 = 31;
+    pub const KEY_FRAME_COLOR: u16 = 37;
+    pub const TRANSFORM_COMPONENT: u16 = 38;
+    pub const STATE_MACHINE: u16 = 53;
+    pub const STATE_MACHINE_COMPONENT: u16 = 54;
+    pub const STATE_MACHINE_INPUT: u16 = 55;
+    pub const STATE_MACHINE_NUMBER: u16 = 56;
+    pub const STATE_MACHINE_LAYER: u16 = 57;
+    pub const STATE_MACHINE_TRIGGER: u16 = 58;
+    pub const STATE_MACHINE_BOOL: u16 = 59;
+    pub const LAYER_STATE: u16 = 60;
+    pub const ANIMATION_STATE: u16 = 61;
+    pub const ANY_STATE: u16 = 62;
+    pub const ENTRY_STATE: u16 = 63;
+    pub const EXIT_STATE: u16 = 64;
+    pub const STATE_TRANSITION: u16 = 65;
+    pub const TRANSITION_INPUT_CONDITION: u16 = 67;
+    pub const TRANSITION_TRIGGER_CONDITION: u16 = 68;
+    pub const TRANSITION_VALUE_CONDITION: u16 = 69;
+    pub const TRANSITION_NUMBER_CONDITION: u16 = 70;
+    pub const TRANSITION_BOOL_CONDITION: u16 = 71;
+    pub const WORLD_TRANSFORM_COMPONENT: u16 = 91;
+    pub const INTERPOLATING_KEY_FRAME: u16 = 170;
+    pub const LAYOUT_COMPONENT: u16 = 409;
+    pub const TRANSITION_CONDITION: u16 = 476;
+}
+
+pub mod property_keys {
+    pub const COMPONENT_NAME: u16 = 4;
+    pub const COMPONENT_PARENT_ID: u16 = 5;
+    pub const LAYOUT_COMPONENT_WIDTH: u16 = 7;
+    pub const LAYOUT_COMPONENT_HEIGHT: u16 = 8;
+    pub const NODE_X_ARTBOARD: u16 = 9;
+    pub const NODE_Y_ARTBOARD: u16 = 10;
+    pub const ARTBOARD_ORIGIN_X: u16 = 11;
+    pub const ARTBOARD_ORIGIN_Y: u16 = 12;
+    pub const NODE_X: u16 = 13;
+    pub const NODE_Y: u16 = 14;
+    pub const TRANSFORM_ROTATION: u16 = 15;
+    pub const TRANSFORM_SCALE_X: u16 = 16;
+    pub const TRANSFORM_SCALE_Y: u16 = 17;
+    pub const WORLD_TRANSFORM_OPACITY: u16 = 18;
+    pub const PARAMETRIC_PATH_WIDTH: u16 = 20;
+    pub const PARAMETRIC_PATH_HEIGHT: u16 = 21;
+    pub const DRAWABLE_BLEND_MODE: u16 = 23;
+    pub const RECTANGLE_CORNER_RADIUS_TL: u16 = 31;
+    pub const LINEAR_GRADIENT_START_Y: u16 = 33;
+    pub const LINEAR_GRADIENT_END_X: u16 = 34;
+    pub const LINEAR_GRADIENT_END_Y: u16 = 35;
+    pub const SOLID_COLOR_VALUE: u16 = 37;
+    pub const GRADIENT_STOP_COLOR: u16 = 38;
+    pub const GRADIENT_STOP_POSITION: u16 = 39;
+    pub const FILL_RULE: u16 = 40;
+    pub const SHAPE_PAINT_IS_VISIBLE: u16 = 41;
+    pub const LINEAR_GRADIENT_START_X: u16 = 42;
+    pub const LINEAR_GRADIENT_OPACITY: u16 = 46;
+    pub const STROKE_THICKNESS: u16 = 47;
+    pub const STROKE_CAP: u16 = 48;
+    pub const STROKE_JOIN: u16 = 49;
+    pub const STROKE_TRANSFORM_AFFECTS: u16 = 50;
+    pub const KEYED_OBJECT_ID: u16 = 51;
+    pub const KEYED_PROPERTY_KEY: u16 = 53;
+    pub const ANIMATION_NAME: u16 = 55;
+    pub const LINEAR_ANIMATION_FPS: u16 = 56;
+    pub const LINEAR_ANIMATION_DURATION: u16 = 57;
+    pub const LINEAR_ANIMATION_SPEED: u16 = 58;
+    pub const LINEAR_ANIMATION_LOOP: u16 = 59;
+    pub const LINEAR_ANIMATION_WORK_START: u16 = 60;
+    pub const LINEAR_ANIMATION_WORK_END: u16 = 61;
+    pub const LINEAR_ANIMATION_ENABLE_WORK_AREA: u16 = 62;
+    pub const KEY_FRAME_FRAME: u16 = 67;
+    pub const INTERPOLATING_KEY_FRAME_TYPE: u16 = 68;
+    pub const INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID: u16 = 69;
+    pub const KEY_FRAME_DOUBLE_VALUE: u16 = 70;
+    pub const KEY_FRAME_COLOR_VALUE: u16 = 88;
+    pub const PARAMETRIC_PATH_ORIGIN_X: u16 = 123;
+    pub const PARAMETRIC_PATH_ORIGIN_Y: u16 = 124;
+    pub const PATH_FLAGS: u16 = 128;
+    pub const DRAWABLE_FLAGS: u16 = 129;
+    pub const STATE_MACHINE_COMPONENT_NAME: u16 = 138;
+    pub const STATE_MACHINE_NUMBER_VALUE: u16 = 140;
+    pub const STATE_MACHINE_BOOL_VALUE: u16 = 141;
+    pub const ANIMATION_STATE_ANIMATION_ID: u16 = 149;
+    pub const STATE_TRANSITION_STATE_TO_ID: u16 = 151;
+    pub const STATE_TRANSITION_FLAGS: u16 = 152;
+    pub const TRANSITION_INPUT_CONDITION_INPUT_ID: u16 = 155;
+    pub const TRANSITION_VALUE_CONDITION_OP: u16 = 156;
+    pub const TRANSITION_NUMBER_CONDITION_VALUE: u16 = 157;
+    pub const STATE_TRANSITION_DURATION: u16 = 158;
+    pub const STATE_TRANSITION_EXIT_TIME: u16 = 160;
+    pub const RECTANGLE_CORNER_RADIUS_TR: u16 = 161;
+    pub const RECTANGLE_CORNER_RADIUS_BL: u16 = 162;
+    pub const RECTANGLE_CORNER_RADIUS_BR: u16 = 163;
+    pub const RECTANGLE_LINK_CORNER_RADIUS: u16 = 164;
+    pub const LAYOUT_COMPONENT_CLIP: u16 = 196;
+    pub const ARTBOARD_DEFAULT_STATE_MACHINE_ID: u16 = 236;
+    pub const LINEAR_ANIMATION_QUANTIZE: u16 = 376;
+    pub const LAYOUT_COMPONENT_STYLE_ID: u16 = 494;
+    pub const LAYER_STATE_FLAGS: u16 = 536;
+    pub const STATE_TRANSITION_RANDOM_WEIGHT: u16 = 537;
+    pub const ARTBOARD_VIEW_MODEL_ID: u16 = 583;
+    pub const LAYOUT_COMPONENT_FRACTIONAL_WIDTH: u16 = 706;
+    pub const LAYOUT_COMPONENT_FRACTIONAL_HEIGHT: u16 = 707;
+    pub const SHAPE_PAINT_BLEND_MODE: u16 = 747;
+    pub const PATH_IS_HOLE: u16 = 770;
+    pub const SHAPE_LENGTH: u16 = 781;
+}
+
+pub fn property_backing_type(key: u16) -> Option<BackingType> {
+    match key {
+        4 | 55 | 138 => Some(BackingType::String),
+        7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 20 | 21 | 31 | 33 | 34 | 35
+        | 39 | 42 | 46 | 47 | 58 | 70 | 123 | 124 | 140 | 157 | 161 | 162 | 163 | 706 | 707
+        | 781 => Some(BackingType::Float),
+        5 | 23 | 40 | 41 | 48 | 49 | 50 | 51 | 53 | 56 | 57 | 59 | 60 | 61 | 62 | 67 | 68 | 69
+        | 128 | 129 | 141 | 149 | 151 | 152 | 155 | 156 | 158 | 160 | 164 | 196 | 236 | 376
+        | 494 | 536 | 537 | 583 | 747 | 770 => Some(BackingType::UInt),
+        37 | 38 | 88 => Some(BackingType::Color),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_property_backing_type_string() {
+        assert_eq!(property_backing_type(4), Some(BackingType::String));
+        assert_eq!(property_backing_type(55), Some(BackingType::String));
+        assert_eq!(property_backing_type(138), Some(BackingType::String));
+    }
+
+    #[test]
+    fn test_property_backing_type_float() {
+        assert_eq!(property_backing_type(7), Some(BackingType::Float));
+        assert_eq!(property_backing_type(14), Some(BackingType::Float));
+        assert_eq!(property_backing_type(70), Some(BackingType::Float));
+        assert_eq!(property_backing_type(781), Some(BackingType::Float));
+    }
+
+    #[test]
+    fn test_property_backing_type_uint() {
+        assert_eq!(property_backing_type(5), Some(BackingType::UInt));
+        assert_eq!(property_backing_type(56), Some(BackingType::UInt));
+        assert_eq!(property_backing_type(583), Some(BackingType::UInt));
+        assert_eq!(property_backing_type(770), Some(BackingType::UInt));
+    }
+
+    #[test]
+    fn test_property_backing_type_color() {
+        assert_eq!(property_backing_type(37), Some(BackingType::Color));
+        assert_eq!(property_backing_type(38), Some(BackingType::Color));
+        assert_eq!(property_backing_type(88), Some(BackingType::Color));
+    }
+
+    #[test]
+    fn test_property_backing_type_unknown() {
+        assert_eq!(property_backing_type(0), None);
+        assert_eq!(property_backing_type(999), None);
+        assert_eq!(property_backing_type(u16::MAX), None);
+    }
+
+    #[test]
+    fn test_property_value_backing_type() {
+        assert_eq!(PropertyValue::Float(1.0).backing_type(), BackingType::Float);
+        assert_eq!(PropertyValue::UInt(42).backing_type(), BackingType::UInt);
+        assert_eq!(
+            PropertyValue::String("test".to_string()).backing_type(),
+            BackingType::String
+        );
+        assert_eq!(
+            PropertyValue::Color(0xFF0000FF).backing_type(),
+            BackingType::Color
+        );
+    }
+
+    #[test]
+    fn test_type_key_constants() {
+        assert_eq!(type_keys::BACKBOARD, 23);
+        assert_eq!(type_keys::ARTBOARD, 1);
+        assert_eq!(type_keys::NODE, 2);
+        assert_eq!(type_keys::SHAPE, 3);
+        assert_eq!(type_keys::ELLIPSE, 4);
+        assert_eq!(type_keys::RECTANGLE, 7);
+        assert_eq!(type_keys::COMPONENT, 10);
+        assert_eq!(type_keys::CONTAINER_COMPONENT, 11);
+        assert_eq!(type_keys::PATH, 12);
+        assert_eq!(type_keys::DRAWABLE, 13);
+        assert_eq!(type_keys::PARAMETRIC_PATH, 15);
+        assert_eq!(type_keys::RADIAL_GRADIENT, 17);
+        assert_eq!(type_keys::SOLID_COLOR, 18);
+        assert_eq!(type_keys::GRADIENT_STOP, 19);
+        assert_eq!(type_keys::FILL, 20);
+        assert_eq!(type_keys::SHAPE_PAINT, 21);
+        assert_eq!(type_keys::LINEAR_GRADIENT, 22);
+        assert_eq!(type_keys::STROKE, 24);
+        assert_eq!(type_keys::KEYED_OBJECT, 25);
+        assert_eq!(type_keys::KEYED_PROPERTY, 26);
+        assert_eq!(type_keys::ANIMATION, 27);
+        assert_eq!(type_keys::KEY_FRAME, 29);
+        assert_eq!(type_keys::KEY_FRAME_DOUBLE, 30);
+        assert_eq!(type_keys::LINEAR_ANIMATION, 31);
+        assert_eq!(type_keys::KEY_FRAME_COLOR, 37);
+        assert_eq!(type_keys::TRANSFORM_COMPONENT, 38);
+        assert_eq!(type_keys::STATE_MACHINE, 53);
+        assert_eq!(type_keys::STATE_MACHINE_COMPONENT, 54);
+        assert_eq!(type_keys::STATE_MACHINE_INPUT, 55);
+        assert_eq!(type_keys::STATE_MACHINE_NUMBER, 56);
+        assert_eq!(type_keys::STATE_MACHINE_LAYER, 57);
+        assert_eq!(type_keys::STATE_MACHINE_TRIGGER, 58);
+        assert_eq!(type_keys::STATE_MACHINE_BOOL, 59);
+        assert_eq!(type_keys::LAYER_STATE, 60);
+        assert_eq!(type_keys::ANIMATION_STATE, 61);
+        assert_eq!(type_keys::ANY_STATE, 62);
+        assert_eq!(type_keys::ENTRY_STATE, 63);
+        assert_eq!(type_keys::EXIT_STATE, 64);
+        assert_eq!(type_keys::STATE_TRANSITION, 65);
+        assert_eq!(type_keys::TRANSITION_INPUT_CONDITION, 67);
+        assert_eq!(type_keys::TRANSITION_TRIGGER_CONDITION, 68);
+        assert_eq!(type_keys::TRANSITION_VALUE_CONDITION, 69);
+        assert_eq!(type_keys::TRANSITION_NUMBER_CONDITION, 70);
+        assert_eq!(type_keys::TRANSITION_BOOL_CONDITION, 71);
+        assert_eq!(type_keys::WORLD_TRANSFORM_COMPONENT, 91);
+        assert_eq!(type_keys::INTERPOLATING_KEY_FRAME, 170);
+        assert_eq!(type_keys::LAYOUT_COMPONENT, 409);
+        assert_eq!(type_keys::TRANSITION_CONDITION, 476);
+    }
+}
