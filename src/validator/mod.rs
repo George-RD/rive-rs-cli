@@ -155,15 +155,18 @@ pub fn parse_riv(data: &[u8]) -> Result<ParsedRiv, String> {
     let mut toc_map: HashMap<u16, BackingType> = HashMap::new();
 
     if !toc_property_keys.is_empty() {
-        let num_bytes = (toc_property_keys.len() + 3) / 4;
-        let bit_array = reader.read_bytes(num_bytes).ok_or_else(|| {
-            "unexpected end of data reading ToC backing type bit array".to_string()
-        })?;
+        let mut current_u32: u32 = 0;
+        let mut bit_pos: usize = 32;
 
         for (i, &key) in toc_property_keys.iter().enumerate() {
-            let byte_index = i / 4;
-            let bit_offset = (i % 4) * 2;
-            let bits = (bit_array[byte_index] >> bit_offset) & 0x03;
+            if i % 16 == 0 {
+                let bytes = reader.read_bytes(4).ok_or_else(|| {
+                    "unexpected end of data reading ToC backing type uint32".to_string()
+                })?;
+                current_u32 = u32::from_le_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                bit_pos = 0;
+            }
+            let bits = (current_u32 >> bit_pos) & 0x03;
             let backing = match bits {
                 0 => BackingType::UInt,
                 1 => BackingType::String,
@@ -173,6 +176,7 @@ pub fn parse_riv(data: &[u8]) -> Result<ParsedRiv, String> {
             };
             toc_backing_types.push(backing);
             toc_map.insert(key, backing);
+            bit_pos += 2;
         }
     }
 
@@ -456,18 +460,22 @@ mod tests {
         assert_eq!(parsed.objects[0].type_key, 23);
         assert!(parsed.objects[0].properties.is_empty());
         assert_eq!(parsed.objects[1].type_key, 1);
-        assert_eq!(parsed.objects[1].properties.len(), 4);
+        assert_eq!(parsed.objects[1].properties.len(), 3);
 
-        let name_prop = &parsed.objects[1].properties[0];
+        let width_prop = &parsed.objects[1].properties[0];
+        assert_eq!(width_prop.key, 7);
+        assert_eq!(width_prop.value, PropertyValueRead::Float(500.0));
+
+        let height_prop = &parsed.objects[1].properties[1];
+        assert_eq!(height_prop.key, 8);
+        assert_eq!(height_prop.value, PropertyValueRead::Float(500.0));
+
+        let name_prop = &parsed.objects[1].properties[2];
         assert_eq!(name_prop.key, 4);
         assert_eq!(
             name_prop.value,
             PropertyValueRead::String("Test".to_string())
         );
-
-        let width_prop = &parsed.objects[1].properties[2];
-        assert_eq!(width_prop.key, 7);
-        assert_eq!(width_prop.value, PropertyValueRead::Float(500.0));
     }
 
     #[test]
