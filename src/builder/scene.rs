@@ -275,7 +275,9 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                         }
                         StateSpec::Animation { animation } => {
                             let animation_id =
-                                animation_name_to_index.get(animation).copied().unwrap_or(0) as u64;
+                                *animation_name_to_index.get(animation).unwrap_or_else(|| {
+                                    panic!("unknown animation referenced: '{}'", animation)
+                                }) as u64;
                             objects.push(Box::new(AnimationState::new(animation_id)));
                         }
                     }
@@ -284,10 +286,16 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
 
                 if let Some(transitions) = &layer.transitions {
                     for transition in transitions {
-                        let state_to_id = layer_state_object_ids
+                        let state_to_id = *layer_state_object_ids
                             .get(transition.to)
-                            .copied()
-                            .unwrap_or(0) as u64;
+                            .unwrap_or_else(|| {
+                                panic!(
+                                    "transition target index {} out of bounds (layer has {} states)",
+                                    transition.to,
+                                    layer_state_object_ids.len()
+                                )
+                            })
+                            as u64;
                         let mut state_transition = StateTransition::new(state_to_id);
                         if let Some(duration) = transition.duration {
                             state_transition.duration = duration;
@@ -316,12 +324,12 @@ pub fn build_scene(spec: &SceneSpec) -> Vec<Box<dyn RiveObject>> {
                                                 input_id, op, value,
                                             )));
                                         }
-                                        Some(serde_json::Value::Bool(v)) => {
+                                        Some(serde_json::Value::Bool(_v)) => {
                                             let bool_op = condition
                                                 .op
                                                 .as_deref()
                                                 .map(parse_condition_op)
-                                                .unwrap_or(if *v { 1 } else { 0 });
+                                                .unwrap_or(0);
                                             objects.push(Box::new(TransitionBoolCondition::new(
                                                 input_id, bool_op,
                                             )));
@@ -443,7 +451,7 @@ fn append_object(
             children,
         } => {
             let mut stroke =
-                Stroke::new(name.clone(), parent_index as u64, thickness.unwrap_or(0.0));
+                Stroke::new(name.clone(), parent_index as u64, thickness.unwrap_or(1.0));
             if let Some(cap) = cap {
                 stroke.cap = *cap;
             }
