@@ -22,13 +22,8 @@ const SCENE_FORMAT_VERSION: u32 = 1;
 
 #[derive(Debug, Deserialize)]
 pub struct SceneSpec {
-    #[serde(default = "default_scene_format_version")]
     pub scene_format_version: u32,
     pub artboard: ArtboardSpec,
-}
-
-fn default_scene_format_version() -> u32 {
-    SCENE_FORMAT_VERSION
 }
 
 #[derive(Debug, Deserialize)]
@@ -976,6 +971,7 @@ mod tests {
     #[test]
     fn test_parse_minimal_json() {
         let json = r#"{
+            "scene_format_version": 1,
             "artboard": {
                 "name": "Main",
                 "width": 500.0,
@@ -1016,6 +1012,7 @@ mod tests {
     #[test]
     fn test_parse_shape_with_fill() {
         let json = r#"{
+            "scene_format_version": 1,
             "artboard": {
                 "name": "Main",
                 "width": 100.0,
