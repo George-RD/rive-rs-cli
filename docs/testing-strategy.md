@@ -155,30 +155,25 @@ When adding a new Rive object type to the codebase:
 - [ ] Update `docs/scene.schema.v1.json` if new JSON fields added
 - [ ] Update `AGENTS.md` with the new type's location and conventions
 
-## Future: Fuzz and Property Testing
+## Fuzz and Property Testing
 
-Planned but not yet implemented (tracked in #17):
+Implemented in PR #39:
 
-- **cargo-fuzz**: random byte sequences → `validator/mod.rs` parser. Catches panics, OOMs, infinite loops in the binary reader.
-- **Roundtrip property tests**: generate random valid `SceneSpec` → `build_scene()` → `encode_riv()` → `parse_riv()` → compare object tree. Catches encode/decode asymmetry.
-- **LEB128 boundary tests**: property-based tests for varuint encoding at u32/u64 boundaries.
+- **cargo-fuzz**: `fuzz_parse_riv` feeds random bytes into the parser. Requires nightly and uses the seed corpus in `fuzz/corpus/`.
+- **Roundtrip property tests**: proptest-based encode→decode roundtrips for varuint, float, string, color, and bool in `encoder/binary_writer.rs`.
+- **LEB128 boundary tests**: edge coverage at 2^7, 2^14, 2^21, 2^28 boundaries plus `u64::MAX`.
 
-## Future: Animation Frame Diffing (Multi-Frame)
+## Animation Frame Diffing (Multi-Frame)
 
-Current state: `animation.json`, `color_animation.json`, `cubic_easing.json`, `loop_animation.json`, and `multi_artboard.json` use multi-frame captures. Static fixtures capture f0.
+Implemented coverage captures multi-frame baselines for:
 
-**Expansion plan**:
+- `animation.json`: f0, f30, f60
+- `cubic_easing.json`: f0, f15, f30, f45, f60
+- `multi_artboard.json`: f0, f30
+- `color_animation.json`: f0, f30, f60
+- `loop_animation.json`: f0, f30
 
-1. Update `shotPlanForFixture()` to return multi-frame plans for all animated fixtures
-2. Standard plan: `f0` (start), `f_mid` (duration/2), `f_end` (last frame)
-3. Cubic easing plan: 5 frames — f0, f15, f30, f45, f60 — to catch easing curve shape
-4. State machine plan: f0 (initial state) + capture after simulated input trigger
-5. Store all frame baselines: `{fixture}-f{N}.png`
-
-This catches:
-- Interpolation errors (wrong easing curve shape between keyframes)
-- Timing errors (animation plays too fast/slow)
-- State transition rendering (wrong state displayed after input)
+Static fixtures continue to capture f0.
 
 ## Commands
 
