@@ -21,3 +21,17 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy -- -D warnings
       - run: cargo test
+
+  playwright:
+    needs: [check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npx -y playwright@1.50.1 install --with-deps chromium
+      - run: npx -y -p playwright@1.50.1 node tests/playwright/regression.js

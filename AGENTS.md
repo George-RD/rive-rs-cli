@@ -107,7 +107,7 @@ cli/mod.rs
 
 ```bash
 cargo build
-cargo test                                    # 224 tests (182 unit + 42 e2e)
+cargo test                                    # 222 tests (180 unit + 42 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
@@ -116,11 +116,13 @@ cargo run -- inspect out.riv --type-key 1 --property-key 4
                                               # filtered inspect (type/object/property)
 cargo clippy -- -D warnings                   # lint
 cargo fmt --check                             # format check
+npx -y -p playwright node tests/playwright/regression.js
+                                              # runtime regression (also included in CI workflow)
 ```
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **224 tests total**: **182 unit tests** + **42 e2e tests**
+- `cargo test` currently runs **222 tests total**: **180 unit tests** + **42 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
 - `inspect` supports focused diagnostics via filters: `--type-key`, `--type-name`, `--object-index`, and `--property-key`
 - Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`, `nested_artboard.json`, `artboard_preset.json`, `gradients.json`, `color_animation.json`, `loop_animation.json`, `stroke_styles.json`, `empty_artboard.json`)
@@ -145,5 +147,8 @@ cargo fmt --check                             # format check
 - C++ runtime source cloned to `/tmp/rive-runtime/` for reference
 - Visual test harness at `/tmp/rive-visual-test/` with Playwright automation
 - Scene input is versioned with `scene_format_version` (current value `1`) and JSON schema lives at `docs/scene.schema.v1.json`
-- CI/CD: `.github/workflows/ci.yml` (ready-to-enable, billing-capped)
+- Property testing is implemented with `proptest` in `encoder/binary_writer.rs`
+- Fuzzing target is available via `cargo-fuzz` (`fuzz/fuzz_targets/fuzz_parse_riv.rs`, nightly required)
+- `src/lib.rs` re-exports builder/encoder/objects/validator for fuzz and external tooling entry points
+- CI/CD: `.github/workflows/ci.yml` includes fmt, clippy, test, and Playwright runtime regression jobs (billing-capped)
 - `thiserror` v2 is a dependency but not yet used (validator uses `String` errors)
