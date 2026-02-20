@@ -1,4 +1,4 @@
-use super::core::{Property, PropertyValue, RiveObject, property_keys, type_keys};
+use super::core::{property_keys, type_keys, Property, PropertyValue, RiveObject};
 
 pub struct Node {
     pub name: String,
@@ -746,6 +746,28 @@ mod tests {
         assert_eq!(props[0].value, PropertyValue::String("MyShape".to_string()));
         assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
         assert_eq!(props[1].value, PropertyValue::UInt(2));
+    }
+
+    #[test]
+    fn test_shape_properties_with_position() {
+        let mut shape = Shape::new("Centered".to_string(), 0);
+        shape.x = 250.0;
+        shape.y = 300.0;
+        let props = shape.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[2].key, property_keys::NODE_X);
+        assert_eq!(props[2].value, PropertyValue::Float(250.0));
+        assert_eq!(props[3].key, property_keys::NODE_Y);
+        assert_eq!(props[3].value, PropertyValue::Float(300.0));
+    }
+
+    #[test]
+    fn test_shape_zero_position_omitted() {
+        let shape = Shape::new("Default".to_string(), 0);
+        let props = shape.properties();
+        assert_eq!(props.len(), 2);
+        assert!(!props.iter().any(|p| p.key == property_keys::NODE_X));
+        assert!(!props.iter().any(|p| p.key == property_keys::NODE_Y));
     }
 
     #[test]

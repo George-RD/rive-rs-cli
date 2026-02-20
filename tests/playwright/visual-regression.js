@@ -376,6 +376,7 @@ async function main() {
           if (!update) {
             hasNewBaselines = true;
           }
+          await page.close();
           continue;
         }
 
