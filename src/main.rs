@@ -79,13 +79,26 @@ fn main() {
                 }
             }
         }
-        cli::Command::Inspect { file, json } => {
+        cli::Command::Inspect {
+            file,
+            json,
+            type_key,
+            type_name,
+            object_index,
+            property_key,
+        } => {
             let bytes = std::fs::read(&file).unwrap_or_else(|e| {
                 eprintln!("error reading {:?}: {}", file, e);
                 std::process::exit(1);
             });
+            let filter = validator::InspectFilter {
+                type_keys: type_key,
+                type_names: type_name,
+                object_indices: object_index,
+                property_keys: property_key,
+            };
             if json {
-                match validator::parse_riv(&bytes) {
+                match validator::parse_riv(&bytes, &filter) {
                     Ok(parsed) => match serde_json::to_string_pretty(&parsed) {
                         Ok(json_str) => println!("{}", json_str),
                         Err(e) => {
@@ -99,7 +112,7 @@ fn main() {
                     }
                 }
             } else {
-                match validator::inspect_riv(&bytes) {
+                match validator::inspect_riv(&bytes, &filter) {
                     Ok(output) => {
                         print!("{}", output);
                     }

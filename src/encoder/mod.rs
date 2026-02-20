@@ -142,7 +142,9 @@ mod tests {
     fn test_toc_only_includes_unknown_properties() {
         let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
         let data = encode_riv(&[&Backboard, &artboard], 0);
-        let parsed = crate::validator::parse_riv(&data).unwrap();
+        let parsed =
+            crate::validator::parse_riv(&data, &crate::validator::InspectFilter::default())
+                .unwrap();
         for &key in &parsed.toc_property_keys {
             assert!(
                 crate::objects::core::property_backing_type(key).is_none(),
