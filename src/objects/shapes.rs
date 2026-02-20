@@ -727,6 +727,70 @@ impl RiveObject for ShapePaint {
     }
 }
 
+pub struct TrimPath {
+    pub name: String,
+    pub parent_id: u64,
+    pub start: f32,
+    pub end: f32,
+    pub offset: f32,
+    pub mode_value: u64,
+}
+
+impl TrimPath {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            start: 0.0,
+            end: 0.0,
+            offset: 0.0,
+            mode_value: 1,
+        }
+    }
+}
+
+impl RiveObject for TrimPath {
+    fn type_key(&self) -> u16 {
+        type_keys::TRIM_PATH
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.start != 0.0 {
+            props.push(Property {
+                key: property_keys::TRIM_PATH_START,
+                value: PropertyValue::Float(self.start),
+            });
+        }
+        if self.end != 0.0 {
+            props.push(Property {
+                key: property_keys::TRIM_PATH_END,
+                value: PropertyValue::Float(self.end),
+            });
+        }
+        if self.offset != 0.0 {
+            props.push(Property {
+                key: property_keys::TRIM_PATH_OFFSET,
+                value: PropertyValue::Float(self.offset),
+            });
+        }
+        props.push(Property {
+            key: property_keys::TRIM_PATH_MODE_VALUE,
+            value: PropertyValue::UInt(self.mode_value),
+        });
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1163,5 +1227,74 @@ mod tests {
         assert_eq!(props.len(), 3);
         assert_eq!(props[2].key, property_keys::SHAPE_PAINT_IS_VISIBLE);
         assert_eq!(props[2].value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_trim_path_type_key() {
+        let tp = TrimPath::new("trim1".to_string(), 2);
+        assert_eq!(tp.type_key(), 47);
+    }
+
+    #[test]
+    fn test_trim_path_default_properties() {
+        let tp = TrimPath::new("trim1".to_string(), 2);
+        let props = tp.properties();
+        assert_eq!(props.len(), 3);
+        assert!(props.iter().any(|p| p.key == property_keys::COMPONENT_NAME));
+        assert!(props
+            .iter()
+            .any(|p| p.key == property_keys::COMPONENT_PARENT_ID));
+        let mode = props
+            .iter()
+            .find(|p| p.key == property_keys::TRIM_PATH_MODE_VALUE)
+            .unwrap();
+        assert_eq!(mode.value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_trim_path_all_properties() {
+        let mut tp = TrimPath::new("trim1".to_string(), 2);
+        tp.start = 0.1;
+        tp.end = 0.75;
+        tp.offset = 0.5;
+        tp.mode_value = 1;
+        let props = tp.properties();
+        assert_eq!(props.len(), 6);
+        let start = props
+            .iter()
+            .find(|p| p.key == property_keys::TRIM_PATH_START)
+            .unwrap();
+        assert_eq!(start.value, PropertyValue::Float(0.1));
+        let end = props
+            .iter()
+            .find(|p| p.key == property_keys::TRIM_PATH_END)
+            .unwrap();
+        assert_eq!(end.value, PropertyValue::Float(0.75));
+        let offset = props
+            .iter()
+            .find(|p| p.key == property_keys::TRIM_PATH_OFFSET)
+            .unwrap();
+        assert_eq!(offset.value, PropertyValue::Float(0.5));
+        let mode = props
+            .iter()
+            .find(|p| p.key == property_keys::TRIM_PATH_MODE_VALUE)
+            .unwrap();
+        assert_eq!(mode.value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_trim_path_zero_values_omitted() {
+        let tp = TrimPath::new("trim1".to_string(), 2);
+        let props = tp.properties();
+        assert!(props
+            .iter()
+            .all(|p| p.key != property_keys::TRIM_PATH_START));
+        assert!(props.iter().all(|p| p.key != property_keys::TRIM_PATH_END));
+        assert!(props
+            .iter()
+            .all(|p| p.key != property_keys::TRIM_PATH_OFFSET));
+        assert!(props
+            .iter()
+            .any(|p| p.key == property_keys::TRIM_PATH_MODE_VALUE));
     }
 }

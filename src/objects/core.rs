@@ -58,11 +58,13 @@ pub mod type_keys {
     pub const KEYED_OBJECT: u16 = 25;
     pub const KEYED_PROPERTY: u16 = 26;
     pub const ANIMATION: u16 = 27;
+    pub const CUBIC_EASE_INTERPOLATOR: u16 = 28;
     pub const KEY_FRAME: u16 = 29;
     pub const KEY_FRAME_DOUBLE: u16 = 30;
     pub const LINEAR_ANIMATION: u16 = 31;
     pub const KEY_FRAME_COLOR: u16 = 37;
     pub const TRANSFORM_COMPONENT: u16 = 38;
+    pub const TRIM_PATH: u16 = 47;
     pub const STATE_MACHINE: u16 = 53;
     pub const STATE_MACHINE_COMPONENT: u16 = 54;
     pub const STATE_MACHINE_INPUT: u16 = 55;
@@ -82,7 +84,10 @@ pub mod type_keys {
     pub const TRANSITION_NUMBER_CONDITION: u16 = 70;
     pub const TRANSITION_BOOL_CONDITION: u16 = 71;
     pub const WORLD_TRANSFORM_COMPONENT: u16 = 91;
+    pub const CUBIC_VALUE_INTERPOLATOR: u16 = 138;
+    pub const CUBIC_INTERPOLATOR: u16 = 139;
     pub const INTERPOLATING_KEY_FRAME: u16 = 170;
+    pub const KEYFRAME_INTERPOLATOR: u16 = 175;
     pub const LAYOUT_COMPONENT: u16 = 409;
     pub const TRANSITION_CONDITION: u16 = 476;
 }
@@ -130,11 +135,19 @@ pub mod property_keys {
     pub const LINEAR_ANIMATION_WORK_START: u16 = 60;
     pub const LINEAR_ANIMATION_WORK_END: u16 = 61;
     pub const LINEAR_ANIMATION_ENABLE_WORK_AREA: u16 = 62;
+    pub const CUBIC_INTERPOLATOR_X1: u16 = 63;
+    pub const CUBIC_INTERPOLATOR_Y1: u16 = 64;
+    pub const CUBIC_INTERPOLATOR_X2: u16 = 65;
+    pub const CUBIC_INTERPOLATOR_Y2: u16 = 66;
     pub const KEY_FRAME_FRAME: u16 = 67;
     pub const INTERPOLATING_KEY_FRAME_TYPE: u16 = 68;
     pub const INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID: u16 = 69;
     pub const KEY_FRAME_DOUBLE_VALUE: u16 = 70;
     pub const KEY_FRAME_COLOR_VALUE: u16 = 88;
+    pub const TRIM_PATH_START: u16 = 114;
+    pub const TRIM_PATH_END: u16 = 115;
+    pub const TRIM_PATH_OFFSET: u16 = 116;
+    pub const TRIM_PATH_MODE_VALUE: u16 = 117;
     pub const PARAMETRIC_PATH_ORIGIN_X: u16 = 123;
     pub const PARAMETRIC_PATH_ORIGIN_Y: u16 = 124;
     pub const PATH_FLAGS: u16 = 128;
@@ -218,6 +231,13 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::RECTANGLE_CORNER_RADIUS_TR
         | property_keys::RECTANGLE_CORNER_RADIUS_BL
         | property_keys::RECTANGLE_CORNER_RADIUS_BR
+        | property_keys::CUBIC_INTERPOLATOR_X1
+        | property_keys::CUBIC_INTERPOLATOR_Y1
+        | property_keys::CUBIC_INTERPOLATOR_X2
+        | property_keys::CUBIC_INTERPOLATOR_Y2
+        | property_keys::TRIM_PATH_START
+        | property_keys::TRIM_PATH_END
+        | property_keys::TRIM_PATH_OFFSET
         | property_keys::LAYOUT_COMPONENT_FRACTIONAL_WIDTH
         | property_keys::LAYOUT_COMPONENT_FRACTIONAL_HEIGHT
         | property_keys::SHAPE_LENGTH => Some(BackingType::Float),
@@ -258,6 +278,7 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::LAYER_STATE_FLAGS
         | property_keys::STATE_TRANSITION_RANDOM_WEIGHT
         | property_keys::ARTBOARD_VIEW_MODEL_ID
+        | property_keys::TRIM_PATH_MODE_VALUE
         | property_keys::SHAPE_PAINT_BLEND_MODE
         | property_keys::PATH_IS_HOLE => Some(BackingType::UInt),
 
@@ -285,12 +306,20 @@ mod tests {
         assert_eq!(property_backing_type(14), Some(BackingType::Float));
         assert_eq!(property_backing_type(70), Some(BackingType::Float));
         assert_eq!(property_backing_type(781), Some(BackingType::Float));
+        assert_eq!(property_backing_type(63), Some(BackingType::Float));
+        assert_eq!(property_backing_type(64), Some(BackingType::Float));
+        assert_eq!(property_backing_type(65), Some(BackingType::Float));
+        assert_eq!(property_backing_type(66), Some(BackingType::Float));
+        assert_eq!(property_backing_type(114), Some(BackingType::Float));
+        assert_eq!(property_backing_type(115), Some(BackingType::Float));
+        assert_eq!(property_backing_type(116), Some(BackingType::Float));
     }
 
     #[test]
     fn test_property_backing_type_uint() {
         assert_eq!(property_backing_type(5), Some(BackingType::UInt));
         assert_eq!(property_backing_type(56), Some(BackingType::UInt));
+        assert_eq!(property_backing_type(117), Some(BackingType::UInt));
         assert_eq!(property_backing_type(583), Some(BackingType::UInt));
         assert_eq!(property_backing_type(770), Some(BackingType::UInt));
     }
@@ -388,8 +417,13 @@ mod tests {
         assert_eq!(type_keys::TRANSITION_VALUE_CONDITION, 69);
         assert_eq!(type_keys::TRANSITION_NUMBER_CONDITION, 70);
         assert_eq!(type_keys::TRANSITION_BOOL_CONDITION, 71);
+        assert_eq!(type_keys::TRIM_PATH, 47);
         assert_eq!(type_keys::WORLD_TRANSFORM_COMPONENT, 91);
+        assert_eq!(type_keys::CUBIC_VALUE_INTERPOLATOR, 138);
+        assert_eq!(type_keys::CUBIC_INTERPOLATOR, 139);
         assert_eq!(type_keys::INTERPOLATING_KEY_FRAME, 170);
+        assert_eq!(type_keys::KEYFRAME_INTERPOLATOR, 175);
+        assert_eq!(type_keys::CUBIC_EASE_INTERPOLATOR, 28);
         assert_eq!(type_keys::LAYOUT_COMPONENT, 409);
         assert_eq!(type_keys::TRANSITION_CONDITION, 476);
     }

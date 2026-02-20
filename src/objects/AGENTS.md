@@ -7,9 +7,9 @@ All Rive runtime object types. Every struct implements `RiveObject` trait from `
 | File | Types | LOC | Domain |
 |------|-------|-----|--------|
 | `core.rs` | RiveObject, PropertyValue, BackingType, type_keys, property_keys | 291 | Foundation |
-| `shapes.rs` | Node, TransformComponent, Shape, Ellipse, Rectangle, Path, Fill, Stroke, SolidColor, LinearGradient, RadialGradient, GradientStop | 1125 | Drawing |
+| `shapes.rs` | Node, TransformComponent, Shape, Ellipse, Rectangle, Path, Fill, Stroke, SolidColor, LinearGradient, RadialGradient, GradientStop, TrimPath | 1200 | Drawing |
 | `state_machine.rs` | StateMachine, SMLayer, SMInput/Number/Bool/Trigger, EntryState, ExitState, AnyState, AnimationState, LayerState, StateTransition, TransitionCondition variants | 660 | Interactivity |
-| `animation.rs` | LinearAnimation, KeyedObject, KeyedProperty, KeyFrameDouble, KeyFrameColor | 409 | Animation |
+| `animation.rs` | LinearAnimation, KeyedObject, KeyedProperty, KeyFrameDouble, KeyFrameColor, KeyFrameInterpolator, CubicInterpolator, CubicEaseInterpolator, CubicValueInterpolator | 520 | Animation |
 | `artboard.rs` | Artboard, Backboard | 154 | Scene root |
 
 ## HOW TO ADD A NEW OBJECT TYPE
@@ -37,6 +37,8 @@ All Rive runtime object types. Every struct implements `RiveObject` trait from `
 - **Only write non-default properties** — default values waste bytes and can confuse runtimes.
 - **Artboard property emission order** must be `width(7)` → `height(8)` → `name(4)` and must NOT include `parentId(5)`.
 - **LinearAnimation property slimming**: always write `name/fps/duration`; write `speed/loop/workStart/workEnd` only when non-default.
+- **TrimPath mode_value must be 1 (sequential) or 2 (synchronized)** — mode 0 is C++ default but runtime rejects it as InvalidObject
+- **TrimPath MUST be a child of ShapePaint (Stroke or Fill), not Shape** — the runtime's EffectsContainer::from() only resolves ShapePaint types
 
 ## HIERARCHY (inheritance in C++ runtime)
 
@@ -48,11 +50,17 @@ Component (name=4, parentId=5)
 │       └── WorldTransformComponent
 ├── Drawable (blendMode=23, flags=129)
 ├── ContainerComponent
+├── TrimPath (start=114, end=115, offset=116, modeValue=117) — parent must be ShapePaint
 └── Artboard (width=7, height=8, originX=11, originY=12)
 
 Animation (name=55)
 ├── LinearAnimation (fps=56, duration=57, speed=58, loop=59, ...)
 └── StateMachine
+
+KeyFrameInterpolator
+└── CubicInterpolator (x1=63, y1=64, x2=65, y2=66)
+    ├── CubicEaseInterpolator (type 28, no extra properties)
+    └── CubicValueInterpolator (type 138, no extra properties)
 
 StateMachineComponent (name=138)
 ├── StateMachineInput → SMNumber(value=140), SMBool(value=141), SMTrigger
@@ -74,7 +82,7 @@ StateMachineLayerComponent
 | `core.rs` type_keys | `core_registry.hpp` → `makeCoreInstance()` switch |
 | `core.rs` property_keys | `*_base.hpp` files → `static const uint16_t *PropertyKey` |
 | `core.rs` property_backing_type | `core_registry.hpp` → `propertyFieldId()` switch |
-| `shapes.rs` | `generated/shapes/*.hpp`, `generated/shapes/paint/*.hpp` |
-| `animation.rs` | `generated/animation/linear_animation_base.hpp`, `generated/animation/keyed_*_base.hpp` |
+| `shapes.rs` | `generated/shapes/*.hpp`, `generated/shapes/paint/*.hpp`, `generated/shapes/paint/trim_path_base.hpp` |
+| `animation.rs` | `generated/animation/linear_animation_base.hpp`, `generated/animation/keyed_*_base.hpp`, `generated/animation/keyframe_interpolator_base.hpp` |
 | `state_machine.rs` | `generated/animation/state_machine_*_base.hpp`, `generated/animation/*_state_base.hpp` |
 | `artboard.rs` | `generated/artboard_base.hpp`, `generated/backboard_base.hpp` |

@@ -1,0 +1,43 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "CubicEasing",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Ball",
+        "x": 250,
+        "y": 250,
+        "children": [
+          { "type": "ellipse", "name": "Circle", "width": 100, "height": 100, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "BallFill", "children": [
+            { "type": "solid_color", "name": "Cyan", "color": "FF00FFFF" }
+          ]}
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "ease_move",
+        "fps": 60,
+        "duration": 120,
+        "interpolators": [
+          { "name": "ease_in_out", "x1": 0.42, "y1": 0.0, "x2": 0.58, "y2": 1.0 }
+        ],
+        "keyframes": [
+          {
+            "object": "Circle",
+            "property": "width",
+            "frames": [
+              { "frame": 0, "value": 100.0, "interpolation": "cubic", "interpolator": "ease_in_out" },
+              { "frame": 60, "value": 200.0, "interpolation": "cubic", "interpolator": "ease_in_out" },
+              { "frame": 119, "value": 100.0 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
