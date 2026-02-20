@@ -35,10 +35,10 @@ JSON fixture → cargo run -- generate → .riv file → cargo run -- validate �
                                                   → cargo run -- inspect  → verify output
 ```
 
-Each fixture in `tests/fixtures/` gets at least two e2e tests:
+Each fixture in `tests/fixtures/` gets at least one e2e test:
 
-- `test_generate_{fixture}` — generates .riv, validates it
-- `test_inspect_{fixture}` — (for select fixtures) verifies inspect output structure
+- `test_generate_{fixture}` — generates .riv, validates it (required for every fixture)
+- `test_inspect_{fixture}` — optional, for select fixtures to verify inspect output structure
 
 **Convention**: every new fixture added to `tests/fixtures/` must have a corresponding e2e test in `tests/e2e.rs`.
 
@@ -82,7 +82,7 @@ Pixel-level comparison of rendered frames against committed baseline PNGs.
 **Updating baselines**:
 
 ```bash
-UPDATE_BASELINES=1 node tests/playwright/visual-regression.js
+UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js
 ```
 
 This overwrites `tests/playwright/baselines/*.png` with current renders. Commit the updated baselines after visual review.
@@ -139,7 +139,7 @@ When adding a new Rive object type to the codebase:
 - [ ] Add e2e test in `tests/e2e.rs`
 - [ ] Add fixture to `FIXTURES` array in `regression.js` and `visual-regression.js`
 - [ ] Run Playwright regression — fixture loads without runtime errors
-- [ ] Capture golden-frame baseline: `UPDATE_BASELINES=1 node tests/playwright/visual-regression.js`
+- [ ] Capture golden-frame baseline: `UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js`
 - [ ] Commit baseline PNGs
 - [ ] Update `docs/scene.schema.v1.json` if new JSON fields added
 - [ ] Update `AGENTS.md` with the new type's location and conventions
@@ -188,5 +188,5 @@ npx -y -p playwright node tests/playwright/regression.js
 npx -y -p playwright node tests/playwright/visual-regression.js
 
 # Update golden-frame baselines (after visual review)
-UPDATE_BASELINES=1 node tests/playwright/visual-regression.js
+UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js
 ```
