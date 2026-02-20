@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::objects::core::{is_bool_property, property_backing_type, type_keys, BackingType};
+use crate::objects::core::{BackingType, is_bool_property, property_backing_type, type_keys};
 
 pub struct BinaryReader<'a> {
     data: &'a [u8],

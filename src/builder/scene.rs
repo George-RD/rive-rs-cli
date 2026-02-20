@@ -7,7 +7,7 @@ use crate::objects::animation::{
     LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard};
-use crate::objects::core::{property_keys, RiveObject};
+use crate::objects::core::{RiveObject, property_keys};
 use crate::objects::shapes::{
     Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
     Shape, SolidColor, Stroke, TrimPath,
@@ -712,7 +712,9 @@ fn append_object(
                 trim_path.offset = *offset;
             }
             if let Some(mode) = mode {
-                trim_path.set_mode(*mode).map_err(|e| format!("trim_path '{}': {}", name, e))?;
+                trim_path
+                    .set_mode(*mode)
+                    .map_err(|e| format!("trim_path '{}': {}", name, e))?;
             }
             objects.push(Box::new(trim_path));
             name_to_index.insert(name.clone(), object_index);
@@ -803,7 +805,7 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
 
     let mut object_names: HashSet<String> = HashSet::new();
     for child in &spec.artboard.children {
-        validate_object_spec(child, &mut object_names)?;
+        validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
     }
 
     let mut animation_names: HashSet<String> = HashSet::new();
@@ -951,16 +953,25 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
     Ok(())
 }
 
+enum ParentKind {
+    Artboard,
+    Shape,
+    Fill,
+    Stroke,
+    Gradient,
+}
+
 fn validate_object_spec(
     spec: &ObjectSpec,
     object_names: &mut HashSet<String>,
+    parent_kind: &ParentKind,
 ) -> Result<(), String> {
     match spec {
         ObjectSpec::Shape { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Shape)?;
                 }
             }
         }
@@ -1005,7 +1016,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Fill)?;
                 }
             }
         }
@@ -1023,7 +1034,7 @@ fn validate_object_spec(
             }
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Stroke)?;
                 }
             }
         }
@@ -1035,7 +1046,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Gradient)?;
                 }
             }
         }
@@ -1043,7 +1054,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Gradient)?;
                 }
             }
         }
@@ -1071,9 +1082,19 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::TrimPath {
-            name, start, end, mode, ..
+            name,
+            start,
+            end,
+            mode,
+            ..
         } => {
             ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::Fill | ParentKind::Stroke) {
+                return Err(format!(
+                    "trim_path '{}' must be a child of a fill or stroke, not a shape or artboard",
+                    name
+                ));
+            }
             if let Some(start) = start
                 && *start < 0.0
             {
@@ -1516,5 +1537,80 @@ mod tests {
     fn test_json_value_to_color_rejects_overflow() {
         let value = serde_json::json!(4294967296u64);
         assert!(json_value_to_color(&value).is_none());
+    }
+
+    #[test]
+    fn test_trim_path_rejects_shape_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::TrimPath {
+                        name: "trim_1".to_string(),
+                        start: None,
+                        end: None,
+                        offset: None,
+                        mode: None,
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        match build_scene(&spec) {
+            Err(err) => assert!(
+                err.contains("must be a child of a fill or stroke"),
+                "unexpected error: {}",
+                err
+            ),
+            Ok(_) => panic!("expected error for TrimPath under Shape"),
+        }
+    }
+
+    #[test]
+    fn test_trim_path_accepts_stroke_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::Stroke {
+                        name: "stroke_1".to_string(),
+                        thickness: Some(2.0),
+                        cap: None,
+                        join: None,
+                        children: Some(vec![
+                            ObjectSpec::SolidColor {
+                                name: "color_1".to_string(),
+                                color: "FF0000FF".to_string(),
+                            },
+                            ObjectSpec::TrimPath {
+                                name: "trim_1".to_string(),
+                                start: None,
+                                end: Some(0.75),
+                                offset: None,
+                                mode: Some(1),
+                            },
+                        ]),
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        build_scene(&spec).unwrap();
     }
 }

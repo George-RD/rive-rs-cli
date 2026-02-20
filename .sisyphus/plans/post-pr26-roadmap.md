@@ -3,11 +3,11 @@
 ## TL;DR
 
 > **Quick Summary**: Harden the rive-rs-cli foundation (CI/CD, encoder correctness, validation) in PR #27, then expand animation capability and object coverage in PR #28. This is an infrastructure-then-features sequence that prevents regression debt.
-> 
+>
 > **Deliverables**:
 > - PR #27: GitHub Actions CI, generalized ToC encoder, boolean encoding fix, typed error model (builder), stale-doc/issue cleanup
 > - PR #28: CubicInterpolator + TrimPath objects, expanded animatable property set, new fixtures with playwright regression
-> 
+>
 > **Estimated Effort**: Medium (each PR is ~1 day of focused work)
 > **Parallel Execution**: YES — 3 waves per PR
 > **Critical Path**: CI setup → ToC refactor → bool fix → e2e verify → new objects → new fixtures → playwright
@@ -17,9 +17,11 @@
 ## Context
 
 ### Original Request
+
 Produce a concrete next-phase development plan for rive-rs-cli after PR #26 merged. Prioritized roadmap with milestones, acceptance criteria, sequencing, and risk mitigation. Focus on: (1) scene schema evolution, (2) semantic validation hardening, (3) exporter boundary design, (4) object coverage expansion, (5) verification gates.
 
 ### Current State (Post-PR #26)
+
 - **Branch**: `main` at `4bd8171` (PR #26 merged)
 - **Tests**: 133 passing (123 unit + 10 e2e), 0 failures
 - **Object Coverage**: 30+ type_key constants defined, 11 types JSON-constructable via scene schema v1
@@ -28,6 +30,7 @@ Produce a concrete next-phase development plan for rive-rs-cli after PR #26 merg
 - **Schema**: v1 with JSON Schema 2020-12, `unevaluatedProperties: false`
 
 ### Metis Review
+
 **Critical finding — StateMachineLayer bug is ALREADY FIXED:**
 PRs #21-25 resolved the SM sentinel state issue. The `builder/scene.rs` auto-injects AnyState and interleaves transitions correctly. Playwright regression passes for `state_machine.json`. The AGENTS.md "Active bug" note is stale.
 
@@ -41,6 +44,7 @@ PRs #21-25 resolved the SM sentinel state issue. The `builder/scene.rs` auto-inj
 `RiveObject` trait returns `type_key() -> u16` (Rive-specific). `PropertyValue` enum has exactly 4 .riv backing types. Designing abstractions before the second consumer exists produces wrong abstractions.
 
 ### Gaps Addressed
+
 - **SM bug stale docs**: Auto-resolved — will update AGENTS.md (MINOR)
 - **Lottie scope**: Auto-resolved — deferred with ADR note, no code changes (DEFAULT)
 - **Schema version**: Auto-resolved — extend v1 (additive), no v2 needed yet (DEFAULT)
@@ -52,9 +56,11 @@ PRs #21-25 resolved the SM sentinel state issue. The `builder/scene.rs` auto-inj
 ## Work Objectives
 
 ### Core Objective
+
 Deliver two focused PRs that (1) eliminate infrastructure debt and encoding edge cases, then (2) meaningfully expand what users can create — measured by automated gates at every step.
 
 ### Concrete Deliverables
+
 - `.github/workflows/ci.yml` — automated test/lint/format/playwright pipeline
 - Generalized ToC encoder collecting all property keys from all objects
 - Boolean encoding fix (encoder + validator in lockstep)
@@ -66,6 +72,7 @@ Deliver two focused PRs that (1) eliminate infrastructure debt and encoding edge
 - 2+ new test fixtures with full e2e + playwright coverage
 
 ### Definition of Done
+
 - [ ] `cargo test` passes with 0 failures (count ≥ 150 after both PRs)
 - [ ] `cargo clippy -- -D warnings` clean
 - [ ] `cargo fmt --check` clean
@@ -73,6 +80,7 @@ Deliver two focused PRs that (1) eliminate infrastructure debt and encoding edge
 - [ ] GitHub Actions CI passes on push to any branch
 
 ### Must Have
+
 - CI/CD pipeline (PR #27)
 - Generalized ToC encoder (PR #27)
 - At least 1 new interpolation type (CubicInterpolator, PR #28)
@@ -80,6 +88,7 @@ Deliver two focused PRs that (1) eliminate infrastructure debt and encoding edge
 - All new types verified against C++ runtime headers
 
 ### Must NOT Have (Guardrails)
+
 - NO Lottie exporter code or `Encoder` trait abstraction — premature, defer to future PR
 - NO schema version bump to v2 — all changes are additive within v1
 - NO bones/skeletal/constraints/text/assets — too complex for 2 PRs, defer to PR #29+
@@ -96,11 +105,13 @@ Deliver two focused PRs that (1) eliminate infrastructure debt and encoding edge
 > **ZERO HUMAN INTERVENTION** — ALL verification is agent-executed. No exceptions.
 
 ### Test Decision
+
 - **Infrastructure exists**: YES — cargo test (133 tests), playwright regression harness
 - **Automated tests**: YES (tests-after) — each task adds unit + e2e tests
 - **Framework**: `cargo test` (built-in) + `npx playwright` (regression)
 
 ### QA Policy
+
 Every task MUST include agent-executed QA scenarios.
 Evidence saved to `.sisyphus/evidence/task-{N}-{scenario-slug}.{ext}`.
 
@@ -115,7 +126,7 @@ Evidence saved to `.sisyphus/evidence/task-{N}-{scenario-slug}.{ext}`.
 
 ### Parallel Execution Waves
 
-```
+```text
 === PR #27: Infrastructure & Correctness ===
 
 Wave 1 (Start Immediately — independent foundations):
@@ -245,7 +256,7 @@ Max Concurrent: 4 (Waves 1 and 4)
 
   **QA Scenarios (MANDATORY):**
 
-  ```
+  ```text
   Scenario: CI workflow file is valid YAML and contains required jobs
     Tool: Bash
     Preconditions: .github/workflows/ci.yml exists
@@ -329,7 +340,7 @@ Max Concurrent: 4 (Waves 1 and 4)
 
   **QA Scenarios (MANDATORY):**
 
-  ```
+  ```text
   Scenario: ToC now includes non-baseline property keys from shapes fixture
     Tool: Bash
     Preconditions: shapes.json fixture exists, ToC encoder refactored
@@ -415,7 +426,7 @@ Max Concurrent: 4 (Waves 1 and 4)
 
   **QA Scenarios (MANDATORY):**
 
-  ```
+  ```text
   Scenario: Bool properties encode as single raw byte
     Tool: Bash (cargo test)
     Preconditions: write_bool fixed to use buffer.push
@@ -480,7 +491,7 @@ Max Concurrent: 4 (Waves 1 and 4)
 
   **QA Scenarios (MANDATORY):**
 
-  ```
+  ```text
   Scenario: Stale SM bug note removed
     Tool: Bash (grep)
     Steps:
@@ -544,6 +555,7 @@ Each PR should contain atomic commits following the repo's existing `feat:` / `f
 ## Success Criteria
 
 ### Verification Commands
+
 ```bash
 # PR #27
 cargo test                                    # ≥ 140 tests, 0 failures
@@ -561,6 +573,7 @@ npx -y -p playwright node tests/playwright/regression.js  # exits 0, all fixture
 ```
 
 ### Final Checklist
+
 - [ ] All "Must Have" present
 - [ ] All "Must NOT Have" absent
 - [ ] All tests pass

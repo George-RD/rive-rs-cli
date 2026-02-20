@@ -1,4 +1,4 @@
-use super::core::{property_keys, type_keys, Property, PropertyValue, RiveObject};
+use super::core::{Property, PropertyValue, RiveObject, property_keys, type_keys};
 
 pub struct Node {
     pub name: String,
@@ -1243,7 +1243,7 @@ mod tests {
     #[test]
     fn test_trim_path_type_key() {
         let tp = TrimPath::new("trim1".to_string(), 2);
-        assert_eq!(tp.type_key(), 47);
+        assert_eq!(tp.type_key(), type_keys::TRIM_PATH);
     }
 
     #[test]
@@ -1252,9 +1252,11 @@ mod tests {
         let props = tp.properties();
         assert_eq!(props.len(), 3);
         assert!(props.iter().any(|p| p.key == property_keys::COMPONENT_NAME));
-        assert!(props
-            .iter()
-            .any(|p| p.key == property_keys::COMPONENT_PARENT_ID));
+        assert!(
+            props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+        );
         let mode = props
             .iter()
             .find(|p| p.key == property_keys::TRIM_PATH_MODE_VALUE)
@@ -1297,16 +1299,22 @@ mod tests {
     fn test_trim_path_zero_values_omitted() {
         let tp = TrimPath::new("trim1".to_string(), 2);
         let props = tp.properties();
-        assert!(props
-            .iter()
-            .all(|p| p.key != property_keys::TRIM_PATH_START));
+        assert!(
+            props
+                .iter()
+                .all(|p| p.key != property_keys::TRIM_PATH_START)
+        );
         assert!(props.iter().all(|p| p.key != property_keys::TRIM_PATH_END));
-        assert!(props
-            .iter()
-            .all(|p| p.key != property_keys::TRIM_PATH_OFFSET));
-        assert!(props
-            .iter()
-            .any(|p| p.key == property_keys::TRIM_PATH_MODE_VALUE));
+        assert!(
+            props
+                .iter()
+                .all(|p| p.key != property_keys::TRIM_PATH_OFFSET)
+        );
+        assert!(
+            props
+                .iter()
+                .any(|p| p.key == property_keys::TRIM_PATH_MODE_VALUE)
+        );
     }
 
     #[test]
