@@ -507,6 +507,8 @@ mod tests {
     use super::*;
     use crate::encoder::encode_riv;
     use crate::objects::artboard::{Artboard, Backboard};
+    use crate::objects::core::{property_keys, type_keys};
+    use crate::objects::shapes::{Ellipse, Fill, Shape, SolidColor};
 
     #[test]
     fn test_binary_reader_varuint() {
@@ -524,6 +526,31 @@ mod tests {
 
         let mut reader = BinaryReader::new(&[0x80, 0x80, 0x01]);
         assert_eq!(reader.read_varuint(), Some(16384));
+    }
+
+    #[test]
+    fn test_binary_reader_varuint_max() {
+        let mut reader =
+            BinaryReader::new(&[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x01]);
+        assert_eq!(reader.read_varuint(), Some(u64::MAX));
+        assert_eq!(reader.remaining(), 0);
+    }
+
+    #[test]
+    fn test_binary_reader_varuint_overflow() {
+        let mut reader = BinaryReader::new(&[
+            0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00,
+        ]);
+        assert_eq!(reader.read_varuint(), None);
+    }
+
+    #[test]
+    fn test_binary_reader_truncated() {
+        let mut reader = BinaryReader::new(&[]);
+        assert_eq!(reader.read_varuint(), None);
+
+        let mut reader = BinaryReader::new(&[0x80]);
+        assert_eq!(reader.read_varuint(), None);
     }
 
     #[test]
@@ -585,6 +612,108 @@ mod tests {
         assert_eq!(
             name_prop.value,
             PropertyValueRead::String("Test".to_string())
+        );
+    }
+
+    #[test]
+    fn test_roundtrip_shapes() {
+        let backboard = Backboard;
+        let artboard = Artboard::new("Shapes".to_string(), 500.0, 500.0);
+        let shape = Shape::new("shape-1".to_string(), 0);
+        let ellipse = Ellipse::new("ellipse-1".to_string(), 1, 100.0, 80.0);
+        let fill = Fill::new("fill-1".to_string(), 1);
+        let solid = SolidColor::new("solid-1".to_string(), 3, 0xFF0000FF);
+
+        let data = encode_riv(&[&backboard, &artboard, &shape, &ellipse, &fill, &solid], 7);
+        let parsed = parse_riv(&data, &InspectFilter::default()).unwrap();
+
+        assert_eq!(parsed.header.file_id, 7);
+        assert_eq!(parsed.objects.len(), 6);
+        assert_eq!(parsed.objects[0].type_key, type_keys::BACKBOARD);
+        assert_eq!(parsed.objects[1].type_key, type_keys::ARTBOARD);
+        assert_eq!(parsed.objects[2].type_key, type_keys::SHAPE);
+        assert_eq!(parsed.objects[3].type_key, type_keys::ELLIPSE);
+        assert_eq!(parsed.objects[4].type_key, type_keys::FILL);
+        assert_eq!(parsed.objects[5].type_key, type_keys::SOLID_COLOR);
+
+        let shape_props = &parsed.objects[2].properties;
+        assert!(
+            shape_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_NAME
+                    && p.value == PropertyValueRead::String("shape-1".to_string()))
+        );
+        assert!(
+            shape_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_PARENT_ID
+                    && p.value == PropertyValueRead::UInt(0))
+        );
+
+        let ellipse_props = &parsed.objects[3].properties;
+        assert!(
+            ellipse_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_NAME
+                    && p.value == PropertyValueRead::String("ellipse-1".to_string()))
+        );
+        assert!(
+            ellipse_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_PARENT_ID
+                    && p.value == PropertyValueRead::UInt(1))
+        );
+        assert!(
+            ellipse_props
+                .iter()
+                .any(|p| p.key == property_keys::PARAMETRIC_PATH_WIDTH
+                    && p.value == PropertyValueRead::Float(100.0))
+        );
+        assert!(
+            ellipse_props
+                .iter()
+                .any(|p| p.key == property_keys::PARAMETRIC_PATH_HEIGHT
+                    && p.value == PropertyValueRead::Float(80.0))
+        );
+
+        let fill_props = &parsed.objects[4].properties;
+        assert!(
+            fill_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_NAME
+                    && p.value == PropertyValueRead::String("fill-1".to_string()))
+        );
+        assert!(
+            fill_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_PARENT_ID
+                    && p.value == PropertyValueRead::UInt(1))
+        );
+        assert!(
+            fill_props
+                .iter()
+                .any(|p| p.key == property_keys::SHAPE_PAINT_IS_VISIBLE
+                    && p.value == PropertyValueRead::UInt(1))
+        );
+
+        let solid_props = &parsed.objects[5].properties;
+        assert!(
+            solid_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_NAME
+                    && p.value == PropertyValueRead::String("solid-1".to_string()))
+        );
+        assert!(
+            solid_props
+                .iter()
+                .any(|p| p.key == property_keys::COMPONENT_PARENT_ID
+                    && p.value == PropertyValueRead::UInt(3))
+        );
+        assert!(
+            solid_props
+                .iter()
+                .any(|p| p.key == property_keys::SOLID_COLOR_VALUE
+                    && p.value == PropertyValueRead::Color(0xFF0000FF))
         );
     }
 
