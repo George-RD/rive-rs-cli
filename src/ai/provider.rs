@@ -14,14 +14,15 @@ pub fn create_provider(
         return Ok(Box::new(TemplateProvider));
     }
     match config.provider {
-        ProviderKind::Template => Err(AiError::ApiKeyMissing("OPENAI_API_KEY".to_string())),
+        ProviderKind::Template => Err(AiError::ProviderNotConfigured(
+            "no API key set; use --template for built-in templates, or set OPENAI_API_KEY for prompt mode".to_string(),
+        )),
         ProviderKind::OpenAi => {
             if config.api_key.is_none() {
                 return Err(AiError::ApiKeyMissing("OPENAI_API_KEY".to_string()));
             }
             Err(AiError::ProviderNotConfigured(
-                "OpenAI provider not yet implemented; use --template for now, or set OPENAI_API_KEY when available"
-                    .to_string(),
+                "OpenAI provider not yet implemented; use --template for now".to_string(),
             ))
         }
     }

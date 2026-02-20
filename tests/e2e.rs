@@ -1437,7 +1437,8 @@ fn test_ai_generate_prompt_without_api_key() {
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!result.status.success());
     assert!(
-        stderr.contains("API key missing")
+        stderr.contains("no API key set")
+            || stderr.contains("API key missing")
             || stderr.contains("OpenAI provider not yet implemented"),
         "stderr was: {}",
         stderr

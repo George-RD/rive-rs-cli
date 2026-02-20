@@ -18,11 +18,10 @@ impl std::fmt::Display for AiError {
             AiError::RequestFailed(msg) => write!(f, "API request failed: {}", msg),
             AiError::InvalidResponse(msg) => write!(f, "invalid API response: {}", msg),
             AiError::SchemaValidation(msg) => write!(f, "schema validation failed:\n{}", msg),
-            AiError::UnknownTemplate(msg) => write!(
-                f,
-                "unknown template '{}'; available: bounce, spinner, pulse, fade",
-                msg
-            ),
+            AiError::UnknownTemplate(msg) => {
+                let available = crate::ai::templates::list_templates().join(", ");
+                write!(f, "unknown template '{}'; available: {}", msg, available)
+            }
         }
     }
 }

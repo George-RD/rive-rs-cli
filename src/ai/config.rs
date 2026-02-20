@@ -53,9 +53,17 @@ impl AiConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    fn lock_env() -> std::sync::MutexGuard<'static, ()> {
+        ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
 
     #[test]
     fn test_resolve_default_config() {
+        let _guard = lock_env();
         unsafe {
             std::env::remove_var("OPENAI_API_KEY");
             std::env::remove_var("OPENAI_MODEL");
@@ -67,6 +75,7 @@ mod tests {
 
     #[test]
     fn test_resolve_unknown_provider_error() {
+        let _guard = lock_env();
         let result = AiConfig::resolve(None, Some("unknown".to_string()));
         assert!(result.is_err());
     }
