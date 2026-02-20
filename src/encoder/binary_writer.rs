@@ -50,7 +50,7 @@ impl BinaryWriter {
     }
 
     pub fn write_bool(&mut self, value: bool) {
-        self.write_varuint(if value { 1 } else { 0 });
+        self.buffer.push(if value { 1 } else { 0 });
     }
 
     pub fn finish(self) -> Vec<u8> {

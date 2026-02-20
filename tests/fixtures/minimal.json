@@ -8,12 +8,16 @@
       {
         "type": "shape",
         "name": "MyShape",
+        "x": 250,
+        "y": 250,
         "children": [
           {
             "type": "ellipse",
             "name": "Circle",
-            "width": 100,
-            "height": 100
+            "width": 220,
+            "height": 220,
+            "origin_x": 0.5,
+            "origin_y": 0.5
           },
           {
             "type": "fill",

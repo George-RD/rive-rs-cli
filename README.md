@@ -111,6 +111,7 @@ npx -y -p playwright node tests/playwright/regression.js
 ```
 
 The Playwright suite generates fixture `.riv` files, serves a local harness that loads `@rive-app/canvas`, and fails on runtime load or browser errors.
+Fixtures are intentionally high-contrast for screenshot clarity so future visual diffing can compare deterministic outputs.
 
 ## Internal Format Notes
 

@@ -8,8 +8,10 @@
       {
         "type": "shape",
         "name": "Ball",
+        "x": 150,
+        "y": 250,
         "children": [
-          { "type": "ellipse", "name": "BallPath", "width": 50, "height": 50 },
+          { "type": "ellipse", "name": "BallPath", "width": 120, "height": 120, "origin_x": 0.5, "origin_y": 0.5 },
           { "type": "fill", "name": "BallFill", "children": [
             { "type": "solid_color", "name": "Red", "color": "FFFF0000" }
           ]}

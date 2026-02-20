@@ -38,10 +38,6 @@ All Rive runtime object types. Every struct implements `RiveObject` trait from `
 - **Artboard property emission order** must be `width(7)` → `height(8)` → `name(4)` and must NOT include `parentId(5)`.
 - **LinearAnimation property slimming**: always write `name/fps/duration`; write `speed/loop/workStart/workEnd` only when non-default.
 
-## KNOWN ISSUE
-
-- **StateMachineLayer (type 57)** still fails in WASM runtime import with a "may be corrupt" error in some generated files. Treat state-machine object/property wiring as unstable until this is resolved.
-
 ## HIERARCHY (inheritance in C++ runtime)
 
 ```
