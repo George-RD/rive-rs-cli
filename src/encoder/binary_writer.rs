@@ -61,6 +61,8 @@ impl BinaryWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::validator::BinaryReader;
+    use proptest::prelude::*;
 
     #[test]
     fn test_write_varuint_zero() {
@@ -181,5 +183,115 @@ mod tests {
         assert_eq!(result[0], 0x05);
         assert_eq!(&result[1..5], &[0x00, 0x00, 0x80, 0x3F]);
         assert_eq!(result[5], 0x01);
+    }
+
+    #[test]
+    fn test_write_varuint_max_u64() {
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint(u64::MAX);
+        assert_eq!(writer.finish().len(), 10);
+    }
+
+    #[test]
+    fn test_write_varuint_boundary_values() {
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint((1 << 7) - 1);
+        assert_eq!(writer.finish().len(), 1);
+
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint(1 << 7);
+        assert_eq!(writer.finish().len(), 2);
+
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint((1 << 14) - 1);
+        assert_eq!(writer.finish().len(), 2);
+
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint(1 << 14);
+        assert_eq!(writer.finish().len(), 3);
+
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint((1 << 21) - 1);
+        assert_eq!(writer.finish().len(), 3);
+
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint(1 << 21);
+        assert_eq!(writer.finish().len(), 4);
+
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint((1 << 28) - 1);
+        assert_eq!(writer.finish().len(), 4);
+
+        let mut writer = BinaryWriter::new();
+        writer.write_varuint(1 << 28);
+        assert_eq!(writer.finish().len(), 5);
+    }
+
+    #[test]
+    fn test_varuint_roundtrip_edge_cases() {
+        let edge_cases = [u64::MAX, u64::MAX - 1, 1, 2, 0xFFFF_FFFF];
+
+        for value in edge_cases {
+            let mut writer = BinaryWriter::new();
+            writer.write_varuint(value);
+            let encoded = writer.finish();
+            let mut reader = BinaryReader::new(&encoded);
+            assert_eq!(reader.read_varuint(), Some(value));
+            assert_eq!(reader.remaining(), 0);
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn proptest_varuint_roundtrip(value in any::<u64>()) {
+            let mut writer = BinaryWriter::new();
+            writer.write_varuint(value);
+            let encoded = writer.finish();
+            let mut reader = BinaryReader::new(&encoded);
+            prop_assert_eq!(reader.read_varuint(), Some(value));
+            prop_assert_eq!(reader.remaining(), 0);
+        }
+
+        #[test]
+        fn proptest_float_roundtrip(value in any::<f32>()) {
+            let mut writer = BinaryWriter::new();
+            writer.write_float(value);
+            let encoded = writer.finish();
+            let mut reader = BinaryReader::new(&encoded);
+            let decoded = reader.read_float().unwrap();
+            prop_assert_eq!(decoded.to_bits(), value.to_bits());
+            prop_assert_eq!(reader.remaining(), 0);
+        }
+
+        #[test]
+        fn proptest_string_roundtrip(value in any::<String>()) {
+            let mut writer = BinaryWriter::new();
+            writer.write_string(&value);
+            let encoded = writer.finish();
+            let mut reader = BinaryReader::new(&encoded);
+            prop_assert_eq!(reader.read_string(), Some(value));
+            prop_assert_eq!(reader.remaining(), 0);
+        }
+
+        #[test]
+        fn proptest_color_roundtrip(value in any::<u32>()) {
+            let mut writer = BinaryWriter::new();
+            writer.write_color(value);
+            let encoded = writer.finish();
+            let mut reader = BinaryReader::new(&encoded);
+            prop_assert_eq!(reader.read_color(), Some(value));
+            prop_assert_eq!(reader.remaining(), 0);
+        }
+
+        #[test]
+        fn proptest_bool_roundtrip(value in any::<bool>()) {
+            let mut writer = BinaryWriter::new();
+            writer.write_bool(value);
+            let encoded = writer.finish();
+            let mut reader = BinaryReader::new(&encoded);
+            let expected = if value { 1 } else { 0 };
+            prop_assert_eq!(reader.read_byte(), Some(expected));
+            prop_assert_eq!(reader.remaining(), 0);
+        }
     }
 }

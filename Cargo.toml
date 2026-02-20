@@ -6,11 +6,18 @@ description = "Feature-complete CLI for programmatic creation and manipulation o
 license = "MIT"
 repository = "https://github.com/George-RD/rive-rs-cli"
 
+[lib]
+name = "rive_cli"
+path = "src/lib.rs"
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
+
+[dev-dependencies]
+proptest = "1"
 
 [profile.release]
 opt-level = 3

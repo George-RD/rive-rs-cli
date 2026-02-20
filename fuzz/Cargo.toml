@@ -1,0 +1,21 @@
+[package]
+name = "rive-cli-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.rive-cli]
+path = ".."
+
+[[bin]]
+name = "fuzz_parse_riv"
+path = "fuzz_targets/fuzz_parse_riv.rs"
+test = false
+doc = false
+bench = false
