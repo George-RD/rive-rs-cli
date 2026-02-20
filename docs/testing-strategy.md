@@ -67,7 +67,7 @@ Pixel-level comparison of rendered frames against committed baseline PNGs.
 1. Loads each fixture in a controlled Rive canvas (manual frame advance, no autoplay)
 2. Captures screenshots at specific frame points (see frame plan below)
 3. Compares against baselines in `tests/playwright/baselines/` using pixel diff
-4. Fails if any fixture exceeds the diff threshold (default 0.1%)
+4. Fails if any fixture exceeds the diff threshold (default 1.0%)
 
 **Frame capture plan** (`shotPlanForFixture()`):
 
