@@ -7,7 +7,7 @@ use crate::objects::animation::{
     LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard};
-use crate::objects::core::RiveObject;
+use crate::objects::core::{property_keys, RiveObject};
 use crate::objects::shapes::{
     Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
     Shape, SolidColor, Stroke, TrimPath,
@@ -224,22 +224,33 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
     }
 
     let mut interpolator_name_to_index: HashMap<String, usize> = HashMap::new();
+    let mut interpolator_control_points: HashMap<String, (f32, f32, f32, f32)> = HashMap::new();
 
     if let Some(animations) = &spec.artboard.animations {
         for animation in animations {
             if let Some(interpolators) = &animation.interpolators {
                 for interp in interpolators {
-                    if interpolator_name_to_index.contains_key(&interp.name) {
+                    let x1 = interp.x1.unwrap_or(0.42);
+                    let y1 = interp.y1.unwrap_or(0.0);
+                    let x2 = interp.x2.unwrap_or(0.58);
+                    let y2 = interp.y2.unwrap_or(1.0);
+
+                    if let Some((stored_x1, stored_y1, stored_x2, stored_y2)) =
+                        interpolator_control_points.get(&interp.name)
+                    {
+                        if (stored_x1, stored_y1, stored_x2, stored_y2) != (&x1, &y1, &x2, &y2) {
+                            return Err(format!(
+                                "duplicate interpolator '{}' with different control points",
+                                interp.name
+                            ));
+                        }
                         continue;
                     }
+
                     let artboard_local_index = objects.len() - 1;
                     interpolator_name_to_index.insert(interp.name.clone(), artboard_local_index);
-                    objects.push(Box::new(CubicEaseInterpolator::new(
-                        interp.x1.unwrap_or(0.42),
-                        interp.y1.unwrap_or(0.0),
-                        interp.x2.unwrap_or(0.58),
-                        interp.y2.unwrap_or(1.0),
-                    )));
+                    interpolator_control_points.insert(interp.name.clone(), (x1, y1, x2, y2));
+                    objects.push(Box::new(CubicEaseInterpolator::new(x1, y1, x2, y2)));
                 }
             }
         }
@@ -290,7 +301,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                         None => u32::MAX as u64,
                     };
 
-                    if property_key == 37 {
+                    if property_key == property_keys::SOLID_COLOR_VALUE {
                         let color = json_value_to_color(&frame.value).ok_or_else(|| {
                             format!(
                                 "invalid color keyframe value for object '{}' property '{}' at frame {}",
@@ -701,7 +712,7 @@ fn append_object(
                 trim_path.offset = *offset;
             }
             if let Some(mode) = mode {
-                trim_path.mode_value = *mode;
+                trim_path.set_mode(*mode).map_err(|e| format!("trim_path '{}': {}", name, e))?;
             }
             objects.push(Box::new(trim_path));
             name_to_index.insert(name.clone(), object_index);
@@ -713,18 +724,18 @@ fn append_object(
 
 fn property_key_from_name(name: &str) -> Option<u16> {
     match name {
-        "x" => Some(13),
-        "y" => Some(14),
-        "rotation" => Some(15),
-        "scale_x" => Some(16),
-        "scale_y" => Some(17),
-        "opacity" => Some(18),
-        "width" => Some(20),
-        "height" => Some(21),
-        "color" => Some(37),
-        "trim_start" => Some(114),
-        "trim_end" => Some(115),
-        "trim_offset" => Some(116),
+        "x" => Some(property_keys::NODE_X),
+        "y" => Some(property_keys::NODE_Y),
+        "rotation" => Some(property_keys::TRANSFORM_ROTATION),
+        "scale_x" => Some(property_keys::TRANSFORM_SCALE_X),
+        "scale_y" => Some(property_keys::TRANSFORM_SCALE_Y),
+        "opacity" => Some(property_keys::WORLD_TRANSFORM_OPACITY),
+        "width" => Some(property_keys::PARAMETRIC_PATH_WIDTH),
+        "height" => Some(property_keys::PARAMETRIC_PATH_HEIGHT),
+        "color" => Some(property_keys::SOLID_COLOR_VALUE),
+        "trim_start" => Some(property_keys::TRIM_PATH_START),
+        "trim_end" => Some(property_keys::TRIM_PATH_END),
+        "trim_offset" => Some(property_keys::TRIM_PATH_OFFSET),
         _ => None,
     }
 }
@@ -849,7 +860,7 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
                         interpolation_type_from_name(interp_type)?;
                     }
 
-                    if property_key == 37 {
+                    if property_key == property_keys::SOLID_COLOR_VALUE {
                         if json_value_to_color(&frame.value).is_none() {
                             return Err(format!(
                                 "invalid color keyframe value for object '{}' property '{}' at frame {}",

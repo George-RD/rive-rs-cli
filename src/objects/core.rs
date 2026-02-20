@@ -302,26 +302,74 @@ mod tests {
 
     #[test]
     fn test_property_backing_type_float() {
-        assert_eq!(property_backing_type(7), Some(BackingType::Float));
-        assert_eq!(property_backing_type(14), Some(BackingType::Float));
-        assert_eq!(property_backing_type(70), Some(BackingType::Float));
-        assert_eq!(property_backing_type(781), Some(BackingType::Float));
-        assert_eq!(property_backing_type(63), Some(BackingType::Float));
-        assert_eq!(property_backing_type(64), Some(BackingType::Float));
-        assert_eq!(property_backing_type(65), Some(BackingType::Float));
-        assert_eq!(property_backing_type(66), Some(BackingType::Float));
-        assert_eq!(property_backing_type(114), Some(BackingType::Float));
-        assert_eq!(property_backing_type(115), Some(BackingType::Float));
-        assert_eq!(property_backing_type(116), Some(BackingType::Float));
+        assert_eq!(
+            property_backing_type(property_keys::LAYOUT_COMPONENT_WIDTH),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::NODE_Y),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::KEY_FRAME_DOUBLE_VALUE),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::SHAPE_LENGTH),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::CUBIC_INTERPOLATOR_X1),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::CUBIC_INTERPOLATOR_Y1),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::CUBIC_INTERPOLATOR_X2),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::CUBIC_INTERPOLATOR_Y2),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::TRIM_PATH_START),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::TRIM_PATH_END),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::TRIM_PATH_OFFSET),
+            Some(BackingType::Float)
+        );
     }
 
     #[test]
     fn test_property_backing_type_uint() {
-        assert_eq!(property_backing_type(5), Some(BackingType::UInt));
-        assert_eq!(property_backing_type(56), Some(BackingType::UInt));
-        assert_eq!(property_backing_type(117), Some(BackingType::UInt));
-        assert_eq!(property_backing_type(583), Some(BackingType::UInt));
-        assert_eq!(property_backing_type(770), Some(BackingType::UInt));
+        assert_eq!(
+            property_backing_type(property_keys::COMPONENT_PARENT_ID),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::LINEAR_ANIMATION_FPS),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::TRIM_PATH_MODE_VALUE),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::ARTBOARD_VIEW_MODEL_ID),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::PATH_IS_HOLE),
+            Some(BackingType::UInt)
+        );
     }
 
     #[test]

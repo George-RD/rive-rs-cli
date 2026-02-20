@@ -733,7 +733,7 @@ pub struct TrimPath {
     pub start: f32,
     pub end: f32,
     pub offset: f32,
-    pub mode_value: u64,
+    pub(crate) mode_value: u64,
 }
 
 impl TrimPath {
@@ -746,6 +746,17 @@ impl TrimPath {
             offset: 0.0,
             mode_value: 1,
         }
+    }
+
+    pub fn set_mode(&mut self, mode: u64) -> Result<(), String> {
+        if mode != 1 && mode != 2 {
+            return Err(format!(
+                "TrimPath mode must be 1 (sequential) or 2 (synchronized), got {}",
+                mode
+            ));
+        }
+        self.mode_value = mode;
+        Ok(())
     }
 }
 
@@ -1296,5 +1307,22 @@ mod tests {
         assert!(props
             .iter()
             .any(|p| p.key == property_keys::TRIM_PATH_MODE_VALUE));
+    }
+
+    #[test]
+    fn test_trim_path_set_mode_valid() {
+        let mut trim = TrimPath::new("T".to_string(), 1);
+        assert!(trim.set_mode(1).is_ok());
+        assert_eq!(trim.mode_value, 1);
+        assert!(trim.set_mode(2).is_ok());
+        assert_eq!(trim.mode_value, 2);
+    }
+
+    #[test]
+    fn test_trim_path_set_mode_invalid() {
+        let mut trim = TrimPath::new("T".to_string(), 1);
+        assert!(trim.set_mode(0).is_err());
+        assert!(trim.set_mode(3).is_err());
+        assert!(trim.set_mode(999).is_err());
     }
 }

@@ -1,4 +1,4 @@
-use crate::objects::core::{Property, PropertyValue, RiveObject, property_keys, type_keys};
+use crate::objects::core::{property_keys, type_keys, Property, PropertyValue, RiveObject};
 
 pub struct LinearAnimation {
     pub name: String,
@@ -353,16 +353,12 @@ mod tests {
             .find(|p| p.key == property_keys::LINEAR_ANIMATION_DURATION)
             .unwrap();
         assert_eq!(dur_prop.value, PropertyValue::UInt(120));
-        assert!(
-            props
-                .iter()
-                .all(|p| p.key != property_keys::LINEAR_ANIMATION_SPEED)
-        );
-        assert!(
-            props
-                .iter()
-                .all(|p| p.key != property_keys::LINEAR_ANIMATION_QUANTIZE)
-        );
+        assert!(props
+            .iter()
+            .all(|p| p.key != property_keys::LINEAR_ANIMATION_SPEED));
+        assert!(props
+            .iter()
+            .all(|p| p.key != property_keys::LINEAR_ANIMATION_QUANTIZE));
     }
 
     #[test]
@@ -462,7 +458,7 @@ mod tests {
     #[test]
     fn test_cubic_ease_interpolator_type_key() {
         let interp = CubicEaseInterpolator::new(0.42, 0.0, 0.58, 1.0);
-        assert_eq!(interp.type_key(), 28);
+        assert_eq!(interp.type_key(), type_keys::CUBIC_EASE_INTERPOLATOR);
     }
 
     #[test]
@@ -494,16 +490,12 @@ mod tests {
         let interp = CubicEaseInterpolator::new(0.25, 0.1, 0.25, 1.0);
         let props = interp.properties();
         assert_eq!(props.len(), 3);
-        assert!(
-            props
-                .iter()
-                .any(|p| p.key == property_keys::CUBIC_INTERPOLATOR_X1)
-        );
-        assert!(
-            props
-                .iter()
-                .any(|p| p.key == property_keys::CUBIC_INTERPOLATOR_Y1)
-        );
+        assert!(props
+            .iter()
+            .any(|p| p.key == property_keys::CUBIC_INTERPOLATOR_X1));
+        assert!(props
+            .iter()
+            .any(|p| p.key == property_keys::CUBIC_INTERPOLATOR_Y1));
     }
 
     #[test]
@@ -511,10 +503,8 @@ mod tests {
         let interp = CubicEaseInterpolator::new(0.0, 0.0, 1.0, 1.0);
         let props = interp.properties();
         assert!(props.iter().all(|p| p.key != property_keys::COMPONENT_NAME));
-        assert!(
-            props
-                .iter()
-                .all(|p| p.key != property_keys::COMPONENT_PARENT_ID)
-        );
+        assert!(props
+            .iter()
+            .all(|p| p.key != property_keys::COMPONENT_PARENT_ID));
     }
 }
