@@ -33,5 +33,5 @@ jobs:
         with:
           node-version: 20
       - run: cargo build
-      - run: npx -y playwright install --with-deps chromium
-      - run: npx -y -p playwright node tests/playwright/regression.js
+      - run: npx -y playwright@1.50.1 install --with-deps chromium
+      - run: npx -y -p playwright@1.50.1 node tests/playwright/regression.js
