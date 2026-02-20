@@ -8,10 +8,12 @@
       {
         "type": "shape",
         "name": "Indicator",
+        "x": 200,
+        "y": 200,
         "children": [
-          { "type": "ellipse", "name": "Dot", "width": 30, "height": 30 },
+          { "type": "ellipse", "name": "Dot", "width": 180, "height": 180, "origin_x": 0.5, "origin_y": 0.5 },
           { "type": "fill", "name": "DotFill", "children": [
-            { "type": "solid_color", "name": "White", "color": "FFFFFFFF" }
+            { "type": "solid_color", "name": "Magenta", "color": "FFFF00FF" }
           ]}
         ]
       }

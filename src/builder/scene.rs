@@ -41,6 +41,8 @@ pub struct ArtboardSpec {
 pub enum ObjectSpec {
     Shape {
         name: String,
+        x: Option<f32>,
+        y: Option<f32>,
         children: Option<Vec<ObjectSpec>>,
     },
     Ellipse {
@@ -429,8 +431,20 @@ fn append_object(
     let parent_id = (parent_index - 1) as u64;
 
     match spec {
-        ObjectSpec::Shape { name, children } => {
-            objects.push(Box::new(Shape::new(name.clone(), parent_id)));
+        ObjectSpec::Shape {
+            name,
+            x,
+            y,
+            children,
+        } => {
+            let mut shape = Shape::new(name.clone(), parent_id);
+            if let Some(x) = x {
+                shape.x = *x;
+            }
+            if let Some(y) = y {
+                shape.y = *y;
+            }
+            objects.push(Box::new(shape));
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
@@ -811,7 +825,7 @@ fn validate_object_spec(
     object_names: &mut HashSet<String>,
 ) -> Result<(), String> {
     match spec {
-        ObjectSpec::Shape { name, children } => {
+        ObjectSpec::Shape { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
@@ -1048,7 +1062,7 @@ mod tests {
         let scene: SceneSpec = serde_json::from_str(json).unwrap();
         assert_eq!(scene.artboard.children.len(), 1);
         match &scene.artboard.children[0] {
-            ObjectSpec::Shape { name, children } => {
+            ObjectSpec::Shape { name, children, .. } => {
                 assert_eq!(name, "shape_1");
                 assert_eq!(children.as_ref().unwrap().len(), 2);
             }
@@ -1093,6 +1107,8 @@ mod tests {
                 height: 500.0,
                 children: vec![ObjectSpec::Shape {
                     name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
                     children: Some(vec![
                         ObjectSpec::Ellipse {
                             name: "ellipse_1".to_string(),
@@ -1164,6 +1180,8 @@ mod tests {
                 height: 500.0,
                 children: vec![ObjectSpec::Shape {
                     name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
                     children: Some(vec![ObjectSpec::Ellipse {
                         name: "ellipse_1".to_string(),
                         width: 120.0,
@@ -1310,6 +1328,8 @@ mod tests {
                 height: 100.0,
                 children: vec![ObjectSpec::Shape {
                     name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
                     children: Some(vec![
                         ObjectSpec::GradientStop {
                             name: Some("gradient_stop_1".to_string()),

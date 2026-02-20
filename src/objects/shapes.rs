@@ -88,11 +88,18 @@ impl RiveObject for TransformComponent {
 pub struct Shape {
     pub name: String,
     pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
 }
 
 impl Shape {
     pub fn new(name: String, parent_id: u64) -> Self {
-        Shape { name, parent_id }
+        Shape {
+            name,
+            parent_id,
+            x: 0.0,
+            y: 0.0,
+        }
     }
 }
 
@@ -102,7 +109,7 @@ impl RiveObject for Shape {
     }
 
     fn properties(&self) -> Vec<Property> {
-        vec![
+        let mut props = vec![
             Property {
                 key: property_keys::COMPONENT_NAME,
                 value: PropertyValue::String(self.name.clone()),
@@ -111,7 +118,20 @@ impl RiveObject for Shape {
                 key: property_keys::COMPONENT_PARENT_ID,
                 value: PropertyValue::UInt(self.parent_id),
             },
-        ]
+        ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        props
     }
 }
 

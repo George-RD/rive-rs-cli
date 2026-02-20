@@ -8,8 +8,10 @@
       {
         "type": "shape",
         "name": "Circle",
+        "x": 280,
+        "y": 300,
         "children": [
-          { "type": "ellipse", "name": "CirclePath", "width": 200, "height": 200 },
+          { "type": "ellipse", "name": "CirclePath", "width": 200, "height": 200, "origin_x": 0.5, "origin_y": 0.5 },
           { "type": "fill", "name": "CircleFill", "children": [
             { "type": "solid_color", "name": "Blue", "color": "FF0000FF" }
           ]}
@@ -18,8 +20,10 @@
       {
         "type": "shape",
         "name": "Box",
+        "x": 560,
+        "y": 300,
         "children": [
-          { "type": "rectangle", "name": "BoxPath", "width": 150, "height": 100, "corner_radius": 10.0 },
+          { "type": "rectangle", "name": "BoxPath", "width": 150, "height": 100, "corner_radius": 10.0, "origin_x": 0.5, "origin_y": 0.5 },
           { "type": "fill", "name": "BoxFill", "children": [
             { "type": "solid_color", "name": "Green", "color": "FF00FF00" }
           ]},

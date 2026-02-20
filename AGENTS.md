@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-02-19
-**Commit:** 1dd84ba
-**Branch:** feat/wave-6-e2e-tests
+**Generated:** 2026-02-20
+**Commit:** HEAD
+**Branch:** main
 
 ## OVERVIEW
 
@@ -37,13 +37,9 @@ tests/
 
 ## CURRENT WORKTREE SNAPSHOT
 
-- Branch: `feat/wave-6-e2e-tests`
-- HEAD: `1dd84ba`
-- Uncommitted implementation updates are active in:
-  - `src/builder/scene.rs` (scene graph index mapping and state-machine wiring)
-  - `src/encoder/mod.rs` + `src/encoder/toc.rs` (object emission + ToC backing bit packing)
-  - `src/objects/animation.rs` + `src/objects/artboard.rs` + `src/objects/state_machine.rs` (property slimming/order/default handling)
-  - `src/validator/mod.rs` (reader/parser/inspect alignment with writer behavior)
+- Branch: `main`
+- All prior work merged (PRs #21-#26)
+- Active development on `feat/golden-frame-pr27` branch
 
 ## WHERE TO LOOK
 
@@ -99,7 +95,7 @@ cli/mod.rs
 
 - **NEVER guess property IDs or type keys** — always cross-reference with C++ `core_registry.hpp` and `*_base.hpp` files
 - **NEVER write CoreBoolType as varuint** — booleans encode as single raw byte, not LEB128
-- **NEVER include baseline properties (name=4, parentId=5, width=7, height=8) in ToC** — causes WASM runtime import failures
+- **NEVER include known properties in ToC** — only include properties NOT in `property_backing_type()` registry; including known properties causes WASM runtime import failures
 - **NEVER write Artboard parentId** — Artboard is root, no parent reference
 - **NEVER write default-valued properties for LinearAnimation** — only name/fps/duration are always written; speed/loop/workStart/workEnd only when non-default
 - **Artboard property order**: width(7) → height(8) → name(4) — no parentId
@@ -108,7 +104,7 @@ cli/mod.rs
 
 ```bash
 cargo build
-cargo test                                    # 131 tests (121 unit + 10 e2e)
+cargo test                                    # 136 tests (126 unit + 10 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
@@ -119,7 +115,7 @@ cargo fmt --check                             # format check
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **131 tests total**: **121 unit tests** + **10 e2e tests**
+- `cargo test` currently runs **136 tests total**: **126 unit tests** + **10 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
 - Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`)
 - Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
@@ -140,6 +136,5 @@ cargo fmt --check                             # format check
 - C++ runtime source cloned to `/tmp/rive-runtime/` for reference
 - Visual test harness at `/tmp/rive-visual-test/` with Playwright automation
 - Scene input is versioned with `scene_format_version` (current value `1`) and JSON schema lives at `docs/scene.schema.v1.json`
-- **Active bug**: StateMachineLayer (type 57) causes WASM runtime "may be corrupt" error — under investigation
-- No CI/CD pipeline yet — no `.github/workflows/`
+- CI/CD: `.github/workflows/ci.yml` (ready-to-enable, billing-capped)
 - `thiserror` v2 is a dependency but not yet used (validator uses `String` errors)

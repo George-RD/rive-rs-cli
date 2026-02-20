@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::objects::core::{BackingType, property_backing_type};
+use crate::objects::core::{BackingType, is_bool_property, property_backing_type};
 
 pub struct BinaryReader<'a> {
     data: &'a [u8],
@@ -211,10 +211,17 @@ pub fn parse_riv(data: &[u8]) -> Result<ParsedRiv, String> {
 
             let value = match backing {
                 BackingType::UInt => {
-                    let v = reader.read_varuint().ok_or_else(|| {
-                        format!("unexpected end of data reading uint property {}", prop_key)
-                    })?;
-                    PropertyValueRead::UInt(v)
+                    if is_bool_property(prop_key) {
+                        let v = reader.read_byte().ok_or_else(|| {
+                            format!("unexpected end of data reading bool property {}", prop_key)
+                        })?;
+                        PropertyValueRead::UInt(v as u64)
+                    } else {
+                        let v = reader.read_varuint().ok_or_else(|| {
+                            format!("unexpected end of data reading uint property {}", prop_key)
+                        })?;
+                        PropertyValueRead::UInt(v)
+                    }
                 }
                 BackingType::String => {
                     let v = reader.read_string().ok_or_else(|| {

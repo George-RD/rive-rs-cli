@@ -68,6 +68,8 @@
           "type": "object",
           "properties": {
             "type": { "const": "shape" },
+            "x": { "type": "number" },
+            "y": { "type": "number" },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
           }
         }

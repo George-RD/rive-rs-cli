@@ -2,17 +2,28 @@
   "scene_format_version": 1,
   "artboard": {
     "name": "Main",
-    "width": 400.0,
-    "height": 400.0,
+    "width": 400,
+    "height": 400,
     "children": [
       {
         "type": "shape",
         "name": "shape_1",
+        "x": 200,
+        "y": 200,
         "children": [
           {
             "type": "path",
             "name": "path_1",
             "path_flags": 1
+          },
+          {
+            "type": "rectangle",
+            "name": "path_backdrop",
+            "width": 200,
+            "height": 200,
+            "corner_radius": 12,
+            "origin_x": 0.5,
+            "origin_y": 0.5
           },
           {
             "type": "fill",

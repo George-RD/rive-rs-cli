@@ -168,6 +168,19 @@ pub mod property_keys {
     pub const SHAPE_LENGTH: u16 = 781;
 }
 
+pub fn is_bool_property(key: u16) -> bool {
+    matches!(
+        key,
+        property_keys::SHAPE_PAINT_IS_VISIBLE
+            | property_keys::LINEAR_ANIMATION_ENABLE_WORK_AREA
+            | property_keys::STATE_MACHINE_BOOL_VALUE
+            | property_keys::RECTANGLE_LINK_CORNER_RADIUS
+            | property_keys::LINEAR_ANIMATION_QUANTIZE
+            | property_keys::LAYOUT_COMPONENT_CLIP
+            | property_keys::PATH_IS_HOLE
+    )
+}
+
 pub fn property_backing_type(key: u16) -> Option<BackingType> {
     match key {
         property_keys::COMPONENT_NAME
@@ -308,6 +321,25 @@ mod tests {
             PropertyValue::Color(0xFF0000FF).backing_type(),
             BackingType::Color
         );
+    }
+
+    #[test]
+    fn test_is_bool_property() {
+        assert!(is_bool_property(property_keys::SHAPE_PAINT_IS_VISIBLE));
+        assert!(is_bool_property(
+            property_keys::LINEAR_ANIMATION_ENABLE_WORK_AREA
+        ));
+        assert!(is_bool_property(property_keys::STATE_MACHINE_BOOL_VALUE));
+        assert!(is_bool_property(
+            property_keys::RECTANGLE_LINK_CORNER_RADIUS
+        ));
+        assert!(is_bool_property(property_keys::LINEAR_ANIMATION_QUANTIZE));
+        assert!(is_bool_property(property_keys::LAYOUT_COMPONENT_CLIP));
+        assert!(is_bool_property(property_keys::PATH_IS_HOLE));
+        assert!(!is_bool_property(property_keys::COMPONENT_NAME));
+        assert!(!is_bool_property(property_keys::NODE_X));
+        assert!(!is_bool_property(property_keys::SOLID_COLOR_VALUE));
+        assert!(!is_bool_property(property_keys::COMPONENT_PARENT_ID));
     }
 
     #[test]
