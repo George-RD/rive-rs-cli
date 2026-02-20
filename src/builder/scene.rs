@@ -920,6 +920,53 @@ fn json_value_to_color(value: &serde_json::Value) -> Option<u32> {
     }
 }
 
+fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
+    let mut refs = Vec::new();
+    for child in children {
+        match child {
+            ObjectSpec::NestedArtboard {
+                source_artboard, ..
+            } => {
+                refs.push(source_artboard.clone());
+            }
+            ObjectSpec::Shape { children, .. }
+            | ObjectSpec::Fill { children, .. }
+            | ObjectSpec::Stroke { children, .. } => {
+                if let Some(kids) = children {
+                    refs.extend(collect_nested_artboard_refs(kids));
+                }
+            }
+            _ => {}
+        }
+    }
+    refs
+}
+
+fn detect_artboard_cycles(artboard_deps: &HashMap<String, Vec<String>>) -> Result<(), String> {
+    for start in artboard_deps.keys() {
+        let mut visited: HashSet<&str> = HashSet::new();
+        let mut stack = vec![start.as_str()];
+        visited.insert(start.as_str());
+        while let Some(current) = stack.pop() {
+            if let Some(deps) = artboard_deps.get(current) {
+                for dep in deps {
+                    if dep == start {
+                        return Err(format!(
+                            "circular nested artboard reference detected: '{}' eventually references itself",
+                            start
+                        ));
+                    }
+                    if !visited.contains(dep.as_str()) {
+                        visited.insert(dep.as_str());
+                        stack.push(dep.as_str());
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
     if spec.scene_format_version != SCENE_FORMAT_VERSION {
         return Err(format!(
@@ -938,6 +985,15 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
         artboard_names.insert(artboard_spec.name.clone());
         validate_artboard_spec(artboard_spec)?;
     }
+
+    let mut artboard_deps: HashMap<String, Vec<String>> = HashMap::new();
+    for artboard_spec in &artboard_specs {
+        let refs = collect_nested_artboard_refs(&artboard_spec.children);
+        if !refs.is_empty() {
+            artboard_deps.insert(artboard_spec.name.clone(), refs);
+        }
+    }
+    detect_artboard_cycles(&artboard_deps)?;
 
     Ok(())
 }
@@ -1972,9 +2028,49 @@ mod tests {
             Ok(_) => panic!("expected self-reference error"),
             Err(err) => err,
         };
-        assert!(err.contains(
-            "nested artboard 'embedded_component' cannot reference its own artboard 'Main'"
-        ));
+        assert!(err.contains("circular nested artboard reference detected"));
+    }
+
+    #[test]
+    fn test_nested_artboard_rejects_indirect_cycle() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "A".to_string(),
+                    width: 500.0,
+                    height: 500.0,
+                    children: vec![ObjectSpec::NestedArtboard {
+                        name: "embed_b".to_string(),
+                        source_artboard: "B".to_string(),
+                        x: None,
+                        y: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "B".to_string(),
+                    width: 500.0,
+                    height: 500.0,
+                    children: vec![ObjectSpec::NestedArtboard {
+                        name: "embed_a".to_string(),
+                        source_artboard: "A".to_string(),
+                        x: None,
+                        y: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected indirect cycle error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("circular nested artboard reference detected"));
     }
 
     #[test]

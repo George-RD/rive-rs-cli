@@ -217,7 +217,7 @@ mod tests {
             x: 0.0,
             y: 0.0,
         };
-        assert_eq!(nested.type_key(), 92);
+        assert_eq!(nested.type_key(), type_keys::NESTED_ARTBOARD);
     }
 
     #[test]
