@@ -90,7 +90,7 @@ This overwrites `tests/playwright/baselines/*.png` with current renders. Commit 
 
 **Resolution**: 512×512 logical viewport with `deviceScaleFactor: 2`, producing 1024×1024 pixel screenshots. This ensures crisp rendering on Retina/HiDPI displays and catches sub-pixel anti-aliasing issues.
 
-**Diff threshold**: 1.0% of pixels (configurable via `VISUAL_DIFF_THRESHOLD` env var). Static frames (f0 of non-animated fixtures) consistently diff at 0.0000%. Animated frames show 0.2-0.5% jitter due to `requestAnimationFrame` timing non-determinism — the Rive runtime advances based on real time deltas, so captured animation positions shift by 1-2 pixels between runs. The 1.0% threshold accommodates this while still catching real regressions (a broken animation would show 30%+ diff).
+**Diff threshold**: 1.0% of pixels (configurable via `VISUAL_DIFF_THRESHOLD` env var). Static frames (f0 of non-animated fixtures) consistently diff at 0.0000%. Animated frames show 0.2-0.5% jitter due to `requestAnimationFrame` timing non-determinism — the Rive runtime advances based on real-time deltas, so captured animation positions shift by 1-2 pixels between runs. The 1.0% threshold accommodates this while still catching real regressions (a broken animation would show 30%+ diff).
 
 ## Fixture Corpus
 
