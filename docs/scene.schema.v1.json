@@ -32,7 +32,13 @@
       "required": ["name", "children"],
       "anyOf": [
         { "required": ["preset"] },
-        { "required": ["width", "height"] }
+        {
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "number", "exclusiveMinimum": 0 },
+            "height": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
       ],
       "properties": {
         "name": { "type": "string", "minLength": 1 },

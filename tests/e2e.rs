@@ -541,6 +541,35 @@ fn test_generate_artboard_preset() {
 }
 
 #[test]
+fn test_validate_artboard_preset() {
+    let input = fixture_path("artboard_preset.json");
+    let output = temp_output("validate_artboard_preset");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
 fn test_list_presets_flag() {
     let result = cargo_run(&["--list-presets"]);
     let stdout = String::from_utf8_lossy(&result.stdout);

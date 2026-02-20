@@ -2595,8 +2595,14 @@ mod tests {
             .find(|p| p.key == property_keys::LAYOUT_COMPONENT_HEIGHT)
             .unwrap();
 
-        assert_eq!(width.value, PropertyValue::Float(390.0));
-        assert_eq!(height.value, PropertyValue::Float(844.0));
+        assert_eq!(
+            width.value,
+            PropertyValue::Float(ARTBOARD_PRESET_MOBILE_WIDTH)
+        );
+        assert_eq!(
+            height.value,
+            PropertyValue::Float(ARTBOARD_PRESET_MOBILE_HEIGHT)
+        );
     }
 
     #[test]
@@ -2627,7 +2633,10 @@ mod tests {
             .unwrap();
 
         assert_eq!(width.value, PropertyValue::Float(800.0));
-        assert_eq!(height.value, PropertyValue::Float(844.0));
+        assert_eq!(
+            height.value,
+            PropertyValue::Float(ARTBOARD_PRESET_MOBILE_HEIGHT)
+        );
     }
 
     #[test]
