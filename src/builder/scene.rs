@@ -21,6 +21,19 @@ use crate::objects::state_machine::{
 
 const SCENE_FORMAT_VERSION: u32 = 1;
 
+const ARTBOARD_PRESET_MOBILE_WIDTH: f32 = 390.0;
+const ARTBOARD_PRESET_MOBILE_HEIGHT: f32 = 844.0;
+const ARTBOARD_PRESET_TABLET_WIDTH: f32 = 768.0;
+const ARTBOARD_PRESET_TABLET_HEIGHT: f32 = 1024.0;
+const ARTBOARD_PRESET_DESKTOP_WIDTH: f32 = 1440.0;
+const ARTBOARD_PRESET_DESKTOP_HEIGHT: f32 = 900.0;
+const ARTBOARD_PRESET_SQUARE_WIDTH: f32 = 500.0;
+const ARTBOARD_PRESET_SQUARE_HEIGHT: f32 = 500.0;
+const ARTBOARD_PRESET_BANNER_WIDTH: f32 = 728.0;
+const ARTBOARD_PRESET_BANNER_HEIGHT: f32 = 90.0;
+const ARTBOARD_PRESET_STORY_WIDTH: f32 = 1080.0;
+const ARTBOARD_PRESET_STORY_HEIGHT: f32 = 1920.0;
+
 #[derive(Debug, Deserialize)]
 pub struct SceneSpec {
     pub scene_format_version: u32,
@@ -33,11 +46,103 @@ pub struct SceneSpec {
 #[derive(Debug, Deserialize)]
 pub struct ArtboardSpec {
     pub name: String,
+    #[serde(default)]
+    pub preset: Option<String>,
+    #[serde(default)]
     pub width: f32,
+    #[serde(default)]
     pub height: f32,
     pub children: Vec<ObjectSpec>,
     pub animations: Option<Vec<AnimationSpec>>,
     pub state_machines: Option<Vec<StateMachineSpec>>,
+}
+
+#[derive(Clone, Copy)]
+pub struct ArtboardPreset {
+    pub name: &'static str,
+    pub width: f32,
+    pub height: f32,
+}
+
+const ARTBOARD_PRESETS: [ArtboardPreset; 6] = [
+    ArtboardPreset {
+        name: "mobile",
+        width: ARTBOARD_PRESET_MOBILE_WIDTH,
+        height: ARTBOARD_PRESET_MOBILE_HEIGHT,
+    },
+    ArtboardPreset {
+        name: "tablet",
+        width: ARTBOARD_PRESET_TABLET_WIDTH,
+        height: ARTBOARD_PRESET_TABLET_HEIGHT,
+    },
+    ArtboardPreset {
+        name: "desktop",
+        width: ARTBOARD_PRESET_DESKTOP_WIDTH,
+        height: ARTBOARD_PRESET_DESKTOP_HEIGHT,
+    },
+    ArtboardPreset {
+        name: "square",
+        width: ARTBOARD_PRESET_SQUARE_WIDTH,
+        height: ARTBOARD_PRESET_SQUARE_HEIGHT,
+    },
+    ArtboardPreset {
+        name: "banner",
+        width: ARTBOARD_PRESET_BANNER_WIDTH,
+        height: ARTBOARD_PRESET_BANNER_HEIGHT,
+    },
+    ArtboardPreset {
+        name: "story",
+        width: ARTBOARD_PRESET_STORY_WIDTH,
+        height: ARTBOARD_PRESET_STORY_HEIGHT,
+    },
+];
+
+pub fn artboard_presets() -> &'static [ArtboardPreset] {
+    &ARTBOARD_PRESETS
+}
+
+fn lookup_artboard_preset(name: &str) -> Option<(f32, f32)> {
+    ARTBOARD_PRESETS
+        .iter()
+        .find(|preset| preset.name == name)
+        .map(|preset| (preset.width, preset.height))
+}
+
+fn resolve_artboard_dimensions(artboard_spec: &ArtboardSpec) -> Result<(f32, f32), String> {
+    let preset_dimensions = if let Some(preset_name) = artboard_spec.preset.as_deref() {
+        Some(lookup_artboard_preset(preset_name).ok_or_else(|| {
+            format!(
+                "artboard '{}' has unknown preset '{}'",
+                artboard_spec.name, preset_name
+            )
+        })?)
+    } else {
+        None
+    };
+
+    let width = if artboard_spec.width > 0.0 {
+        artboard_spec.width
+    } else if let Some((preset_width, _)) = preset_dimensions {
+        preset_width
+    } else {
+        return Err(format!(
+            "artboard '{}' must specify non-zero width and height or a preset",
+            artboard_spec.name
+        ));
+    };
+
+    let height = if artboard_spec.height > 0.0 {
+        artboard_spec.height
+    } else if let Some((_, preset_height)) = preset_dimensions {
+        preset_height
+    } else {
+        return Err(format!(
+            "artboard '{}' must specify non-zero width and height or a preset",
+            artboard_spec.name
+        ));
+    };
+
+    Ok((width, height))
 }
 
 #[derive(Debug, Deserialize)]
@@ -233,12 +338,10 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
 
     for artboard_spec in &artboard_specs {
         let artboard_start = objects.len();
+        let (artboard_width, artboard_height) = resolve_artboard_dimensions(artboard_spec)?;
 
-        let mut artboard = Artboard::new(
-            artboard_spec.name.clone(),
-            artboard_spec.width,
-            artboard_spec.height,
-        );
+        let mut artboard =
+            Artboard::new(artboard_spec.name.clone(), artboard_width, artboard_height);
         if artboard_spec
             .state_machines
             .as_ref()
@@ -1012,6 +1115,8 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
         ));
     }
 
+    resolve_artboard_dimensions(artboard_spec)?;
+
     let mut object_names: HashSet<String> = HashSet::new();
     for child in &artboard_spec.children {
         validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
@@ -1397,6 +1502,7 @@ mod tests {
             scene_format_version: 2,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 500.0,
                 height: 500.0,
                 children: vec![],
@@ -1467,6 +1573,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 500.0,
                 height: 500.0,
                 children: vec![],
@@ -1495,6 +1602,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 500.0,
                 height: 500.0,
                 children: vec![ObjectSpec::Shape {
@@ -1569,6 +1677,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 500.0,
                 height: 500.0,
                 children: vec![ObjectSpec::Shape {
@@ -1639,6 +1748,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![ObjectSpec::SolidColor {
@@ -1664,6 +1774,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![],
@@ -1698,6 +1809,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![ObjectSpec::Path {
@@ -1726,6 +1838,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![ObjectSpec::Shape {
@@ -1767,6 +1880,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![ObjectSpec::Shape {
@@ -1803,6 +1917,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![ObjectSpec::Shape {
@@ -1846,6 +1961,7 @@ mod tests {
             artboards: Some(vec![
                 ArtboardSpec {
                     name: "A".to_string(),
+                    preset: None,
                     width: 400.0,
                     height: 300.0,
                     children: vec![ObjectSpec::Shape {
@@ -1865,6 +1981,7 @@ mod tests {
                 },
                 ArtboardSpec {
                     name: "B".to_string(),
+                    preset: None,
                     width: 800.0,
                     height: 600.0,
                     children: vec![ObjectSpec::Shape {
@@ -1933,6 +2050,7 @@ mod tests {
             artboards: Some(vec![
                 ArtboardSpec {
                     name: "Main".to_string(),
+                    preset: None,
                     width: 500.0,
                     height: 500.0,
                     children: vec![ObjectSpec::NestedArtboard {
@@ -1946,6 +2064,7 @@ mod tests {
                 },
                 ArtboardSpec {
                     name: "Component".to_string(),
+                    preset: None,
                     width: 200.0,
                     height: 200.0,
                     children: vec![],
@@ -1981,6 +2100,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 500.0,
                 height: 500.0,
                 children: vec![ObjectSpec::NestedArtboard {
@@ -2010,6 +2130,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
+                preset: None,
                 width: 500.0,
                 height: 500.0,
                 children: vec![ObjectSpec::NestedArtboard {
@@ -2039,6 +2160,7 @@ mod tests {
             artboards: Some(vec![
                 ArtboardSpec {
                     name: "A".to_string(),
+                    preset: None,
                     width: 500.0,
                     height: 500.0,
                     children: vec![ObjectSpec::NestedArtboard {
@@ -2052,6 +2174,7 @@ mod tests {
                 },
                 ArtboardSpec {
                     name: "B".to_string(),
+                    preset: None,
                     width: 500.0,
                     height: 500.0,
                     children: vec![ObjectSpec::NestedArtboard {
@@ -2079,6 +2202,7 @@ mod tests {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
                 name: "A".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![],
@@ -2087,6 +2211,7 @@ mod tests {
             }),
             artboards: Some(vec![ArtboardSpec {
                 name: "B".to_string(),
+                preset: None,
                 width: 100.0,
                 height: 100.0,
                 children: vec![],
@@ -2140,6 +2265,7 @@ mod tests {
             artboards: Some(vec![
                 ArtboardSpec {
                     name: "Main".to_string(),
+                    preset: None,
                     width: 100.0,
                     height: 100.0,
                     children: vec![],
@@ -2148,6 +2274,7 @@ mod tests {
                 },
                 ArtboardSpec {
                     name: "Main".to_string(),
+                    preset: None,
                     width: 200.0,
                     height: 200.0,
                     children: vec![],
@@ -2172,6 +2299,7 @@ mod tests {
             artboards: Some(vec![
                 ArtboardSpec {
                     name: "A".to_string(),
+                    preset: None,
                     width: 100.0,
                     height: 100.0,
                     children: vec![ObjectSpec::Shape {
@@ -2216,6 +2344,7 @@ mod tests {
                 },
                 ArtboardSpec {
                     name: "B".to_string(),
+                    preset: None,
                     width: 200.0,
                     height: 200.0,
                     children: vec![ObjectSpec::Shape {
@@ -2270,6 +2399,7 @@ mod tests {
             artboards: Some(vec![
                 ArtboardSpec {
                     name: "A".to_string(),
+                    preset: None,
                     width: 100.0,
                     height: 100.0,
                     children: vec![ObjectSpec::Shape {
@@ -2314,6 +2444,7 @@ mod tests {
                 },
                 ArtboardSpec {
                     name: "B".to_string(),
+                    preset: None,
                     width: 200.0,
                     height: 200.0,
                     children: vec![ObjectSpec::Shape {
@@ -2438,6 +2569,114 @@ mod tests {
     }
 
     #[test]
+    fn test_artboard_preset_resolves_dimensions() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: Some("mobile".to_string()),
+                width: 0.0,
+                height: 0.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        let artboard_props = objects[1].properties();
+        let width = artboard_props
+            .iter()
+            .find(|p| p.key == property_keys::LAYOUT_COMPONENT_WIDTH)
+            .unwrap();
+        let height = artboard_props
+            .iter()
+            .find(|p| p.key == property_keys::LAYOUT_COMPONENT_HEIGHT)
+            .unwrap();
+
+        assert_eq!(width.value, PropertyValue::Float(390.0));
+        assert_eq!(height.value, PropertyValue::Float(844.0));
+    }
+
+    #[test]
+    fn test_artboard_preset_applies_per_dimension_overrides() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: Some("mobile".to_string()),
+                width: 800.0,
+                height: 0.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        let artboard_props = objects[1].properties();
+        let width = artboard_props
+            .iter()
+            .find(|p| p.key == property_keys::LAYOUT_COMPONENT_WIDTH)
+            .unwrap();
+        let height = artboard_props
+            .iter()
+            .find(|p| p.key == property_keys::LAYOUT_COMPONENT_HEIGHT)
+            .unwrap();
+
+        assert_eq!(width.value, PropertyValue::Float(800.0));
+        assert_eq!(height.value, PropertyValue::Float(844.0));
+    }
+
+    #[test]
+    fn test_artboard_unknown_preset_rejected() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: Some("watch".to_string()),
+                width: 0.0,
+                height: 0.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected unknown preset error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unknown preset 'watch'"));
+    }
+
+    #[test]
+    fn test_artboard_requires_dimensions_or_preset() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 0.0,
+                height: 0.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected missing dimensions error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("must specify non-zero width and height or a preset"));
+    }
+
+    #[test]
     fn test_multi_artboard_names_can_overlap_object_names() {
         let spec = SceneSpec {
             scene_format_version: 1,
@@ -2445,6 +2684,7 @@ mod tests {
             artboards: Some(vec![
                 ArtboardSpec {
                     name: "A".to_string(),
+                    preset: None,
                     width: 100.0,
                     height: 100.0,
                     children: vec![ObjectSpec::Node {
@@ -2457,6 +2697,7 @@ mod tests {
                 },
                 ArtboardSpec {
                     name: "B".to_string(),
+                    preset: None,
                     width: 100.0,
                     height: 100.0,
                     children: vec![ObjectSpec::Node {

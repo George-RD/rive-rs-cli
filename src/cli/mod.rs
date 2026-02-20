@@ -2,10 +2,17 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "rive-cli", about = "Generate Rive .riv files programmatically")]
+#[command(
+    name = "rive-cli",
+    about = "Generate Rive .riv files programmatically",
+    arg_required_else_help = true
+)]
 pub struct Cli {
+    #[arg(long, help = "List available artboard size presets")]
+    pub list_presets: bool,
+
     #[command(subcommand)]
-    pub command: Command,
+    pub command: Option<Command>,
 }
 
 #[derive(Subcommand)]
