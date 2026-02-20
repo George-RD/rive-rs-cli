@@ -59,4 +59,28 @@ pub enum Command {
         )]
         property_key: Vec<u16>,
     },
+    Ai {
+        #[command(subcommand)]
+        command: AiCommand,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum AiCommand {
+    Generate {
+        #[arg(long, help = "Natural language prompt describing the animation")]
+        prompt: Option<String>,
+        #[arg(long, help = "Use a built-in template (bounce, spinner, pulse, fade)")]
+        template: Option<String>,
+        #[arg(short, long, default_value = "output.riv", help = "Output .riv path")]
+        output: std::path::PathBuf,
+        #[arg(long, default_value = "0", help = "Rive file id")]
+        file_id: u64,
+        #[arg(long, help = "Output SceneSpec JSON without encoding to .riv")]
+        dry_run: bool,
+        #[arg(long, help = "Override AI model (e.g. gpt-4o, gpt-4.1)")]
+        model: Option<String>,
+        #[arg(long, help = "AI provider (template, openai)")]
+        provider: Option<String>,
+    },
 }
