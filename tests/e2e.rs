@@ -1231,6 +1231,259 @@ fn test_validate_artboard_preset() {
 }
 
 #[test]
+fn test_ai_generate_template_bounce() {
+    let output = temp_output("ai_template_bounce");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "bounce",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_ai_generate_template_spinner() {
+    let output = temp_output("ai_template_spinner");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "spinner",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_ai_generate_template_pulse() {
+    let output = temp_output("ai_template_pulse");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "pulse",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_ai_generate_template_fade() {
+    let output = temp_output("ai_template_fade");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "fade",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_ai_generate_dry_run() {
+    let result = cargo_run(&["ai", "generate", "--template", "bounce", "--dry-run"]);
+    assert!(
+        result.status.success(),
+        "ai dry-run failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("dry-run JSON should parse");
+    assert_eq!(
+        parsed.get("scene_format_version").and_then(|v| v.as_u64()),
+        Some(1)
+    );
+}
+
+#[test]
+fn test_ai_dry_run_pipe_to_generate() {
+    let json_path = std::env::temp_dir().join("rive_ai_dry_run_pipe.json");
+    let output = temp_output("ai_dry_run_pipe");
+    let _ = std::fs::remove_file(&json_path);
+    cleanup(&output);
+
+    let dry_run = cargo_run(&["ai", "generate", "--template", "bounce", "--dry-run"]);
+    assert!(
+        dry_run.status.success(),
+        "ai dry-run failed: {}",
+        String::from_utf8_lossy(&dry_run.stderr)
+    );
+
+    std::fs::write(&json_path, &dry_run.stdout).expect("failed to write dry-run output");
+
+    let generate = cargo_run(&[
+        "generate",
+        json_path.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate from dry-run failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+
+    let _ = std::fs::remove_file(&json_path);
+    cleanup(&output);
+}
+
+#[test]
+fn test_ai_unknown_template_error() {
+    let result = cargo_run(&["ai", "generate", "--template", "nonexistent"]);
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!result.status.success());
+    assert!(
+        stderr.contains("unknown template"),
+        "stderr was: {}",
+        stderr
+    );
+}
+
+#[test]
+fn test_ai_no_prompt_or_template() {
+    let result = cargo_run(&["ai", "generate"]);
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!result.status.success());
+    assert!(
+        stderr.contains("provide --prompt or --template"),
+        "stderr was: {}",
+        stderr
+    );
+}
+
+#[test]
+fn test_ai_generate_prompt_without_api_key() {
+    let result = Command::new("cargo")
+        .args([
+            "run",
+            "--quiet",
+            "--",
+            "ai",
+            "generate",
+            "--prompt",
+            "make a bounce",
+        ])
+        .env_remove("OPENAI_API_KEY")
+        .output()
+        .expect("failed to run cargo");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!result.status.success());
+    assert!(
+        stderr.contains("API key missing")
+            || stderr.contains("OpenAI provider not yet implemented"),
+        "stderr was: {}",
+        stderr
+    );
+}
+
+#[test]
+fn test_ai_validate_template_output() {
+    for template in ["bounce", "spinner", "pulse", "fade"] {
+        let output = temp_output(&format!("ai_validate_{}", template));
+        cleanup(&output);
+
+        let generate = cargo_run(&[
+            "ai",
+            "generate",
+            "--template",
+            template,
+            "-o",
+            output.to_str().unwrap(),
+        ]);
+        assert!(
+            generate.status.success(),
+            "ai generate failed for {}: {}",
+            template,
+            String::from_utf8_lossy(&generate.stderr)
+        );
+
+        let val = cargo_run(&["validate", output.to_str().unwrap()]);
+        let stdout = String::from_utf8_lossy(&val.stdout);
+        assert!(
+            val.status.success(),
+            "validate failed for {}: {}",
+            template,
+            String::from_utf8_lossy(&val.stderr)
+        );
+        assert!(
+            stdout.contains("valid"),
+            "expected valid output for {}, got: {}",
+            template,
+            stdout
+        );
+        cleanup(&output);
+    }
+}
+
+#[test]
 fn test_list_presets_flag() {
     let result = cargo_run(&["--list-presets"]);
     let stdout = String::from_utf8_lossy(&result.stdout);
