@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::objects::core::{BackingType, is_bool_property, property_backing_type, type_keys};
+use crate::objects::core::{
+    BackingType, is_bool_property, property_backing_type, property_keys, type_keys,
+};
 
 pub struct BinaryReader<'a> {
     data: &'a [u8],
@@ -394,13 +396,14 @@ pub fn inspect_riv(data: &[u8]) -> Result<String, String> {
     }
 
     let mut artboard_idx = 0;
+    let mut local_idx: usize = 0;
     for (i, obj) in parsed.objects.iter().enumerate() {
         if obj.type_key == type_keys::ARTBOARD {
             if artboard_count > 1 {
                 let name = obj
                     .properties
                     .iter()
-                    .find(|p| p.key == 4)
+                    .find(|p| p.key == property_keys::COMPONENT_NAME)
                     .and_then(|p| match &p.value {
                         PropertyValueRead::String(s) => Some(s.as_str()),
                         _ => None,
@@ -409,13 +412,25 @@ pub fn inspect_riv(data: &[u8]) -> Result<String, String> {
                 out.push_str(&format!("--- Artboard {} ({}) ---\n", artboard_idx, name));
             }
             artboard_idx += 1;
+            local_idx = 0;
         }
-        out.push_str(&format!(
-            "[{}] type={} ({})\n",
-            i,
-            obj.type_key,
-            type_name(obj.type_key)
-        ));
+        if artboard_count > 1 {
+            out.push_str(&format!(
+                "[{}:{}] type={} ({})\n",
+                i,
+                local_idx,
+                obj.type_key,
+                type_name(obj.type_key)
+            ));
+        } else {
+            out.push_str(&format!(
+                "[{}] type={} ({})\n",
+                i,
+                obj.type_key,
+                type_name(obj.type_key)
+            ));
+        }
+        local_idx += 1;
         for prop in &obj.properties {
             let val_str = match &prop.value {
                 PropertyValueRead::UInt(v) => format!("uint({})", v),

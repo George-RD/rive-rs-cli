@@ -81,6 +81,23 @@
             }
           ]
         }
+      ],
+      "animations": [
+        {
+          "name": "slide_in",
+          "fps": 60,
+          "duration": 120,
+          "keyframes": [
+            {
+              "object": "box",
+              "property": "x",
+              "frames": [
+                { "frame": 0, "value": -200.0 },
+                { "frame": 119, "value": 400.0 }
+              ]
+            }
+          ]
+        }
       ]
     }
   ]

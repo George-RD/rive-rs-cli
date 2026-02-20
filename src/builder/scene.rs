@@ -275,7 +275,11 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                             continue;
                         }
 
-                        let artboard_local_index = objects.len() - artboard_start;
+                        let artboard_local_index =
+                            objects.len().checked_sub(artboard_start).ok_or(
+                                "internal error: interpolator index precedes artboard start"
+                                    .to_string(),
+                            )?;
                         interpolator_name_to_index
                             .insert(interp.name.clone(), artboard_local_index);
                         interpolator_control_points.insert(interp.name.clone(), (x1, y1, x2, y2));
@@ -302,8 +306,11 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                         *object_name_to_index.get(&group.object).ok_or_else(|| {
                             format!("unknown object referenced in keyframes: '{}'", group.object)
                         })?;
+                    let keyed_object_id = object_index.checked_sub(artboard_start).ok_or(
+                        "internal error: keyed object index precedes artboard start".to_string(),
+                    )?;
                     objects.push(Box::new(KeyedObject {
-                        object_id: (object_index - artboard_start) as u64,
+                        object_id: keyed_object_id as u64,
                     }));
 
                     let property_key =
@@ -539,7 +546,10 @@ fn append_object(
     name_to_index: &mut HashMap<String, usize>,
 ) -> Result<(), String> {
     let object_index = objects.len();
-    let parent_id = (parent_index - artboard_start) as u64;
+    let parent_id = parent_index
+        .checked_sub(artboard_start)
+        .ok_or("internal error: parent index precedes artboard start".to_string())?
+        as u64;
 
     match spec {
         ObjectSpec::Shape {
@@ -1961,6 +1971,126 @@ mod tests {
             .find(|p| p.key == property_keys::COMPONENT_NAME)
             .unwrap();
         assert_eq!(b_name.value, PropertyValue::String("B".to_string()));
+    }
+
+    #[test]
+    fn test_multi_artboard_keyed_object_id_resets_per_artboard() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "A".to_string(),
+                    width: 100.0,
+                    height: 100.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "s_a".to_string(),
+                        x: None,
+                        y: None,
+                        children: Some(vec![ObjectSpec::Ellipse {
+                            name: "e_a".to_string(),
+                            width: 50.0,
+                            height: 50.0,
+                            origin_x: None,
+                            origin_y: None,
+                        }]),
+                    }],
+                    animations: Some(vec![AnimationSpec {
+                        name: "anim_a".to_string(),
+                        fps: 60,
+                        duration: 60,
+                        speed: None,
+                        loop_type: None,
+                        interpolators: None,
+                        keyframes: vec![KeyframeGroupSpec {
+                            object: "e_a".to_string(),
+                            property: "width".to_string(),
+                            frames: vec![
+                                KeyframeSpec {
+                                    frame: 0,
+                                    value: serde_json::json!(50.0),
+                                    interpolation: None,
+                                    interpolator: None,
+                                },
+                                KeyframeSpec {
+                                    frame: 59,
+                                    value: serde_json::json!(100.0),
+                                    interpolation: None,
+                                    interpolator: None,
+                                },
+                            ],
+                        }],
+                    }]),
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "B".to_string(),
+                    width: 200.0,
+                    height: 200.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "s_b".to_string(),
+                        x: None,
+                        y: None,
+                        children: Some(vec![ObjectSpec::Ellipse {
+                            name: "e_b".to_string(),
+                            width: 80.0,
+                            height: 80.0,
+                            origin_x: None,
+                            origin_y: None,
+                        }]),
+                    }],
+                    animations: Some(vec![AnimationSpec {
+                        name: "anim_b".to_string(),
+                        fps: 60,
+                        duration: 60,
+                        speed: None,
+                        loop_type: None,
+                        interpolators: None,
+                        keyframes: vec![KeyframeGroupSpec {
+                            object: "e_b".to_string(),
+                            property: "height".to_string(),
+                            frames: vec![
+                                KeyframeSpec {
+                                    frame: 0,
+                                    value: serde_json::json!(80.0),
+                                    interpolation: None,
+                                    interpolator: None,
+                                },
+                                KeyframeSpec {
+                                    frame: 59,
+                                    value: serde_json::json!(160.0),
+                                    interpolation: None,
+                                    interpolator: None,
+                                },
+                            ],
+                        }],
+                    }]),
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let objects = build_scene(&spec).unwrap();
+
+        let keyed_objects: Vec<_> = objects
+            .iter()
+            .filter(|o| o.type_key() == type_keys::KEYED_OBJECT)
+            .collect();
+        assert_eq!(keyed_objects.len(), 2);
+
+        let keyed_a_id = keyed_objects[0]
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::KEYED_OBJECT_ID)
+            .unwrap();
+        assert_eq!(keyed_a_id.value, PropertyValue::UInt(2));
+
+        let keyed_b_id = keyed_objects[1]
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::KEYED_OBJECT_ID)
+            .unwrap();
+        assert_eq!(keyed_b_id.value, PropertyValue::UInt(2));
     }
 
     #[test]

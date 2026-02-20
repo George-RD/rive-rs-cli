@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+const ARTBOARD_TYPE_KEY: u64 = 1;
+
 fn cargo_run(args: &[&str]) -> std::process::Output {
     Command::new("cargo")
         .args(["run", "--quiet", "--"])
@@ -406,7 +408,7 @@ fn test_inspect_json_multi_artboard() {
     let objects = parsed.get("objects").unwrap().as_array().unwrap();
     let artboard_count = objects
         .iter()
-        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == 1)
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == ARTBOARD_TYPE_KEY)
         .count();
     assert_eq!(artboard_count, 2);
     cleanup(&output);
