@@ -73,11 +73,12 @@ Pixel-level comparison of rendered frames against committed baseline PNGs.
 
 | Fixture category | Frames captured | Why |
 |------------------|-----------------|-----|
-| Static (minimal, shapes, path) | f0 only | No animation — single frame is sufficient |
+| Static (minimal, shapes, path, trim_path, artboard_preset) | f0 only | No animation — single frame is sufficient |
 | Linear animation | f0, f30, f60 | Start, midpoint, end — catches timing and interpolation errors |
-| Cubic easing | f0 only (expand to f0, f15, f30, f45, f60) | Easing curves need dense sampling to catch control point errors |
-| State machine | f0 only (expand to f0 + post-trigger) | Need to test state transitions with simulated inputs |
-| TrimPath | f0 only | Static trim — expand when animated trim is added |
+| Cubic easing | f0, f15, f30, f45, f60 | Dense 5-frame sampling catches easing curve shape and control point errors |
+| Multi-artboard | f0, f30 | Captures opacity fade-in animation between frames |
+| Nested artboard | f0 only | Static embedding — expand when nested animations are supported |
+| State machine | f0 only | Animations have no keyframes; expand when simulated input triggers are added |
 
 **Updating baselines**:
 
@@ -87,21 +88,26 @@ UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.
 
 This overwrites `tests/playwright/baselines/*.png` with current renders. Commit the updated baselines after visual review.
 
-**Diff threshold**: 0.1% of pixels (configurable via `VISUAL_DIFF_THRESHOLD` env var). Accounts for minor anti-aliasing differences across Chromium versions.
+**Resolution**: 512×512 logical viewport with `deviceScaleFactor: 2`, producing 1024×1024 pixel screenshots. This ensures crisp rendering on Retina/HiDPI displays and catches sub-pixel anti-aliasing issues.
+
+**Diff threshold**: 1.0% of pixels (configurable via `VISUAL_DIFF_THRESHOLD` env var). Static frames (f0 of non-animated fixtures) consistently diff at 0.0000%. Animated frames show 0.2-0.5% jitter due to `requestAnimationFrame` timing non-determinism — the Rive runtime advances based on real-time deltas, so captured animation positions shift by 1-2 pixels between runs. The 1.0% threshold accommodates this while still catching real regressions (a broken animation would show 30%+ diff).
 
 ## Fixture Corpus
 
-### Current Fixtures (Post-PR #28)
+### Current Fixtures (Post-PR #36)
 
 | Fixture | Category | Objects | Animations | Golden frames |
 |---------|----------|---------|------------|---------------|
-| `minimal.json` | Static | Backboard, Artboard | None | f0 |
+| `minimal.json` | Static | Backboard, Artboard, Shape, Ellipse, Fill | None | f0 |
 | `shapes.json` | Static | Ellipse, Rectangle, Fill, Stroke, Gradients | None | f0 |
-| `path.json` | Static | Path with path_flags | None | f0 |
-| `animation.json` | Animated | Shape with position/scale keyframes | 1 (60 frames) | f0, f30, f60 |
-| `cubic_easing.json` | Animated | Shape with CubicEaseInterpolator | 1 (60 frames) | f0 |
-| `trim_path.json` | Static | Stroke with TrimPath (75% trim) | None | f0 |
-| `state_machine.json` | Interactive | States, transitions, bool input | 1 SM | f0 |
+| `path.json` | Static | Path with path_flags, Stroke | None | f0 |
+| `animation.json` | Animated | Shape with X/Y position keyframes | 1 (120 frames) | f0, f30, f60 |
+| `cubic_easing.json` | Animated | Shape with CubicEaseInterpolator width keyframes | 1 (120 frames) | f0, f15, f30, f45, f60 |
+| `trim_path.json` | Static | Stroke with TrimPath (75% sequential trim) | None | f0 |
+| `state_machine.json` | Interactive | States, transitions, bool/trigger inputs | 1 SM | f0 |
+| `multi_artboard.json` | Multi/Animated | 2 artboards, opacity fade + X slide animations | 2 | f0, f30 |
+| `nested_artboard.json` | Multi/Static | Main embeds Component via NestedArtboard | None | f0 |
+| `artboard_preset.json` | Static | Mobile preset (390×844), empty artboard | None | f0 |
 
 ### Growth Plan
 
