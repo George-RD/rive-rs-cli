@@ -24,7 +24,10 @@ const SCENE_FORMAT_VERSION: u32 = 1;
 #[derive(Debug, Deserialize)]
 pub struct SceneSpec {
     pub scene_format_version: u32,
-    pub artboard: ArtboardSpec,
+    #[serde(default)]
+    pub artboard: Option<ArtboardSpec>,
+    #[serde(default)]
+    pub artboards: Option<Vec<ArtboardSpec>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -196,286 +199,322 @@ pub struct ConditionSpec {
     pub value: Option<serde_json::Value>,
 }
 
+fn resolve_artboards(spec: &SceneSpec) -> Result<Vec<&ArtboardSpec>, String> {
+    match (&spec.artboard, &spec.artboards) {
+        (Some(ab), None) => Ok(vec![ab]),
+        (None, Some(abs)) => {
+            if abs.is_empty() {
+                return Err("artboards array must not be empty".to_string());
+            }
+            Ok(abs.iter().collect())
+        }
+        (Some(_), Some(_)) => Err("specify either 'artboard' or 'artboards', not both".to_string()),
+        (None, None) => Err("must specify either 'artboard' or 'artboards'".to_string()),
+    }
+}
+
 pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String> {
     validate_scene_spec(spec)?;
 
+    let artboard_specs = resolve_artboards(spec)?;
     let mut objects: Vec<Box<dyn RiveObject>> = Vec::new();
-    let mut object_name_to_index: HashMap<String, usize> = HashMap::new();
-    let mut animation_name_to_index: HashMap<String, usize> = HashMap::new();
 
     objects.push(Box::new(Backboard));
-    let mut artboard = Artboard::new(
-        spec.artboard.name.clone(),
-        spec.artboard.width,
-        spec.artboard.height,
-    );
-    if spec
-        .artboard
-        .state_machines
-        .as_ref()
-        .is_some_and(|sms| !sms.is_empty())
-    {
-        artboard.default_state_machine_id = Some(0);
-    }
-    objects.push(Box::new(artboard));
 
-    for child in &spec.artboard.children {
-        append_object(child, 1, &mut objects, &mut object_name_to_index)?;
-    }
+    for artboard_spec in &artboard_specs {
+        let artboard_start = objects.len();
 
-    let mut interpolator_name_to_index: HashMap<String, usize> = HashMap::new();
-    let mut interpolator_control_points: HashMap<String, (f32, f32, f32, f32)> = HashMap::new();
+        let mut artboard = Artboard::new(
+            artboard_spec.name.clone(),
+            artboard_spec.width,
+            artboard_spec.height,
+        );
+        if artboard_spec
+            .state_machines
+            .as_ref()
+            .is_some_and(|sms| !sms.is_empty())
+        {
+            artboard.default_state_machine_id = Some(0);
+        }
+        objects.push(Box::new(artboard));
 
-    if let Some(animations) = &spec.artboard.animations {
-        for animation in animations {
-            if let Some(interpolators) = &animation.interpolators {
-                for interp in interpolators {
-                    let x1 = interp.x1.unwrap_or(0.42);
-                    let y1 = interp.y1.unwrap_or(0.0);
-                    let x2 = interp.x2.unwrap_or(0.58);
-                    let y2 = interp.y2.unwrap_or(1.0);
+        let mut object_name_to_index: HashMap<String, usize> = HashMap::new();
+        let mut animation_name_to_index: HashMap<String, usize> = HashMap::new();
+        let mut interpolator_name_to_index: HashMap<String, usize> = HashMap::new();
+        let mut interpolator_control_points: HashMap<String, (f32, f32, f32, f32)> = HashMap::new();
 
-                    if let Some((stored_x1, stored_y1, stored_x2, stored_y2)) =
-                        interpolator_control_points.get(&interp.name)
-                    {
-                        if (stored_x1, stored_y1, stored_x2, stored_y2) != (&x1, &y1, &x2, &y2) {
-                            return Err(format!(
-                                "duplicate interpolator '{}' with different control points",
-                                interp.name
-                            ));
-                        }
-                        continue;
-                    }
-
-                    let artboard_local_index = objects.len() - 1;
-                    interpolator_name_to_index.insert(interp.name.clone(), artboard_local_index);
-                    interpolator_control_points.insert(interp.name.clone(), (x1, y1, x2, y2));
-                    objects.push(Box::new(CubicEaseInterpolator::new(x1, y1, x2, y2)));
-                }
-            }
+        for child in &artboard_spec.children {
+            append_object(
+                child,
+                artboard_start,
+                artboard_start,
+                &mut objects,
+                &mut object_name_to_index,
+            )?;
         }
 
-        for (animation_list_index, animation) in animations.iter().enumerate() {
-            let mut linear =
-                LinearAnimation::new(animation.name.clone(), animation.fps, animation.duration);
-            if let Some(speed) = animation.speed {
-                linear.speed = speed;
-            }
-            if let Some(loop_type) = animation.loop_type {
-                linear.loop_type = loop_type;
-            }
+        if let Some(animations) = &artboard_spec.animations {
+            for animation in animations {
+                if let Some(interpolators) = &animation.interpolators {
+                    for interp in interpolators {
+                        let x1 = interp.x1.unwrap_or(0.42);
+                        let y1 = interp.y1.unwrap_or(0.0);
+                        let x2 = interp.x2.unwrap_or(0.58);
+                        let y2 = interp.y2.unwrap_or(1.0);
 
-            objects.push(Box::new(linear));
-            animation_name_to_index.insert(animation.name.clone(), animation_list_index);
-
-            for group in &animation.keyframes {
-                let object_index = *object_name_to_index.get(&group.object).ok_or_else(|| {
-                    format!("unknown object referenced in keyframes: '{}'", group.object)
-                })?;
-                objects.push(Box::new(KeyedObject {
-                    object_id: (object_index - 1) as u64,
-                }));
-
-                let property_key = property_key_from_name(&group.property).ok_or_else(|| {
-                    format!(
-                        "unknown property referenced in keyframes: '{}'",
-                        group.property
-                    )
-                })?;
-                objects.push(Box::new(KeyedProperty {
-                    property_key: property_key as u64,
-                }));
-
-                for frame in &group.frames {
-                    let interp_type = match &frame.interpolation {
-                        Some(name) => interpolation_type_from_name(name)?,
-                        None => 1,
-                    };
-                    let interp_id = match &frame.interpolator {
-                        Some(name) => {
-                            let idx = *interpolator_name_to_index.get(name).ok_or_else(|| {
-                                format!("unknown interpolator referenced: '{}'", name)
-                            })?;
-                            idx as u64
-                        }
-                        None => u32::MAX as u64,
-                    };
-
-                    if property_key == property_keys::SOLID_COLOR_VALUE {
-                        let color = json_value_to_color(&frame.value).ok_or_else(|| {
-                            format!(
-                                "invalid color keyframe value for object '{}' property '{}' at frame {}",
-                                group.object, group.property, frame.frame
-                            )
-                        })?;
-                        let mut kf = KeyFrameColor::new(frame.frame, color);
-                        kf.interpolation_type = interp_type;
-                        kf.interpolator_id = interp_id;
-                        objects.push(Box::new(kf));
-                    } else {
-                        let value = json_value_to_f32(&frame.value).ok_or_else(|| {
-                            format!(
-                                "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
-                                group.object, group.property, frame.frame
-                            )
-                        })?;
-                        let mut kf = KeyFrameDouble::new(frame.frame, value);
-                        kf.interpolation_type = interp_type;
-                        kf.interpolator_id = interp_id;
-                        objects.push(Box::new(kf));
-                    }
-                }
-            }
-        }
-    }
-
-    if let Some(state_machines) = &spec.artboard.state_machines {
-        for state_machine in state_machines {
-            objects.push(Box::new(StateMachine::new(state_machine.name.clone())));
-
-            let mut input_name_to_index: HashMap<String, usize> = HashMap::new();
-            if let Some(inputs) = &state_machine.inputs {
-                for (input_index, input) in inputs.iter().enumerate() {
-                    match input {
-                        InputSpec::Number { name, value } => {
-                            objects.push(Box::new(StateMachineNumber {
-                                name: name.clone(),
-                                value: *value,
-                            }));
-                            input_name_to_index.insert(name.clone(), input_index);
-                        }
-                        InputSpec::Bool { name, value } => {
-                            objects.push(Box::new(StateMachineBool {
-                                name: name.clone(),
-                                value: if *value { 1 } else { 0 },
-                            }));
-                            input_name_to_index.insert(name.clone(), input_index);
-                        }
-                        InputSpec::Trigger { name } => {
-                            objects.push(Box::new(StateMachineTrigger { name: name.clone() }));
-                            input_name_to_index.insert(name.clone(), input_index);
-                        }
-                    }
-                }
-            }
-
-            for (layer_index, layer) in state_machine.layers.iter().enumerate() {
-                objects.push(Box::new(StateMachineLayer {
-                    name: format!("Layer {}", layer_index),
-                }));
-
-                let has_any = layer.states.iter().any(|s| matches!(s, StateSpec::Any));
-
-                let mut user_to_final: Vec<usize> = Vec::new();
-                let mut final_idx = if has_any { 0 } else { 1 };
-                for _ in &layer.states {
-                    user_to_final.push(final_idx);
-                    final_idx += 1;
-                }
-
-                if !has_any {
-                    objects.push(Box::new(AnyState));
-                }
-
-                for (user_idx, state) in layer.states.iter().enumerate() {
-                    match state {
-                        StateSpec::Entry => {
-                            objects.push(Box::new(EntryState));
-                        }
-                        StateSpec::Exit => {
-                            objects.push(Box::new(ExitState));
-                        }
-                        StateSpec::Any => {
-                            objects.push(Box::new(AnyState));
-                        }
-                        StateSpec::Animation { animation } => {
-                            let animation_id =
-                                *animation_name_to_index.get(animation).ok_or_else(|| {
-                                    format!("unknown animation referenced: '{}'", animation)
-                                })? as u64;
-                            objects.push(Box::new(AnimationState::new(animation_id)));
-                        }
-                    }
-
-                    if let Some(transitions) = &layer.transitions {
-                        for transition in transitions {
-                            if transition.from != user_idx {
-                                continue;
+                        if let Some((stored_x1, stored_y1, stored_x2, stored_y2)) =
+                            interpolator_control_points.get(&interp.name)
+                        {
+                            if (stored_x1, stored_y1, stored_x2, stored_y2) != (&x1, &y1, &x2, &y2)
+                            {
+                                return Err(format!(
+                                    "duplicate interpolator '{}' with different control points",
+                                    interp.name
+                                ));
                             }
-                            let state_to_id = *user_to_final.get(transition.to).ok_or_else(|| {
+                            continue;
+                        }
+
+                        let artboard_local_index = objects.len() - artboard_start;
+                        interpolator_name_to_index
+                            .insert(interp.name.clone(), artboard_local_index);
+                        interpolator_control_points.insert(interp.name.clone(), (x1, y1, x2, y2));
+                        objects.push(Box::new(CubicEaseInterpolator::new(x1, y1, x2, y2)));
+                    }
+                }
+            }
+
+            for (animation_list_index, animation) in animations.iter().enumerate() {
+                let mut linear =
+                    LinearAnimation::new(animation.name.clone(), animation.fps, animation.duration);
+                if let Some(speed) = animation.speed {
+                    linear.speed = speed;
+                }
+                if let Some(loop_type) = animation.loop_type {
+                    linear.loop_type = loop_type;
+                }
+
+                objects.push(Box::new(linear));
+                animation_name_to_index.insert(animation.name.clone(), animation_list_index);
+
+                for group in &animation.keyframes {
+                    let object_index =
+                        *object_name_to_index.get(&group.object).ok_or_else(|| {
+                            format!("unknown object referenced in keyframes: '{}'", group.object)
+                        })?;
+                    objects.push(Box::new(KeyedObject {
+                        object_id: (object_index - artboard_start) as u64,
+                    }));
+
+                    let property_key =
+                        property_key_from_name(&group.property).ok_or_else(|| {
+                            format!(
+                                "unknown property referenced in keyframes: '{}'",
+                                group.property
+                            )
+                        })?;
+                    objects.push(Box::new(KeyedProperty {
+                        property_key: property_key as u64,
+                    }));
+
+                    for frame in &group.frames {
+                        let interp_type = match &frame.interpolation {
+                            Some(name) => interpolation_type_from_name(name)?,
+                            None => 1,
+                        };
+                        let interp_id = match &frame.interpolator {
+                            Some(name) => {
+                                let idx =
+                                    *interpolator_name_to_index.get(name).ok_or_else(|| {
+                                        format!("unknown interpolator referenced: '{}'", name)
+                                    })?;
+                                idx as u64
+                            }
+                            None => u32::MAX as u64,
+                        };
+
+                        if property_key == property_keys::SOLID_COLOR_VALUE {
+                            let color = json_value_to_color(&frame.value).ok_or_else(|| {
                                 format!(
-                                    "transition target index {} out of bounds (layer has {} states)",
-                                    transition.to,
-                                    user_to_final.len()
+                                    "invalid color keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
                                 )
-                            })? as u64;
-                            let mut state_transition = StateTransition::new(state_to_id);
-                            if let Some(duration) = transition.duration {
-                                state_transition.duration = duration;
-                            }
-                            objects.push(Box::new(state_transition));
+                            })?;
+                            let mut kf = KeyFrameColor::new(frame.frame, color);
+                            kf.interpolation_type = interp_type;
+                            kf.interpolator_id = interp_id;
+                            objects.push(Box::new(kf));
+                        } else {
+                            let value = json_value_to_f32(&frame.value).ok_or_else(|| {
+                                format!(
+                                    "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                )
+                            })?;
+                            let mut kf = KeyFrameDouble::new(frame.frame, value);
+                            kf.interpolation_type = interp_type;
+                            kf.interpolator_id = interp_id;
+                            objects.push(Box::new(kf));
+                        }
+                    }
+                }
+            }
+        }
 
-                            if let Some(conditions) = &transition.conditions {
-                                for condition in conditions {
-                                    let input_index = *input_name_to_index
-                                        .get(&condition.input)
-                                        .ok_or_else(|| {
-                                            format!(
-                                                "unknown input referenced in condition: '{}'",
-                                                condition.input
-                                            )
-                                        })?;
-                                    {
-                                        let input_id = input_index as u64;
-                                        let op = condition
-                                            .op
-                                            .as_deref()
-                                            .map(parse_condition_op)
-                                            .unwrap_or(0);
-                                        match condition.value.as_ref() {
-                                            Some(serde_json::Value::Number(_)) => {
-                                                let value = condition
-                                                    .value
-                                                    .as_ref()
-                                                    .and_then(json_value_to_f32)
-                                                    .ok_or_else(|| {
-                                                        format!(
-                                                            "invalid numeric condition value for input '{}'",
-                                                            condition.input
-                                                        )
-                                                    })?;
-                                                objects.push(Box::new(
-                                                    TransitionNumberCondition::new(
-                                                        input_id, op, value,
-                                                    ),
-                                                ));
-                                            }
-                                            Some(serde_json::Value::Bool(_v)) => {
-                                                let bool_op = condition
-                                                    .op
-                                                    .as_deref()
-                                                    .map(parse_condition_op)
-                                                    .unwrap_or(0);
-                                                objects.push(Box::new(
-                                                    TransitionBoolCondition::new(input_id, bool_op),
-                                                ));
-                                            }
-                                            _ => {
-                                                if condition.op.is_some() {
+        if let Some(state_machines) = &artboard_spec.state_machines {
+            for state_machine in state_machines {
+                objects.push(Box::new(StateMachine::new(state_machine.name.clone())));
+
+                let mut input_name_to_index: HashMap<String, usize> = HashMap::new();
+                if let Some(inputs) = &state_machine.inputs {
+                    for (input_index, input) in inputs.iter().enumerate() {
+                        match input {
+                            InputSpec::Number { name, value } => {
+                                objects.push(Box::new(StateMachineNumber {
+                                    name: name.clone(),
+                                    value: *value,
+                                }));
+                                input_name_to_index.insert(name.clone(), input_index);
+                            }
+                            InputSpec::Bool { name, value } => {
+                                objects.push(Box::new(StateMachineBool {
+                                    name: name.clone(),
+                                    value: if *value { 1 } else { 0 },
+                                }));
+                                input_name_to_index.insert(name.clone(), input_index);
+                            }
+                            InputSpec::Trigger { name } => {
+                                objects.push(Box::new(StateMachineTrigger { name: name.clone() }));
+                                input_name_to_index.insert(name.clone(), input_index);
+                            }
+                        }
+                    }
+                }
+
+                for (layer_index, layer) in state_machine.layers.iter().enumerate() {
+                    objects.push(Box::new(StateMachineLayer {
+                        name: format!("Layer {}", layer_index),
+                    }));
+
+                    let has_any = layer.states.iter().any(|s| matches!(s, StateSpec::Any));
+
+                    let mut user_to_final: Vec<usize> = Vec::new();
+                    let mut final_idx = if has_any { 0 } else { 1 };
+                    for _ in &layer.states {
+                        user_to_final.push(final_idx);
+                        final_idx += 1;
+                    }
+
+                    if !has_any {
+                        objects.push(Box::new(AnyState));
+                    }
+
+                    for (user_idx, state) in layer.states.iter().enumerate() {
+                        match state {
+                            StateSpec::Entry => {
+                                objects.push(Box::new(EntryState));
+                            }
+                            StateSpec::Exit => {
+                                objects.push(Box::new(ExitState));
+                            }
+                            StateSpec::Any => {
+                                objects.push(Box::new(AnyState));
+                            }
+                            StateSpec::Animation { animation } => {
+                                let animation_id =
+                                    *animation_name_to_index.get(animation).ok_or_else(|| {
+                                        format!("unknown animation referenced: '{}'", animation)
+                                    })? as u64;
+                                objects.push(Box::new(AnimationState::new(animation_id)));
+                            }
+                        }
+
+                        if let Some(transitions) = &layer.transitions {
+                            for transition in transitions {
+                                if transition.from != user_idx {
+                                    continue;
+                                }
+                                let state_to_id =
+                                    *user_to_final.get(transition.to).ok_or_else(|| {
+                                        format!(
+                                            "transition target index {} out of bounds (layer has {} states)",
+                                            transition.to,
+                                            user_to_final.len()
+                                        )
+                                    })? as u64;
+                                let mut state_transition = StateTransition::new(state_to_id);
+                                if let Some(duration) = transition.duration {
+                                    state_transition.duration = duration;
+                                }
+                                objects.push(Box::new(state_transition));
+
+                                if let Some(conditions) = &transition.conditions {
+                                    for condition in conditions {
+                                        let input_index = *input_name_to_index
+                                            .get(&condition.input)
+                                            .ok_or_else(|| {
+                                                format!(
+                                                    "unknown input referenced in condition: '{}'",
+                                                    condition.input
+                                                )
+                                            })?;
+                                        {
+                                            let input_id = input_index as u64;
+                                            let op = condition
+                                                .op
+                                                .as_deref()
+                                                .map(parse_condition_op)
+                                                .unwrap_or(0);
+                                            match condition.value.as_ref() {
+                                                Some(serde_json::Value::Number(_)) => {
+                                                    let value = condition
+                                                        .value
+                                                        .as_ref()
+                                                        .and_then(json_value_to_f32)
+                                                        .ok_or_else(|| {
+                                                            format!(
+                                                                "invalid numeric condition value for input '{}'",
+                                                                condition.input
+                                                            )
+                                                        })?;
                                                     objects.push(Box::new(
-                                                        TransitionValueCondition { input_id, op },
+                                                        TransitionNumberCondition::new(
+                                                            input_id, op, value,
+                                                        ),
                                                     ));
-                                                } else if input_is_trigger(
-                                                    &condition.input,
-                                                    state_machine.inputs.as_ref(),
-                                                ) {
+                                                }
+                                                Some(serde_json::Value::Bool(_v)) => {
+                                                    let bool_op = condition
+                                                        .op
+                                                        .as_deref()
+                                                        .map(parse_condition_op)
+                                                        .unwrap_or(0);
                                                     objects.push(Box::new(
-                                                        TransitionTriggerCondition { input_id },
+                                                        TransitionBoolCondition::new(
+                                                            input_id, bool_op,
+                                                        ),
                                                     ));
-                                                } else {
-                                                    objects.push(Box::new(
-                                                        TransitionInputCondition { input_id },
-                                                    ));
+                                                }
+                                                _ => {
+                                                    if condition.op.is_some() {
+                                                        objects.push(Box::new(
+                                                            TransitionValueCondition {
+                                                                input_id,
+                                                                op,
+                                                            },
+                                                        ));
+                                                    } else if input_is_trigger(
+                                                        &condition.input,
+                                                        state_machine.inputs.as_ref(),
+                                                    ) {
+                                                        objects.push(Box::new(
+                                                            TransitionTriggerCondition { input_id },
+                                                        ));
+                                                    } else {
+                                                        objects.push(Box::new(
+                                                            TransitionInputCondition { input_id },
+                                                        ));
+                                                    }
                                                 }
                                             }
                                         }
@@ -495,11 +534,12 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
 fn append_object(
     spec: &ObjectSpec,
     parent_index: usize,
+    artboard_start: usize,
     objects: &mut Vec<Box<dyn RiveObject>>,
     name_to_index: &mut HashMap<String, usize>,
 ) -> Result<(), String> {
     let object_index = objects.len();
-    let parent_id = (parent_index - 1) as u64;
+    let parent_id = (parent_index - artboard_start) as u64;
 
     match spec {
         ObjectSpec::Shape {
@@ -519,7 +559,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index)?;
+                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
                 }
             }
         }
@@ -578,7 +618,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index)?;
+                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
                 }
             }
         }
@@ -600,7 +640,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index)?;
+                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
                 }
             }
         }
@@ -633,7 +673,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index)?;
+                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
                 }
             }
         }
@@ -657,7 +697,7 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, objects, name_to_index)?;
+                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
                 }
             }
         }
@@ -796,20 +836,41 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
         ));
     }
 
-    if spec.artboard.width < 0.0 {
-        return Err("artboard width must be non-negative".to_string());
+    let artboard_specs = resolve_artboards(spec)?;
+
+    let mut artboard_names: HashSet<String> = HashSet::new();
+    for artboard_spec in &artboard_specs {
+        if artboard_names.contains(&artboard_spec.name) {
+            return Err(format!("duplicate artboard name '{}'", artboard_spec.name));
+        }
+        artboard_names.insert(artboard_spec.name.clone());
+        validate_artboard_spec(artboard_spec)?;
     }
-    if spec.artboard.height < 0.0 {
-        return Err("artboard height must be non-negative".to_string());
+
+    Ok(())
+}
+
+fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
+    if artboard_spec.width < 0.0 {
+        return Err(format!(
+            "artboard '{}' width must be non-negative",
+            artboard_spec.name
+        ));
+    }
+    if artboard_spec.height < 0.0 {
+        return Err(format!(
+            "artboard '{}' height must be non-negative",
+            artboard_spec.name
+        ));
     }
 
     let mut object_names: HashSet<String> = HashSet::new();
-    for child in &spec.artboard.children {
+    for child in &artboard_spec.children {
         validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
     }
 
     let mut animation_names: HashSet<String> = HashSet::new();
-    if let Some(animations) = &spec.artboard.animations {
+    if let Some(animations) = &artboard_spec.animations {
         for animation in animations {
             if animation.duration == 0 {
                 return Err(format!(
@@ -880,7 +941,7 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
         }
     }
 
-    if let Some(state_machines) = &spec.artboard.state_machines {
+    if let Some(state_machines) = &artboard_spec.state_machines {
         for state_machine in state_machines {
             let mut input_names: HashSet<String> = HashSet::new();
             if let Some(inputs) = &state_machine.inputs {
@@ -1171,10 +1232,11 @@ mod tests {
         }"#;
 
         let scene: SceneSpec = serde_json::from_str(json).unwrap();
-        assert_eq!(scene.artboard.name, "Main");
-        assert_eq!(scene.artboard.width, 500.0);
-        assert_eq!(scene.artboard.children.len(), 0);
-        assert!(scene.artboard.animations.is_none());
+        let ab = scene.artboard.as_ref().unwrap();
+        assert_eq!(ab.name, "Main");
+        assert_eq!(ab.width, 500.0);
+        assert_eq!(ab.children.len(), 0);
+        assert!(ab.animations.is_none());
         assert_eq!(scene.scene_format_version, 1);
     }
 
@@ -1182,14 +1244,15 @@ mod tests {
     fn test_reject_unsupported_scene_format_version() {
         let spec = SceneSpec {
             scene_format_version: 2,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 500.0,
                 height: 500.0,
                 children: vec![],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         let err = match build_scene(&spec) {
@@ -1236,8 +1299,9 @@ mod tests {
         }"#;
 
         let scene: SceneSpec = serde_json::from_str(json).unwrap();
-        assert_eq!(scene.artboard.children.len(), 1);
-        match &scene.artboard.children[0] {
+        let ab = scene.artboard.as_ref().unwrap();
+        assert_eq!(ab.children.len(), 1);
+        match &ab.children[0] {
             ObjectSpec::Shape { name, children, .. } => {
                 assert_eq!(name, "shape_1");
                 assert_eq!(children.as_ref().unwrap().len(), 2);
@@ -1250,14 +1314,15 @@ mod tests {
     fn test_build_minimal_scene() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 500.0,
                 height: 500.0,
                 children: vec![],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         let objects = build_scene(&spec).unwrap();
@@ -1277,7 +1342,7 @@ mod tests {
     fn test_build_scene_with_shape() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 500.0,
                 height: 500.0,
@@ -1305,7 +1370,8 @@ mod tests {
                 }],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         let objects = build_scene(&spec).unwrap();
@@ -1350,7 +1416,7 @@ mod tests {
     fn test_build_scene_with_animation() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 500.0,
                 height: 500.0,
@@ -1393,7 +1459,8 @@ mod tests {
                     }],
                 }]),
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         let objects = build_scene(&spec).unwrap();
@@ -1419,7 +1486,7 @@ mod tests {
     fn test_build_scene_rejects_invalid_color() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 100.0,
                 height: 100.0,
@@ -1429,7 +1496,8 @@ mod tests {
                 }],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         let err = match build_scene(&spec) {
@@ -1443,7 +1511,7 @@ mod tests {
     fn test_build_scene_rejects_oob_transition_index() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 100.0,
                 height: 100.0,
@@ -1462,7 +1530,8 @@ mod tests {
                         }]),
                     }],
                 }]),
-            },
+            }),
+            artboards: None,
         };
 
         let err = match build_scene(&spec) {
@@ -1476,7 +1545,7 @@ mod tests {
     fn test_build_scene_with_path_object() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 100.0,
                 height: 100.0,
@@ -1486,7 +1555,8 @@ mod tests {
                 }],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         let objects = build_scene(&spec).unwrap();
@@ -1503,7 +1573,7 @@ mod tests {
     fn test_gradient_stop_generated_name_alignment() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 100.0,
                 height: 100.0,
@@ -1526,7 +1596,8 @@ mod tests {
                 }],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         let objects = build_scene(&spec).unwrap();
@@ -1543,7 +1614,7 @@ mod tests {
     fn test_trim_path_rejects_shape_parent() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 100.0,
                 height: 100.0,
@@ -1561,7 +1632,8 @@ mod tests {
                 }],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         match build_scene(&spec) {
@@ -1578,7 +1650,7 @@ mod tests {
     fn test_trim_path_accepts_stroke_parent() {
         let spec = SceneSpec {
             scene_format_version: 1,
-            artboard: ArtboardSpec {
+            artboard: Some(ArtboardSpec {
                 name: "Main".to_string(),
                 width: 100.0,
                 height: 100.0,
@@ -1608,9 +1680,378 @@ mod tests {
                 }],
                 animations: None,
                 state_machines: None,
-            },
+            }),
+            artboards: None,
         };
 
         build_scene(&spec).unwrap();
+    }
+
+    #[test]
+    fn test_build_multi_artboard_scene() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "A".to_string(),
+                    width: 400.0,
+                    height: 300.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "shape_a".to_string(),
+                        x: None,
+                        y: None,
+                        children: Some(vec![ObjectSpec::Ellipse {
+                            name: "ellipse_a".to_string(),
+                            width: 50.0,
+                            height: 50.0,
+                            origin_x: None,
+                            origin_y: None,
+                        }]),
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "B".to_string(),
+                    width: 800.0,
+                    height: 600.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "shape_b".to_string(),
+                        x: None,
+                        y: None,
+                        children: Some(vec![ObjectSpec::Rectangle {
+                            name: "rect_b".to_string(),
+                            width: 100.0,
+                            height: 80.0,
+                            corner_radius: None,
+                            origin_x: None,
+                            origin_y: None,
+                        }]),
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let objects = build_scene(&spec).unwrap();
+
+        assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
+        assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
+        assert_eq!(objects[2].type_key(), type_keys::SHAPE);
+        assert_eq!(objects[3].type_key(), type_keys::ELLIPSE);
+        assert_eq!(objects[4].type_key(), type_keys::ARTBOARD);
+        assert_eq!(objects[5].type_key(), type_keys::SHAPE);
+        assert_eq!(objects[6].type_key(), type_keys::RECTANGLE);
+
+        let shape_a_parent = objects[2]
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+            .unwrap();
+        assert_eq!(shape_a_parent.value, PropertyValue::UInt(0));
+
+        let ellipse_a_parent = objects[3]
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+            .unwrap();
+        assert_eq!(ellipse_a_parent.value, PropertyValue::UInt(1));
+
+        let shape_b_parent = objects[5]
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+            .unwrap();
+        assert_eq!(shape_b_parent.value, PropertyValue::UInt(0));
+
+        let rect_b_parent = objects[6]
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+            .unwrap();
+        assert_eq!(rect_b_parent.value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_reject_both_artboard_and_artboards() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "A".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: Some(vec![ArtboardSpec {
+                name: "B".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }]),
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected error"),
+            Err(e) => e,
+        };
+        assert!(err.contains("not both"));
+    }
+
+    #[test]
+    fn test_reject_neither_artboard_nor_artboards() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected error"),
+            Err(e) => e,
+        };
+        assert!(err.contains("must specify"));
+    }
+
+    #[test]
+    fn test_reject_empty_artboards_array() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![]),
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected error"),
+            Err(e) => e,
+        };
+        assert!(err.contains("must not be empty"));
+    }
+
+    #[test]
+    fn test_reject_duplicate_artboard_names() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "Main".to_string(),
+                    width: 100.0,
+                    height: 100.0,
+                    children: vec![],
+                    animations: None,
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "Main".to_string(),
+                    width: 200.0,
+                    height: 200.0,
+                    children: vec![],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected error"),
+            Err(e) => e,
+        };
+        assert!(err.contains("duplicate artboard name"));
+    }
+
+    #[test]
+    fn test_multi_artboard_with_animation() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "A".to_string(),
+                    width: 100.0,
+                    height: 100.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "s_a".to_string(),
+                        x: None,
+                        y: None,
+                        children: Some(vec![ObjectSpec::Ellipse {
+                            name: "e_a".to_string(),
+                            width: 50.0,
+                            height: 50.0,
+                            origin_x: None,
+                            origin_y: None,
+                        }]),
+                    }],
+                    animations: Some(vec![AnimationSpec {
+                        name: "anim_a".to_string(),
+                        fps: 60,
+                        duration: 60,
+                        speed: None,
+                        loop_type: None,
+                        interpolators: None,
+                        keyframes: vec![KeyframeGroupSpec {
+                            object: "e_a".to_string(),
+                            property: "width".to_string(),
+                            frames: vec![
+                                KeyframeSpec {
+                                    frame: 0,
+                                    value: serde_json::json!(50.0),
+                                    interpolation: None,
+                                    interpolator: None,
+                                },
+                                KeyframeSpec {
+                                    frame: 59,
+                                    value: serde_json::json!(100.0),
+                                    interpolation: None,
+                                    interpolator: None,
+                                },
+                            ],
+                        }],
+                    }]),
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "B".to_string(),
+                    width: 200.0,
+                    height: 200.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "s_b".to_string(),
+                        x: None,
+                        y: None,
+                        children: Some(vec![ObjectSpec::Ellipse {
+                            name: "e_b".to_string(),
+                            width: 80.0,
+                            height: 80.0,
+                            origin_x: None,
+                            origin_y: None,
+                        }]),
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let objects = build_scene(&spec).unwrap();
+
+        let keyed_obj = objects
+            .iter()
+            .find(|o| o.type_key() == type_keys::KEYED_OBJECT)
+            .unwrap();
+        let keyed_obj_id = keyed_obj
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::KEYED_OBJECT_ID)
+            .unwrap();
+        assert_eq!(keyed_obj_id.value, PropertyValue::UInt(2));
+
+        let artboard_b = objects
+            .iter()
+            .filter(|o| o.type_key() == type_keys::ARTBOARD)
+            .nth(1)
+            .unwrap();
+        let b_name = artboard_b
+            .properties()
+            .into_iter()
+            .find(|p| p.key == property_keys::COMPONENT_NAME)
+            .unwrap();
+        assert_eq!(b_name.value, PropertyValue::String("B".to_string()));
+    }
+
+    #[test]
+    fn test_parse_multi_artboard_json() {
+        let json = r#"{
+            "scene_format_version": 1,
+            "artboards": [
+                {
+                    "name": "X",
+                    "width": 100,
+                    "height": 100,
+                    "children": []
+                },
+                {
+                    "name": "Y",
+                    "width": 200,
+                    "height": 200,
+                    "children": []
+                }
+            ]
+        }"#;
+
+        let scene: SceneSpec = serde_json::from_str(json).unwrap();
+        assert!(scene.artboard.is_none());
+        let abs = scene.artboards.as_ref().unwrap();
+        assert_eq!(abs.len(), 2);
+        assert_eq!(abs[0].name, "X");
+        assert_eq!(abs[1].name, "Y");
+
+        let objects = build_scene(&scene).unwrap();
+        assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
+        assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
+        assert_eq!(objects[2].type_key(), type_keys::ARTBOARD);
+    }
+
+    #[test]
+    fn test_single_artboard_json_backward_compatible() {
+        let json = r#"{
+            "scene_format_version": 1,
+            "artboard": {
+                "name": "Main",
+                "width": 500,
+                "height": 500,
+                "children": []
+            }
+        }"#;
+
+        let scene: SceneSpec = serde_json::from_str(json).unwrap();
+        assert!(scene.artboard.is_some());
+        assert!(scene.artboards.is_none());
+
+        let objects = build_scene(&scene).unwrap();
+        assert_eq!(objects.len(), 2);
+        assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
+        assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
+    }
+
+    #[test]
+    fn test_multi_artboard_names_can_overlap_object_names() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "A".to_string(),
+                    width: 100.0,
+                    height: 100.0,
+                    children: vec![ObjectSpec::Node {
+                        name: "node_1".to_string(),
+                        x: None,
+                        y: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "B".to_string(),
+                    width: 100.0,
+                    height: 100.0,
+                    children: vec![ObjectSpec::Node {
+                        name: "node_1".to_string(),
+                        x: None,
+                        y: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert_eq!(objects.len(), 5);
     }
 }

@@ -1,0 +1,87 @@
+{
+  "scene_format_version": 1,
+  "artboards": [
+    {
+      "name": "Screen A",
+      "width": 400,
+      "height": 300,
+      "children": [
+        {
+          "type": "shape",
+          "name": "circle",
+          "x": 200,
+          "y": 150,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "ellipse_a",
+              "width": 100,
+              "height": 100
+            },
+            {
+              "type": "fill",
+              "name": "fill_a",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "color_a",
+                  "color": "FFFF0000"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "name": "fade_in",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": [
+            {
+              "object": "circle",
+              "property": "opacity",
+              "frames": [
+                { "frame": 0, "value": 0.0 },
+                { "frame": 59, "value": 1.0 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Screen B",
+      "width": 800,
+      "height": 600,
+      "children": [
+        {
+          "type": "shape",
+          "name": "box",
+          "x": 400,
+          "y": 300,
+          "children": [
+            {
+              "type": "rectangle",
+              "name": "rect_b",
+              "width": 200,
+              "height": 150,
+              "corner_radius": 10
+            },
+            {
+              "type": "fill",
+              "name": "fill_b",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "color_b",
+                  "color": "FF0000FF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
