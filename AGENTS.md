@@ -107,19 +107,22 @@ cli/mod.rs
 
 ```bash
 cargo build
-cargo test                                    # 177 tests (159 unit + 18 e2e)
+cargo test                                    # 191 tests (164 unit + 27 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
 cargo run -- inspect out.riv --json           # dump as JSON
+cargo run -- inspect out.riv --type-key 1 --property-key 4
+                                              # filtered inspect (type/object/property)
 cargo clippy -- -D warnings                   # lint
 cargo fmt --check                             # format check
 ```
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **177 tests total**: **159 unit tests** + **18 e2e tests**
+- `cargo test` currently runs **191 tests total**: **164 unit tests** + **27 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
+- `inspect` supports focused diagnostics via filters: `--type-key`, `--type-name`, `--object-index`, and `--property-key`
 - Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`, `nested_artboard.json`)
 - Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
 

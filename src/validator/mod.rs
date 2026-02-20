@@ -6,6 +6,23 @@ use crate::objects::core::{
     BackingType, is_bool_property, property_backing_type, property_keys, type_keys,
 };
 
+#[derive(Debug, Clone, Default)]
+pub struct InspectFilter {
+    pub type_keys: Vec<u16>,
+    pub type_names: Vec<String>,
+    pub object_indices: Vec<usize>,
+    pub property_keys: Vec<u16>,
+}
+
+impl InspectFilter {
+    fn is_active(&self) -> bool {
+        !self.type_keys.is_empty()
+            || !self.type_names.is_empty()
+            || !self.object_indices.is_empty()
+            || !self.property_keys.is_empty()
+    }
+}
+
 pub struct BinaryReader<'a> {
     data: &'a [u8],
     pos: usize,
@@ -114,7 +131,7 @@ pub struct ParsedRiv {
     pub objects: Vec<RivObject>,
 }
 
-pub fn parse_riv(data: &[u8]) -> Result<ParsedRiv, String> {
+pub fn parse_riv(data: &[u8], filter: &InspectFilter) -> Result<ParsedRiv, String> {
     let mut reader = BinaryReader::new(data);
 
     let fingerprint = reader
@@ -260,12 +277,14 @@ pub fn parse_riv(data: &[u8]) -> Result<ParsedRiv, String> {
         });
     }
 
-    Ok(ParsedRiv {
+    let parsed = ParsedRiv {
         header,
         toc_property_keys,
         toc_backing_types,
         objects,
-    })
+    };
+
+    Ok(apply_inspect_filter(parsed, filter))
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -278,7 +297,7 @@ pub struct ValidationReport {
 }
 
 pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
-    let parsed = parse_riv(data)?;
+    let parsed = parse_riv(data, &InspectFilter::default())?;
 
     let mut type_counts: HashMap<u16, usize> = HashMap::new();
     for obj in &parsed.objects {
@@ -373,8 +392,41 @@ fn type_name(key: u16) -> &'static str {
     }
 }
 
-pub fn inspect_riv(data: &[u8]) -> Result<String, String> {
-    let parsed = parse_riv(data)?;
+fn matches_object_filter(filter: &InspectFilter, index: usize, object: &RivObject) -> bool {
+    let type_key_match = filter.type_keys.is_empty() || filter.type_keys.contains(&object.type_key);
+    let type_name_match = filter.type_names.is_empty()
+        || filter
+            .type_names
+            .iter()
+            .any(|name| name.eq_ignore_ascii_case(type_name(object.type_key)));
+    let index_match = filter.object_indices.is_empty() || filter.object_indices.contains(&index);
+
+    type_key_match && type_name_match && index_match
+}
+
+fn apply_inspect_filter(mut parsed: ParsedRiv, filter: &InspectFilter) -> ParsedRiv {
+    let mut filtered_objects = Vec::new();
+
+    for (index, mut object) in parsed.objects.into_iter().enumerate() {
+        if !matches_object_filter(filter, index, &object) {
+            continue;
+        }
+
+        if !filter.property_keys.is_empty() {
+            object
+                .properties
+                .retain(|property| filter.property_keys.contains(&property.key));
+        }
+
+        filtered_objects.push(object);
+    }
+
+    parsed.objects = filtered_objects;
+    parsed
+}
+
+pub fn inspect_riv(data: &[u8], filter: &InspectFilter) -> Result<String, String> {
+    let parsed = parse_riv(data, filter)?;
     let mut out = std::string::String::new();
 
     let artboard_count = parsed
@@ -392,6 +444,10 @@ pub fn inspect_riv(data: &[u8]) -> Result<String, String> {
         parsed.toc_property_keys.len()
     ));
     out.push_str(&format!("Objects: {}\n", parsed.objects.len()));
+    if parsed.objects.is_empty() && filter.is_active() {
+        out.push_str("No objects matched the provided filters.\n");
+        return Ok(out);
+    }
     if artboard_count > 1 {
         out.push_str(&format!("Artboards: {}\n", artboard_count));
     }
@@ -491,7 +547,7 @@ mod tests {
     #[test]
     fn test_parse_riv_empty() {
         let data = encode_riv(&[], 0);
-        let parsed = parse_riv(&data).unwrap();
+        let parsed = parse_riv(&data, &InspectFilter::default()).unwrap();
         assert_eq!(parsed.header.major_version, 7);
         assert_eq!(parsed.header.minor_version, 0);
         assert_eq!(parsed.header.file_id, 0);
@@ -505,7 +561,7 @@ mod tests {
         let backboard = Backboard;
         let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
         let data = encode_riv(&[&backboard, &artboard], 42);
-        let parsed = parse_riv(&data).unwrap();
+        let parsed = parse_riv(&data, &InspectFilter::default()).unwrap();
 
         assert_eq!(parsed.header.major_version, 7);
         assert_eq!(parsed.header.minor_version, 0);
@@ -551,7 +607,7 @@ mod tests {
         let backboard = Backboard;
         let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
         let data = encode_riv(&[&backboard, &artboard], 0);
-        let output = inspect_riv(&data).unwrap();
+        let output = inspect_riv(&data, &InspectFilter::default()).unwrap();
 
         assert!(output.contains("Backboard"));
         assert!(output.contains("Artboard"));

@@ -34,5 +34,29 @@ pub enum Command {
         file: PathBuf,
         #[arg(long, help = "Output parsed result as JSON")]
         json: bool,
+        #[arg(
+            long = "type-key",
+            value_name = "N",
+            help = "Filter by object type key"
+        )]
+        type_key: Vec<u16>,
+        #[arg(
+            long = "type-name",
+            value_name = "NAME",
+            help = "Filter by object type name (case-insensitive)"
+        )]
+        type_name: Vec<String>,
+        #[arg(
+            long = "object-index",
+            value_name = "N",
+            help = "Filter by global object index"
+        )]
+        object_index: Vec<usize>,
+        #[arg(
+            long = "property-key",
+            value_name = "N",
+            help = "Filter displayed properties by key"
+        )]
+        property_key: Vec<u16>,
     },
 }

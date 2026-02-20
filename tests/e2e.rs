@@ -2,6 +2,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 const ARTBOARD_TYPE_KEY: u64 = 1;
+const BACKBOARD_TYPE_KEY: u64 = 23;
+const COMPONENT_NAME_KEY: u64 = 4;
 const ARTBOARD_WIDTH_KEY: u64 = 7;
 const ARTBOARD_HEIGHT_KEY: u64 = 8;
 
@@ -227,6 +229,260 @@ fn test_inspect_json_flag() {
         serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
     assert!(parsed.get("header").is_some());
     assert!(parsed.get("objects").is_some());
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_type_key_json() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("inspect_filter_type_key_json");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--json",
+        "--type-key",
+        "1",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        insp.status.success(),
+        "inspect --json --type-key failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&insp.stdout).expect("inspect output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|v| v.as_array())
+        .expect("objects array missing");
+    assert_eq!(objects.len(), 1);
+    assert_eq!(
+        objects[0].get("type_key").and_then(|v| v.as_u64()),
+        Some(ARTBOARD_TYPE_KEY)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_type_name_case_insensitive_json() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("inspect_filter_type_name_json");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--json",
+        "--type-name",
+        "artboard",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        insp.status.success(),
+        "inspect --json --type-name failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&insp.stdout).expect("inspect output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|v| v.as_array())
+        .expect("objects array missing");
+    assert_eq!(objects.len(), 1);
+    assert_eq!(
+        objects[0].get("type_key").and_then(|v| v.as_u64()),
+        Some(ARTBOARD_TYPE_KEY)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_object_index_json() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("inspect_filter_object_index_json");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--json",
+        "--object-index",
+        "0",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        insp.status.success(),
+        "inspect --json --object-index failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&insp.stdout).expect("inspect output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|v| v.as_array())
+        .expect("objects array missing");
+    assert_eq!(objects.len(), 1);
+    assert_eq!(
+        objects[0].get("type_key").and_then(|v| v.as_u64()),
+        Some(BACKBOARD_TYPE_KEY)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_property_key_json() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("inspect_filter_property_key_json");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--json",
+        "--type-key",
+        "1",
+        "--property-key",
+        "4",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        insp.status.success(),
+        "inspect --json --property-key failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&insp.stdout).expect("inspect output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|v| v.as_array())
+        .expect("objects array missing");
+    assert_eq!(objects.len(), 1);
+    let properties = objects[0]
+        .get("properties")
+        .and_then(|v| v.as_array())
+        .expect("properties array missing");
+    assert_eq!(properties.len(), 1);
+    assert_eq!(
+        properties[0].get("key").and_then(|v| v.as_u64()),
+        Some(COMPONENT_NAME_KEY)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_combined_and_logic_json() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("inspect_filter_combined_json");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--json",
+        "--type-name",
+        "ARTBOARD",
+        "--object-index",
+        "1",
+        "--property-key",
+        "4",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        insp.status.success(),
+        "inspect --json combined filters failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&insp.stdout).expect("inspect output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|v| v.as_array())
+        .expect("objects array missing");
+    assert_eq!(objects.len(), 1);
+    assert_eq!(
+        objects[0].get("type_key").and_then(|v| v.as_u64()),
+        Some(ARTBOARD_TYPE_KEY)
+    );
+    let properties = objects[0]
+        .get("properties")
+        .and_then(|v| v.as_array())
+        .expect("properties array missing");
+    assert_eq!(properties.len(), 1);
+    assert_eq!(
+        properties[0].get("key").and_then(|v| v.as_u64()),
+        Some(COMPONENT_NAME_KEY)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_no_match_human_output() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("inspect_filter_no_match");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--object-index", "99", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect with non-matching filters failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("No objects matched the provided filters."),
+        "expected no-match message in output, got: {}",
+        stdout
+    );
     cleanup(&output);
 }
 
