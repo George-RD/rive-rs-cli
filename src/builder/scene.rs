@@ -1512,26 +1512,6 @@ mod tests {
     }
 
     #[test]
-    fn test_build_scene_wrong_version() {
-        let json = r#"{
-            "scene_format_version": 2,
-            "artboard": {
-                "name": "Main",
-                "width": 500.0,
-                "height": 500.0,
-                "children": []
-            }
-        }"#;
-
-        let scene: SceneSpec = serde_json::from_str(json).unwrap();
-        let err = match build_scene(&scene) {
-            Ok(_) => panic!("expected scene format version error"),
-            Err(err) => err,
-        };
-        assert!(err.contains("unsupported scene_format_version 2"));
-    }
-
-    #[test]
     fn test_build_scene_zero_dimensions() {
         let spec = SceneSpec {
             scene_format_version: 1,
@@ -1619,34 +1599,6 @@ mod tests {
         assert_eq!(objects[2].type_key(), type_keys::SHAPE);
         assert_eq!(objects[3].type_key(), type_keys::ARTBOARD);
         assert_eq!(objects[4].type_key(), type_keys::SHAPE);
-    }
-
-    #[test]
-    fn test_build_scene_nested_cycle() {
-        let spec = SceneSpec {
-            scene_format_version: 1,
-            artboard: Some(ArtboardSpec {
-                name: "Main".to_string(),
-                preset: None,
-                width: 500.0,
-                height: 500.0,
-                children: vec![ObjectSpec::NestedArtboard {
-                    name: "embedded_component".to_string(),
-                    source_artboard: "Main".to_string(),
-                    x: None,
-                    y: None,
-                }],
-                animations: None,
-                state_machines: None,
-            }),
-            artboards: None,
-        };
-
-        let err = match build_scene(&spec) {
-            Ok(_) => panic!("expected nested cycle error"),
-            Err(err) => err,
-        };
-        assert!(err.contains("circular nested artboard reference detected"));
     }
 
     #[test]

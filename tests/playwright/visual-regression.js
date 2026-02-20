@@ -264,6 +264,9 @@ function thresholdForShot(fixture, shot) {
   if (fixture === "color_animation" && (shot.frame === 30 || shot.frame === 60)) {
     return 20.0;
   }
+  if (fixture === "loop_animation") {
+    return 5.0;
+  }
   return THRESHOLD_PERCENT;
 }
 

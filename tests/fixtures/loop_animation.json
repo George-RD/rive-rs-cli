@@ -42,7 +42,7 @@
         "speed": 2.0,
         "keyframes": [
           {
-            "object": "SpinRect",
+            "object": "Spinner",
             "property": "x",
             "frames": [
               {
