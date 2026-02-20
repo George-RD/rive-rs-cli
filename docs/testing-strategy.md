@@ -94,7 +94,7 @@ This overwrites `tests/playwright/baselines/*.png` with current renders. Commit 
 
 ## Fixture Corpus
 
-### Current Fixtures (Post-PR #36)
+### Current Fixtures
 
 | Fixture | Category | Objects | Animations | Golden frames |
 |---------|----------|---------|------------|---------------|
@@ -108,6 +108,11 @@ This overwrites `tests/playwright/baselines/*.png` with current renders. Commit 
 | `multi_artboard.json` | Multi/Animated | 2 artboards, opacity fade + X slide animations | 2 | f0, f30 |
 | `nested_artboard.json` | Multi/Static | Main embeds Component via NestedArtboard | None | f0 |
 | `artboard_preset.json` | Static | Mobile preset (390×844), empty artboard | None | f0 |
+| `gradients.json` | Static | LinearGradient and RadialGradient with gradient stops | None | f0 |
+| `color_animation.json` | Animated | Solid color paint with KeyFrameColor progression | 1 (120 frames) | f0, f30, f60 |
+| `loop_animation.json` | Animated | Loop-type linear animation with speed override | 1 (60 frames) | f0, f30 |
+| `stroke_styles.json` | Static | Stroke cap/join/thickness combinations with fill overlay | None | f0 |
+| `empty_artboard.json` | Edge/Static | Artboard without drawable children | None | f0 |
 
 ### Growth Plan
 
@@ -160,7 +165,7 @@ Planned but not yet implemented (tracked in #17):
 
 ## Future: Animation Frame Diffing (Multi-Frame)
 
-Current state: `animation.json` captures 3 frames (f0, f30, f60). Other animated fixtures capture only f0.
+Current state: `animation.json`, `color_animation.json`, `cubic_easing.json`, `loop_animation.json`, and `multi_artboard.json` use multi-frame captures. Static fixtures capture f0.
 
 **Expansion plan**:
 

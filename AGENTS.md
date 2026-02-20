@@ -31,7 +31,7 @@ src/
     └── mod.rs           # BinaryReader, parse_riv, validate_riv, inspect_riv
 tests/
 ├── e2e.rs               # Integration tests (cargo run subprocess)
-├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path, cubic_easing, trim_path, multi_artboard, nested_artboard)
+├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path, cubic_easing, trim_path, multi_artboard, nested_artboard, artboard_preset, gradients, color_animation, loop_animation, stroke_styles, empty_artboard)
 └── playwright/          # Runtime load harness + regression script
 ```
 
@@ -107,7 +107,7 @@ cli/mod.rs
 
 ```bash
 cargo build
-cargo test                                    # 191 tests (164 unit + 27 e2e)
+cargo test                                    # 224 tests (182 unit + 42 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
@@ -120,12 +120,12 @@ cargo fmt --check                             # format check
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **191 tests total**: **164 unit tests** + **27 e2e tests**
+- `cargo test` currently runs **224 tests total**: **182 unit tests** + **42 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
 - `inspect` supports focused diagnostics via filters: `--type-key`, `--type-name`, `--object-index`, and `--property-key`
-- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`, `nested_artboard.json`, `artboard_preset.json`)
+- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`, `nested_artboard.json`, `artboard_preset.json`, `gradients.json`, `color_animation.json`, `loop_animation.json`, `stroke_styles.json`, `empty_artboard.json`)
 - Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
-- Golden-frame visual regression: 17 baselines at 1024×1024 (2x Retina), multi-frame captures for animated fixtures (animation f0/f30/f60, cubic_easing f0/f15/f30/f45/f60, multi_artboard f0/f30)
+- Golden-frame visual regression: 25 baselines at 1024×1024 (2x Retina), multi-frame captures for animated fixtures (animation f0/f30/f60, color_animation f0/f30/f60, cubic_easing f0/f15/f30/f45/f60, loop_animation f0/f30, multi_artboard f0/f30)
 - Visual regression run: `npx -y -p playwright node tests/playwright/visual-regression.js`
 - Update baselines: `npx -y -p playwright node tests/playwright/visual-regression.js --update`
 
