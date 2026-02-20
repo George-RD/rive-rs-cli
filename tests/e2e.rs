@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use std::process::Command;
 
+const ARTBOARD_TYPE_KEY: u64 = 1;
+
 fn cargo_run(args: &[&str]) -> std::process::Output {
     Command::new("cargo")
         .args(["run", "--quiet", "--"])
@@ -286,5 +288,128 @@ fn test_generate_trim_path() {
     assert!(output.exists());
     let bytes = std::fs::read(&output).unwrap();
     assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_multi_artboard() {
+    let input = fixture_path("multi_artboard.json");
+    let output = temp_output("multi_artboard");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_multi_artboard() {
+    let input = fixture_path("multi_artboard.json");
+    let output = temp_output("validate_multi_artboard");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_multi_artboard() {
+    let input = fixture_path("multi_artboard.json");
+    let output = temp_output("inspect_multi_artboard");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboards: 2"),
+        "expected multi-artboard count in output, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("Screen A"),
+        "expected Screen A in output, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("Screen B"),
+        "expected Screen B in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_multi_artboard() {
+    let input = fixture_path("multi_artboard.json");
+    let output = temp_output("inspect_json_multi");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+    let artboard_count = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == ARTBOARD_TYPE_KEY)
+        .count();
+    assert_eq!(artboard_count, 2);
     cleanup(&output);
 }

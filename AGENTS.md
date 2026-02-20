@@ -31,15 +31,15 @@ src/
     └── mod.rs           # BinaryReader, parse_riv, validate_riv, inspect_riv
 tests/
 ├── e2e.rs               # Integration tests (cargo run subprocess)
-├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path, cubic_easing, trim_path)
+├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path, cubic_easing, trim_path, multi_artboard)
 └── playwright/          # Runtime load harness + regression script
 ```
 
 ## CURRENT WORKTREE SNAPSHOT
 
 - Branch: `main`
-- All prior work merged (PRs #21-#26)
-- Active development on `feat/golden-frame-pr27` branch
+- All prior work merged (PRs #21-#33)
+- Multi-artboard support added (PR #33, issue #29)
 
 ## WHERE TO LOOK
 
@@ -101,12 +101,13 @@ cli/mod.rs
 - **Artboard property order**: width(7) → height(8) → name(4) — no parentId
 - **NEVER use TrimPath mode_value 0** — valid modes are 1 (sequential) or 2 (synchronized); mode 0 causes runtime InvalidObject
 - **TrimPath parent must be a ShapePaint (Stroke/Fill), NOT a Shape** — EffectsContainer::from() only accepts ShapePaint types
+- **NEVER use global object indices across artboards** — parent_id must be artboard-local (`parent_global - artboard_start`); each artboard has independent object/animation/interpolator index scopes
 
 ## COMMANDS
 
 ```bash
 cargo build
-cargo test                                    # 149 tests (137 unit + 12 e2e)
+cargo test                                    # 169 tests (153 unit + 16 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
@@ -117,9 +118,9 @@ cargo fmt --check                             # format check
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **149 tests total**: **137 unit tests** + **12 e2e tests**
+- `cargo test` currently runs **169 tests total**: **153 unit tests** + **16 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
-- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`)
+- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`)
 - Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
 
 ## BINARY FORMAT QUICK REF
@@ -128,7 +129,7 @@ cargo fmt --check                             # format check
 - **ToC**: property keys (varuint, 0-terminated) + backing bits (2-bit per key, 16 per uint32 LE)
 - **Backing types**: uint/bool=0, string=1, float=2, color=3
 - **Object**: typeKey(varuint) + [propKey(varuint) + value]* + 0 terminator
-- **Hierarchy**: sequential order, parent-child via parentId (artboard-local index, 0-based excluding Backboard)
+- **Hierarchy**: sequential order, parent-child via parentId (artboard-local index, 0-based excluding Backboard); supports multiple artboards per file with per-artboard object/animation/interpolator scoping
 
 ## NOTES
 

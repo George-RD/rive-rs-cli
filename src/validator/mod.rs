@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::objects::core::{BackingType, is_bool_property, property_backing_type, type_keys};
+use crate::objects::core::{
+    BackingType, is_bool_property, property_backing_type, property_keys, type_keys,
+};
 
 pub struct BinaryReader<'a> {
     data: &'a [u8],
@@ -374,6 +376,12 @@ pub fn inspect_riv(data: &[u8]) -> Result<String, String> {
     let parsed = parse_riv(data)?;
     let mut out = std::string::String::new();
 
+    let artboard_count = parsed
+        .objects
+        .iter()
+        .filter(|o| o.type_key == type_keys::ARTBOARD)
+        .count();
+
     out.push_str(&format!(
         "RIVE v{}.{} file_id={}\n",
         parsed.header.major_version, parsed.header.minor_version, parsed.header.file_id
@@ -383,14 +391,46 @@ pub fn inspect_riv(data: &[u8]) -> Result<String, String> {
         parsed.toc_property_keys.len()
     ));
     out.push_str(&format!("Objects: {}\n", parsed.objects.len()));
+    if artboard_count > 1 {
+        out.push_str(&format!("Artboards: {}\n", artboard_count));
+    }
 
+    let mut artboard_idx = 0;
+    let mut local_idx: usize = 0;
     for (i, obj) in parsed.objects.iter().enumerate() {
-        out.push_str(&format!(
-            "[{}] type={} ({})\n",
-            i,
-            obj.type_key,
-            type_name(obj.type_key)
-        ));
+        if obj.type_key == type_keys::ARTBOARD {
+            if artboard_count > 1 {
+                let name = obj
+                    .properties
+                    .iter()
+                    .find(|p| p.key == property_keys::COMPONENT_NAME)
+                    .and_then(|p| match &p.value {
+                        PropertyValueRead::String(s) => Some(s.as_str()),
+                        _ => None,
+                    })
+                    .unwrap_or("unnamed");
+                out.push_str(&format!("--- Artboard {} ({}) ---\n", artboard_idx, name));
+            }
+            artboard_idx += 1;
+            local_idx = 0;
+        }
+        if artboard_count > 1 {
+            out.push_str(&format!(
+                "[{}:{}] type={} ({})\n",
+                i,
+                local_idx,
+                obj.type_key,
+                type_name(obj.type_key)
+            ));
+        } else {
+            out.push_str(&format!(
+                "[{}] type={} ({})\n",
+                i,
+                obj.type_key,
+                type_name(obj.type_key)
+            ));
+        }
+        local_idx += 1;
         for prop in &obj.properties {
             let val_str = match &prop.value {
                 PropertyValueRead::UInt(v) => format!("uint({})", v),

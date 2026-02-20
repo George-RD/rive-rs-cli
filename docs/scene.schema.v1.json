@@ -3,17 +3,29 @@
   "$id": "https://github.com/George-RD/rive-rs-cli/docs/scene.schema.v1.json",
   "title": "rive-cli SceneSpec v1",
   "type": "object",
-  "required": ["scene_format_version", "artboard"],
-  "properties": {
-    "scene_format_version": {
-      "type": "integer",
-      "const": 1
+  "required": ["scene_format_version"],
+  "oneOf": [
+    {
+      "required": ["artboard"],
+      "properties": {
+        "scene_format_version": { "type": "integer", "const": 1 },
+        "artboard": { "$ref": "#/$defs/artboard" }
+      },
+      "unevaluatedProperties": false
     },
-    "artboard": {
-      "$ref": "#/$defs/artboard"
+    {
+      "required": ["artboards"],
+      "properties": {
+        "scene_format_version": { "type": "integer", "const": 1 },
+        "artboards": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/artboard" },
+          "minItems": 1
+        }
+      },
+      "unevaluatedProperties": false
     }
-  },
-  "unevaluatedProperties": false,
+  ],
   "$defs": {
     "artboard": {
       "type": "object",
