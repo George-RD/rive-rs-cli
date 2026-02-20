@@ -413,3 +413,67 @@ fn test_inspect_json_multi_artboard() {
     assert_eq!(artboard_count, 2);
     cleanup(&output);
 }
+
+#[test]
+fn test_generate_nested_artboard() {
+    let input = fixture_path("nested_artboard.json");
+    let output = temp_output("nested_artboard");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_nested_artboard() {
+    let input = fixture_path("nested_artboard.json");
+    let output = temp_output("inspect_nested_artboard");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("NestedArtboard"),
+        "expected 'NestedArtboard' in output, got: {}",
+        stdout
+    );
+
+    cleanup(&output);
+}

@@ -1,0 +1,49 @@
+{
+  "scene_format_version": 1,
+  "artboards": [
+    {
+      "name": "Main",
+      "width": 500,
+      "height": 500,
+      "children": [
+        {
+          "type": "nested_artboard",
+          "name": "embedded_component",
+          "source_artboard": "Component",
+          "x": 100,
+          "y": 100
+        }
+      ]
+    },
+    {
+      "name": "Component",
+      "width": 200,
+      "height": 200,
+      "children": [
+        {
+          "type": "shape",
+          "name": "icon_shape",
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "icon_circle",
+              "width": 100,
+              "height": 100
+            },
+            {
+              "type": "fill",
+              "name": "icon_fill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "icon_color",
+                  "color": "FF00CC88"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

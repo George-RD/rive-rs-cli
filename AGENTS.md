@@ -21,7 +21,7 @@ src/
 │   └── toc.rs           # Table of contents (2-bit backing types)
 ├── objects/             # Rive object type definitions (see objects/AGENTS.md)
 │   ├── core.rs          # RiveObject trait, type_keys, property_keys
-│   ├── artboard.rs      # Artboard, Backboard
+│   ├── artboard.rs      # Artboard, Backboard, NestedArtboard
 │   ├── shapes.rs        # Shape, Ellipse, Rectangle, Fill, Stroke, Gradients, TrimPath
 │   ├── animation.rs     # LinearAnimation, KeyFrame types, CubicEaseInterpolator
 │   └── state_machine.rs # StateMachine, Layer, States, Transitions, Conditions
@@ -31,7 +31,7 @@ src/
     └── mod.rs           # BinaryReader, parse_riv, validate_riv, inspect_riv
 tests/
 ├── e2e.rs               # Integration tests (cargo run subprocess)
-├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path, cubic_easing, trim_path, multi_artboard)
+├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path, cubic_easing, trim_path, multi_artboard, nested_artboard)
 └── playwright/          # Runtime load harness + regression script
 ```
 
@@ -107,7 +107,7 @@ cli/mod.rs
 
 ```bash
 cargo build
-cargo test                                    # 169 tests (153 unit + 16 e2e)
+cargo test                                    # 177 tests (159 unit + 18 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
@@ -118,9 +118,9 @@ cargo fmt --check                             # format check
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **169 tests total**: **153 unit tests** + **16 e2e tests**
+- `cargo test` currently runs **177 tests total**: **159 unit tests** + **18 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
-- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`)
+- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`, `nested_artboard.json`)
 - Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
 
 ## BINARY FORMAT QUICK REF

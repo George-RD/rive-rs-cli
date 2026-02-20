@@ -62,7 +62,8 @@
         { "$ref": "#/$defs/gradient_stop" },
         { "$ref": "#/$defs/node" },
         { "$ref": "#/$defs/path" },
-        { "$ref": "#/$defs/trim_path" }
+        { "$ref": "#/$defs/trim_path" },
+        { "$ref": "#/$defs/nested_artboard" }
       ],
       "unevaluatedProperties": false
     },
@@ -255,6 +256,22 @@
             "end": { "type": "number", "minimum": 0 },
             "offset": { "type": "number" },
             "mode": { "type": "integer", "enum": [1, 2] }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "nested_artboard": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "type": "object",
+          "required": ["source_artboard"],
+          "properties": {
+            "type": { "const": "nested_artboard" },
+            "source_artboard": { "type": "string", "minLength": 1 },
+            "x": { "type": "number" },
+            "y": { "type": "number" }
           }
         }
       ],

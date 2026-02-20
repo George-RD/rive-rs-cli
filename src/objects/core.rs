@@ -84,6 +84,7 @@ pub mod type_keys {
     pub const TRANSITION_NUMBER_CONDITION: u16 = 70;
     pub const TRANSITION_BOOL_CONDITION: u16 = 71;
     pub const WORLD_TRANSFORM_COMPONENT: u16 = 91;
+    pub const NESTED_ARTBOARD: u16 = 92;
     pub const CUBIC_VALUE_INTERPOLATOR: u16 = 138;
     pub const CUBIC_INTERPOLATOR: u16 = 139;
     pub const INTERPOLATING_KEY_FRAME: u16 = 170;
@@ -168,6 +169,7 @@ pub mod property_keys {
     pub const RECTANGLE_CORNER_RADIUS_BR: u16 = 163;
     pub const RECTANGLE_LINK_CORNER_RADIUS: u16 = 164;
     pub const LAYOUT_COMPONENT_CLIP: u16 = 196;
+    pub const NESTED_ARTBOARD_ARTBOARD_ID: u16 = 197;
     pub const ARTBOARD_DEFAULT_STATE_MACHINE_ID: u16 = 236;
     pub const LINEAR_ANIMATION_QUANTIZE: u16 = 376;
     pub const LAYOUT_COMPONENT_STYLE_ID: u16 = 494;
@@ -272,6 +274,7 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::STATE_TRANSITION_EXIT_TIME
         | property_keys::RECTANGLE_LINK_CORNER_RADIUS
         | property_keys::LAYOUT_COMPONENT_CLIP
+        | property_keys::NESTED_ARTBOARD_ARTBOARD_ID
         | property_keys::ARTBOARD_DEFAULT_STATE_MACHINE_ID
         | property_keys::LINEAR_ANIMATION_QUANTIZE
         | property_keys::LAYOUT_COMPONENT_STYLE_ID
@@ -364,6 +367,10 @@ mod tests {
         );
         assert_eq!(
             property_backing_type(property_keys::ARTBOARD_VIEW_MODEL_ID),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::NESTED_ARTBOARD_ARTBOARD_ID),
             Some(BackingType::UInt)
         );
         assert_eq!(
@@ -467,6 +474,7 @@ mod tests {
         assert_eq!(type_keys::TRANSITION_BOOL_CONDITION, 71);
         assert_eq!(type_keys::TRIM_PATH, 47);
         assert_eq!(type_keys::WORLD_TRANSFORM_COMPONENT, 91);
+        assert_eq!(type_keys::NESTED_ARTBOARD, 92);
         assert_eq!(type_keys::CUBIC_VALUE_INTERPOLATOR, 138);
         assert_eq!(type_keys::CUBIC_INTERPOLATOR, 139);
         assert_eq!(type_keys::INTERPOLATING_KEY_FRAME, 170);
