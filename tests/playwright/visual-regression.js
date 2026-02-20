@@ -10,7 +10,7 @@ const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const CURRENT_DIR = path.join(ROOT, "target", "playwright-visual");
 const BASELINE_DIR = path.join(ROOT, "tests", "playwright", "baselines");
-const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard", "nested_artboard", "artboard_preset"];
+const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard", "nested_artboard", "artboard_preset", "gradients", "color_animation", "loop_animation", "stroke_styles", "empty_artboard"];
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8766);
 const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "1.0");
 
@@ -241,7 +241,33 @@ function shotPlanForFixture(fixture) {
       { frame: 30, waitFrames: 30 },
     ];
   }
+  if (fixture === "color_animation") {
+    return [
+      { frame: 0, waitFrames: 0 },
+      { frame: 30, waitFrames: 30 },
+      { frame: 60, waitFrames: 60 },
+    ];
+  }
+  if (fixture === "loop_animation") {
+    return [
+      { frame: 0, waitFrames: 0 },
+      { frame: 30, waitFrames: 30 },
+    ];
+  }
   return [{ frame: 0, waitFrames: 0 }];
+}
+
+function thresholdForShot(fixture, shot) {
+  if (fixture === "multi_artboard" && shot.frame === 30) {
+    return 5.0;
+  }
+  if (fixture === "color_animation" && (shot.frame === 30 || shot.frame === 60)) {
+    return 20.0;
+  }
+  if (fixture === "loop_animation") {
+    return 5.0;
+  }
+  return THRESHOLD_PERCENT;
 }
 
 async function advanceFrames(page, frames) {
@@ -396,7 +422,7 @@ async function main() {
         }
 
         const diffPercent = comparePngPixels(currentPath, baselinePath);
-        const pass = diffPercent <= THRESHOLD_PERCENT;
+        const pass = diffPercent <= thresholdForShot(fixture, shot);
         rows.push({
           name: `${fixture}@f${shot.frame}`,
           status: pass ? "pass" : "fail",

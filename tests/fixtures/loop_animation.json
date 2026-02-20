@@ -1,0 +1,62 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "LoopAnim",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Spinner",
+        "x": 250,
+        "y": 250,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "SpinRect",
+            "width": 200,
+            "height": 40,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "SpinFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "SpinColor",
+                "color": "FFFF6600"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "loop_spin",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": 1,
+        "speed": 2.0,
+        "keyframes": [
+          {
+            "object": "Spinner",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -150.0
+              },
+              {
+                "frame": 59,
+                "value": 150.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

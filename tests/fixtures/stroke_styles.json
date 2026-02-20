@@ -1,0 +1,81 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "StrokeStyles",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "ThickStroke",
+        "x": 150,
+        "y": 250,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "ThickEllipse",
+            "width": 180,
+            "height": 180,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "FatStroke",
+            "thickness": 12.0,
+            "cap": 1,
+            "join": 1,
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "StrokeRed",
+                "color": "FFFF0000"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "ThinStroke",
+        "x": 350,
+        "y": 250,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "ThinRect",
+            "width": 180,
+            "height": 180,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "HairStroke",
+            "thickness": 1.0,
+            "cap": 2,
+            "join": 2,
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "StrokeBlue",
+                "color": "FF0000FF"
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "RectFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "FillYellow",
+                "color": "FFFFFF00"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

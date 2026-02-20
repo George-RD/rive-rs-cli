@@ -1,0 +1,94 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Gradients",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "LinearBox",
+        "x": 150,
+        "y": 250,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "LinearRect",
+            "width": 200,
+            "height": 200,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "LinearFill",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "LG",
+                "start_x": 0,
+                "start_y": 0,
+                "end_x": 200,
+                "end_y": 0,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "color": "FFFF0000",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "color": "FF0000FF",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "RadialCircle",
+        "x": 350,
+        "y": 250,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "RadialEllipse",
+            "width": 200,
+            "height": 200,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "RadialFill",
+            "children": [
+              {
+                "type": "radial_gradient",
+                "name": "RG",
+                "start_x": 100,
+                "start_y": 100,
+                "end_x": 200,
+                "end_y": 100,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "color": "FFFFFF00",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "color": "FF00FF00",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1497,6 +1497,111 @@ mod tests {
     }
 
     #[test]
+    fn test_build_scene_missing_version() {
+        let json = r#"{
+            "artboard": {
+                "name": "Main",
+                "width": 500.0,
+                "height": 500.0,
+                "children": []
+            }
+        }"#;
+
+        let parsed: Result<SceneSpec, _> = serde_json::from_str(json);
+        assert!(parsed.is_err());
+    }
+
+    #[test]
+    fn test_build_scene_zero_dimensions() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 0.0,
+                height: 0.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected zero dimensions error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("must specify non-zero width and height or a preset"));
+    }
+
+    #[test]
+    fn test_build_scene_empty_children() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 500.0,
+                height: 500.0,
+                children: vec![],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert_eq!(objects.len(), 2);
+        assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
+        assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
+    }
+
+    #[test]
+    fn test_build_scene_duplicate_names() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "A".to_string(),
+                    preset: None,
+                    width: 100.0,
+                    height: 100.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "dup_shape".to_string(),
+                        x: None,
+                        y: None,
+                        children: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "B".to_string(),
+                    preset: None,
+                    width: 100.0,
+                    height: 100.0,
+                    children: vec![ObjectSpec::Shape {
+                        name: "dup_shape".to_string(),
+                        x: None,
+                        y: None,
+                        children: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
+        assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
+        assert_eq!(objects[2].type_key(), type_keys::SHAPE);
+        assert_eq!(objects[3].type_key(), type_keys::ARTBOARD);
+        assert_eq!(objects[4].type_key(), type_keys::SHAPE);
+    }
+
+    #[test]
     fn test_reject_unsupported_scene_format_version() {
         let spec = SceneSpec {
             scene_format_version: 2,

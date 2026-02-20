@@ -797,6 +797,411 @@ fn test_generate_artboard_preset() {
 }
 
 #[test]
+fn test_generate_gradients() {
+    let input = fixture_path("gradients.json");
+    let output = temp_output("gradients");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_gradients() {
+    let input = fixture_path("gradients.json");
+    let output = temp_output("validate_gradients");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_gradients() {
+    let input = fixture_path("gradients.json");
+    let output = temp_output("inspect_gradients");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboard"),
+        "expected 'Artboard' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_color_animation() {
+    let input = fixture_path("color_animation.json");
+    let output = temp_output("color_animation");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_color_animation() {
+    let input = fixture_path("color_animation.json");
+    let output = temp_output("validate_color_animation");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_color_animation() {
+    let input = fixture_path("color_animation.json");
+    let output = temp_output("inspect_color_animation");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboard"),
+        "expected 'Artboard' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_loop_animation() {
+    let input = fixture_path("loop_animation.json");
+    let output = temp_output("loop_animation");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_loop_animation() {
+    let input = fixture_path("loop_animation.json");
+    let output = temp_output("validate_loop_animation");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_loop_animation() {
+    let input = fixture_path("loop_animation.json");
+    let output = temp_output("inspect_loop_animation");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboard"),
+        "expected 'Artboard' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_stroke_styles() {
+    let input = fixture_path("stroke_styles.json");
+    let output = temp_output("stroke_styles");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_stroke_styles() {
+    let input = fixture_path("stroke_styles.json");
+    let output = temp_output("validate_stroke_styles");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_stroke_styles() {
+    let input = fixture_path("stroke_styles.json");
+    let output = temp_output("inspect_stroke_styles");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboard"),
+        "expected 'Artboard' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_empty_artboard() {
+    let input = fixture_path("empty_artboard.json");
+    let output = temp_output("empty_artboard");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_empty_artboard() {
+    let input = fixture_path("empty_artboard.json");
+    let output = temp_output("validate_empty_artboard");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_empty_artboard() {
+    let input = fixture_path("empty_artboard.json");
+    let output = temp_output("inspect_empty_artboard");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboard"),
+        "expected 'Artboard' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
 fn test_validate_artboard_preset() {
     let input = fixture_path("artboard_preset.json");
     let output = temp_output("validate_artboard_preset");

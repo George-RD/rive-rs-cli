@@ -1,0 +1,64 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ColorAnim",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "ColorBox",
+        "x": 250,
+        "y": 250,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "BoxRect",
+            "width": 300,
+            "height": 300,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "BoxFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "AnimColor",
+                "color": "FFFF0000"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "color_shift",
+        "fps": 60,
+        "duration": 120,
+        "keyframes": [
+          {
+            "object": "AnimColor",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "FFFF0000"
+              },
+              {
+                "frame": 60,
+                "value": "FF00FF00"
+              },
+              {
+                "frame": 119,
+                "value": "FF0000FF"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

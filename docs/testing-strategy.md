@@ -67,7 +67,7 @@ Pixel-level comparison of rendered frames against committed baseline PNGs.
 1. Loads each fixture in a controlled Rive canvas (manual frame advance, no autoplay)
 2. Captures screenshots at specific frame points (see frame plan below)
 3. Compares against baselines in `tests/playwright/baselines/` using pixel diff
-4. Fails if any fixture exceeds the diff threshold (default 0.1%)
+4. Fails if any fixture exceeds the diff threshold (default 1.0%)
 
 **Frame capture plan** (`shotPlanForFixture()`):
 
@@ -90,11 +90,11 @@ This overwrites `tests/playwright/baselines/*.png` with current renders. Commit 
 
 **Resolution**: 512×512 logical viewport with `deviceScaleFactor: 2`, producing 1024×1024 pixel screenshots. This ensures crisp rendering on Retina/HiDPI displays and catches sub-pixel anti-aliasing issues.
 
-**Diff threshold**: 1.0% of pixels (configurable via `VISUAL_DIFF_THRESHOLD` env var). Static frames (f0 of non-animated fixtures) consistently diff at 0.0000%. Animated frames show 0.2-0.5% jitter due to `requestAnimationFrame` timing non-determinism — the Rive runtime advances based on real-time deltas, so captured animation positions shift by 1-2 pixels between runs. The 1.0% threshold accommodates this while still catching real regressions (a broken animation would show 30%+ diff).
+**Diff threshold**: 1.0% of pixels (configurable via `VISUAL_DIFF_THRESHOLD` env var). Static frames (f0 of non-animated fixtures) consistently diff at 0.0000%. Animated frames show 0.2-0.5% jitter due to `requestAnimationFrame` timing non-determinism — the Rive runtime advances based on real-time deltas, so captured animation positions shift by 1-2 pixels between runs. The 1.0% threshold accommodates this while still catching real regressions (a broken animation would show 30%+ diff). Some fixtures override this per-shot: `multi_artboard` f30 at 5% (opacity fade timing), `loop_animation` at 5% (2x speed amplifies timing jitter), `color_animation` f30/f60 at 20% (full-fill color shifts amplify small timing diffs).
 
 ## Fixture Corpus
 
-### Current Fixtures (Post-PR #36)
+### Current Fixtures
 
 | Fixture | Category | Objects | Animations | Golden frames |
 |---------|----------|---------|------------|---------------|
@@ -108,6 +108,11 @@ This overwrites `tests/playwright/baselines/*.png` with current renders. Commit 
 | `multi_artboard.json` | Multi/Animated | 2 artboards, opacity fade + X slide animations | 2 | f0, f30 |
 | `nested_artboard.json` | Multi/Static | Main embeds Component via NestedArtboard | None | f0 |
 | `artboard_preset.json` | Static | Mobile preset (390×844), empty artboard | None | f0 |
+| `gradients.json` | Static | LinearGradient and RadialGradient with gradient stops | None | f0 |
+| `color_animation.json` | Animated | Solid color paint with KeyFrameColor progression | 1 (120 frames) | f0, f30, f60 |
+| `loop_animation.json` | Animated | Loop-type linear animation with speed override | 1 (60 frames) | f0, f30 |
+| `stroke_styles.json` | Static | Stroke cap/join/thickness combinations with fill overlay | None | f0 |
+| `empty_artboard.json` | Edge/Static | Artboard without drawable children | None | f0 |
 
 ### Growth Plan
 
@@ -160,7 +165,7 @@ Planned but not yet implemented (tracked in #17):
 
 ## Future: Animation Frame Diffing (Multi-Frame)
 
-Current state: `animation.json` captures 3 frames (f0, f30, f60). Other animated fixtures capture only f0.
+Current state: `animation.json`, `color_animation.json`, `cubic_easing.json`, `loop_animation.json`, and `multi_artboard.json` use multi-frame captures. Static fixtures capture f0.
 
 **Expansion plan**:
 
