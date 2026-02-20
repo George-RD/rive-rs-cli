@@ -6,7 +6,7 @@ use crate::objects::animation::{
     CubicEaseInterpolator, KeyFrameColor, KeyFrameDouble, KeyedObject, KeyedProperty,
     LinearAnimation,
 };
-use crate::objects::artboard::{Artboard, Backboard};
+use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
 use crate::objects::core::{RiveObject, property_keys};
 use crate::objects::shapes::{
     Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
@@ -117,6 +117,12 @@ pub enum ObjectSpec {
         offset: Option<f32>,
         mode: Option<u64>,
     },
+    NestedArtboard {
+        name: String,
+        source_artboard: String,
+        x: Option<f32>,
+        y: Option<f32>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -217,6 +223,10 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
     validate_scene_spec(spec)?;
 
     let artboard_specs = resolve_artboards(spec)?;
+    let mut artboard_name_to_index: HashMap<String, usize> = HashMap::new();
+    for (artboard_index, artboard_spec) in artboard_specs.iter().enumerate() {
+        artboard_name_to_index.insert(artboard_spec.name.clone(), artboard_index);
+    }
     let mut objects: Vec<Box<dyn RiveObject>> = Vec::new();
 
     objects.push(Box::new(Backboard));
@@ -250,6 +260,8 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                 artboard_start,
                 &mut objects,
                 &mut object_name_to_index,
+                &artboard_name_to_index,
+                &artboard_spec.name,
             )?;
         }
 
@@ -544,6 +556,8 @@ fn append_object(
     artboard_start: usize,
     objects: &mut Vec<Box<dyn RiveObject>>,
     name_to_index: &mut HashMap<String, usize>,
+    artboard_name_to_index: &HashMap<String, usize>,
+    current_artboard_name: &str,
 ) -> Result<(), String> {
     let object_index = objects.len();
     let parent_id = parent_index
@@ -569,7 +583,15 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
                 }
             }
         }
@@ -628,7 +650,15 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
                 }
             }
         }
@@ -650,7 +680,15 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
                 }
             }
         }
@@ -683,7 +721,15 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
                 }
             }
         }
@@ -707,7 +753,15 @@ fn append_object(
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
-                    append_object(child, object_index, artboard_start, objects, name_to_index)?;
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
                 }
             }
         }
@@ -767,6 +821,34 @@ fn append_object(
                     .map_err(|e| format!("trim_path '{}': {}", name, e))?;
             }
             objects.push(Box::new(trim_path));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedArtboard {
+            name,
+            source_artboard,
+            x,
+            y,
+        } => {
+            if source_artboard == current_artboard_name {
+                return Err(format!(
+                    "nested artboard '{}' cannot reference its own artboard '{}'",
+                    name, source_artboard
+                ));
+            }
+            let source_artboard_index =
+                *artboard_name_to_index.get(source_artboard).ok_or_else(|| {
+                    format!(
+                        "nested artboard '{}' references unknown artboard '{}'",
+                        name, source_artboard
+                    )
+                })?;
+            objects.push(Box::new(NestedArtboard {
+                name: name.clone(),
+                parent_id,
+                artboard_id: source_artboard_index as u64,
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+            }));
             name_to_index.insert(name.clone(), object_index);
         }
     }
@@ -838,6 +920,53 @@ fn json_value_to_color(value: &serde_json::Value) -> Option<u32> {
     }
 }
 
+fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
+    let mut refs = Vec::new();
+    for child in children {
+        match child {
+            ObjectSpec::NestedArtboard {
+                source_artboard, ..
+            } => {
+                refs.push(source_artboard.clone());
+            }
+            ObjectSpec::Shape { children, .. }
+            | ObjectSpec::Fill { children, .. }
+            | ObjectSpec::Stroke { children, .. } => {
+                if let Some(kids) = children {
+                    refs.extend(collect_nested_artboard_refs(kids));
+                }
+            }
+            _ => {}
+        }
+    }
+    refs
+}
+
+fn detect_artboard_cycles(artboard_deps: &HashMap<String, Vec<String>>) -> Result<(), String> {
+    for start in artboard_deps.keys() {
+        let mut visited: HashSet<&str> = HashSet::new();
+        let mut stack = vec![start.as_str()];
+        visited.insert(start.as_str());
+        while let Some(current) = stack.pop() {
+            if let Some(deps) = artboard_deps.get(current) {
+                for dep in deps {
+                    if dep == start {
+                        return Err(format!(
+                            "circular nested artboard reference detected: '{}' eventually references itself",
+                            start
+                        ));
+                    }
+                    if !visited.contains(dep.as_str()) {
+                        visited.insert(dep.as_str());
+                        stack.push(dep.as_str());
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
     if spec.scene_format_version != SCENE_FORMAT_VERSION {
         return Err(format!(
@@ -856,6 +985,15 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
         artboard_names.insert(artboard_spec.name.clone());
         validate_artboard_spec(artboard_spec)?;
     }
+
+    let mut artboard_deps: HashMap<String, Vec<String>> = HashMap::new();
+    for artboard_spec in &artboard_specs {
+        let refs = collect_nested_artboard_refs(&artboard_spec.children);
+        if !refs.is_empty() {
+            artboard_deps.insert(artboard_spec.name.clone(), refs);
+        }
+    }
+    detect_artboard_cycles(&artboard_deps)?;
 
     Ok(())
 }
@@ -1185,6 +1323,9 @@ fn validate_object_spec(
                     name
                 ));
             }
+        }
+        ObjectSpec::NestedArtboard { name, .. } => {
+            ensure_unique_name(name, object_names)?;
         }
     }
 
@@ -1782,6 +1923,154 @@ mod tests {
             .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
             .unwrap();
         assert_eq!(rect_b_parent.value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_build_scene_with_nested_artboard() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "Main".to_string(),
+                    width: 500.0,
+                    height: 500.0,
+                    children: vec![ObjectSpec::NestedArtboard {
+                        name: "embedded_component".to_string(),
+                        source_artboard: "Component".to_string(),
+                        x: Some(100.0),
+                        y: Some(100.0),
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "Component".to_string(),
+                    width: 200.0,
+                    height: 200.0,
+                    children: vec![],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
+        assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
+        assert_eq!(objects[2].type_key(), type_keys::NESTED_ARTBOARD);
+        assert_eq!(objects[3].type_key(), type_keys::ARTBOARD);
+
+        let nested_props = objects[2].properties();
+        let nested_parent = nested_props
+            .iter()
+            .find(|p| p.key == property_keys::COMPONENT_PARENT_ID)
+            .unwrap();
+        assert_eq!(nested_parent.value, PropertyValue::UInt(0));
+
+        let nested_artboard_id = nested_props
+            .iter()
+            .find(|p| p.key == property_keys::NESTED_ARTBOARD_ARTBOARD_ID)
+            .unwrap();
+        assert_eq!(nested_artboard_id.value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_nested_artboard_rejects_unknown_source() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                width: 500.0,
+                height: 500.0,
+                children: vec![ObjectSpec::NestedArtboard {
+                    name: "embedded_component".to_string(),
+                    source_artboard: "DoesNotExist".to_string(),
+                    x: None,
+                    y: None,
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected unknown source artboard error"),
+            Err(err) => err,
+        };
+        assert!(err.contains(
+            "nested artboard 'embedded_component' references unknown artboard 'DoesNotExist'"
+        ));
+    }
+
+    #[test]
+    fn test_nested_artboard_rejects_self_reference() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                width: 500.0,
+                height: 500.0,
+                children: vec![ObjectSpec::NestedArtboard {
+                    name: "embedded_component".to_string(),
+                    source_artboard: "Main".to_string(),
+                    x: None,
+                    y: None,
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected self-reference error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("circular nested artboard reference detected"));
+    }
+
+    #[test]
+    fn test_nested_artboard_rejects_indirect_cycle() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: None,
+            artboards: Some(vec![
+                ArtboardSpec {
+                    name: "A".to_string(),
+                    width: 500.0,
+                    height: 500.0,
+                    children: vec![ObjectSpec::NestedArtboard {
+                        name: "embed_b".to_string(),
+                        source_artboard: "B".to_string(),
+                        x: None,
+                        y: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+                ArtboardSpec {
+                    name: "B".to_string(),
+                    width: 500.0,
+                    height: 500.0,
+                    children: vec![ObjectSpec::NestedArtboard {
+                        name: "embed_a".to_string(),
+                        source_artboard: "A".to_string(),
+                        x: None,
+                        y: None,
+                    }],
+                    animations: None,
+                    state_machines: None,
+                },
+            ]),
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected indirect cycle error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("circular nested artboard reference detected"));
     }
 
     #[test]

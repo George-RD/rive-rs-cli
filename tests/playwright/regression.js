@@ -8,7 +8,7 @@ const ROOT = path.resolve(__dirname, "..", "..");
 const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const SCREENSHOT_DIR = path.join(ROOT, "target", "playwright-snapshots");
-const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard"];
+const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "nested_artboard", "multi_artboard"];
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8765);
 
 function run(command, args, cwd = ROOT) {

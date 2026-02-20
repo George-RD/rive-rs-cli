@@ -362,6 +362,7 @@ fn type_name(key: u16) -> &'static str {
         type_keys::TRANSITION_NUMBER_CONDITION => "TransitionNumberCondition",
         type_keys::TRANSITION_BOOL_CONDITION => "TransitionBoolCondition",
         type_keys::WORLD_TRANSFORM_COMPONENT => "WorldTransformComponent",
+        type_keys::NESTED_ARTBOARD => "NestedArtboard",
         type_keys::CUBIC_VALUE_INTERPOLATOR => "CubicValueInterpolator",
         type_keys::CUBIC_INTERPOLATOR => "CubicInterpolator",
         type_keys::INTERPOLATING_KEY_FRAME => "InterpolatingKeyFrame",

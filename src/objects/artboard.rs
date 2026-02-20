@@ -24,6 +24,53 @@ pub struct Artboard {
     pub default_state_machine_id: Option<u64>,
 }
 
+pub struct NestedArtboard {
+    pub name: String,
+    pub parent_id: u64,
+    pub artboard_id: u64,
+    pub x: f32,
+    pub y: f32,
+}
+
+impl RiveObject for NestedArtboard {
+    fn type_key(&self) -> u16 {
+        type_keys::NESTED_ARTBOARD
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::NESTED_ARTBOARD_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            },
+        ];
+
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+
+        props
+    }
+}
+
 impl Artboard {
     pub fn new(name: String, width: f32, height: f32) -> Self {
         Artboard {
@@ -159,5 +206,60 @@ mod tests {
         assert!(keys.contains(&property_keys::ARTBOARD_ORIGIN_Y));
         assert!(keys.contains(&property_keys::NODE_X));
         assert!(keys.contains(&property_keys::NODE_Y));
+    }
+
+    #[test]
+    fn test_nested_artboard_type_key() {
+        let nested = NestedArtboard {
+            name: "nested".to_string(),
+            parent_id: 2,
+            artboard_id: 1,
+            x: 0.0,
+            y: 0.0,
+        };
+        assert_eq!(nested.type_key(), type_keys::NESTED_ARTBOARD);
+    }
+
+    #[test]
+    fn test_nested_artboard_properties() {
+        let nested = NestedArtboard {
+            name: "embedded_component".to_string(),
+            parent_id: 3,
+            artboard_id: 1,
+            x: 100.0,
+            y: 200.0,
+        };
+
+        let props = nested.properties();
+        assert_eq!(props.len(), 5);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(
+            props[0].value,
+            PropertyValue::String("embedded_component".to_string())
+        );
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(3));
+        assert_eq!(props[2].key, property_keys::NESTED_ARTBOARD_ARTBOARD_ID);
+        assert_eq!(props[2].value, PropertyValue::UInt(1));
+        assert_eq!(props[3].key, property_keys::NODE_X);
+        assert_eq!(props[3].value, PropertyValue::Float(100.0));
+        assert_eq!(props[4].key, property_keys::NODE_Y);
+        assert_eq!(props[4].value, PropertyValue::Float(200.0));
+    }
+
+    #[test]
+    fn test_nested_artboard_zero_position_omitted() {
+        let nested = NestedArtboard {
+            name: "embedded_component".to_string(),
+            parent_id: 3,
+            artboard_id: 0,
+            x: 0.0,
+            y: 0.0,
+        };
+
+        let props = nested.properties();
+        assert_eq!(props.len(), 3);
+        assert!(!props.iter().any(|p| p.key == property_keys::NODE_X));
+        assert!(!props.iter().any(|p| p.key == property_keys::NODE_Y));
     }
 }
