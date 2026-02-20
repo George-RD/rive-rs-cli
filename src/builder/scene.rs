@@ -3,13 +3,14 @@ use std::collections::{HashMap, HashSet};
 use serde::Deserialize;
 
 use crate::objects::animation::{
-    KeyFrameColor, KeyFrameDouble, KeyedObject, KeyedProperty, LinearAnimation,
+    CubicEaseInterpolator, KeyFrameColor, KeyFrameDouble, KeyedObject, KeyedProperty,
+    LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard};
-use crate::objects::core::RiveObject;
+use crate::objects::core::{RiveObject, property_keys};
 use crate::objects::shapes::{
     Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
-    Shape, SolidColor, Stroke,
+    Shape, SolidColor, Stroke, TrimPath,
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, EntryState, ExitState, StateMachine, StateMachineBool,
@@ -106,6 +107,22 @@ pub enum ObjectSpec {
         name: String,
         path_flags: Option<u64>,
     },
+    TrimPath {
+        name: String,
+        start: Option<f32>,
+        end: Option<f32>,
+        offset: Option<f32>,
+        mode: Option<u64>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InterpolatorSpec {
+    pub name: String,
+    pub x1: Option<f32>,
+    pub y1: Option<f32>,
+    pub x2: Option<f32>,
+    pub y2: Option<f32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -115,6 +132,7 @@ pub struct AnimationSpec {
     pub duration: u64,
     pub speed: Option<f32>,
     pub loop_type: Option<u64>,
+    pub interpolators: Option<Vec<InterpolatorSpec>>,
     pub keyframes: Vec<KeyframeGroupSpec>,
 }
 
@@ -129,6 +147,8 @@ pub struct KeyframeGroupSpec {
 pub struct KeyframeSpec {
     pub frame: u64,
     pub value: serde_json::Value,
+    pub interpolation: Option<String>,
+    pub interpolator: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -203,7 +223,38 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
         append_object(child, 1, &mut objects, &mut object_name_to_index)?;
     }
 
+    let mut interpolator_name_to_index: HashMap<String, usize> = HashMap::new();
+    let mut interpolator_control_points: HashMap<String, (f32, f32, f32, f32)> = HashMap::new();
+
     if let Some(animations) = &spec.artboard.animations {
+        for animation in animations {
+            if let Some(interpolators) = &animation.interpolators {
+                for interp in interpolators {
+                    let x1 = interp.x1.unwrap_or(0.42);
+                    let y1 = interp.y1.unwrap_or(0.0);
+                    let x2 = interp.x2.unwrap_or(0.58);
+                    let y2 = interp.y2.unwrap_or(1.0);
+
+                    if let Some((stored_x1, stored_y1, stored_x2, stored_y2)) =
+                        interpolator_control_points.get(&interp.name)
+                    {
+                        if (stored_x1, stored_y1, stored_x2, stored_y2) != (&x1, &y1, &x2, &y2) {
+                            return Err(format!(
+                                "duplicate interpolator '{}' with different control points",
+                                interp.name
+                            ));
+                        }
+                        continue;
+                    }
+
+                    let artboard_local_index = objects.len() - 1;
+                    interpolator_name_to_index.insert(interp.name.clone(), artboard_local_index);
+                    interpolator_control_points.insert(interp.name.clone(), (x1, y1, x2, y2));
+                    objects.push(Box::new(CubicEaseInterpolator::new(x1, y1, x2, y2)));
+                }
+            }
+        }
+
         for (animation_list_index, animation) in animations.iter().enumerate() {
             let mut linear =
                 LinearAnimation::new(animation.name.clone(), animation.fps, animation.duration);
@@ -236,14 +287,31 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                 }));
 
                 for frame in &group.frames {
-                    if property_key == 37 {
+                    let interp_type = match &frame.interpolation {
+                        Some(name) => interpolation_type_from_name(name)?,
+                        None => 1,
+                    };
+                    let interp_id = match &frame.interpolator {
+                        Some(name) => {
+                            let idx = *interpolator_name_to_index.get(name).ok_or_else(|| {
+                                format!("unknown interpolator referenced: '{}'", name)
+                            })?;
+                            idx as u64
+                        }
+                        None => u32::MAX as u64,
+                    };
+
+                    if property_key == property_keys::SOLID_COLOR_VALUE {
                         let color = json_value_to_color(&frame.value).ok_or_else(|| {
                             format!(
                                 "invalid color keyframe value for object '{}' property '{}' at frame {}",
                                 group.object, group.property, frame.frame
                             )
                         })?;
-                        objects.push(Box::new(KeyFrameColor::new(frame.frame, color)));
+                        let mut kf = KeyFrameColor::new(frame.frame, color);
+                        kf.interpolation_type = interp_type;
+                        kf.interpolator_id = interp_id;
+                        objects.push(Box::new(kf));
                     } else {
                         let value = json_value_to_f32(&frame.value).ok_or_else(|| {
                             format!(
@@ -251,7 +319,10 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 group.object, group.property, frame.frame
                             )
                         })?;
-                        objects.push(Box::new(KeyFrameDouble::new(frame.frame, value)));
+                        let mut kf = KeyFrameDouble::new(frame.frame, value);
+                        kf.interpolation_type = interp_type;
+                        kf.interpolator_id = interp_id;
+                        objects.push(Box::new(kf));
                     }
                 }
             }
@@ -623,6 +694,31 @@ fn append_object(
             }));
             name_to_index.insert(name.clone(), object_index);
         }
+        ObjectSpec::TrimPath {
+            name,
+            start,
+            end,
+            offset,
+            mode,
+        } => {
+            let mut trim_path = TrimPath::new(name.clone(), parent_id);
+            if let Some(start) = start {
+                trim_path.start = *start;
+            }
+            if let Some(end) = end {
+                trim_path.end = *end;
+            }
+            if let Some(offset) = offset {
+                trim_path.offset = *offset;
+            }
+            if let Some(mode) = mode {
+                trim_path
+                    .set_mode(*mode)
+                    .map_err(|e| format!("trim_path '{}': {}", name, e))?;
+            }
+            objects.push(Box::new(trim_path));
+            name_to_index.insert(name.clone(), object_index);
+        }
     }
 
     Ok(())
@@ -630,16 +726,28 @@ fn append_object(
 
 fn property_key_from_name(name: &str) -> Option<u16> {
     match name {
-        "x" => Some(13),
-        "y" => Some(14),
-        "rotation" => Some(15),
-        "scale_x" => Some(16),
-        "scale_y" => Some(17),
-        "opacity" => Some(18),
-        "width" => Some(20),
-        "height" => Some(21),
-        "color" => Some(37),
+        "x" => Some(property_keys::NODE_X),
+        "y" => Some(property_keys::NODE_Y),
+        "rotation" => Some(property_keys::TRANSFORM_ROTATION),
+        "scale_x" => Some(property_keys::TRANSFORM_SCALE_X),
+        "scale_y" => Some(property_keys::TRANSFORM_SCALE_Y),
+        "opacity" => Some(property_keys::WORLD_TRANSFORM_OPACITY),
+        "width" => Some(property_keys::PARAMETRIC_PATH_WIDTH),
+        "height" => Some(property_keys::PARAMETRIC_PATH_HEIGHT),
+        "color" => Some(property_keys::SOLID_COLOR_VALUE),
+        "trim_start" => Some(property_keys::TRIM_PATH_START),
+        "trim_end" => Some(property_keys::TRIM_PATH_END),
+        "trim_offset" => Some(property_keys::TRIM_PATH_OFFSET),
         _ => None,
+    }
+}
+
+fn interpolation_type_from_name(name: &str) -> Result<u64, String> {
+    match name {
+        "hold" => Ok(0),
+        "linear" => Ok(1),
+        "cubic" => Ok(2),
+        _ => Err(format!("unknown interpolation type: '{}'", name)),
     }
 }
 
@@ -697,7 +805,7 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
 
     let mut object_names: HashSet<String> = HashSet::new();
     for child in &spec.artboard.children {
-        validate_object_spec(child, &mut object_names)?;
+        validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
     }
 
     let mut animation_names: HashSet<String> = HashSet::new();
@@ -714,6 +822,19 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
             }
             animation_names.insert(animation.name.clone());
 
+            let mut interp_names: HashSet<String> = HashSet::new();
+            if let Some(interpolators) = &animation.interpolators {
+                for interp in interpolators {
+                    if interp_names.contains(&interp.name) {
+                        return Err(format!(
+                            "duplicate interpolator name '{}' in animation '{}'",
+                            interp.name, animation.name
+                        ));
+                    }
+                    interp_names.insert(interp.name.clone());
+                }
+            }
+
             for group in &animation.keyframes {
                 if !object_names.contains(&group.object) {
                     return Err(format!(
@@ -729,7 +850,19 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
                 })?;
 
                 for frame in &group.frames {
-                    if property_key == 37 {
+                    if let Some(interp_name) = &frame.interpolator
+                        && !interp_names.contains(interp_name)
+                    {
+                        return Err(format!(
+                            "unknown interpolator '{}' referenced in keyframe",
+                            interp_name
+                        ));
+                    }
+                    if let Some(interp_type) = &frame.interpolation {
+                        interpolation_type_from_name(interp_type)?;
+                    }
+
+                    if property_key == property_keys::SOLID_COLOR_VALUE {
                         if json_value_to_color(&frame.value).is_none() {
                             return Err(format!(
                                 "invalid color keyframe value for object '{}' property '{}' at frame {}",
@@ -820,16 +953,25 @@ fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
     Ok(())
 }
 
+enum ParentKind {
+    Artboard,
+    Shape,
+    Fill,
+    Stroke,
+    Gradient,
+}
+
 fn validate_object_spec(
     spec: &ObjectSpec,
     object_names: &mut HashSet<String>,
+    parent_kind: &ParentKind,
 ) -> Result<(), String> {
     match spec {
         ObjectSpec::Shape { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Shape)?;
                 }
             }
         }
@@ -874,7 +1016,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Fill)?;
                 }
             }
         }
@@ -892,7 +1034,7 @@ fn validate_object_spec(
             }
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Stroke)?;
                 }
             }
         }
@@ -904,7 +1046,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Gradient)?;
                 }
             }
         }
@@ -912,7 +1054,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names)?;
+                    validate_object_spec(child, object_names, &ParentKind::Gradient)?;
                 }
             }
         }
@@ -938,6 +1080,40 @@ fn validate_object_spec(
         }
         ObjectSpec::Path { name, .. } => {
             ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::TrimPath {
+            name,
+            start,
+            end,
+            mode,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::Fill | ParentKind::Stroke) {
+                return Err(format!(
+                    "trim_path '{}' must be a child of a fill or stroke, not a shape or artboard",
+                    name
+                ));
+            }
+            if let Some(start) = start
+                && *start < 0.0
+            {
+                return Err(format!("trim_path '{}' start must be non-negative", name));
+            }
+            if let Some(end) = end
+                && *end < 0.0
+            {
+                return Err(format!("trim_path '{}' end must be non-negative", name));
+            }
+            if let Some(mode) = mode
+                && *mode != 1
+                && *mode != 2
+            {
+                return Err(format!(
+                    "trim_path '{}' mode must be 1 (sequential) or 2 (synchronized)",
+                    name
+                ));
+            }
         }
     }
 
@@ -1196,6 +1372,7 @@ mod tests {
                     duration: 120,
                     speed: Some(1.0),
                     loop_type: Some(1),
+                    interpolators: None,
                     keyframes: vec![KeyframeGroupSpec {
                         object: "ellipse_1".to_string(),
                         property: "width".to_string(),
@@ -1203,10 +1380,14 @@ mod tests {
                             KeyframeSpec {
                                 frame: 0,
                                 value: serde_json::json!(120.0),
+                                interpolation: None,
+                                interpolator: None,
                             },
                             KeyframeSpec {
                                 frame: 60,
                                 value: serde_json::json!(200.0),
+                                interpolation: None,
+                                interpolator: None,
                             },
                         ],
                     }],
@@ -1356,5 +1537,80 @@ mod tests {
     fn test_json_value_to_color_rejects_overflow() {
         let value = serde_json::json!(4294967296u64);
         assert!(json_value_to_color(&value).is_none());
+    }
+
+    #[test]
+    fn test_trim_path_rejects_shape_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::TrimPath {
+                        name: "trim_1".to_string(),
+                        start: None,
+                        end: None,
+                        offset: None,
+                        mode: None,
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        match build_scene(&spec) {
+            Err(err) => assert!(
+                err.contains("must be a child of a fill or stroke"),
+                "unexpected error: {}",
+                err
+            ),
+            Ok(_) => panic!("expected error for TrimPath under Shape"),
+        }
+    }
+
+    #[test]
+    fn test_trim_path_accepts_stroke_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: ArtboardSpec {
+                name: "Main".to_string(),
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::Stroke {
+                        name: "stroke_1".to_string(),
+                        thickness: Some(2.0),
+                        cap: None,
+                        join: None,
+                        children: Some(vec![
+                            ObjectSpec::SolidColor {
+                                name: "color_1".to_string(),
+                                color: "FF0000FF".to_string(),
+                            },
+                            ObjectSpec::TrimPath {
+                                name: "trim_1".to_string(),
+                                start: None,
+                                end: Some(0.75),
+                                offset: None,
+                                mode: Some(1),
+                            },
+                        ]),
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            },
+        };
+
+        build_scene(&spec).unwrap();
     }
 }

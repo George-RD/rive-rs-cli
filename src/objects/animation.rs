@@ -134,7 +134,7 @@ impl KeyFrameDouble {
         Self {
             frame,
             interpolation_type: 1,
-            interpolator_id: 0,
+            interpolator_id: u32::MAX as u64,
             value,
         }
     }
@@ -179,7 +179,7 @@ impl KeyFrameColor {
         Self {
             frame,
             interpolation_type: 1,
-            interpolator_id: 0,
+            interpolator_id: u32::MAX as u64,
             value,
         }
     }
@@ -272,6 +272,54 @@ impl RiveObject for InterpolatingKeyFrame {
                 value: PropertyValue::UInt(self.interpolator_id),
             },
         ]
+    }
+}
+
+pub struct CubicEaseInterpolator {
+    pub x1: f32,
+    pub y1: f32,
+    pub x2: f32,
+    pub y2: f32,
+}
+
+impl CubicEaseInterpolator {
+    pub fn new(x1: f32, y1: f32, x2: f32, y2: f32) -> Self {
+        Self { x1, y1, x2, y2 }
+    }
+}
+
+impl RiveObject for CubicEaseInterpolator {
+    fn type_key(&self) -> u16 {
+        type_keys::CUBIC_EASE_INTERPOLATOR
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.x1 != 0.42 {
+            props.push(Property {
+                key: property_keys::CUBIC_INTERPOLATOR_X1,
+                value: PropertyValue::Float(self.x1),
+            });
+        }
+        if self.y1 != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_INTERPOLATOR_Y1,
+                value: PropertyValue::Float(self.y1),
+            });
+        }
+        if self.x2 != 0.58 {
+            props.push(Property {
+                key: property_keys::CUBIC_INTERPOLATOR_X2,
+                value: PropertyValue::Float(self.x2),
+            });
+        }
+        if self.y2 != 1.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_INTERPOLATOR_Y2,
+                value: PropertyValue::Float(self.y2),
+            });
+        }
+        props
     }
 }
 
@@ -409,5 +457,76 @@ mod tests {
         assert_eq!(val_prop.value, PropertyValue::Color(0xFF0000FF));
         assert!(props.iter().all(|p| p.key != 4));
         assert!(props.iter().all(|p| p.key != 5));
+    }
+
+    #[test]
+    fn test_cubic_ease_interpolator_type_key() {
+        let interp = CubicEaseInterpolator::new(0.42, 0.0, 0.58, 1.0);
+        assert_eq!(interp.type_key(), type_keys::CUBIC_EASE_INTERPOLATOR);
+    }
+
+    #[test]
+    fn test_cubic_ease_interpolator_default_properties() {
+        let interp = CubicEaseInterpolator::new(0.42, 0.0, 0.58, 1.0);
+        let props = interp.properties();
+        assert_eq!(props.len(), 0);
+    }
+
+    #[test]
+    fn test_cubic_ease_interpolator_custom_properties() {
+        let interp = CubicEaseInterpolator::new(0.0, 0.0, 1.0, 1.0);
+        let props = interp.properties();
+        assert_eq!(props.len(), 2);
+        let x1 = props
+            .iter()
+            .find(|p| p.key == property_keys::CUBIC_INTERPOLATOR_X1)
+            .unwrap();
+        assert_eq!(x1.value, PropertyValue::Float(0.0));
+        let x2 = props
+            .iter()
+            .find(|p| p.key == property_keys::CUBIC_INTERPOLATOR_X2)
+            .unwrap();
+        assert_eq!(x2.value, PropertyValue::Float(1.0));
+    }
+
+    #[test]
+    fn test_cubic_ease_interpolator_all_custom() {
+        let interp = CubicEaseInterpolator::new(0.25, 0.1, 0.25, 1.0);
+        let props = interp.properties();
+        assert_eq!(props.len(), 3);
+        assert!(
+            props
+                .iter()
+                .any(|p| p.key == property_keys::CUBIC_INTERPOLATOR_X1)
+        );
+        assert!(
+            props
+                .iter()
+                .any(|p| p.key == property_keys::CUBIC_INTERPOLATOR_Y1)
+        );
+    }
+
+    #[test]
+    fn test_cubic_ease_interpolator_no_name_no_parent() {
+        let interp = CubicEaseInterpolator::new(0.0, 0.0, 1.0, 1.0);
+        let props = interp.properties();
+        assert!(props.iter().all(|p| p.key != property_keys::COMPONENT_NAME));
+        assert!(
+            props
+                .iter()
+                .all(|p| p.key != property_keys::COMPONENT_PARENT_ID)
+        );
+    }
+
+    #[test]
+    fn test_key_frame_double_default_interpolator_sentinel() {
+        let kf = KeyFrameDouble::new(0, 0.0);
+        assert_eq!(kf.interpolator_id, u32::MAX as u64);
+    }
+
+    #[test]
+    fn test_key_frame_color_default_interpolator_sentinel() {
+        let kf = KeyFrameColor::new(0, 0);
+        assert_eq!(kf.interpolator_id, u32::MAX as u64);
     }
 }

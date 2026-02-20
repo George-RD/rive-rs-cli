@@ -22,8 +22,8 @@ src/
 ├── objects/             # Rive object type definitions (see objects/AGENTS.md)
 │   ├── core.rs          # RiveObject trait, type_keys, property_keys
 │   ├── artboard.rs      # Artboard, Backboard
-│   ├── shapes.rs        # Shape, Ellipse, Rectangle, Fill, Stroke, Gradients
-│   ├── animation.rs     # LinearAnimation, KeyFrame types
+│   ├── shapes.rs        # Shape, Ellipse, Rectangle, Fill, Stroke, Gradients, TrimPath
+│   ├── animation.rs     # LinearAnimation, KeyFrame types, CubicEaseInterpolator
 │   └── state_machine.rs # StateMachine, Layer, States, Transitions, Conditions
 ├── builder/
 │   └── scene.rs         # JSON → Result<Vec<Box<dyn RiveObject>>, String> via SceneSpec
@@ -31,7 +31,7 @@ src/
     └── mod.rs           # BinaryReader, parse_riv, validate_riv, inspect_riv
 tests/
 ├── e2e.rs               # Integration tests (cargo run subprocess)
-├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path)
+├── fixtures/            # JSON fixtures (minimal, shapes, animation, state_machine, path, cubic_easing, trim_path)
 └── playwright/          # Runtime load harness + regression script
 ```
 
@@ -99,12 +99,14 @@ cli/mod.rs
 - **NEVER write Artboard parentId** — Artboard is root, no parent reference
 - **NEVER write default-valued properties for LinearAnimation** — only name/fps/duration are always written; speed/loop/workStart/workEnd only when non-default
 - **Artboard property order**: width(7) → height(8) → name(4) — no parentId
+- **NEVER use TrimPath mode_value 0** — valid modes are 1 (sequential) or 2 (synchronized); mode 0 causes runtime InvalidObject
+- **TrimPath parent must be a ShapePaint (Stroke/Fill), NOT a Shape** — EffectsContainer::from() only accepts ShapePaint types
 
 ## COMMANDS
 
 ```bash
 cargo build
-cargo test                                    # 136 tests (126 unit + 10 e2e)
+cargo test                                    # 149 tests (137 unit + 12 e2e)
 cargo run -- generate input.json -o out.riv   # JSON → .riv
 cargo run -- validate out.riv                 # structural check
 cargo run -- inspect out.riv                  # dump object tree
@@ -115,9 +117,9 @@ cargo fmt --check                             # format check
 
 ## TEST INFRASTRUCTURE
 
-- `cargo test` currently runs **136 tests total**: **126 unit tests** + **10 e2e tests**
+- `cargo test` currently runs **149 tests total**: **137 unit tests** + **12 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
-- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`)
+- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`)
 - Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
 
 ## BINARY FORMAT QUICK REF

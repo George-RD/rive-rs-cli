@@ -10,7 +10,7 @@ const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const CURRENT_DIR = path.join(ROOT, "target", "playwright-visual");
 const BASELINE_DIR = path.join(ROOT, "tests", "playwright", "baselines");
-const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path"];
+const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path"];
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8766);
 const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "0.1");
 

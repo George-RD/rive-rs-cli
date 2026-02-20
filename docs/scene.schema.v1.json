@@ -49,7 +49,8 @@
         { "$ref": "#/$defs/radial_gradient" },
         { "$ref": "#/$defs/gradient_stop" },
         { "$ref": "#/$defs/node" },
-        { "$ref": "#/$defs/path" }
+        { "$ref": "#/$defs/path" },
+        { "$ref": "#/$defs/trim_path" }
       ],
       "unevaluatedProperties": false
     },
@@ -231,6 +232,22 @@
       ],
       "unevaluatedProperties": false
     },
+    "trim_path": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "const": "trim_path" },
+            "start": { "type": "number", "minimum": 0 },
+            "end": { "type": "number", "minimum": 0 },
+            "offset": { "type": "number" },
+            "mode": { "type": "integer", "enum": [1, 2] }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
     "animation": {
       "type": "object",
       "required": ["name", "fps", "duration", "keyframes"],
@@ -240,10 +257,26 @@
         "duration": { "type": "integer", "minimum": 1 },
         "speed": { "type": "number" },
         "loop_type": { "type": "integer", "minimum": 0 },
+        "interpolators": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/interpolator" }
+        },
         "keyframes": {
           "type": "array",
           "items": { "$ref": "#/$defs/keyframe_group" }
         }
+      },
+      "unevaluatedProperties": false
+    },
+    "interpolator": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "x1": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y1": { "type": "number" },
+        "x2": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y2": { "type": "number" }
       },
       "unevaluatedProperties": false
     },
@@ -254,7 +287,7 @@
         "object": { "type": "string", "minLength": 1 },
         "property": {
           "type": "string",
-          "enum": ["x", "y", "rotation", "scale_x", "scale_y", "opacity", "width", "height", "color"]
+          "enum": ["x", "y", "rotation", "scale_x", "scale_y", "opacity", "width", "height", "color", "trim_start", "trim_end", "trim_offset"]
         },
         "frames": {
           "type": "array",
@@ -263,7 +296,9 @@
             "required": ["frame", "value"],
             "properties": {
               "frame": { "type": "integer", "minimum": 0 },
-              "value": {}
+              "value": {},
+              "interpolation": { "type": "string", "enum": ["hold", "linear", "cubic"] },
+              "interpolator": { "type": "string", "minLength": 1 }
             },
             "unevaluatedProperties": false
           }
