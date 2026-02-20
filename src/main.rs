@@ -11,7 +11,19 @@ use clap::Parser;
 fn main() {
     let cli = cli::Cli::parse();
 
-    match cli.command {
+    if cli.list_presets {
+        for preset in builder::artboard_presets() {
+            println!("{}: {}x{}", preset.name, preset.width, preset.height);
+        }
+        return;
+    }
+
+    let command = cli.command.unwrap_or_else(|| {
+        eprintln!("no command provided");
+        std::process::exit(1);
+    });
+
+    match command {
         cli::Command::Generate {
             input,
             output,
