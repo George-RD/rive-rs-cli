@@ -123,8 +123,11 @@ cargo fmt --check                             # format check
 - `cargo test` currently runs **191 tests total**: **164 unit tests** + **27 e2e tests**
 - E2E coverage lives in `tests/e2e.rs` and executes CLI subprocesses for `generate`, `validate`, and `inspect`
 - `inspect` supports focused diagnostics via filters: `--type-key`, `--type-name`, `--object-index`, and `--property-key`
-- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`, `nested_artboard.json`)
+- Fixtures for e2e live in `tests/fixtures/` (`minimal.json`, `shapes.json`, `animation.json`, `state_machine.json`, `path.json`, `cubic_easing.json`, `trim_path.json`, `multi_artboard.json`, `nested_artboard.json`, `artboard_preset.json`)
 - Playwright runtime regression checks live in `tests/playwright/` and run via `npx -y -p playwright node tests/playwright/regression.js`
+- Golden-frame visual regression: 17 baselines at 1024×1024 (2x Retina), multi-frame captures for animated fixtures (animation f0/f30/f60, cubic_easing f0/f15/f30/f45/f60, multi_artboard f0/f30)
+- Visual regression run: `npx -y -p playwright node tests/playwright/visual-regression.js`
+- Update baselines: `npx -y -p playwright node tests/playwright/visual-regression.js --update`
 
 ## BINARY FORMAT QUICK REF
 

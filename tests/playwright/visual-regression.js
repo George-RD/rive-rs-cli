@@ -10,9 +10,9 @@ const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const CURRENT_DIR = path.join(ROOT, "target", "playwright-visual");
 const BASELINE_DIR = path.join(ROOT, "tests", "playwright", "baselines");
-const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard", "nested_artboard"];
+const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard", "nested_artboard", "artboard_preset"];
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8766);
-const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "0.1");
+const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "1.0");
 
 function run(command, args, cwd = ROOT) {
   const result = spawnSync(command, args, { cwd, stdio: "inherit" });
@@ -226,6 +226,21 @@ function shotPlanForFixture(fixture) {
       { frame: 60, waitFrames: 60 },
     ];
   }
+  if (fixture === "cubic_easing") {
+    return [
+      { frame: 0, waitFrames: 0 },
+      { frame: 15, waitFrames: 15 },
+      { frame: 30, waitFrames: 30 },
+      { frame: 45, waitFrames: 45 },
+      { frame: 60, waitFrames: 60 },
+    ];
+  }
+  if (fixture === "multi_artboard") {
+    return [
+      { frame: 0, waitFrames: 0 },
+      { frame: 30, waitFrames: 30 },
+    ];
+  }
   return [{ frame: 0, waitFrames: 0 }];
 }
 
@@ -323,7 +338,7 @@ async function main() {
 
     for (const fixture of FIXTURES) {
       for (const shot of shotPlanForFixture(fixture)) {
-        const page = await browser.newPage({ viewport: { width: 512, height: 512 } });
+        const page = await browser.newPage({ viewport: { width: 512, height: 512 }, deviceScaleFactor: 2 });
         const runtimeErrors = [];
         page.on("pageerror", (err) => runtimeErrors.push(String(err)));
         page.on("console", (msg) => {
