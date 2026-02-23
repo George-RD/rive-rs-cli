@@ -1909,7 +1909,6 @@ fn test_inspect_json_constraints() {
     cleanup(&output);
 }
 
-
 const TEXT_TYPE_KEY: u64 = 134;
 const TEXT_STYLE_TYPE_KEY: u64 = 573;
 const TEXT_VALUE_RUN_TYPE_KEY: u64 = 135;
@@ -1921,8 +1920,6 @@ const LAYOUT_COMPONENT_STYLE_TYPE_KEY: u64 = 420;
 const VIEW_MODEL_TYPE_KEY: u64 = 435;
 const VIEW_MODEL_PROPERTY_TYPE_KEY: u64 = 430;
 const DATA_BIND_TYPE_KEY: u64 = 446;
-
-
 
 #[test]
 fn test_generate_text() {
@@ -2051,8 +2048,6 @@ fn test_inspect_json_text() {
     cleanup(&output);
 }
 
-
-
 #[test]
 fn test_generate_assets() {
     let input = fixture_path("assets.json");
@@ -2151,8 +2146,6 @@ fn test_inspect_json_assets() {
     cleanup(&output);
 }
 
-
-
 #[test]
 fn test_generate_layout() {
     let input = fixture_path("layout.json");
@@ -2244,8 +2237,6 @@ fn test_inspect_json_layout() {
 
     cleanup(&output);
 }
-
-
 
 #[test]
 fn test_generate_data_binding() {
