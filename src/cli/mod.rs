@@ -82,5 +82,11 @@ pub enum AiCommand {
         model: Option<String>,
         #[arg(long, help = "AI provider (template, openai)")]
         provider: Option<String>,
+        #[arg(
+            long,
+            default_value = "3",
+            help = "Max auto-repair retries (0 = no repair)"
+        )]
+        max_retries: u8,
     },
 }

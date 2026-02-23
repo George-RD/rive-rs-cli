@@ -133,12 +133,12 @@ fn main() {
                 dry_run,
                 model,
                 provider: provider_name,
+                max_retries,
             } => {
                 let config = ai::AiConfig::resolve(model, provider_name).unwrap_or_else(|e| {
                     eprintln!("AI config error: {}", e);
                     std::process::exit(1);
                 });
-
                 if template.is_some() && prompt.is_some() {
                     eprintln!("error: cannot use both --template and --prompt");
                     std::process::exit(1);
@@ -151,18 +151,15 @@ fn main() {
                     eprintln!("error: provide --prompt or --template");
                     std::process::exit(1);
                 };
-
                 let provider =
                     ai::create_provider(&config, template.is_some()).unwrap_or_else(|e| {
                         eprintln!("AI provider error: {}", e);
                         std::process::exit(1);
                     });
-
                 let scene_json = provider.generate(&input, &config).unwrap_or_else(|e| {
                     eprintln!("AI generation error: {}", e);
                     std::process::exit(1);
                 });
-
                 if dry_run {
                     let pretty = serde_json::to_string_pretty(&scene_json).unwrap_or_else(|e| {
                         eprintln!("failed to serialize scene JSON: {}", e);
@@ -172,23 +169,37 @@ fn main() {
                     return;
                 }
 
-                let spec: builder::SceneSpec =
-                    serde_json::from_value(scene_json).unwrap_or_else(|e| {
-                        eprintln!("invalid scene spec from AI: {}", e);
+                let engine = ai::RepairEngine::new(max_retries);
+                match engine.repair(scene_json, file_id) {
+                    Ok(result) => {
+                        if result.total_retries > 0 {
+                            eprintln!("repair succeeded after {} retry(ies)", result.total_retries);
+                            let summary = ai::format_repair_summary(&result.attempts);
+                            eprint!("{}", summary);
+                        }
+                        let bytes = result.riv_bytes;
+                        std::fs::write(&output, &bytes).unwrap_or_else(|e| {
+                            eprintln!("error writing {:?}: {}", output, e);
+                            std::process::exit(1);
+                        });
+                        eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
+                    }
+                    Err(e) => {
+                        if let ai::AiError::RepairFailed { ref attempts, .. } = e {
+                            let summary = ai::format_repair_summary(attempts);
+                            eprint!("{}", summary);
+                            let hints = ai::remediation_hints(attempts);
+                            if !hints.is_empty() {
+                                eprintln!("hints:");
+                                for hint in &hints {
+                                    eprintln!("  - {}", hint);
+                                }
+                            }
+                        }
+                        eprintln!("repair failed: {}", e);
                         std::process::exit(1);
-                    });
-                let scene = builder::build_scene(&spec).unwrap_or_else(|e| {
-                    eprintln!("scene build failed: {}", e);
-                    std::process::exit(1);
-                });
-                let refs: Vec<&dyn objects::core::RiveObject> =
-                    scene.iter().map(|o| &**o).collect();
-                let bytes = encoder::encode_riv(&refs, file_id);
-                std::fs::write(&output, &bytes).unwrap_or_else(|e| {
-                    eprintln!("error writing {:?}: {}", output, e);
-                    std::process::exit(1);
-                });
-                eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
+                    }
+                }
             }
         },
     }

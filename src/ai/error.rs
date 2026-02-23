@@ -1,3 +1,4 @@
+use crate::ai::repair::RepairAttempt;
 #[derive(Debug)]
 pub enum AiError {
     ProviderNotConfigured(String),
@@ -6,8 +7,11 @@ pub enum AiError {
     InvalidResponse(String),
     SchemaValidation(String),
     UnknownTemplate(String),
+    RepairFailed {
+        attempts: Vec<RepairAttempt>,
+        final_error: String,
+    },
 }
-
 impl std::fmt::Display for AiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -22,8 +26,18 @@ impl std::fmt::Display for AiError {
                 let available = crate::ai::templates::list_templates().join(", ");
                 write!(f, "unknown template '{}'; available: {}", msg, available)
             }
+            AiError::RepairFailed {
+                attempts,
+                final_error,
+            } => {
+                write!(
+                    f,
+                    "repair failed after {} attempt(s): {}",
+                    attempts.len(),
+                    final_error
+                )
+            }
         }
     }
 }
-
 impl std::error::Error for AiError {}
