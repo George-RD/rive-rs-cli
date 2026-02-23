@@ -19,7 +19,9 @@ impl AiConfig {
         model_override: Option<String>,
         provider_override: Option<String>,
     ) -> Result<Self, AiError> {
-        let api_key = std::env::var("OPENAI_API_KEY").ok();
+        let api_key = std::env::var("OPENAI_API_KEY")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
         let base_url = std::env::var("OPENAI_BASE_URL")
             .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
         let model = model_override
@@ -100,5 +102,31 @@ mod tests {
             "expected OPENAI_API_KEY in error, got: {}",
             err
         );
+    }
+
+    #[test]
+    fn test_resolve_empty_api_key_treated_as_missing() {
+        let _guard = lock_env();
+        unsafe {
+            std::env::set_var("OPENAI_API_KEY", "");
+        }
+        let config = AiConfig::resolve(None, None).unwrap();
+        assert!(matches!(config.provider, ProviderKind::Template));
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
+    }
+
+    #[test]
+    fn test_resolve_whitespace_api_key_treated_as_missing() {
+        let _guard = lock_env();
+        unsafe {
+            std::env::set_var("OPENAI_API_KEY", "   ");
+        }
+        let config = AiConfig::resolve(None, None).unwrap();
+        assert!(matches!(config.provider, ProviderKind::Template));
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
     }
 }

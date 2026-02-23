@@ -1446,6 +1446,31 @@ fn test_ai_generate_prompt_without_api_key() {
 }
 
 #[test]
+fn test_ai_rejects_both_template_and_prompt() {
+    let result = Command::new("cargo")
+        .args([
+            "run",
+            "--quiet",
+            "--",
+            "ai",
+            "generate",
+            "--template",
+            "bounce",
+            "--prompt",
+            "make something",
+        ])
+        .env_remove("OPENAI_API_KEY")
+        .output()
+        .expect("failed to run cargo");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!result.status.success());
+    assert!(
+        stderr.contains("cannot use both --template and --prompt"),
+        "expected conflict error, got: {}",
+        stderr
+    );
+}
+#[test]
 fn test_list_presets_flag() {
     let result = cargo_run(&["--list-presets"]);
     let stdout = String::from_utf8_lossy(&result.stdout);
