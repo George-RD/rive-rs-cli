@@ -1155,7 +1155,7 @@ fn append_object(
             ty,
         } => {
             let mut tendon = Tendon::new(name.clone(), parent_id);
-            if let Some(ref bone_name) = bone {
+            if let Some(bone_name) = bone {
                 let bone_global = *name_to_index.get(bone_name).ok_or_else(|| {
                     format!("tendon '{}' references unknown bone '{}'", name, bone_name)
                 })?;
@@ -1228,7 +1228,7 @@ fn append_object(
             parent_bone_count,
         } => {
             let mut ik = IKConstraint::new(name.clone(), parent_id);
-            if let Some(ref target_name) = target {
+            if let Some(target_name) = target {
                 let target_global = *name_to_index.get(target_name).ok_or_else(|| {
                     format!(
                         "ik_constraint '{}' references unknown target '{}'",
@@ -1257,7 +1257,7 @@ fn append_object(
             mode_value,
         } => {
             let mut dc = DistanceConstraint::new(name.clone(), parent_id);
-            if let Some(ref target_name) = target {
+            if let Some(target_name) = target {
                 let target_global = *name_to_index.get(target_name).ok_or_else(|| {
                     format!(
                         "distance_constraint '{}' references unknown target '{}'",
@@ -1288,7 +1288,7 @@ fn append_object(
             origin_y,
         } => {
             let mut tc = TransformConstraint::new(name.clone(), parent_id);
-            if let Some(ref target_name) = target {
+            if let Some(target_name) = target {
                 let target_global = *name_to_index.get(target_name).ok_or_else(|| {
                     format!(
                         "transform_constraint '{}' references unknown target '{}'",
@@ -1321,7 +1321,7 @@ fn append_object(
             strength,
         } => {
             let mut tlc = TranslationConstraint::new(name.clone(), parent_id);
-            if let Some(ref target_name) = target {
+            if let Some(target_name) = target {
                 let target_global = *name_to_index.get(target_name).ok_or_else(|| {
                     format!(
                         "translation_constraint '{}' references unknown target '{}'",
@@ -1342,7 +1342,7 @@ fn append_object(
             strength,
         } => {
             let mut sc = ScaleConstraint::new(name.clone(), parent_id);
-            if let Some(ref target_name) = target {
+            if let Some(target_name) = target {
                 let target_global = *name_to_index.get(target_name).ok_or_else(|| {
                     format!(
                         "scale_constraint '{}' references unknown target '{}'",
@@ -1363,7 +1363,7 @@ fn append_object(
             strength,
         } => {
             let mut rc = RotationConstraint::new(name.clone(), parent_id);
-            if let Some(ref target_name) = target {
+            if let Some(target_name) = target {
                 let target_global = *name_to_index.get(target_name).ok_or_else(|| {
                     format!(
                         "rotation_constraint '{}' references unknown target '{}'",
