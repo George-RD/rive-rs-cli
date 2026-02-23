@@ -1491,3 +1491,113 @@ fn test_list_presets_flag() {
         stdout
     );
 }
+
+#[test]
+fn test_ai_repair_missing_version() {
+    let output = temp_output("ai_repair_missing_version");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "bounce",
+        "--max-retries",
+        "3",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate with repair failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_ai_repair_zero_retries_still_succeeds_valid_template() {
+    let output = temp_output("ai_repair_zero_retries");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "bounce",
+        "--max-retries",
+        "0",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate with --max-retries 0 should succeed for valid templates: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_ai_repair_dry_run_skips_repair() {
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "bounce",
+        "--dry-run",
+        "--max-retries",
+        "0",
+    ]);
+    assert!(
+        result.status.success(),
+        "ai dry-run should skip repair: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("dry-run JSON should parse");
+    assert_eq!(
+        parsed.get("scene_format_version").and_then(|v| v.as_u64()),
+        Some(1)
+    );
+}
+
+#[test]
+fn test_ai_max_retries_flag_accepted() {
+    let output = temp_output("ai_max_retries_flag");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "spinner",
+        "--max-retries",
+        "5",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate with --max-retries 5 failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}

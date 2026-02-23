@@ -1,0 +1,28 @@
+{
+  "artboard": {
+    "name": "Test",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "children": [
+          {
+            "type": "ellipse",
+            "width": 100.0,
+            "height": 100.0
+          },
+          {
+            "type": "fill",
+            "children": [
+              {
+                "type": "solid_color",
+                "color": "FFFF0000"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
