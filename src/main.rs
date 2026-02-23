@@ -200,6 +200,17 @@ fn main() {
                         eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
                     }
                     Err(e) => {
+                        if let ai::AiError::RepairFailed { ref attempts, .. } = e {
+                            let summary = ai::format_repair_summary(attempts);
+                            eprint!("{}", summary);
+                            let hints = ai::repair::remediation_hints(attempts);
+                            if !hints.is_empty() {
+                                eprintln!("hints:");
+                                for hint in &hints {
+                                    eprintln!("  - {}", hint);
+                                }
+                            }
+                        }
                         eprintln!("repair failed: {}", e);
                         std::process::exit(1);
                     }

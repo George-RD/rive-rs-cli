@@ -1493,8 +1493,8 @@ fn test_list_presets_flag() {
 }
 
 #[test]
-fn test_ai_repair_missing_version() {
-    let output = temp_output("ai_repair_missing_version");
+fn test_ai_generate_with_repair_retries() {
+    let output = temp_output("ai_generate_with_repair_retries");
     cleanup(&output);
 
     let result = cargo_run(&[

@@ -277,11 +277,12 @@ fn add_default_names(json: &mut Value) -> Vec<String> {
 fn deduplicate_names(json: &mut Value) -> Vec<String> {
     let mut fixes = Vec::new();
     let mut seen: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
-
+    let mut renames: Vec<(String, String)> = Vec::new();
     fn walk_dedup(
         val: &mut Value,
         seen: &mut std::collections::HashMap<String, u32>,
         fixes: &mut Vec<String>,
+        renames: &mut Vec<(String, String)>,
     ) {
         if let Some(obj) = val.as_object_mut() {
             if let Some(name_val) = obj.get_mut("name")
@@ -292,24 +293,67 @@ fn deduplicate_names(json: &mut Value) -> Vec<String> {
                 if *count > 1 {
                     let new_name = format!("{}_{}", name, count);
                     *name_val = Value::String(new_name.clone());
+                    renames.push((name.clone(), new_name.clone()));
                     fixes.push(format!("renamed duplicate '{}' to '{}'", name, new_name));
                 }
             }
             for key in ["children", "artboard", "artboards"] {
                 if let Some(child) = obj.get_mut(key) {
-                    walk_dedup(child, seen, fixes);
+                    walk_dedup(child, seen, fixes, renames);
                 }
             }
         }
         if let Some(arr) = val.as_array_mut() {
             for item in arr.iter_mut() {
-                walk_dedup(item, seen, fixes);
+                walk_dedup(item, seen, fixes, renames);
             }
         }
     }
 
-    walk_dedup(json, &mut seen, &mut fixes);
+    walk_dedup(json, &mut seen, &mut fixes, &mut renames);
+
+    if !renames.is_empty() {
+        let rename_map: std::collections::HashMap<&str, &str> = renames
+            .iter()
+            .map(|(old, new)| (old.as_str(), new.as_str()))
+            .collect();
+        update_name_references(json, &rename_map, &mut fixes);
+    }
+
     fixes
+}
+
+fn update_name_references(
+    val: &mut Value,
+    rename_map: &std::collections::HashMap<&str, &str>,
+    fixes: &mut Vec<String>,
+) {
+    const REFERENCE_FIELDS: &[&str] = &["source_artboard_name"];
+    if let Some(obj) = val.as_object_mut() {
+        for field in REFERENCE_FIELDS {
+            if let Some(ref_val) = obj.get_mut(*field)
+                && let Some(old_ref) = ref_val.as_str().map(|s| s.to_string())
+            {
+                if let Some(new_ref) = rename_map.get(old_ref.as_str()) {
+                    *ref_val = Value::String((*new_ref).to_string());
+                    fixes.push(format!(
+                        "updated reference '{}' in {} to '{}'",
+                        old_ref, field, new_ref
+                    ));
+                }
+            }
+        }
+        for key in ["children", "artboard", "artboards", "animations"] {
+            if let Some(child) = obj.get_mut(key) {
+                update_name_references(child, rename_map, fixes);
+            }
+        }
+    }
+    if let Some(arr) = val.as_array_mut() {
+        for item in arr.iter_mut() {
+            update_name_references(item, rename_map, fixes);
+        }
+    }
 }
 
 fn clamp_color_values(json: &mut Value) -> Vec<String> {
