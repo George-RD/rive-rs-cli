@@ -1,0 +1,38 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "TextDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "text",
+        "name": "Greeting",
+        "align_value": 1,
+        "sizing_value": 2,
+        "overflow_value": 1,
+        "width": 400.0,
+        "height": 200.0,
+        "origin_x": 0.5,
+        "origin_y": 0.5,
+        "paragraph_spacing": 12.0,
+        "children": [
+          {
+            "type": "text_style",
+            "name": "HeadingStyle",
+            "font_size": 24.0,
+            "line_height": 1.5,
+            "letter_spacing": 0.5,
+            "font_asset_id": 1
+          },
+          {
+            "type": "text_value_run",
+            "name": "HeadingRun",
+            "text": "Hello World",
+            "style_id": 0
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,7 +1,11 @@
 pub mod animation;
 pub mod artboard;
+pub mod assets;
 pub mod bones;
 pub mod constraints;
 pub mod core;
+pub mod data_binding;
+pub mod layout;
 pub mod shapes;
 pub mod state_machine;
+pub mod text;

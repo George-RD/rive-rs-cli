@@ -1,0 +1,36 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "LayoutDemo",
+    "width": 800,
+    "height": 600,
+    "children": [
+      {
+        "type": "layout_component",
+        "name": "Container",
+        "clip": true,
+        "width": 600.0,
+        "height": 400.0,
+        "fractional_width": 0.8,
+        "fractional_height": 0.7,
+        "children": [
+          {
+            "type": "layout_component_style",
+            "name": "ContainerStyle",
+            "gap_horizontal": 10.0,
+            "gap_vertical": 8.0,
+            "padding_left": 16.0,
+            "padding_right": 16.0,
+            "padding_top": 12.0,
+            "padding_bottom": 12.0,
+            "flex_direction": 0,
+            "align_items": 2,
+            "justify_content": 1,
+            "flex_grow": 1.0,
+            "flex_shrink": 1.0
+          }
+        ]
+      }
+    ]
+  }
+}
