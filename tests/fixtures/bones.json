@@ -1,0 +1,91 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Rigging",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "BodyShape",
+        "x": 250,
+        "y": 250,
+        "children": [
+          { "type": "rectangle", "name": "BodyRect", "width": 100, "height": 200, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "BodyFill", "children": [
+            { "type": "solid_color", "name": "SkinTone", "color": "FFD2A67A" }
+          ]}
+        ]
+      },
+      {
+        "type": "root_bone",
+        "name": "Spine",
+        "x": 250.0,
+        "y": 400.0,
+        "length": 80.0,
+        "children": [
+          {
+            "type": "bone",
+            "name": "Torso",
+            "length": 60.0,
+            "children": [
+              {
+                "type": "bone",
+                "name": "Neck",
+                "length": 30.0
+              }
+            ]
+          },
+          {
+            "type": "bone",
+            "name": "LeftArm",
+            "length": 50.0,
+            "children": [
+              {
+                "type": "bone",
+                "name": "LeftForearm",
+                "length": 40.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "skin",
+        "name": "BodySkin",
+        "xx": 1.0,
+        "yy": 1.0,
+        "children": [
+          {
+            "type": "tendon",
+            "name": "SpineTendon",
+            "bone": "Spine",
+            "xx": 1.0,
+            "yy": 1.0
+          },
+          {
+            "type": "tendon",
+            "name": "TorsoTendon",
+            "bone": "Torso",
+            "xx": 1.0,
+            "yy": 1.0
+          }
+        ]
+      },
+      {
+        "type": "weight",
+        "name": "BodyWeight",
+        "values": 255,
+        "indices": 1
+      },
+      {
+        "type": "cubic_weight",
+        "name": "SmoothWeight",
+        "in_values": 128,
+        "in_indices": 0,
+        "out_values": 128,
+        "out_indices": 0
+      }
+    ]
+  }
+}

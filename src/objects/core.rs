@@ -83,6 +83,24 @@ pub mod type_keys {
     pub const TRANSITION_VALUE_CONDITION: u16 = 69;
     pub const TRANSITION_NUMBER_CONDITION: u16 = 70;
     pub const TRANSITION_BOOL_CONDITION: u16 = 71;
+    pub const SKELETAL_COMPONENT: u16 = 39;
+    pub const BONE: u16 = 40;
+    pub const ROOT_BONE: u16 = 41;
+    pub const SKIN: u16 = 43;
+    pub const TENDON: u16 = 44;
+    pub const WEIGHT: u16 = 45;
+    pub const CUBIC_WEIGHT: u16 = 46;
+    pub const CONSTRAINT: u16 = 79;
+    pub const TARGETED_CONSTRAINT: u16 = 80;
+    pub const IK_CONSTRAINT: u16 = 81;
+    pub const DISTANCE_CONSTRAINT: u16 = 82;
+    pub const TRANSFORM_CONSTRAINT: u16 = 83;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT: u16 = 85;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_Y: u16 = 86;
+    pub const TRANSLATION_CONSTRAINT: u16 = 87;
+    pub const SCALE_CONSTRAINT: u16 = 88;
+    pub const ROTATION_CONSTRAINT: u16 = 89;
+    pub const TRANSFORM_SPACE_CONSTRAINT: u16 = 90;
     pub const WORLD_TRANSFORM_COMPONENT: u16 = 91;
     pub const NESTED_ARTBOARD: u16 = 92;
     pub const CUBIC_VALUE_INTERPOLATOR: u16 = 138;
@@ -181,6 +199,52 @@ pub mod property_keys {
     pub const SHAPE_PAINT_BLEND_MODE: u16 = 747;
     pub const PATH_IS_HOLE: u16 = 770;
     pub const SHAPE_LENGTH: u16 = 781;
+    pub const BONE_LENGTH: u16 = 89;
+    pub const ROOT_BONE_X: u16 = 90;
+    pub const ROOT_BONE_Y: u16 = 91;
+    pub const TENDON_BONE_ID: u16 = 95;
+    pub const TENDON_XX: u16 = 96;
+    pub const TENDON_YX: u16 = 97;
+    pub const TENDON_XY: u16 = 98;
+    pub const TENDON_YY: u16 = 99;
+    pub const TENDON_TX: u16 = 100;
+    pub const TENDON_TY: u16 = 101;
+    pub const WEIGHT_VALUES: u16 = 102;
+    pub const WEIGHT_INDICES: u16 = 103;
+    pub const SKIN_XX: u16 = 104;
+    pub const SKIN_YX: u16 = 105;
+    pub const SKIN_XY: u16 = 106;
+    pub const SKIN_YY: u16 = 107;
+    pub const SKIN_TX: u16 = 108;
+    pub const SKIN_TY: u16 = 109;
+    pub const CUBIC_WEIGHT_IN_VALUES: u16 = 110;
+    pub const CUBIC_WEIGHT_IN_INDICES: u16 = 111;
+    pub const CUBIC_WEIGHT_OUT_VALUES: u16 = 112;
+    pub const CUBIC_WEIGHT_OUT_INDICES: u16 = 113;
+    pub const CONSTRAINT_STRENGTH: u16 = 172;
+    pub const TARGETED_CONSTRAINT_TARGET_ID: u16 = 173;
+    pub const IK_CONSTRAINT_INVERT_DIRECTION: u16 = 174;
+    pub const IK_CONSTRAINT_PARENT_BONE_COUNT: u16 = 175;
+    pub const DISTANCE_CONSTRAINT_DISTANCE: u16 = 177;
+    pub const DISTANCE_CONSTRAINT_MODE_VALUE: u16 = 178;
+    pub const TRANSFORM_SPACE_SOURCE_SPACE_VALUE: u16 = 179;
+    pub const TRANSFORM_SPACE_DEST_SPACE_VALUE: u16 = 180;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_COPY_FACTOR: u16 = 182;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_MIN_VALUE: u16 = 183;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_MAX_VALUE: u16 = 184;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_Y_COPY_FACTOR_Y: u16 = 185;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_VALUE_Y: u16 = 186;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_VALUE_Y: u16 = 187;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_OFFSET: u16 = 188;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_DOES_COPY: u16 = 189;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_MIN: u16 = 190;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_MAX: u16 = 191;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_Y_DOES_COPY_Y: u16 = 192;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_Y: u16 = 193;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y: u16 = 194;
+    pub const TRANSFORM_COMPONENT_CONSTRAINT_MIN_MAX_SPACE_VALUE: u16 = 195;
+    pub const TRANSFORM_CONSTRAINT_ORIGIN_X: u16 = 372;
+    pub const TRANSFORM_CONSTRAINT_ORIGIN_Y: u16 = 373;
 }
 
 pub fn is_bool_property(key: u16) -> bool {
@@ -193,6 +257,14 @@ pub fn is_bool_property(key: u16) -> bool {
             | property_keys::LINEAR_ANIMATION_QUANTIZE
             | property_keys::LAYOUT_COMPONENT_CLIP
             | property_keys::PATH_IS_HOLE
+            | property_keys::IK_CONSTRAINT_INVERT_DIRECTION
+            | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_OFFSET
+            | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_DOES_COPY
+            | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MIN
+            | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MAX
+            | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_DOES_COPY_Y
+            | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_Y
+            | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y
     )
 }
 
@@ -242,7 +314,32 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TRIM_PATH_OFFSET
         | property_keys::LAYOUT_COMPONENT_FRACTIONAL_WIDTH
         | property_keys::LAYOUT_COMPONENT_FRACTIONAL_HEIGHT
-        | property_keys::SHAPE_LENGTH => Some(BackingType::Float),
+        | property_keys::SHAPE_LENGTH
+        | property_keys::BONE_LENGTH
+        | property_keys::ROOT_BONE_X
+        | property_keys::ROOT_BONE_Y
+        | property_keys::TENDON_XX
+        | property_keys::TENDON_YX
+        | property_keys::TENDON_XY
+        | property_keys::TENDON_YY
+        | property_keys::TENDON_TX
+        | property_keys::TENDON_TY
+        | property_keys::SKIN_XX
+        | property_keys::SKIN_YX
+        | property_keys::SKIN_XY
+        | property_keys::SKIN_YY
+        | property_keys::SKIN_TX
+        | property_keys::SKIN_TY
+        | property_keys::CONSTRAINT_STRENGTH
+        | property_keys::DISTANCE_CONSTRAINT_DISTANCE
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_COPY_FACTOR
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MIN_VALUE
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MAX_VALUE
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_COPY_FACTOR_Y
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_VALUE_Y
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_VALUE_Y
+        | property_keys::TRANSFORM_CONSTRAINT_ORIGIN_X
+        | property_keys::TRANSFORM_CONSTRAINT_ORIGIN_Y => Some(BackingType::Float),
 
         property_keys::COMPONENT_PARENT_ID
         | property_keys::DRAWABLE_BLEND_MODE
@@ -283,7 +380,30 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::ARTBOARD_VIEW_MODEL_ID
         | property_keys::TRIM_PATH_MODE_VALUE
         | property_keys::SHAPE_PAINT_BLEND_MODE
-        | property_keys::PATH_IS_HOLE => Some(BackingType::UInt),
+        | property_keys::PATH_IS_HOLE
+        | property_keys::TENDON_BONE_ID
+        | property_keys::WEIGHT_VALUES
+        | property_keys::WEIGHT_INDICES
+        | property_keys::CUBIC_WEIGHT_IN_VALUES
+        | property_keys::CUBIC_WEIGHT_IN_INDICES
+        | property_keys::CUBIC_WEIGHT_OUT_VALUES
+        | property_keys::CUBIC_WEIGHT_OUT_INDICES
+        | property_keys::TARGETED_CONSTRAINT_TARGET_ID
+        | property_keys::IK_CONSTRAINT_INVERT_DIRECTION
+        | property_keys::IK_CONSTRAINT_PARENT_BONE_COUNT
+        | property_keys::DISTANCE_CONSTRAINT_MODE_VALUE
+        | property_keys::TRANSFORM_SPACE_SOURCE_SPACE_VALUE
+        | property_keys::TRANSFORM_SPACE_DEST_SPACE_VALUE
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_OFFSET
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_DOES_COPY
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MIN
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MAX
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_DOES_COPY_Y
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_Y
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y
+        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MIN_MAX_SPACE_VALUE => {
+            Some(BackingType::UInt)
+        }
 
         property_keys::SOLID_COLOR_VALUE
         | property_keys::GRADIENT_STOP_COLOR
