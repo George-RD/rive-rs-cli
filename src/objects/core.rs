@@ -339,7 +339,6 @@ pub fn is_bool_property(key: u16) -> bool {
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_DOES_COPY_Y
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_Y
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y
-            | property_keys::LAYOUT_STYLE_INTRINSICALLY_SIZED_VALUE
     )
 }
 
