@@ -333,14 +333,13 @@ fn update_name_references(
         for field in REFERENCE_FIELDS {
             if let Some(ref_val) = obj.get_mut(*field)
                 && let Some(old_ref) = ref_val.as_str().map(|s| s.to_string())
+                && let Some(new_ref) = rename_map.get(old_ref.as_str())
             {
-                if let Some(new_ref) = rename_map.get(old_ref.as_str()) {
-                    *ref_val = Value::String((*new_ref).to_string());
-                    fixes.push(format!(
-                        "updated reference '{}' in {} to '{}'",
-                        old_ref, field, new_ref
-                    ));
-                }
+                *ref_val = Value::String((*new_ref).to_string());
+                fixes.push(format!(
+                    "updated reference '{}' in {} to '{}'",
+                    old_ref, field, new_ref
+                ));
             }
         }
         for key in ["children", "artboard", "artboards", "animations"] {
