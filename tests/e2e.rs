@@ -1909,7 +1909,7 @@ fn test_inspect_json_constraints() {
     cleanup(&output);
 }
 
-// Issue #13: Advanced object type keys
+
 const TEXT_TYPE_KEY: u64 = 134;
 const TEXT_STYLE_TYPE_KEY: u64 = 573;
 const TEXT_VALUE_RUN_TYPE_KEY: u64 = 135;
@@ -1922,7 +1922,7 @@ const VIEW_MODEL_TYPE_KEY: u64 = 435;
 const VIEW_MODEL_PROPERTY_TYPE_KEY: u64 = 430;
 const DATA_BIND_TYPE_KEY: u64 = 446;
 
-// --- Text ---
+
 
 #[test]
 fn test_generate_text() {
@@ -2051,7 +2051,7 @@ fn test_inspect_json_text() {
     cleanup(&output);
 }
 
-// --- Assets ---
+
 
 #[test]
 fn test_generate_assets() {
@@ -2151,7 +2151,7 @@ fn test_inspect_json_assets() {
     cleanup(&output);
 }
 
-// --- Layout ---
+
 
 #[test]
 fn test_generate_layout() {
@@ -2245,7 +2245,7 @@ fn test_inspect_json_layout() {
     cleanup(&output);
 }
 
-// --- Data Binding ---
+
 
 #[test]
 fn test_generate_data_binding() {
