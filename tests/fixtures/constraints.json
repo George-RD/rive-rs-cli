@@ -1,0 +1,87 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Constraints",
+    "width": 600,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Target",
+        "x": 300,
+        "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "TargetPath", "width": 40, "height": 40, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "TargetFill", "children": [
+            { "type": "solid_color", "name": "Red", "color": "FFFF0000" }
+          ]}
+        ]
+      },
+      {
+        "type": "root_bone",
+        "name": "ArmRoot",
+        "x": 100.0,
+        "y": 200.0,
+        "length": 60.0,
+        "children": [
+          {
+            "type": "bone",
+            "name": "UpperArm",
+            "length": 50.0,
+            "children": [
+              {
+                "type": "bone",
+                "name": "LowerArm",
+                "length": 40.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ik_constraint",
+        "name": "ArmIK",
+        "target": "Target",
+        "strength": 1.0,
+        "invert_direction": false,
+        "parent_bone_count": 2
+      },
+      {
+        "type": "distance_constraint",
+        "name": "KeepDistance",
+        "target": "Target",
+        "strength": 0.8,
+        "distance": 50.0,
+        "mode_value": 0
+      },
+      {
+        "type": "transform_constraint",
+        "name": "FollowTransform",
+        "target": "Target",
+        "strength": 0.5,
+        "source_space_value": 0,
+        "dest_space_value": 0,
+        "origin_x": 0.0,
+        "origin_y": 0.0
+      },
+      {
+        "type": "translation_constraint",
+        "name": "FollowPosition",
+        "target": "Target",
+        "strength": 1.0
+      },
+      {
+        "type": "scale_constraint",
+        "name": "MatchScale",
+        "target": "Target",
+        "strength": 0.7
+      },
+      {
+        "type": "rotation_constraint",
+        "name": "MatchRotation",
+        "target": "Target",
+        "strength": 0.9
+      }
+    ]
+  }
+}

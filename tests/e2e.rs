@@ -1601,3 +1601,310 @@ fn test_ai_max_retries_flag_accepted() {
     assert_eq!(&bytes[0..4], b"RIVE");
     cleanup(&output);
 }
+
+const BONE_TYPE_KEY: u64 = 40;
+const ROOT_BONE_TYPE_KEY: u64 = 41;
+const SKIN_TYPE_KEY: u64 = 43;
+const TENDON_TYPE_KEY: u64 = 44;
+const WEIGHT_TYPE_KEY: u64 = 45;
+const CUBIC_WEIGHT_TYPE_KEY: u64 = 46;
+const IK_CONSTRAINT_TYPE_KEY: u64 = 81;
+const DISTANCE_CONSTRAINT_TYPE_KEY: u64 = 82;
+const TRANSFORM_CONSTRAINT_TYPE_KEY: u64 = 83;
+const TRANSLATION_CONSTRAINT_TYPE_KEY: u64 = 87;
+const SCALE_CONSTRAINT_TYPE_KEY: u64 = 88;
+const ROTATION_CONSTRAINT_TYPE_KEY: u64 = 89;
+
+#[test]
+fn test_generate_bones() {
+    let input = fixture_path("bones.json");
+    let output = temp_output("bones");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_bones() {
+    let input = fixture_path("bones.json");
+    let output = temp_output("validate_bones");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_bones() {
+    let input = fixture_path("bones.json");
+    let output = temp_output("inspect_bones");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Rigging"),
+        "expected artboard name 'Rigging' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_bones() {
+    let input = fixture_path("bones.json");
+    let output = temp_output("inspect_json_bones");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+
+    let root_bones: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == ROOT_BONE_TYPE_KEY)
+        .collect();
+    assert_eq!(root_bones.len(), 1, "expected 1 RootBone");
+
+    let bones: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == BONE_TYPE_KEY)
+        .collect();
+    assert!(
+        bones.len() >= 4,
+        "expected at least 4 Bones (Torso, Neck, LeftArm, LeftForearm), got {}",
+        bones.len()
+    );
+
+    let skins: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == SKIN_TYPE_KEY)
+        .collect();
+    assert_eq!(skins.len(), 1, "expected 1 Skin");
+
+    let tendons: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == TENDON_TYPE_KEY)
+        .collect();
+    assert_eq!(tendons.len(), 2, "expected 2 Tendons");
+
+    let weights: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == WEIGHT_TYPE_KEY)
+        .collect();
+    assert_eq!(weights.len(), 1, "expected 1 Weight");
+
+    let cubic_weights: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == CUBIC_WEIGHT_TYPE_KEY)
+        .collect();
+    assert_eq!(cubic_weights.len(), 1, "expected 1 CubicWeight");
+
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_constraints() {
+    let input = fixture_path("constraints.json");
+    let output = temp_output("constraints");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_constraints() {
+    let input = fixture_path("constraints.json");
+    let output = temp_output("validate_constraints");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_constraints() {
+    let input = fixture_path("constraints.json");
+    let output = temp_output("inspect_constraints");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Constraints"),
+        "expected artboard name 'Constraints' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_constraints() {
+    let input = fixture_path("constraints.json");
+    let output = temp_output("inspect_json_constraints");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+
+    let ik: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == IK_CONSTRAINT_TYPE_KEY)
+        .collect();
+    assert_eq!(ik.len(), 1, "expected 1 IKConstraint");
+
+    let dist: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == DISTANCE_CONSTRAINT_TYPE_KEY)
+        .collect();
+    assert_eq!(dist.len(), 1, "expected 1 DistanceConstraint");
+
+    let transform: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == TRANSFORM_CONSTRAINT_TYPE_KEY)
+        .collect();
+    assert_eq!(transform.len(), 1, "expected 1 TransformConstraint");
+
+    let translation: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == TRANSLATION_CONSTRAINT_TYPE_KEY)
+        .collect();
+    assert_eq!(translation.len(), 1, "expected 1 TranslationConstraint");
+
+    let scale: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == SCALE_CONSTRAINT_TYPE_KEY)
+        .collect();
+    assert_eq!(scale.len(), 1, "expected 1 ScaleConstraint");
+
+    let rotation: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == ROTATION_CONSTRAINT_TYPE_KEY)
+        .collect();
+    assert_eq!(rotation.len(), 1, "expected 1 RotationConstraint");
+
+    cleanup(&output);
+}

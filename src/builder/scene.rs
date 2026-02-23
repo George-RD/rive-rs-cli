@@ -7,6 +7,11 @@ use crate::objects::animation::{
     LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
+use crate::objects::bones::{Bone, CubicWeight, RootBone, Skin, Tendon, Weight};
+use crate::objects::constraints::{
+    DistanceConstraint, IKConstraint, RotationConstraint, ScaleConstraint, TransformConstraint,
+    TranslationConstraint,
+};
 use crate::objects::core::{RiveObject, property_keys};
 use crate::objects::shapes::{
     Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
@@ -227,6 +232,88 @@ pub enum ObjectSpec {
         source_artboard: String,
         x: Option<f32>,
         y: Option<f32>,
+    },
+    Bone {
+        name: String,
+        length: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    RootBone {
+        name: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        length: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    Skin {
+        name: String,
+        xx: Option<f32>,
+        yx: Option<f32>,
+        xy: Option<f32>,
+        yy: Option<f32>,
+        tx: Option<f32>,
+        ty: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    Tendon {
+        name: String,
+        bone: Option<String>,
+        xx: Option<f32>,
+        yx: Option<f32>,
+        xy: Option<f32>,
+        yy: Option<f32>,
+        tx: Option<f32>,
+        ty: Option<f32>,
+    },
+    Weight {
+        name: String,
+        values: Option<u64>,
+        indices: Option<u64>,
+    },
+    CubicWeight {
+        name: String,
+        in_values: Option<u64>,
+        in_indices: Option<u64>,
+        out_values: Option<u64>,
+        out_indices: Option<u64>,
+    },
+    IkConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
+        invert_direction: Option<bool>,
+        parent_bone_count: Option<u64>,
+    },
+    DistanceConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
+        distance: Option<f32>,
+        mode_value: Option<u64>,
+    },
+    TransformConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
+        source_space_value: Option<u64>,
+        dest_space_value: Option<u64>,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+    },
+    TranslationConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
+    },
+    ScaleConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
+    },
+    RotationConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
     },
 }
 
@@ -954,8 +1041,344 @@ fn append_object(
             }));
             name_to_index.insert(name.clone(), object_index);
         }
+        ObjectSpec::Bone {
+            name,
+            length,
+            children,
+        } => {
+            let mut bone = Bone::new(name.clone(), parent_id);
+            if let Some(length) = length {
+                bone.length = *length;
+            }
+            objects.push(Box::new(bone));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::RootBone {
+            name,
+            x,
+            y,
+            length,
+            children,
+        } => {
+            let mut root_bone = RootBone::new(name.clone(), parent_id);
+            if let Some(x) = x {
+                root_bone.x = *x;
+            }
+            if let Some(y) = y {
+                root_bone.y = *y;
+            }
+            if let Some(length) = length {
+                root_bone.length = *length;
+            }
+            objects.push(Box::new(root_bone));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::Skin {
+            name,
+            xx,
+            yx,
+            xy,
+            yy,
+            tx,
+            ty,
+            children,
+        } => {
+            let mut skin = Skin::new(name.clone(), parent_id);
+            if let Some(xx) = xx {
+                skin.xx = *xx;
+            }
+            if let Some(yx) = yx {
+                skin.yx = *yx;
+            }
+            if let Some(xy) = xy {
+                skin.xy = *xy;
+            }
+            if let Some(yy) = yy {
+                skin.yy = *yy;
+            }
+            if let Some(tx) = tx {
+                skin.tx = *tx;
+            }
+            if let Some(ty) = ty {
+                skin.ty = *ty;
+            }
+            objects.push(Box::new(skin));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::Tendon {
+            name,
+            bone,
+            xx,
+            yx,
+            xy,
+            yy,
+            tx,
+            ty,
+        } => {
+            let mut tendon = Tendon::new(name.clone(), parent_id);
+            if let Some(ref bone_name) = bone {
+                let bone_global = *name_to_index.get(bone_name).ok_or_else(|| {
+                    format!("tendon '{}' references unknown bone '{}'", name, bone_name)
+                })?;
+                tendon.bone_id = (bone_global - artboard_start) as u64;
+            }
+            if let Some(xx) = xx {
+                tendon.xx = *xx;
+            }
+            if let Some(yx) = yx {
+                tendon.yx = *yx;
+            }
+            if let Some(xy) = xy {
+                tendon.xy = *xy;
+            }
+            if let Some(yy) = yy {
+                tendon.yy = *yy;
+            }
+            if let Some(tx) = tx {
+                tendon.tx = *tx;
+            }
+            if let Some(ty) = ty {
+                tendon.ty = *ty;
+            }
+            objects.push(Box::new(tendon));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::Weight {
+            name,
+            values,
+            indices,
+        } => {
+            let mut weight = Weight::new(name.clone(), parent_id);
+            if let Some(values) = values {
+                weight.values = *values;
+            }
+            if let Some(indices) = indices {
+                weight.indices = *indices;
+            }
+            objects.push(Box::new(weight));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CubicWeight {
+            name,
+            in_values,
+            in_indices,
+            out_values,
+            out_indices,
+        } => {
+            let mut cubic_weight = CubicWeight::new(name.clone(), parent_id);
+            if let Some(in_values) = in_values {
+                cubic_weight.in_values = *in_values;
+            }
+            if let Some(in_indices) = in_indices {
+                cubic_weight.in_indices = *in_indices;
+            }
+            if let Some(out_values) = out_values {
+                cubic_weight.out_values = *out_values;
+            }
+            if let Some(out_indices) = out_indices {
+                cubic_weight.out_indices = *out_indices;
+            }
+            objects.push(Box::new(cubic_weight));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::IkConstraint {
+            name,
+            target,
+            strength,
+            invert_direction,
+            parent_bone_count,
+        } => {
+            let mut ik = IKConstraint::new(name.clone(), parent_id);
+            if let Some(ref target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "ik_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                ik.target_id = (target_global - artboard_start) as u64;
+            }
+            if let Some(s) = strength {
+                ik.strength = *s;
+            }
+            if let Some(inv) = invert_direction {
+                ik.invert_direction = *inv;
+            }
+            if let Some(pbc) = parent_bone_count {
+                ik.parent_bone_count = *pbc;
+            }
+            objects.push(Box::new(ik));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DistanceConstraint {
+            name,
+            target,
+            strength,
+            distance,
+            mode_value,
+        } => {
+            let mut dc = DistanceConstraint::new(name.clone(), parent_id);
+            if let Some(ref target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "distance_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                dc.target_id = (target_global - artboard_start) as u64;
+            }
+            if let Some(s) = strength {
+                dc.strength = *s;
+            }
+            if let Some(d) = distance {
+                dc.distance = *d;
+            }
+            if let Some(mv) = mode_value {
+                dc.mode_value = *mv;
+            }
+            objects.push(Box::new(dc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::TransformConstraint {
+            name,
+            target,
+            strength,
+            source_space_value,
+            dest_space_value,
+            origin_x,
+            origin_y,
+        } => {
+            let mut tc = TransformConstraint::new(name.clone(), parent_id);
+            if let Some(ref target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "transform_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                tc.target_id = (target_global - artboard_start) as u64;
+            }
+            if let Some(s) = strength {
+                tc.strength = *s;
+            }
+            if let Some(ssv) = source_space_value {
+                tc.source_space_value = *ssv;
+            }
+            if let Some(dsv) = dest_space_value {
+                tc.dest_space_value = *dsv;
+            }
+            if let Some(ox) = origin_x {
+                tc.origin_x = *ox;
+            }
+            if let Some(oy) = origin_y {
+                tc.origin_y = *oy;
+            }
+            objects.push(Box::new(tc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::TranslationConstraint {
+            name,
+            target,
+            strength,
+        } => {
+            let mut tlc = TranslationConstraint::new(name.clone(), parent_id);
+            if let Some(ref target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "translation_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                tlc.target_id = (target_global - artboard_start) as u64;
+            }
+            if let Some(s) = strength {
+                tlc.strength = *s;
+            }
+            objects.push(Box::new(tlc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScaleConstraint {
+            name,
+            target,
+            strength,
+        } => {
+            let mut sc = ScaleConstraint::new(name.clone(), parent_id);
+            if let Some(ref target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "scale_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                sc.target_id = (target_global - artboard_start) as u64;
+            }
+            if let Some(s) = strength {
+                sc.strength = *s;
+            }
+            objects.push(Box::new(sc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::RotationConstraint {
+            name,
+            target,
+            strength,
+        } => {
+            let mut rc = RotationConstraint::new(name.clone(), parent_id);
+            if let Some(ref target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "rotation_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                rc.target_id = (target_global - artboard_start) as u64;
+            }
+            if let Some(s) = strength {
+                rc.strength = *s;
+            }
+            objects.push(Box::new(rc));
+            name_to_index.insert(name.clone(), object_index);
+        }
     }
-
     Ok(())
 }
 
@@ -1034,7 +1457,10 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             }
             ObjectSpec::Shape { children, .. }
             | ObjectSpec::Fill { children, .. }
-            | ObjectSpec::Stroke { children, .. } => {
+            | ObjectSpec::Stroke { children, .. }
+            | ObjectSpec::Bone { children, .. }
+            | ObjectSpec::RootBone { children, .. }
+            | ObjectSpec::Skin { children, .. } => {
                 if let Some(kids) = children {
                     refs.extend(collect_nested_artboard_refs(kids));
                 }
@@ -1273,6 +1699,7 @@ enum ParentKind {
     Fill,
     Stroke,
     Gradient,
+    Bone,
 }
 
 fn validate_object_spec(
@@ -1430,6 +1857,43 @@ fn validate_object_spec(
             }
         }
         ObjectSpec::NestedArtboard { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::Bone { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Bone)?;
+                }
+            }
+        }
+        ObjectSpec::RootBone { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Bone)?;
+                }
+            }
+        }
+        ObjectSpec::Skin { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Bone)?;
+                }
+            }
+        }
+        ObjectSpec::Tendon { name, .. }
+        | ObjectSpec::Weight { name, .. }
+        | ObjectSpec::CubicWeight { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::IkConstraint { name, .. }
+        | ObjectSpec::DistanceConstraint { name, .. }
+        | ObjectSpec::TransformConstraint { name, .. }
+        | ObjectSpec::TranslationConstraint { name, .. }
+        | ObjectSpec::ScaleConstraint { name, .. }
+        | ObjectSpec::RotationConstraint { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
     }
