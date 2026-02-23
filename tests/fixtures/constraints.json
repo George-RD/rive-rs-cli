@@ -68,7 +68,12 @@
         "type": "translation_constraint",
         "name": "FollowPosition",
         "target": "Target",
-        "strength": 1.0
+        "strength": 1.0,
+        "copy_factor": 0.5,
+        "offset": true,
+        "does_copy": true,
+        "source_space_value": 1,
+        "dest_space_value": 1
       },
       {
         "type": "scale_constraint",

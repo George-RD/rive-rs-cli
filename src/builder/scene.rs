@@ -304,16 +304,58 @@ pub enum ObjectSpec {
         name: String,
         target: Option<String>,
         strength: Option<f32>,
+        source_space_value: Option<u64>,
+        dest_space_value: Option<u64>,
+        copy_factor: Option<f32>,
+        min_value: Option<f32>,
+        max_value: Option<f32>,
+        offset: Option<bool>,
+        does_copy: Option<bool>,
+        min: Option<bool>,
+        max: Option<bool>,
+        min_max_space_value: Option<u64>,
+        copy_factor_y: Option<f32>,
+        min_value_y: Option<f32>,
+        max_value_y: Option<f32>,
+        does_copy_y: Option<bool>,
+        min_y: Option<bool>,
+        max_y: Option<bool>,
     },
     ScaleConstraint {
         name: String,
         target: Option<String>,
         strength: Option<f32>,
+        source_space_value: Option<u64>,
+        dest_space_value: Option<u64>,
+        copy_factor: Option<f32>,
+        min_value: Option<f32>,
+        max_value: Option<f32>,
+        offset: Option<bool>,
+        does_copy: Option<bool>,
+        min: Option<bool>,
+        max: Option<bool>,
+        min_max_space_value: Option<u64>,
+        copy_factor_y: Option<f32>,
+        min_value_y: Option<f32>,
+        max_value_y: Option<f32>,
+        does_copy_y: Option<bool>,
+        min_y: Option<bool>,
+        max_y: Option<bool>,
     },
     RotationConstraint {
         name: String,
         target: Option<String>,
         strength: Option<f32>,
+        source_space_value: Option<u64>,
+        dest_space_value: Option<u64>,
+        copy_factor: Option<f32>,
+        min_value: Option<f32>,
+        max_value: Option<f32>,
+        offset: Option<bool>,
+        does_copy: Option<bool>,
+        min: Option<bool>,
+        max: Option<bool>,
+        min_max_space_value: Option<u64>,
     },
 }
 
@@ -1319,6 +1361,22 @@ fn append_object(
             name,
             target,
             strength,
+            source_space_value,
+            dest_space_value,
+            copy_factor,
+            min_value,
+            max_value,
+            offset,
+            does_copy,
+            min,
+            max,
+            min_max_space_value,
+            copy_factor_y,
+            min_value_y,
+            max_value_y,
+            does_copy_y,
+            min_y,
+            max_y,
         } => {
             let mut tlc = TranslationConstraint::new(name.clone(), parent_id);
             if let Some(target_name) = target {
@@ -1333,6 +1391,54 @@ fn append_object(
             if let Some(s) = strength {
                 tlc.strength = *s;
             }
+            if let Some(v) = source_space_value {
+                tlc.source_space_value = *v;
+            }
+            if let Some(v) = dest_space_value {
+                tlc.dest_space_value = *v;
+            }
+            if let Some(v) = copy_factor {
+                tlc.copy_factor = *v;
+            }
+            if let Some(v) = min_value {
+                tlc.min_value = *v;
+            }
+            if let Some(v) = max_value {
+                tlc.max_value = *v;
+            }
+            if let Some(v) = offset {
+                tlc.offset = *v;
+            }
+            if let Some(v) = does_copy {
+                tlc.does_copy = *v;
+            }
+            if let Some(v) = min {
+                tlc.min = *v;
+            }
+            if let Some(v) = max {
+                tlc.max = *v;
+            }
+            if let Some(v) = min_max_space_value {
+                tlc.min_max_space_value = *v;
+            }
+            if let Some(v) = copy_factor_y {
+                tlc.copy_factor_y = *v;
+            }
+            if let Some(v) = min_value_y {
+                tlc.min_value_y = *v;
+            }
+            if let Some(v) = max_value_y {
+                tlc.max_value_y = *v;
+            }
+            if let Some(v) = does_copy_y {
+                tlc.does_copy_y = *v;
+            }
+            if let Some(v) = min_y {
+                tlc.min_y = *v;
+            }
+            if let Some(v) = max_y {
+                tlc.max_y = *v;
+            }
             objects.push(Box::new(tlc));
             name_to_index.insert(name.clone(), object_index);
         }
@@ -1340,6 +1446,22 @@ fn append_object(
             name,
             target,
             strength,
+            source_space_value,
+            dest_space_value,
+            copy_factor,
+            min_value,
+            max_value,
+            offset,
+            does_copy,
+            min,
+            max,
+            min_max_space_value,
+            copy_factor_y,
+            min_value_y,
+            max_value_y,
+            does_copy_y,
+            min_y,
+            max_y,
         } => {
             let mut sc = ScaleConstraint::new(name.clone(), parent_id);
             if let Some(target_name) = target {
@@ -1354,6 +1476,54 @@ fn append_object(
             if let Some(s) = strength {
                 sc.strength = *s;
             }
+            if let Some(v) = source_space_value {
+                sc.source_space_value = *v;
+            }
+            if let Some(v) = dest_space_value {
+                sc.dest_space_value = *v;
+            }
+            if let Some(v) = copy_factor {
+                sc.copy_factor = *v;
+            }
+            if let Some(v) = min_value {
+                sc.min_value = *v;
+            }
+            if let Some(v) = max_value {
+                sc.max_value = *v;
+            }
+            if let Some(v) = offset {
+                sc.offset = *v;
+            }
+            if let Some(v) = does_copy {
+                sc.does_copy = *v;
+            }
+            if let Some(v) = min {
+                sc.min = *v;
+            }
+            if let Some(v) = max {
+                sc.max = *v;
+            }
+            if let Some(v) = min_max_space_value {
+                sc.min_max_space_value = *v;
+            }
+            if let Some(v) = copy_factor_y {
+                sc.copy_factor_y = *v;
+            }
+            if let Some(v) = min_value_y {
+                sc.min_value_y = *v;
+            }
+            if let Some(v) = max_value_y {
+                sc.max_value_y = *v;
+            }
+            if let Some(v) = does_copy_y {
+                sc.does_copy_y = *v;
+            }
+            if let Some(v) = min_y {
+                sc.min_y = *v;
+            }
+            if let Some(v) = max_y {
+                sc.max_y = *v;
+            }
             objects.push(Box::new(sc));
             name_to_index.insert(name.clone(), object_index);
         }
@@ -1361,6 +1531,16 @@ fn append_object(
             name,
             target,
             strength,
+            source_space_value,
+            dest_space_value,
+            copy_factor,
+            min_value,
+            max_value,
+            offset,
+            does_copy,
+            min,
+            max,
+            min_max_space_value,
         } => {
             let mut rc = RotationConstraint::new(name.clone(), parent_id);
             if let Some(target_name) = target {
@@ -1374,6 +1554,36 @@ fn append_object(
             }
             if let Some(s) = strength {
                 rc.strength = *s;
+            }
+            if let Some(v) = source_space_value {
+                rc.source_space_value = *v;
+            }
+            if let Some(v) = dest_space_value {
+                rc.dest_space_value = *v;
+            }
+            if let Some(v) = copy_factor {
+                rc.copy_factor = *v;
+            }
+            if let Some(v) = min_value {
+                rc.min_value = *v;
+            }
+            if let Some(v) = max_value {
+                rc.max_value = *v;
+            }
+            if let Some(v) = offset {
+                rc.offset = *v;
+            }
+            if let Some(v) = does_copy {
+                rc.does_copy = *v;
+            }
+            if let Some(v) = min {
+                rc.min = *v;
+            }
+            if let Some(v) = max {
+                rc.max = *v;
+            }
+            if let Some(v) = min_max_space_value {
+                rc.min_max_space_value = *v;
             }
             objects.push(Box::new(rc));
             name_to_index.insert(name.clone(), object_index);
@@ -1883,18 +2093,25 @@ fn validate_object_spec(
                 }
             }
         }
-        ObjectSpec::Tendon { name, .. }
-        | ObjectSpec::Weight { name, .. }
-        | ObjectSpec::CubicWeight { name, .. } => {
+        ObjectSpec::Tendon { name, bone, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if bone.is_none() {
+                return Err(format!("tendon '{}' must reference a bone", name));
+            }
+        }
+        ObjectSpec::Weight { name, .. } | ObjectSpec::CubicWeight { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
-        ObjectSpec::IkConstraint { name, .. }
-        | ObjectSpec::DistanceConstraint { name, .. }
-        | ObjectSpec::TransformConstraint { name, .. }
-        | ObjectSpec::TranslationConstraint { name, .. }
-        | ObjectSpec::ScaleConstraint { name, .. }
-        | ObjectSpec::RotationConstraint { name, .. } => {
+        ObjectSpec::IkConstraint { name, target, .. }
+        | ObjectSpec::DistanceConstraint { name, target, .. }
+        | ObjectSpec::TransformConstraint { name, target, .. }
+        | ObjectSpec::TranslationConstraint { name, target, .. }
+        | ObjectSpec::ScaleConstraint { name, target, .. }
+        | ObjectSpec::RotationConstraint { name, target, .. } => {
             ensure_unique_name(name, object_names)?;
+            if target.is_none() {
+                return Err(format!("constraint '{}' must specify a target", name));
+            }
         }
     }
 
