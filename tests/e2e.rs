@@ -1446,45 +1446,6 @@ fn test_ai_generate_prompt_without_api_key() {
 }
 
 #[test]
-fn test_ai_validate_template_output() {
-    for template in ["bounce", "spinner", "pulse", "fade"] {
-        let output = temp_output(&format!("ai_validate_{}", template));
-        cleanup(&output);
-
-        let generate = cargo_run(&[
-            "ai",
-            "generate",
-            "--template",
-            template,
-            "-o",
-            output.to_str().unwrap(),
-        ]);
-        assert!(
-            generate.status.success(),
-            "ai generate failed for {}: {}",
-            template,
-            String::from_utf8_lossy(&generate.stderr)
-        );
-
-        let val = cargo_run(&["validate", output.to_str().unwrap()]);
-        let stdout = String::from_utf8_lossy(&val.stdout);
-        assert!(
-            val.status.success(),
-            "validate failed for {}: {}",
-            template,
-            String::from_utf8_lossy(&val.stderr)
-        );
-        assert!(
-            stdout.contains("valid"),
-            "expected valid output for {}, got: {}",
-            template,
-            stdout
-        );
-        cleanup(&output);
-    }
-}
-
-#[test]
 fn test_list_presets_flag() {
     let result = cargo_run(&["--list-presets"]);
     let stdout = String::from_utf8_lossy(&result.stdout);

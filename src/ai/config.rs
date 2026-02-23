@@ -1,10 +1,12 @@
 use crate::ai::AiError;
 
+#[derive(Debug)]
 pub enum ProviderKind {
     Template,
     OpenAi,
 }
 
+#[derive(Debug)]
 pub struct AiConfig {
     pub provider: ProviderKind,
     pub model: String,
@@ -40,6 +42,10 @@ impl AiConfig {
         } else {
             ProviderKind::Template
         };
+
+        if matches!(provider, ProviderKind::OpenAi) && api_key.is_none() {
+            return Err(AiError::ApiKeyMissing("OPENAI_API_KEY".to_string()));
+        }
 
         Ok(AiConfig {
             provider,
@@ -78,5 +84,21 @@ mod tests {
         let _guard = lock_env();
         let result = AiConfig::resolve(None, Some("unknown".to_string()));
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_resolve_openai_without_key_errors() {
+        let _guard = lock_env();
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
+        let result = AiConfig::resolve(None, Some("openai".to_string()));
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.to_string().contains("OPENAI_API_KEY"),
+            "expected OPENAI_API_KEY in error, got: {}",
+            err
+        );
     }
 }

@@ -160,7 +160,11 @@ fn main() {
                 });
 
                 if dry_run {
-                    println!("{}", serde_json::to_string_pretty(&scene_json).unwrap());
+                    let pretty = serde_json::to_string_pretty(&scene_json).unwrap_or_else(|e| {
+                        eprintln!("failed to serialize scene JSON: {}", e);
+                        std::process::exit(1);
+                    });
+                    println!("{}", pretty);
                     return;
                 }
 
