@@ -170,29 +170,14 @@ fn main() {
                 }
 
                 let engine = ai::RepairEngine::new(max_retries);
-                match engine.repair(scene_json) {
+                match engine.repair(scene_json, file_id) {
                     Ok(result) => {
                         if result.total_retries > 0 {
                             eprintln!("repair succeeded after {} retry(ies)", result.total_retries);
                             let summary = ai::format_repair_summary(&result.attempts);
                             eprint!("{}", summary);
                         }
-                        let bytes = if file_id != 0 {
-                            let spec: builder::SceneSpec =
-                                serde_json::from_value(result.scene_json).unwrap_or_else(|e| {
-                                    eprintln!("invalid repaired scene: {}", e);
-                                    std::process::exit(1);
-                                });
-                            let scene = builder::build_scene(&spec).unwrap_or_else(|e| {
-                                eprintln!("scene build failed: {}", e);
-                                std::process::exit(1);
-                            });
-                            let refs: Vec<&dyn objects::core::RiveObject> =
-                                scene.iter().map(|o| &**o).collect();
-                            encoder::encode_riv(&refs, file_id)
-                        } else {
-                            result.riv_bytes
-                        };
+                        let bytes = result.riv_bytes;
                         std::fs::write(&output, &bytes).unwrap_or_else(|e| {
                             eprintln!("error writing {:?}: {}", output, e);
                             std::process::exit(1);
@@ -203,7 +188,7 @@ fn main() {
                         if let ai::AiError::RepairFailed { ref attempts, .. } = e {
                             let summary = ai::format_repair_summary(attempts);
                             eprint!("{}", summary);
-                            let hints = ai::repair::remediation_hints(attempts);
+                            let hints = ai::remediation_hints(attempts);
                             if !hints.is_empty() {
                                 eprintln!("hints:");
                                 for hint in &hints {

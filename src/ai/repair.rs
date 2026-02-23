@@ -67,7 +67,7 @@ impl RepairEngine {
         Self { max_retries }
     }
 
-    pub fn repair(&self, mut json: Value) -> Result<RepairResult, AiError> {
+    pub fn repair(&self, mut json: Value, file_id: u64) -> Result<RepairResult, AiError> {
         let mut attempts: Vec<RepairAttempt> = Vec::new();
 
         for attempt_num in 0..=self.max_retries {
@@ -116,7 +116,7 @@ impl RepairEngine {
             };
 
             let refs: Vec<&dyn RiveObject> = scene.iter().map(|o| &**o).collect();
-            let riv_bytes = encode_riv(&refs, 0);
+            let riv_bytes = encode_riv(&refs, file_id);
 
             let report = match validate_riv(&riv_bytes) {
                 Ok(r) => r,
@@ -328,7 +328,7 @@ fn update_name_references(
     rename_map: &std::collections::HashMap<&str, &str>,
     fixes: &mut Vec<String>,
 ) {
-    const REFERENCE_FIELDS: &[&str] = &["source_artboard_name"];
+    const REFERENCE_FIELDS: &[&str] = &["source_artboard_name", "object"];
     if let Some(obj) = val.as_object_mut() {
         for field in REFERENCE_FIELDS {
             if let Some(ref_val) = obj.get_mut(*field)
@@ -501,7 +501,7 @@ mod tests {
     #[test]
     fn test_valid_json_passes_with_zero_retries() {
         let engine = RepairEngine::default();
-        let result = engine.repair(valid_scene_json()).unwrap();
+        let result = engine.repair(valid_scene_json(), 0).unwrap();
         assert_eq!(result.total_retries, 0);
         assert_eq!(result.attempts.len(), 1);
         assert!(result.attempts[0].succeeded);
@@ -519,7 +519,7 @@ mod tests {
             }
         });
         let engine = RepairEngine::default();
-        let result = engine.repair(json).unwrap();
+        let result = engine.repair(json, 0).unwrap();
         assert!(result.total_retries > 0);
         assert!(result.attempts.iter().any(|a| a.succeeded));
         assert!(result.attempts.iter().any(|a| {
@@ -540,7 +540,7 @@ mod tests {
             }
         });
         let engine = RepairEngine::default();
-        let result = engine.repair(json).unwrap();
+        let result = engine.repair(json, 0).unwrap();
         assert!(result.total_retries > 0);
         assert!(
             result
@@ -572,7 +572,7 @@ mod tests {
             }
         });
         let engine = RepairEngine::default();
-        let result = engine.repair(json).unwrap();
+        let result = engine.repair(json, 0).unwrap();
         assert!(result.total_retries > 0);
         assert!(
             result
@@ -606,7 +606,7 @@ mod tests {
             }
         });
         let engine = RepairEngine::default();
-        let result = engine.repair(json).unwrap();
+        let result = engine.repair(json, 0).unwrap();
         assert!(result.scene_json.to_string().contains("MyShape_2") || result.total_retries == 0);
     }
 
@@ -616,7 +616,7 @@ mod tests {
             "completely": "invalid"
         });
         let engine = RepairEngine::new(2);
-        let result = engine.repair(json);
+        let result = engine.repair(json, 0);
         assert!(result.is_err());
         if let Err(AiError::RepairFailed {
             attempts,
@@ -642,7 +642,7 @@ mod tests {
             }
         });
         let engine = RepairEngine::new(0);
-        let result = engine.repair(json);
+        let result = engine.repair(json, 0);
         assert!(result.is_err());
     }
 
@@ -814,7 +814,7 @@ mod tests {
             }
         });
         let engine = RepairEngine::default();
-        let result = engine.repair(json).unwrap();
+        let result = engine.repair(json, 0).unwrap();
         assert_eq!(result.total_retries, 0);
         assert!(result.riv_bytes.len() > 10);
     }
