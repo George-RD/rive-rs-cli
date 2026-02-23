@@ -156,6 +156,7 @@ fn resolve_artboard_dimensions(artboard_spec: &ArtboardSpec) -> Result<(f32, f32
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum ObjectSpec {
     Shape {
         name: String,
