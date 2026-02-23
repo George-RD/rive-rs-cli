@@ -1908,3 +1908,430 @@ fn test_inspect_json_constraints() {
 
     cleanup(&output);
 }
+
+const TEXT_TYPE_KEY: u64 = 134;
+const TEXT_STYLE_TYPE_KEY: u64 = 573;
+const TEXT_VALUE_RUN_TYPE_KEY: u64 = 135;
+const IMAGE_ASSET_TYPE_KEY: u64 = 105;
+const FONT_ASSET_TYPE_KEY: u64 = 141;
+const AUDIO_ASSET_TYPE_KEY: u64 = 406;
+const LAYOUT_COMPONENT_TYPE_KEY: u64 = 409;
+const LAYOUT_COMPONENT_STYLE_TYPE_KEY: u64 = 420;
+const VIEW_MODEL_TYPE_KEY: u64 = 435;
+const VIEW_MODEL_PROPERTY_TYPE_KEY: u64 = 430;
+const DATA_BIND_TYPE_KEY: u64 = 446;
+
+#[test]
+fn test_generate_text() {
+    let input = fixture_path("text.json");
+    let output = temp_output("text");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_text() {
+    let input = fixture_path("text.json");
+    let output = temp_output("validate_text");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_text() {
+    let input = fixture_path("text.json");
+    let output = temp_output("inspect_text");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("TextDemo"),
+        "expected artboard name 'TextDemo' in output, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_text() {
+    let input = fixture_path("text.json");
+    let output = temp_output("inspect_json_text");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+
+    let text: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == TEXT_TYPE_KEY)
+        .collect();
+    assert_eq!(text.len(), 1, "expected 1 Text");
+
+    let text_styles: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == TEXT_STYLE_TYPE_KEY)
+        .collect();
+    assert_eq!(text_styles.len(), 1, "expected 1 TextStyle");
+
+    let text_runs: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == TEXT_VALUE_RUN_TYPE_KEY)
+        .collect();
+    assert_eq!(text_runs.len(), 1, "expected 1 TextValueRun");
+
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_assets() {
+    let input = fixture_path("assets.json");
+    let output = temp_output("assets");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_assets() {
+    let input = fixture_path("assets.json");
+    let output = temp_output("validate_assets");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_assets() {
+    let input = fixture_path("assets.json");
+    let output = temp_output("inspect_json_assets");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+
+    let images: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == IMAGE_ASSET_TYPE_KEY)
+        .collect();
+    assert_eq!(images.len(), 1, "expected 1 ImageAsset");
+
+    let fonts: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == FONT_ASSET_TYPE_KEY)
+        .collect();
+    assert_eq!(fonts.len(), 1, "expected 1 FontAsset");
+
+    let audio: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == AUDIO_ASSET_TYPE_KEY)
+        .collect();
+    assert_eq!(audio.len(), 1, "expected 1 AudioAsset");
+
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_layout() {
+    let input = fixture_path("layout.json");
+    let output = temp_output("layout");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_layout() {
+    let input = fixture_path("layout.json");
+    let output = temp_output("validate_layout");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_layout() {
+    let input = fixture_path("layout.json");
+    let output = temp_output("inspect_json_layout");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+
+    let layout_components: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == LAYOUT_COMPONENT_TYPE_KEY)
+        .collect();
+    assert_eq!(layout_components.len(), 1, "expected 1 LayoutComponent");
+
+    let layout_styles: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == LAYOUT_COMPONENT_STYLE_TYPE_KEY)
+        .collect();
+    assert_eq!(layout_styles.len(), 1, "expected 1 LayoutComponentStyle");
+
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_data_binding() {
+    let input = fixture_path("data_binding.json");
+    let output = temp_output("data_binding");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_data_binding() {
+    let input = fixture_path("data_binding.json");
+    let output = temp_output("validate_data_binding");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_data_binding() {
+    let input = fixture_path("data_binding.json");
+    let output = temp_output("inspect_json_data_binding");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+
+    let view_models: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == VIEW_MODEL_TYPE_KEY)
+        .collect();
+    assert_eq!(view_models.len(), 1, "expected 1 ViewModel");
+
+    let view_model_props: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == VIEW_MODEL_PROPERTY_TYPE_KEY)
+        .collect();
+    assert_eq!(view_model_props.len(), 2, "expected 2 ViewModelProperty");
+
+    let data_binds: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == DATA_BIND_TYPE_KEY)
+        .collect();
+    assert_eq!(data_binds.len(), 1, "expected 1 DataBind");
+
+    cleanup(&output);
+}

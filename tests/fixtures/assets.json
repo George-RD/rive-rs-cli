@@ -1,0 +1,27 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "AssetDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "image_asset",
+        "name": "HeroImage",
+        "asset_id": 100,
+        "cdn_base_url": "https://cdn.example.com/images"
+      },
+      {
+        "type": "font_asset",
+        "name": "MainFont",
+        "asset_id": 200
+      },
+      {
+        "type": "audio_asset",
+        "name": "BackgroundMusic",
+        "asset_id": 300,
+        "cdn_base_url": "https://cdn.example.com/audio"
+      }
+    ]
+  }
+}

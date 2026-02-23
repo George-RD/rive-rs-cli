@@ -109,6 +109,20 @@ pub mod type_keys {
     pub const KEYFRAME_INTERPOLATOR: u16 = 175;
     pub const LAYOUT_COMPONENT: u16 = 409;
     pub const TRANSITION_CONDITION: u16 = 476;
+    pub const LAYOUT_COMPONENT_STYLE: u16 = 420;
+    pub const VIEW_MODEL: u16 = 435;
+    pub const VIEW_MODEL_COMPONENT: u16 = 436;
+    pub const VIEW_MODEL_PROPERTY: u16 = 430;
+    pub const DATA_BIND: u16 = 446;
+    pub const TEXT: u16 = 134;
+    pub const TEXT_VALUE_RUN: u16 = 135;
+    pub const TEXT_STYLE: u16 = 573;
+    pub const IMAGE_ASSET: u16 = 105;
+    pub const FONT_ASSET: u16 = 141;
+    pub const AUDIO_ASSET: u16 = 406;
+    pub const FILE_ASSET_CONTENTS: u16 = 106;
+    pub const ASSET: u16 = 99;
+    pub const FILE_ASSET: u16 = 103;
 }
 
 pub mod property_keys {
@@ -245,6 +259,66 @@ pub mod property_keys {
     pub const TRANSFORM_COMPONENT_CONSTRAINT_MIN_MAX_SPACE_VALUE: u16 = 195;
     pub const TRANSFORM_CONSTRAINT_ORIGIN_X: u16 = 372;
     pub const TRANSFORM_CONSTRAINT_ORIGIN_Y: u16 = 373;
+    pub const ASSET_NAME: u16 = 203;
+    pub const FILE_ASSET_ASSET_ID: u16 = 204;
+    pub const FILE_ASSET_CDN_BASE_URL: u16 = 362;
+    pub const FILE_ASSET_CONTENTS_BYTES: u16 = 212;
+    pub const TEXT_ALIGN_VALUE: u16 = 281;
+    pub const TEXT_SIZING_VALUE: u16 = 284;
+    pub const TEXT_WIDTH: u16 = 285;
+    pub const TEXT_HEIGHT: u16 = 286;
+    pub const TEXT_OVERFLOW_VALUE: u16 = 287;
+    pub const TEXT_ORIGIN_X: u16 = 366;
+    pub const TEXT_ORIGIN_Y: u16 = 367;
+    pub const TEXT_PARAGRAPH_SPACING: u16 = 371;
+    pub const TEXT_ORIGIN_VALUE: u16 = 377;
+    pub const TEXT_STYLE_FONT_SIZE: u16 = 274;
+    pub const TEXT_STYLE_LINE_HEIGHT: u16 = 370;
+    pub const TEXT_STYLE_LETTER_SPACING: u16 = 390;
+    pub const TEXT_STYLE_FONT_ASSET_ID: u16 = 279;
+    pub const TEXT_VALUE_RUN_STYLE_ID: u16 = 272;
+    pub const TEXT_VALUE_RUN_TEXT: u16 = 268;
+    pub const LAYOUT_STYLE_GAP_HORIZONTAL: u16 = 498;
+    pub const LAYOUT_STYLE_GAP_VERTICAL: u16 = 499;
+    pub const LAYOUT_STYLE_MAX_WIDTH: u16 = 500;
+    pub const LAYOUT_STYLE_MAX_HEIGHT: u16 = 501;
+    pub const LAYOUT_STYLE_MIN_WIDTH: u16 = 502;
+    pub const LAYOUT_STYLE_MIN_HEIGHT: u16 = 503;
+    pub const LAYOUT_STYLE_BORDER_LEFT: u16 = 504;
+    pub const LAYOUT_STYLE_BORDER_RIGHT: u16 = 505;
+    pub const LAYOUT_STYLE_BORDER_TOP: u16 = 506;
+    pub const LAYOUT_STYLE_BORDER_BOTTOM: u16 = 507;
+    pub const LAYOUT_STYLE_MARGIN_LEFT: u16 = 508;
+    pub const LAYOUT_STYLE_MARGIN_RIGHT: u16 = 509;
+    pub const LAYOUT_STYLE_MARGIN_TOP: u16 = 510;
+    pub const LAYOUT_STYLE_MARGIN_BOTTOM: u16 = 511;
+    pub const LAYOUT_STYLE_PADDING_LEFT: u16 = 512;
+    pub const LAYOUT_STYLE_PADDING_RIGHT: u16 = 513;
+    pub const LAYOUT_STYLE_PADDING_TOP: u16 = 514;
+    pub const LAYOUT_STYLE_PADDING_BOTTOM: u16 = 515;
+    pub const LAYOUT_STYLE_POSITION_LEFT: u16 = 516;
+    pub const LAYOUT_STYLE_POSITION_RIGHT: u16 = 517;
+    pub const LAYOUT_STYLE_POSITION_TOP: u16 = 518;
+    pub const LAYOUT_STYLE_POSITION_BOTTOM: u16 = 519;
+    pub const LAYOUT_STYLE_FLEX_DIRECTION: u16 = 520;
+    pub const LAYOUT_STYLE_FLEX_WRAP: u16 = 524;
+    pub const LAYOUT_STYLE_ALIGN_ITEMS: u16 = 521;
+    pub const LAYOUT_STYLE_ALIGN_CONTENT: u16 = 522;
+    pub const LAYOUT_STYLE_JUSTIFY_CONTENT: u16 = 523;
+    pub const LAYOUT_STYLE_DISPLAY: u16 = 525;
+    pub const LAYOUT_STYLE_POSITION_TYPE: u16 = 526;
+    pub const LAYOUT_STYLE_OVERFLOW: u16 = 527;
+    pub const LAYOUT_STYLE_INTRINSICALLY_SIZED_VALUE: u16 = 606;
+    pub const LAYOUT_STYLE_WIDTH_UNITS: u16 = 607;
+    pub const LAYOUT_STYLE_HEIGHT_UNITS: u16 = 608;
+    pub const LAYOUT_STYLE_FLEX_GROW: u16 = 609;
+    pub const LAYOUT_STYLE_FLEX_SHRINK: u16 = 610;
+    pub const LAYOUT_STYLE_FLEX_BASIS: u16 = 611;
+    pub const LAYOUT_STYLE_ASPECT_RATIO: u16 = 612;
+    pub const VIEW_MODEL_PROPERTY_TYPE_VALUE: u16 = 875;
+    pub const DATA_BIND_PROPERTY_KEY: u16 = 586;
+    pub const DATA_BIND_FLAGS: u16 = 587;
+    pub const DATA_BIND_CONVERTER_ID: u16 = 660;
 }
 
 pub fn is_bool_property(key: u16) -> bool {
@@ -272,8 +346,10 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
     match key {
         property_keys::COMPONENT_NAME
         | property_keys::ANIMATION_NAME
-        | property_keys::STATE_MACHINE_COMPONENT_NAME => Some(BackingType::String),
-
+        | property_keys::STATE_MACHINE_COMPONENT_NAME
+        | property_keys::ASSET_NAME
+        | property_keys::FILE_ASSET_CDN_BASE_URL
+        | property_keys::TEXT_VALUE_RUN_TEXT => Some(BackingType::String),
         property_keys::LAYOUT_COMPONENT_WIDTH
         | property_keys::LAYOUT_COMPONENT_HEIGHT
         | property_keys::NODE_X_ARTBOARD
@@ -339,7 +415,41 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_VALUE_Y
         | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_VALUE_Y
         | property_keys::TRANSFORM_CONSTRAINT_ORIGIN_X
-        | property_keys::TRANSFORM_CONSTRAINT_ORIGIN_Y => Some(BackingType::Float),
+        | property_keys::TRANSFORM_CONSTRAINT_ORIGIN_Y
+        | property_keys::TEXT_WIDTH
+        | property_keys::TEXT_HEIGHT
+        | property_keys::TEXT_ORIGIN_X
+        | property_keys::TEXT_ORIGIN_Y
+        | property_keys::TEXT_PARAGRAPH_SPACING
+        | property_keys::TEXT_STYLE_FONT_SIZE
+        | property_keys::TEXT_STYLE_LINE_HEIGHT
+        | property_keys::TEXT_STYLE_LETTER_SPACING
+        | property_keys::LAYOUT_STYLE_GAP_HORIZONTAL
+        | property_keys::LAYOUT_STYLE_GAP_VERTICAL
+        | property_keys::LAYOUT_STYLE_MAX_WIDTH
+        | property_keys::LAYOUT_STYLE_MAX_HEIGHT
+        | property_keys::LAYOUT_STYLE_MIN_WIDTH
+        | property_keys::LAYOUT_STYLE_MIN_HEIGHT
+        | property_keys::LAYOUT_STYLE_BORDER_LEFT
+        | property_keys::LAYOUT_STYLE_BORDER_RIGHT
+        | property_keys::LAYOUT_STYLE_BORDER_TOP
+        | property_keys::LAYOUT_STYLE_BORDER_BOTTOM
+        | property_keys::LAYOUT_STYLE_MARGIN_LEFT
+        | property_keys::LAYOUT_STYLE_MARGIN_RIGHT
+        | property_keys::LAYOUT_STYLE_MARGIN_TOP
+        | property_keys::LAYOUT_STYLE_MARGIN_BOTTOM
+        | property_keys::LAYOUT_STYLE_PADDING_LEFT
+        | property_keys::LAYOUT_STYLE_PADDING_RIGHT
+        | property_keys::LAYOUT_STYLE_PADDING_TOP
+        | property_keys::LAYOUT_STYLE_PADDING_BOTTOM
+        | property_keys::LAYOUT_STYLE_POSITION_LEFT
+        | property_keys::LAYOUT_STYLE_POSITION_RIGHT
+        | property_keys::LAYOUT_STYLE_POSITION_TOP
+        | property_keys::LAYOUT_STYLE_POSITION_BOTTOM
+        | property_keys::LAYOUT_STYLE_FLEX_GROW
+        | property_keys::LAYOUT_STYLE_FLEX_SHRINK
+        | property_keys::LAYOUT_STYLE_FLEX_BASIS
+        | property_keys::LAYOUT_STYLE_ASPECT_RATIO => Some(BackingType::Float),
 
         property_keys::COMPONENT_PARENT_ID
         | property_keys::DRAWABLE_BLEND_MODE
@@ -401,9 +511,29 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_DOES_COPY_Y
         | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_Y
         | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y
-        | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MIN_MAX_SPACE_VALUE => {
-            Some(BackingType::UInt)
-        }
+        | property_keys::TEXT_ALIGN_VALUE
+        | property_keys::TEXT_SIZING_VALUE
+        | property_keys::TEXT_OVERFLOW_VALUE
+        | property_keys::TEXT_ORIGIN_VALUE
+        | property_keys::TEXT_STYLE_FONT_ASSET_ID
+        | property_keys::TEXT_VALUE_RUN_STYLE_ID
+        | property_keys::FILE_ASSET_ASSET_ID
+        | property_keys::FILE_ASSET_CONTENTS_BYTES
+        | property_keys::LAYOUT_STYLE_FLEX_DIRECTION
+        | property_keys::LAYOUT_STYLE_FLEX_WRAP
+        | property_keys::LAYOUT_STYLE_ALIGN_ITEMS
+        | property_keys::LAYOUT_STYLE_ALIGN_CONTENT
+        | property_keys::LAYOUT_STYLE_JUSTIFY_CONTENT
+        | property_keys::LAYOUT_STYLE_DISPLAY
+        | property_keys::LAYOUT_STYLE_POSITION_TYPE
+        | property_keys::LAYOUT_STYLE_OVERFLOW
+        | property_keys::LAYOUT_STYLE_INTRINSICALLY_SIZED_VALUE
+        | property_keys::LAYOUT_STYLE_WIDTH_UNITS
+        | property_keys::LAYOUT_STYLE_HEIGHT_UNITS
+        | property_keys::VIEW_MODEL_PROPERTY_TYPE_VALUE
+        | property_keys::DATA_BIND_PROPERTY_KEY
+        | property_keys::DATA_BIND_FLAGS
+        | property_keys::DATA_BIND_CONVERTER_ID => Some(BackingType::UInt),
 
         property_keys::SOLID_COLOR_VALUE
         | property_keys::GRADIENT_STOP_COLOR

@@ -7,12 +7,15 @@ use crate::objects::animation::{
     LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
+use crate::objects::assets::{AudioAsset, FontAsset, ImageAsset};
 use crate::objects::bones::{Bone, CubicWeight, RootBone, Skin, Tendon, Weight};
 use crate::objects::constraints::{
     DistanceConstraint, IKConstraint, RotationConstraint, ScaleConstraint, TransformConstraint,
     TranslationConstraint,
 };
 use crate::objects::core::{RiveObject, property_keys};
+use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
+use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
     Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
     Shape, SolidColor, Stroke, TrimPath,
@@ -23,6 +26,7 @@ use crate::objects::state_machine::{
     TransitionBoolCondition, TransitionInputCondition, TransitionNumberCondition,
     TransitionTriggerCondition, TransitionValueCondition,
 };
+use crate::objects::text::{Text, TextStyle, TextValueRun};
 
 const SCENE_FORMAT_VERSION: u32 = 1;
 
@@ -152,6 +156,7 @@ fn resolve_artboard_dimensions(artboard_spec: &ArtboardSpec) -> Result<(f32, f32
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum ObjectSpec {
     Shape {
         name: String,
@@ -356,6 +361,109 @@ pub enum ObjectSpec {
         min: Option<bool>,
         max: Option<bool>,
         min_max_space_value: Option<u64>,
+    },
+    Text {
+        name: String,
+        align_value: Option<u64>,
+        sizing_value: Option<u64>,
+        overflow_value: Option<u64>,
+        width: Option<f32>,
+        height: Option<f32>,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+        paragraph_spacing: Option<f32>,
+        origin_value: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextStyle {
+        name: String,
+        font_size: Option<f32>,
+        line_height: Option<f32>,
+        letter_spacing: Option<f32>,
+        font_asset_id: Option<u64>,
+    },
+    TextValueRun {
+        name: String,
+        text: String,
+        style_id: Option<u64>,
+    },
+    ImageAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+    },
+    FontAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+    },
+    AudioAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+    },
+    LayoutComponent {
+        name: String,
+        clip: Option<bool>,
+        width: Option<f32>,
+        height: Option<f32>,
+        style_id: Option<u64>,
+        fractional_width: Option<f32>,
+        fractional_height: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    LayoutComponentStyle {
+        name: String,
+        gap_horizontal: Option<f32>,
+        gap_vertical: Option<f32>,
+        max_width: Option<f32>,
+        max_height: Option<f32>,
+        min_width: Option<f32>,
+        min_height: Option<f32>,
+        border_left: Option<f32>,
+        border_right: Option<f32>,
+        border_top: Option<f32>,
+        border_bottom: Option<f32>,
+        margin_left: Option<f32>,
+        margin_right: Option<f32>,
+        margin_top: Option<f32>,
+        margin_bottom: Option<f32>,
+        padding_left: Option<f32>,
+        padding_right: Option<f32>,
+        padding_top: Option<f32>,
+        padding_bottom: Option<f32>,
+        position_left: Option<f32>,
+        position_right: Option<f32>,
+        position_top: Option<f32>,
+        position_bottom: Option<f32>,
+        flex_direction: Option<u64>,
+        flex_wrap: Option<u64>,
+        align_items: Option<u64>,
+        align_content: Option<u64>,
+        justify_content: Option<u64>,
+        display: Option<u64>,
+        position_type: Option<u64>,
+        overflow: Option<u64>,
+        intrinsically_sized: Option<bool>,
+        width_units: Option<u64>,
+        height_units: Option<u64>,
+        flex_grow: Option<f32>,
+        flex_shrink: Option<f32>,
+        flex_basis: Option<f32>,
+        aspect_ratio: Option<f32>,
+    },
+    ViewModel {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    ViewModelProperty {
+        name: String,
+        property_type_value: Option<u64>,
+    },
+    DataBind {
+        property_key: u64,
+        flags: u64,
+        converter_id: Option<u64>,
     },
 }
 
@@ -1588,6 +1696,381 @@ fn append_object(
             objects.push(Box::new(rc));
             name_to_index.insert(name.clone(), object_index);
         }
+        ObjectSpec::Text {
+            name,
+            align_value,
+            sizing_value,
+            overflow_value,
+            width,
+            height,
+            origin_x,
+            origin_y,
+            paragraph_spacing,
+            origin_value,
+            children,
+        } => {
+            let mut text = Text::new(name.clone(), parent_id);
+            if let Some(v) = align_value {
+                text.align_value = *v;
+            }
+            if let Some(v) = sizing_value {
+                text.sizing_value = *v;
+            }
+            if let Some(v) = overflow_value {
+                text.overflow_value = *v;
+            }
+            if let Some(v) = width {
+                text.width = *v;
+            }
+            if let Some(v) = height {
+                text.height = *v;
+            }
+            if let Some(v) = origin_x {
+                text.origin_x = *v;
+            }
+            if let Some(v) = origin_y {
+                text.origin_y = *v;
+            }
+            if let Some(v) = paragraph_spacing {
+                text.paragraph_spacing = *v;
+            }
+            if let Some(v) = origin_value {
+                text.origin_value = *v;
+            }
+            objects.push(Box::new(text));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextStyle {
+            name,
+            font_size,
+            line_height,
+            letter_spacing,
+            font_asset_id,
+        } => {
+            let mut style = TextStyle::new(name.clone(), parent_id);
+            if let Some(v) = font_size {
+                style.font_size = *v;
+            }
+            if let Some(v) = line_height {
+                style.line_height = *v;
+            }
+            if let Some(v) = letter_spacing {
+                style.letter_spacing = *v;
+            }
+            if let Some(v) = font_asset_id {
+                style.font_asset_id = *v;
+            }
+            objects.push(Box::new(style));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::TextValueRun {
+            name,
+            text,
+            style_id,
+        } => {
+            let mut run = TextValueRun::new(name.clone(), parent_id, text.clone());
+            if let Some(v) = style_id {
+                run.style_id = *v;
+            }
+            objects.push(Box::new(run));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ImageAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = ImageAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::FontAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = FontAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::AudioAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = AudioAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::LayoutComponent {
+            name,
+            clip,
+            width,
+            height,
+            style_id,
+            fractional_width,
+            fractional_height,
+            children,
+        } => {
+            let mut lc = LayoutComponent::new(name.clone(), parent_id);
+            if let Some(v) = clip {
+                lc.clip = *v;
+            }
+            if let Some(v) = width {
+                lc.width = *v;
+            }
+            if let Some(v) = height {
+                lc.height = *v;
+            }
+            if let Some(v) = style_id {
+                lc.style_id = *v;
+            }
+            if let Some(v) = fractional_width {
+                lc.fractional_width = *v;
+            }
+            if let Some(v) = fractional_height {
+                lc.fractional_height = *v;
+            }
+            objects.push(Box::new(lc));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::LayoutComponentStyle {
+            name,
+            gap_horizontal,
+            gap_vertical,
+            max_width,
+            max_height,
+            min_width,
+            min_height,
+            border_left,
+            border_right,
+            border_top,
+            border_bottom,
+            margin_left,
+            margin_right,
+            margin_top,
+            margin_bottom,
+            padding_left,
+            padding_right,
+            padding_top,
+            padding_bottom,
+            position_left,
+            position_right,
+            position_top,
+            position_bottom,
+            flex_direction,
+            flex_wrap,
+            align_items,
+            align_content,
+            justify_content,
+            display,
+            position_type,
+            overflow,
+            intrinsically_sized,
+            width_units,
+            height_units,
+            flex_grow,
+            flex_shrink,
+            flex_basis,
+            aspect_ratio,
+        } => {
+            let mut style = LayoutComponentStyle::new(name.clone(), parent_id);
+            if let Some(v) = gap_horizontal {
+                style.gap_horizontal = *v;
+            }
+            if let Some(v) = gap_vertical {
+                style.gap_vertical = *v;
+            }
+            if let Some(v) = max_width {
+                style.max_width = *v;
+            }
+            if let Some(v) = max_height {
+                style.max_height = *v;
+            }
+            if let Some(v) = min_width {
+                style.min_width = *v;
+            }
+            if let Some(v) = min_height {
+                style.min_height = *v;
+            }
+            if let Some(v) = border_left {
+                style.border_left = *v;
+            }
+            if let Some(v) = border_right {
+                style.border_right = *v;
+            }
+            if let Some(v) = border_top {
+                style.border_top = *v;
+            }
+            if let Some(v) = border_bottom {
+                style.border_bottom = *v;
+            }
+            if let Some(v) = margin_left {
+                style.margin_left = *v;
+            }
+            if let Some(v) = margin_right {
+                style.margin_right = *v;
+            }
+            if let Some(v) = margin_top {
+                style.margin_top = *v;
+            }
+            if let Some(v) = margin_bottom {
+                style.margin_bottom = *v;
+            }
+            if let Some(v) = padding_left {
+                style.padding_left = *v;
+            }
+            if let Some(v) = padding_right {
+                style.padding_right = *v;
+            }
+            if let Some(v) = padding_top {
+                style.padding_top = *v;
+            }
+            if let Some(v) = padding_bottom {
+                style.padding_bottom = *v;
+            }
+            if let Some(v) = position_left {
+                style.position_left = *v;
+            }
+            if let Some(v) = position_right {
+                style.position_right = *v;
+            }
+            if let Some(v) = position_top {
+                style.position_top = *v;
+            }
+            if let Some(v) = position_bottom {
+                style.position_bottom = *v;
+            }
+            if let Some(v) = flex_direction {
+                style.flex_direction = *v;
+            }
+            if let Some(v) = flex_wrap {
+                style.flex_wrap = *v;
+            }
+            if let Some(v) = align_items {
+                style.align_items = *v;
+            }
+            if let Some(v) = align_content {
+                style.align_content = *v;
+            }
+            if let Some(v) = justify_content {
+                style.justify_content = *v;
+            }
+            if let Some(v) = display {
+                style.display = *v;
+            }
+            if let Some(v) = position_type {
+                style.position_type = *v;
+            }
+            if let Some(v) = overflow {
+                style.overflow = *v;
+            }
+            if let Some(v) = intrinsically_sized {
+                style.intrinsically_sized = *v;
+            }
+            if let Some(v) = width_units {
+                style.width_units = *v;
+            }
+            if let Some(v) = height_units {
+                style.height_units = *v;
+            }
+            if let Some(v) = flex_grow {
+                style.flex_grow = *v;
+            }
+            if let Some(v) = flex_shrink {
+                style.flex_shrink = *v;
+            }
+            if let Some(v) = flex_basis {
+                style.flex_basis = *v;
+            }
+            if let Some(v) = aspect_ratio {
+                style.aspect_ratio = *v;
+            }
+            objects.push(Box::new(style));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ViewModel { name, children } => {
+            let vm = ViewModel::new(name.clone(), parent_id);
+            objects.push(Box::new(vm));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelProperty {
+            name,
+            property_type_value,
+        } => {
+            let vmp =
+                ViewModelProperty::new(name.clone(), parent_id, property_type_value.unwrap_or(0));
+            objects.push(Box::new(vmp));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataBind {
+            property_key,
+            flags,
+            converter_id,
+        } => {
+            let mut db = DataBind::new(*property_key, *flags);
+            if let Some(v) = converter_id {
+                db.converter_id = *v;
+            }
+            objects.push(Box::new(db));
+        }
     }
     Ok(())
 }
@@ -1670,7 +2153,10 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             | ObjectSpec::Stroke { children, .. }
             | ObjectSpec::Bone { children, .. }
             | ObjectSpec::RootBone { children, .. }
-            | ObjectSpec::Skin { children, .. } => {
+            | ObjectSpec::Skin { children, .. }
+            | ObjectSpec::Text { children, .. }
+            | ObjectSpec::LayoutComponent { children, .. }
+            | ObjectSpec::ViewModel { children, .. } => {
                 if let Some(kids) = children {
                     refs.extend(collect_nested_artboard_refs(kids));
                 }
@@ -1910,6 +2396,9 @@ enum ParentKind {
     Stroke,
     Gradient,
     Bone,
+    Text,
+    LayoutComponent,
+    ViewModel,
 }
 
 fn validate_object_spec(
@@ -2113,6 +2602,45 @@ fn validate_object_spec(
                 return Err(format!("constraint '{}' must specify a target", name));
             }
         }
+        ObjectSpec::Text { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Text)?;
+                }
+            }
+        }
+        ObjectSpec::TextStyle { name, .. } | ObjectSpec::TextValueRun { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::ImageAsset { name, .. }
+        | ObjectSpec::FontAsset { name, .. }
+        | ObjectSpec::AudioAsset { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::LayoutComponent { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::LayoutComponent)?;
+                }
+            }
+        }
+        ObjectSpec::LayoutComponentStyle { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::ViewModel { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::ViewModel)?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelProperty { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::DataBind { .. } => {}
     }
 
     Ok(())

@@ -1,0 +1,31 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "DataBindDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "view_model",
+        "name": "UserProfile",
+        "children": [
+          {
+            "type": "view_model_property",
+            "name": "UserName",
+            "property_type_value": 1
+          },
+          {
+            "type": "view_model_property",
+            "name": "Score",
+            "property_type_value": 2
+          }
+        ]
+      },
+      {
+        "type": "data_bind",
+        "property_key": 586,
+        "flags": 1
+      }
+    ]
+  }
+}
