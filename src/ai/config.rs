@@ -1,0 +1,132 @@
+use crate::ai::AiError;
+
+#[derive(Debug)]
+pub enum ProviderKind {
+    Template,
+    OpenAi,
+}
+
+#[derive(Debug)]
+pub struct AiConfig {
+    pub provider: ProviderKind,
+    pub model: String,
+    pub api_key: Option<String>,
+    pub base_url: String,
+}
+
+impl AiConfig {
+    pub fn resolve(
+        model_override: Option<String>,
+        provider_override: Option<String>,
+    ) -> Result<Self, AiError> {
+        let api_key = std::env::var("OPENAI_API_KEY")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
+        let base_url = std::env::var("OPENAI_BASE_URL")
+            .unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+        let model = model_override
+            .or_else(|| std::env::var("OPENAI_MODEL").ok())
+            .unwrap_or_else(|| "gpt-4o".to_string());
+
+        let provider = if let Some(ref p) = provider_override {
+            match p.as_str() {
+                "template" => ProviderKind::Template,
+                "openai" => ProviderKind::OpenAi,
+                other => {
+                    return Err(AiError::ProviderNotConfigured(format!(
+                        "unknown provider '{}'; available: template, openai",
+                        other
+                    )));
+                }
+            }
+        } else if api_key.is_some() {
+            ProviderKind::OpenAi
+        } else {
+            ProviderKind::Template
+        };
+
+        if matches!(provider, ProviderKind::OpenAi) && api_key.is_none() {
+            return Err(AiError::ApiKeyMissing("OPENAI_API_KEY".to_string()));
+        }
+
+        Ok(AiConfig {
+            provider,
+            model,
+            api_key,
+            base_url,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    fn lock_env() -> std::sync::MutexGuard<'static, ()> {
+        ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
+
+    #[test]
+    fn test_resolve_default_config() {
+        let _guard = lock_env();
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+            std::env::remove_var("OPENAI_MODEL");
+            std::env::remove_var("OPENAI_BASE_URL");
+        }
+        let config = AiConfig::resolve(None, None).unwrap();
+        assert!(matches!(config.provider, ProviderKind::Template));
+    }
+
+    #[test]
+    fn test_resolve_unknown_provider_error() {
+        let _guard = lock_env();
+        let result = AiConfig::resolve(None, Some("unknown".to_string()));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_resolve_openai_without_key_errors() {
+        let _guard = lock_env();
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
+        let result = AiConfig::resolve(None, Some("openai".to_string()));
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.to_string().contains("OPENAI_API_KEY"),
+            "expected OPENAI_API_KEY in error, got: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn test_resolve_empty_api_key_treated_as_missing() {
+        let _guard = lock_env();
+        unsafe {
+            std::env::set_var("OPENAI_API_KEY", "");
+        }
+        let config = AiConfig::resolve(None, None).unwrap();
+        assert!(matches!(config.provider, ProviderKind::Template));
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
+    }
+
+    #[test]
+    fn test_resolve_whitespace_api_key_treated_as_missing() {
+        let _guard = lock_env();
+        unsafe {
+            std::env::set_var("OPENAI_API_KEY", "   ");
+        }
+        let config = AiConfig::resolve(None, None).unwrap();
+        assert!(matches!(config.provider, ProviderKind::Template));
+        unsafe {
+            std::env::remove_var("OPENAI_API_KEY");
+        }
+    }
+}
