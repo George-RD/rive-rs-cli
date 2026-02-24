@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "rive-cli": {
+      "command": "cargo",
+      "args": ["run", "--features", "mcp", "--", "--mcp"],
+      "cwd": "/path/to/rive-rs-cli"
+    }
+  }
+}
