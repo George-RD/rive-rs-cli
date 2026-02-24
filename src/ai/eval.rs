@@ -1,9 +1,9 @@
-use std::collections::hash_map::DefaultHasher;
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
-use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
+use rand::Rng;
+use sha2::{Sha256, Digest};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -84,13 +84,13 @@ fn run_id() -> Result<String, String> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| format!("system time error: {}", e))?;
-    Ok(format!("{}", now.as_secs()))
+    let suffix: u16 = rand::thread_rng().r#gen();
+    Ok(format!("{}_{:04x}", now.as_millis(), suffix))
 }
 
 fn hash_bytes(bytes: &[u8]) -> String {
-    let mut hasher = DefaultHasher::new();
-    bytes.hash(&mut hasher);
-    format!("{:016x}", hasher.finish())
+    let digest = Sha256::digest(bytes);
+    format!("{:064x}", digest)
 }
 
 fn write_json<P: AsRef<Path>, T: Serialize>(path: P, value: &T) -> Result<(), String> {
@@ -475,5 +475,50 @@ mod tests {
         let (score, matched) = style_score(&scene, &expected);
         assert!(score > 0.4 && score < 0.6);
         assert_eq!(matched, vec!["has_animation".to_string()]);
+    }
+
+    #[test]
+    fn test_hash_bytes_deterministic() {
+        let data = b"deterministic test input";
+        let h1 = hash_bytes(data);
+        let h2 = hash_bytes(data);
+        let h3 = hash_bytes(data);
+        assert_eq!(h1, h2);
+        assert_eq!(h2, h3);
+    }
+
+    #[test]
+    fn test_hash_bytes_known_value() {
+        let hash = hash_bytes(b"test input");
+        assert_eq!(hash.len(), 64);
+        assert_eq!(
+            hash,
+            "9dfe6f15d1ab73af898739394fd22fd72a03db01834582f24bb2e1c66c7aaeae"
+        );
+    }
+
+    #[test]
+    fn test_hash_bytes_different_inputs() {
+        let h1 = hash_bytes(b"alpha");
+        let h2 = hash_bytes(b"beta");
+        assert_ne!(h1, h2);
+    }
+
+    #[test]
+    fn test_run_id_uniqueness_rapid_generation() {
+        let ids: std::collections::HashSet<String> = (0..100)
+            .map(|_| run_id().unwrap())
+            .collect();
+        assert_eq!(ids.len(), 100);
+    }
+
+    #[test]
+    fn test_run_id_format() {
+        let id = run_id().unwrap();
+        let parts: Vec<&str> = id.split('_').collect();
+        assert_eq!(parts.len(), 2, "run_id should have timestamp_suffix format");
+        assert!(parts[0].parse::<u128>().is_ok(), "timestamp part should be numeric");
+        assert_eq!(parts[1].len(), 4, "suffix should be 4 hex chars");
+        assert!(parts[1].chars().all(|c| c.is_ascii_hexdigit()), "suffix should be hex");
     }
 }
