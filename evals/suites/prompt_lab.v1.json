@@ -1,0 +1,66 @@
+{
+  "suite_name": "prompt-lab-v1",
+  "suite_version": 1,
+  "cases": [
+    {
+      "id": "bounce",
+      "input_kind": "template",
+      "input": "bounce",
+      "expected_traits": ["has_animation"]
+    },
+    {
+      "id": "spinner",
+      "input_kind": "template",
+      "input": "spinner",
+      "expected_traits": ["has_animation"]
+    },
+    {
+      "id": "pulse",
+      "input_kind": "template",
+      "input": "pulse",
+      "expected_traits": ["has_animation"]
+    },
+    {
+      "id": "fade",
+      "input_kind": "template",
+      "input": "fade",
+      "expected_traits": ["has_animation"]
+    },
+    {
+      "id": "state-machine",
+      "input_kind": "template",
+      "input": "state_machine",
+      "expected_traits": ["has_state_machine"]
+    },
+    {
+      "id": "text",
+      "input_kind": "template",
+      "input": "text",
+      "expected_traits": ["has_text"]
+    },
+    {
+      "id": "layout",
+      "input_kind": "template",
+      "input": "layout",
+      "expected_traits": ["has_layout"]
+    },
+    {
+      "id": "data-binding",
+      "input_kind": "template",
+      "input": "data_binding",
+      "expected_traits": ["has_data_binding"]
+    },
+    {
+      "id": "bones",
+      "input_kind": "template",
+      "input": "bones",
+      "expected_traits": ["has_bones"]
+    },
+    {
+      "id": "constraints",
+      "input_kind": "template",
+      "input": "constraints",
+      "expected_traits": ["has_constraints"]
+    }
+  ]
+}

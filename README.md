@@ -109,6 +109,7 @@ Scene specs are versioned with `scene_format_version` and currently require `1`.
 ## Cookbook
 
 - End-to-end examples are documented in `docs/cookbook.md`.
+- AI prompt templates and regression cookbook are documented in `docs/ai-prompt-cookbook.v1.md`.
 - Release maintainer flow is documented in `docs/release.md`.
 
 ## Testing

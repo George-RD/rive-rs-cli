@@ -201,6 +201,47 @@ fn main() {
                     }
                 }
             }
+            cli::AiCommand::Lab {
+                suite,
+                output_dir,
+                file_id,
+                max_retries,
+                baseline,
+                write_baseline,
+            } => {
+                match ai::run_eval_suite(
+                    &suite,
+                    &output_dir,
+                    file_id,
+                    max_retries,
+                    baseline.as_deref(),
+                    write_baseline.as_deref(),
+                ) {
+                    Ok(report) => {
+                        println!("run_id={}", report.run_id);
+                        println!("output_dir={}", report.output_dir);
+                        println!(
+                            "validity_rate={:.3} ({}/{})",
+                            report.validity_rate, report.valid_count, report.case_count
+                        );
+                        println!("average_retries={:.3}", report.average_retries);
+                        println!("style_adherence_rate={:.3}", report.style_adherence_rate);
+                        println!("reproducibility_rate={:.3}", report.reproducibility_rate);
+                        println!("drift_count={}", report.drift_count);
+                        if report.drift_count > 0 {
+                            eprintln!(
+                                "regression drift detected in {} case(s)",
+                                report.drift_count
+                            );
+                            std::process::exit(1);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("ai lab failed: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
         },
     }
 }
