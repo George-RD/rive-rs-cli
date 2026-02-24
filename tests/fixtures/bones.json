@@ -13,7 +13,7 @@
         "children": [
           { "type": "rectangle", "name": "BodyRect", "width": 100, "height": 200, "origin_x": 0.5, "origin_y": 0.5 },
           { "type": "fill", "name": "BodyFill", "children": [
-            { "type": "solid_color", "name": "SkinTone", "color": "FFD2A67A" }
+            { "type": "solid_color", "name": "SkinTone", "color": "#D2A67A" }
           ]}
         ]
       },

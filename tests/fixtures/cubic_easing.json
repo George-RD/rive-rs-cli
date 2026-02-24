@@ -13,7 +13,7 @@
         "children": [
           { "type": "ellipse", "name": "Circle", "width": 100, "height": 100, "origin_x": 0.5, "origin_y": 0.5 },
           { "type": "fill", "name": "BallFill", "children": [
-            { "type": "solid_color", "name": "Cyan", "color": "FF00FFFF" }
+            { "type": "solid_color", "name": "Cyan", "color": "#00FFFF" }
           ]}
         ]
       }

@@ -33,12 +33,12 @@
                 "children": [
                   {
                     "type": "gradient_stop",
-                    "color": "FFFF0000",
+                    "color": "#FF0000",
                     "position": 0.0
                   },
                   {
                     "type": "gradient_stop",
-                    "color": "FF0000FF",
+                    "color": "#0000FF",
                     "position": 1.0
                   }
                 ]
@@ -75,12 +75,12 @@
                 "children": [
                   {
                     "type": "gradient_stop",
-                    "color": "FFFFFF00",
+                    "color": "#FFFF00",
                     "position": 0.0
                   },
                   {
                     "type": "gradient_stop",
-                    "color": "FF00FF00",
+                    "color": "#00FF00",
                     "position": 1.0
                   }
                 ]

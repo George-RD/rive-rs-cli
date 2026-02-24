@@ -26,7 +26,7 @@
               {
                 "type": "solid_color",
                 "name": "SpinColor",
-                "color": "FFFF6600"
+                "color": "#FF6600"
               }
             ]
           }
@@ -38,7 +38,7 @@
         "name": "loop_spin",
         "fps": 60,
         "duration": 60,
-        "loop_type": 1,
+        "loop_type": "loop",
         "speed": 2.0,
         "keyframes": [
           {

@@ -25,7 +25,7 @@
                 {
                   "type": "solid_color",
                   "name": "color_a",
-                  "color": "FFFF0000"
+                  "color": "#FF0000"
                 }
               ]
             }
@@ -75,7 +75,7 @@
                 {
                   "type": "solid_color",
                   "name": "color_b",
-                  "color": "FF0000FF"
+                  "color": "#0000FF"
                 }
               ]
             }
