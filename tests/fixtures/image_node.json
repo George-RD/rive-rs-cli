@@ -1,0 +1,23 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ImageNodeDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "image_asset",
+        "name": "HeroImage",
+        "asset_id": 100,
+        "cdn_base_url": "https://cdn.example.com/images"
+      },
+      {
+        "type": "image",
+        "name": "HeroSprite",
+        "asset_id": 0,
+        "x": 32,
+        "y": 48
+      }
+    ]
+  }
+}

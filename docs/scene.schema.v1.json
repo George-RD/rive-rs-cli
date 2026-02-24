@@ -75,6 +75,7 @@
         { "$ref": "#/$defs/radial_gradient" },
         { "$ref": "#/$defs/gradient_stop" },
         { "$ref": "#/$defs/node" },
+        { "$ref": "#/$defs/image" },
         { "$ref": "#/$defs/path" },
         { "$ref": "#/$defs/trim_path" },
         { "$ref": "#/$defs/nested_artboard" }
@@ -237,6 +238,23 @@
           "type": "object",
           "properties": {
             "type": { "const": "node" },
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          },
+          "unevaluatedProperties": false
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "image": {
+      "allOf": [
+        { "$ref": "#/$defs/base_object" },
+        {
+          "type": "object",
+          "required": ["asset_id"],
+          "properties": {
+            "type": { "const": "image" },
+            "asset_id": { "type": "integer", "minimum": 0 },
             "x": { "type": "number" },
             "y": { "type": "number" }
           },

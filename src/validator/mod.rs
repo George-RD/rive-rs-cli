@@ -321,6 +321,37 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
         ));
     }
 
+    let mut image_assets_seen: u64 = 0;
+    for (idx, obj) in parsed.objects.iter().enumerate() {
+        if obj.type_key == type_keys::IMAGE_ASSET {
+            image_assets_seen += 1;
+            continue;
+        }
+        if obj.type_key == type_keys::IMAGE {
+            let asset_id = obj
+                .properties
+                .iter()
+                .find(|p| p.key == property_keys::IMAGE_ASSET_ID)
+                .and_then(|p| match p.value {
+                    PropertyValueRead::UInt(v) => Some(v),
+                    _ => None,
+                });
+
+            match asset_id {
+                Some(v) if v < image_assets_seen => {}
+                Some(v) => errors.push(format!(
+                    "image object at index {} references image asset index {} but only {} image asset(s) were defined before it",
+                    idx, v, image_assets_seen
+                )),
+                None => errors.push(format!(
+                    "image object at index {} is missing image asset reference property {}",
+                    idx,
+                    property_keys::IMAGE_ASSET_ID
+                )),
+            }
+        }
+    }
+
     let valid = errors.is_empty();
 
     Ok(ValidationReport {
@@ -382,6 +413,7 @@ fn type_name(key: u16) -> &'static str {
         type_keys::TRANSITION_BOOL_CONDITION => "TransitionBoolCondition",
         type_keys::WORLD_TRANSFORM_COMPONENT => "WorldTransformComponent",
         type_keys::NESTED_ARTBOARD => "NestedArtboard",
+        type_keys::IMAGE => "Image",
         type_keys::CUBIC_VALUE_INTERPOLATOR => "CubicValueInterpolator",
         type_keys::CUBIC_INTERPOLATOR => "CubicInterpolator",
         type_keys::INTERPOLATING_KEY_FRAME => "InterpolatingKeyFrame",
@@ -507,8 +539,9 @@ mod tests {
     use super::*;
     use crate::encoder::encode_riv;
     use crate::objects::artboard::{Artboard, Backboard};
+    use crate::objects::assets::ImageAsset;
     use crate::objects::core::{property_keys, type_keys};
-    use crate::objects::shapes::{Ellipse, Fill, Shape, SolidColor};
+    use crate::objects::shapes::{Ellipse, Fill, Image, Shape, SolidColor};
 
     #[test]
     fn test_binary_reader_varuint() {
@@ -729,6 +762,37 @@ mod tests {
         assert_eq!(report.object_count, 2);
         assert_eq!(report.type_counts.get(&23), Some(&1));
         assert_eq!(report.type_counts.get(&1), Some(&1));
+    }
+
+    #[test]
+    fn test_validate_riv_image_reference_requires_asset_before_image() {
+        let backboard = Backboard;
+        let artboard = Artboard::new("Main".to_string(), 500.0, 500.0);
+        let image = Image::new("Hero".to_string(), 0, 0);
+        let data = encode_riv(&[&backboard, &artboard, &image], 0);
+        let report = validate_riv(&data).unwrap();
+
+        assert!(!report.valid);
+        assert!(
+            report
+                .errors
+                .iter()
+                .any(|e| e.contains("references image asset index")),
+            "expected image asset reference error, got: {:?}",
+            report.errors
+        );
+    }
+
+    #[test]
+    fn test_validate_riv_image_reference_with_preceding_asset() {
+        let backboard = Backboard;
+        let artboard = Artboard::new("Main".to_string(), 500.0, 500.0);
+        let image_asset = ImageAsset::new("HeroAsset".to_string());
+        let image = Image::new("Hero".to_string(), 0, 0);
+        let data = encode_riv(&[&backboard, &image_asset, &artboard, &image], 0);
+        let report = validate_riv(&data).unwrap();
+
+        assert!(report.valid, "unexpected errors: {:?}", report.errors);
     }
 
     #[test]
