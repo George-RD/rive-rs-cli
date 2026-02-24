@@ -1,7 +1,11 @@
 use rmcp::{
     ErrorData as McpError, RoleServer,
     handler::server::{tool::ToolRouter, wrapper::Parameters},
-    model::*,
+    model::{
+        CallToolResult, Content, ErrorCode, Implementation, ListResourcesResult,
+        PaginatedRequestParams, ProtocolVersion, RawResource, ReadResourceRequestParams,
+        ReadResourceResult, Resource, ResourceContents, ServerCapabilities, ServerInfo,
+    },
     service::ServiceExt,
     tool, tool_handler, tool_router,
 };
@@ -22,7 +26,7 @@ impl RiveMcpServer {
 
     #[tool(
         name = "generate",
-        description = "Generate a .riv file from a SceneSpec JSON string. Returns base64-encoded bytes or writes to file."
+        description = "Generate a .riv file from a SceneSpec JSON string. Returns hex-encoded bytes or writes to file."
     )]
     async fn generate(
         &self,
