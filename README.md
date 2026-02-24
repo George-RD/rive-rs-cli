@@ -101,6 +101,16 @@ Scene specs are versioned with `scene_format_version` and currently require `1`.
 }
 ```
 
+## Installation
+
+- Prebuilt binaries: see GitHub Releases and platform packages in `docs/install.md`.
+- From source: `cargo build --release` and run `./target/release/rive-cli`.
+
+## Cookbook
+
+- End-to-end examples are documented in `docs/cookbook.md`.
+- Release maintainer flow is documented in `docs/release.md`.
+
 ## Testing
 
 ```bash
