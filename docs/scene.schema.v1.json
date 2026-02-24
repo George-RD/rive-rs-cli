@@ -98,13 +98,13 @@
         },
         "width": {
           "type": "number",
-          "minimum": 0,
-          "description": "Artboard width in pixels."
+          "description": "Artboard width in pixels. Required when no preset is used; must be > 0.",
+          "exclusiveMinimum": 0
         },
         "height": {
           "type": "number",
-          "minimum": 0,
-          "description": "Artboard height in pixels."
+          "description": "Artboard height in pixels. Required when no preset is used; must be > 0.",
+          "exclusiveMinimum": 0
         },
         "children": {
           "type": "array",
@@ -220,7 +220,7 @@
               "items": {
                 "$ref": "#/$defs/object"
               },
-              "description": "Child objects: paths (ellipse, rectangle), paint (fill, stroke), and effects (trim_path)."
+              "description": "Child objects: paths (ellipse, rectangle) and paint (fill, stroke). Note: trim_path must be placed as a child of fill or stroke, not directly here."
             }
           }
         }
@@ -339,7 +339,7 @@
                   ]
                 }
               ],
-              "description": "Fill rule: 'nonzero' (default) or 'evenodd' (SVG: fill-rule). Integer 0 or 1 also accepted."
+              "description": "Fill rule: 0='nonzero' (default) or 1='evenodd' (SVG: fill-rule)."
             },
             "children": {
               "type": "array",
@@ -389,7 +389,7 @@
                   ]
                 }
               ],
-              "description": "Line cap style: 'butt' (default), 'round', or 'square' (SVG: stroke-linecap). Integer 0-2 also accepted."
+              "description": "Stroke line cap: 0='butt' (default), 1='round', 2='square' (SVG: stroke-linecap)."
             },
             "join": {
               "oneOf": [
@@ -410,7 +410,7 @@
                   ]
                 }
               ],
-              "description": "Line join style: 'miter' (default), 'round', or 'bevel' (SVG: stroke-linejoin). Integer 0-2 also accepted."
+              "description": "Stroke line join: 0='miter' (default), 1='round', 2='bevel' (SVG: stroke-linejoin)."
             },
             "children": {
               "type": "array",
@@ -442,7 +442,7 @@
             "color": {
               "type": "string",
               "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$",
-              "description": "Color in #RRGGBB or #RRGGBBAA format. Legacy AARRGGBB without # also accepted."
+              "description": "Color in #RRGGBB or #RRGGBBAA (alpha last) format; hex string without # is also accepted (6 or 8 chars). Legacy 8-char without # is treated as AARRGGBB."
             }
           }
         }
@@ -561,7 +561,7 @@
         "color": {
           "type": "string",
           "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$",
-          "description": "Stop color in #RRGGBB or #RRGGBBAA format."
+          "description": "Stop color in #RRGGBB or #RRGGBBAA format; hex string without # is also accepted (6 or 8 chars)."
         },
         "position": {
           "type": "number",
@@ -670,12 +670,14 @@
             "start": {
               "type": "number",
               "minimum": 0,
-              "description": "Trim start position (0-1 range, 0=beginning)."
+              "description": "Trim start position (0-1 range, 0=beginning).",
+              "maximum": 1
             },
             "end": {
               "type": "number",
               "minimum": 0,
-              "description": "Trim end position (0-1 range, 1=full path)."
+              "description": "Trim end position (0-1 range, 1=full path).",
+              "maximum": 1
             },
             "offset": {
               "type": "number",
@@ -785,7 +787,7 @@
               ]
             }
           ],
-          "description": "Loop behavior: 'oneshot' (default), 'loop', or 'pingpong'. Integer 0-2 also accepted."
+          "description": "Loop mode: 0='oneShot' (default), 1='loop', 2='pingPong'."
         },
         "interpolators": {
           "type": "array",
@@ -881,7 +883,7 @@
               "frame": {
                 "type": "integer",
                 "minimum": 0,
-                "description": "Frame number (0-based, must be < animation duration)."
+                "description": "Frame number (0-based). Should be less than the parent animation's duration (enforced at runtime)."
               },
               "value": {
                 "description": "Property value at this frame. Type depends on the animated property."
@@ -1140,7 +1142,21 @@
         },
         "op": {
           "type": "string",
-          "description": "Comparison operator: '==', '!=', '>', '>=', '<', '<=' (or: eq, ne, gt, gte, lt, lte)."
+          "description": "Comparison operator: '==', '!=', '>', '>=', '<', '<=' (or: eq, ne, gt, gte, lt, lte).",
+          "enum": [
+            "==",
+            "!=",
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq",
+            "ne",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ]
         },
         "value": {
           "description": "Value to compare against."
