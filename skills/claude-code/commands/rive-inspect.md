@@ -1,6 +1,8 @@
+# Rive Inspect
+
 Inspect a Rive .riv binary file and display its object tree.
 
-Usage: /rive-inspect <file.riv> [--json] [--type-key N] [--property-key N]
+Usage: /rive-inspect <file.riv> [--json] [--type-key N] [--type-name NAME] [--object-index N] [--property-key N]
 
 Steps:
 1. Run: cargo run -- inspect <file.riv> [flags]

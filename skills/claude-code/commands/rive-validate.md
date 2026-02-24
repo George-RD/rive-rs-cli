@@ -1,3 +1,5 @@
+# Rive Validate
+
 Validate a Rive .riv binary file for structural correctness.
 
 Usage: /rive-validate <file.riv>

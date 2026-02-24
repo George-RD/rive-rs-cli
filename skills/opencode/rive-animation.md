@@ -18,6 +18,7 @@ The authoritative schema lives in `docs/scene.schema.v1.json`. Note that the sch
 ## Rules (Opinionated Defaults)
 
 - ALWAYS include `"scene_format_version": 1`
+- ALWAYS use the `"desktop"` artboard preset unless the user specifies another preset
 - ALWAYS give objects descriptive, unique names (referenced by animations)
 - Use string enum values: `cap="round"`, `join="miter"`, `fill_rule="nonzero"`, `loop_type="loop"`
 - Use standard hex colors: `"#FF0000"`, `"#00FF00CC"` (8-digit = alpha last)
@@ -38,7 +39,7 @@ These cause runtime failures:
 
 ## Object Hierarchy Rules
 
-```
+```text
 artboard
   └── shape (x, y position)
         ├── ellipse/rectangle (path — width, height, origin)

@@ -1,3 +1,5 @@
+# Rive Generate
+
 Generate a Rive .riv animation file from a natural language description.
 
 Usage: /rive-generate <description>

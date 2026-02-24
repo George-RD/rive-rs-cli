@@ -102,7 +102,7 @@ After installation, these commands become available:
 
 ## File Structure
 
-```
+```text
 skills/
 ├── README.md                              # This file
 ├── opencode/
