@@ -1,6 +1,7 @@
 pub mod config;
 pub mod error;
 pub mod eval;
+pub mod openai;
 pub mod provider;
 pub mod repair;
 pub mod templates;
