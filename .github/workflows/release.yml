@@ -26,8 +26,27 @@ jobs:
             exit 1
           fi
 
+  quality-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build --locked
+      - run: npm install --no-save playwright@1.50.1
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/regression.js
+
   build:
-    needs: [verify-version]
+    needs: [verify-version, quality-gates]
     strategy:
       fail-fast: false
       matrix:
