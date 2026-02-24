@@ -21,9 +21,10 @@ pub fn create_provider(
             if config.api_key.is_none() {
                 return Err(AiError::ApiKeyMissing("OPENAI_API_KEY".to_string()));
             }
-            Err(AiError::ProviderNotConfigured(
-                "OpenAI provider not yet implemented; use --template for now".to_string(),
-            ))
+            Ok(Box::new(crate::ai::openai::OpenAiProvider::new(
+                config.api_key.clone().unwrap(),
+                config.base_url.clone(),
+            )))
         }
     }
 }
