@@ -1,9 +1,9 @@
+use rand::Rng;
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
-use rand::Rng;
-use sha2::{Sha256, Digest};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -84,8 +84,8 @@ fn run_id() -> Result<String, String> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| format!("system time error: {}", e))?;
-    let suffix: u16 = rand::thread_rng().r#gen();
-    Ok(format!("{}_{:04x}", now.as_millis(), suffix))
+    let suffix: u64 = rand::thread_rng().r#gen();
+    Ok(format!("{}_{:016x}", now.as_millis(), suffix))
 }
 
 fn hash_bytes(bytes: &[u8]) -> String {
@@ -506,9 +506,7 @@ mod tests {
 
     #[test]
     fn test_run_id_uniqueness_rapid_generation() {
-        let ids: std::collections::HashSet<String> = (0..100)
-            .map(|_| run_id().unwrap())
-            .collect();
+        let ids: std::collections::HashSet<String> = (0..100).map(|_| run_id().unwrap()).collect();
         assert_eq!(ids.len(), 100);
     }
 
@@ -517,8 +515,14 @@ mod tests {
         let id = run_id().unwrap();
         let parts: Vec<&str> = id.split('_').collect();
         assert_eq!(parts.len(), 2, "run_id should have timestamp_suffix format");
-        assert!(parts[0].parse::<u128>().is_ok(), "timestamp part should be numeric");
-        assert_eq!(parts[1].len(), 4, "suffix should be 4 hex chars");
-        assert!(parts[1].chars().all(|c| c.is_ascii_hexdigit()), "suffix should be hex");
+        assert!(
+            parts[0].parse::<u128>().is_ok(),
+            "timestamp part should be numeric"
+        );
+        assert_eq!(parts[1].len(), 16, "suffix should be 16 hex chars");
+        assert!(
+            parts[1].chars().all(|c| c.is_ascii_hexdigit()),
+            "suffix should be hex"
+        );
     }
 }
