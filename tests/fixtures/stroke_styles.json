@@ -23,13 +23,13 @@
             "type": "stroke",
             "name": "FatStroke",
             "thickness": 12.0,
-            "cap": 1,
-            "join": 1,
+            "cap": "round",
+            "join": "round",
             "children": [
               {
                 "type": "solid_color",
                 "name": "StrokeRed",
-                "color": "FFFF0000"
+                "color": "#FF0000"
               }
             ]
           }
@@ -53,13 +53,13 @@
             "type": "stroke",
             "name": "HairStroke",
             "thickness": 1.0,
-            "cap": 2,
-            "join": 2,
+            "cap": "square",
+            "join": "bevel",
             "children": [
               {
                 "type": "solid_color",
                 "name": "StrokeBlue",
-                "color": "FF0000FF"
+                "color": "#0000FF"
               }
             ]
           },
@@ -70,7 +70,7 @@
               {
                 "type": "solid_color",
                 "name": "FillYellow",
-                "color": "FFFFFF00"
+                "color": "#FFFF00"
               }
             ]
           }

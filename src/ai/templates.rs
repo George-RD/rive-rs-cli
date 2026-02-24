@@ -1,6 +1,6 @@
 use crate::ai::AiError;
 
-const BOUNCE_TEMPLATE: &str = r#"
+const BOUNCE_TEMPLATE: &str = r##"
 {
   "scene_format_version": 1,
   "artboard": {
@@ -29,7 +29,7 @@ const BOUNCE_TEMPLATE: &str = r#"
               {
                 "type": "solid_color",
                 "name": "BounceBallColor",
-                "color": "FFFF0000"
+                "color": "#FF0000"
               }
             ]
           }
@@ -56,9 +56,9 @@ const BOUNCE_TEMPLATE: &str = r#"
     ]
   }
 }
-"#;
+"##;
 
-const SPINNER_TEMPLATE: &str = r#"
+const SPINNER_TEMPLATE: &str = r##"
 {
   "scene_format_version": 1,
   "artboard": {
@@ -87,7 +87,7 @@ const SPINNER_TEMPLATE: &str = r#"
               {
                 "type": "solid_color",
                 "name": "SpinnerColor",
-                "color": "FFFF8800"
+                "color": "#FF8800"
               }
             ]
           }
@@ -127,9 +127,9 @@ const SPINNER_TEMPLATE: &str = r#"
     ]
   }
 }
-"#;
+"##;
 
-const PULSE_TEMPLATE: &str = r#"
+const PULSE_TEMPLATE: &str = r##"
 {
   "scene_format_version": 1,
   "artboard": {
@@ -158,7 +158,7 @@ const PULSE_TEMPLATE: &str = r#"
               {
                 "type": "solid_color",
                 "name": "PulseColor",
-                "color": "FF0066FF"
+                "color": "#0066FF"
               }
             ]
           }
@@ -194,9 +194,9 @@ const PULSE_TEMPLATE: &str = r#"
     ]
   }
 }
-"#;
+"##;
 
-const FADE_TEMPLATE: &str = r#"
+const FADE_TEMPLATE: &str = r##"
 {
   "scene_format_version": 1,
   "artboard": {
@@ -225,7 +225,7 @@ const FADE_TEMPLATE: &str = r#"
               {
                 "type": "solid_color",
                 "name": "FadeColor",
-                "color": "FF00FF00"
+                "color": "#00FF00"
               }
             ]
           }
@@ -242,9 +242,9 @@ const FADE_TEMPLATE: &str = r#"
             "object": "FadeColor",
             "property": "color",
             "frames": [
-              { "frame": 0, "value": "FF00FF00" },
-              { "frame": 60, "value": "6600FF00" },
-              { "frame": 119, "value": "0000FF00" }
+              { "frame": 0, "value": "#00FF00" },
+              { "frame": 60, "value": "#00FF0066" },
+              { "frame": 119, "value": "#00FF0000" }
             ]
           }
         ]
@@ -252,7 +252,7 @@ const FADE_TEMPLATE: &str = r#"
     ]
   }
 }
-"#;
+"##;
 
 const MINIMAL_TEMPLATE: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),

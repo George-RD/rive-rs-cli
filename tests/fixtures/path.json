@@ -32,7 +32,7 @@
               {
                 "type": "solid_color",
                 "name": "color_1",
-                "color": "FF00AAFF"
+                "color": "#00AAFF"
               }
             ]
           }

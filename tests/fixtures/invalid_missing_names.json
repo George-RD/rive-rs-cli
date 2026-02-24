@@ -17,7 +17,7 @@
             "children": [
               {
                 "type": "solid_color",
-                "color": "FFFF0000"
+                "color": "#FF0000"
               }
             ]
           }

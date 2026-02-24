@@ -181,14 +181,14 @@ pub enum ObjectSpec {
     },
     Fill {
         name: String,
-        fill_rule: Option<u64>,
+        fill_rule: Option<serde_json::Value>,
         children: Option<Vec<ObjectSpec>>,
     },
     Stroke {
         name: String,
         thickness: Option<f32>,
-        cap: Option<u64>,
-        join: Option<u64>,
+        cap: Option<serde_json::Value>,
+        join: Option<serde_json::Value>,
         children: Option<Vec<ObjectSpec>>,
     },
     SolidColor {
@@ -236,7 +236,7 @@ pub enum ObjectSpec {
         start: Option<f32>,
         end: Option<f32>,
         offset: Option<f32>,
-        mode: Option<u64>,
+        mode: Option<serde_json::Value>,
     },
     NestedArtboard {
         name: String,
@@ -488,7 +488,7 @@ pub struct AnimationSpec {
     pub fps: u64,
     pub duration: u64,
     pub speed: Option<f32>,
-    pub loop_type: Option<u64>,
+    pub loop_type: Option<serde_json::Value>,
     pub interpolators: Option<Vec<InterpolatorSpec>>,
     pub keyframes: Vec<KeyframeGroupSpec>,
 }
@@ -652,8 +652,8 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                 if let Some(speed) = animation.speed {
                     linear.speed = speed;
                 }
-                if let Some(loop_type) = animation.loop_type {
-                    linear.loop_type = loop_type;
+                if let Some(loop_type) = &animation.loop_type {
+                    linear.loop_type = parse_loop_type(loop_type)?;
                 }
 
                 objects.push(Box::new(linear));
@@ -990,7 +990,7 @@ fn append_object(
         } => {
             let mut fill = Fill::new(name.clone(), parent_id);
             if let Some(fill_rule) = fill_rule {
-                fill.fill_rule = *fill_rule;
+                fill.fill_rule = parse_fill_rule(fill_rule)?;
             }
             objects.push(Box::new(fill));
             name_to_index.insert(name.clone(), object_index);
@@ -1017,10 +1017,10 @@ fn append_object(
         } => {
             let mut stroke = Stroke::new(name.clone(), parent_id, thickness.unwrap_or(1.0));
             if let Some(cap) = cap {
-                stroke.cap = *cap;
+                stroke.cap = parse_stroke_cap(cap)?;
             }
             if let Some(join) = join {
-                stroke.join = *join;
+                stroke.join = parse_stroke_join(join)?;
             }
             objects.push(Box::new(stroke));
             name_to_index.insert(name.clone(), object_index);
@@ -1178,8 +1178,9 @@ fn append_object(
                 trim_path.offset = *offset;
             }
             if let Some(mode) = mode {
+                let mode_val = parse_trim_mode(mode)?;
                 trim_path
-                    .set_mode(*mode)
+                    .set_mode(mode_val)
                     .map_err(|e| format!("trim_path '{}': {}", name, e))?;
             }
             objects.push(Box::new(trim_path));
@@ -2124,11 +2125,117 @@ fn interpolation_type_from_name(name: &str) -> Result<u64, String> {
     }
 }
 
+fn parse_stroke_cap(v: &serde_json::Value) -> Result<u64, String> {
+    match v {
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| format!("invalid cap value: {}", v)),
+        serde_json::Value::String(s) => match s.to_lowercase().as_str() {
+            "butt" => Ok(0),
+            "round" => Ok(1),
+            "square" => Ok(2),
+            _ => Err(format!(
+                "unknown cap type: '{}' (expected butt, round, or square)",
+                s
+            )),
+        },
+        _ => Err(format!("cap must be a string or integer, got: {}", v)),
+    }
+}
+
+fn parse_stroke_join(v: &serde_json::Value) -> Result<u64, String> {
+    match v {
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| format!("invalid join value: {}", v)),
+        serde_json::Value::String(s) => match s.to_lowercase().as_str() {
+            "miter" => Ok(0),
+            "round" => Ok(1),
+            "bevel" => Ok(2),
+            _ => Err(format!(
+                "unknown join type: '{}' (expected miter, round, or bevel)",
+                s
+            )),
+        },
+        _ => Err(format!("join must be a string or integer, got: {}", v)),
+    }
+}
+
+fn parse_fill_rule(v: &serde_json::Value) -> Result<u64, String> {
+    match v {
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| format!("invalid fill_rule value: {}", v)),
+        serde_json::Value::String(s) => match s.to_lowercase().as_str() {
+            "nonzero" => Ok(0),
+            "evenodd" => Ok(1),
+            _ => Err(format!(
+                "unknown fill_rule: '{}' (expected nonzero or evenodd)",
+                s
+            )),
+        },
+        _ => Err(format!("fill_rule must be a string or integer, got: {}", v)),
+    }
+}
+
+fn parse_loop_type(v: &serde_json::Value) -> Result<u64, String> {
+    match v {
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .ok_or_else(|| format!("invalid loop_type value: {}", v)),
+        serde_json::Value::String(s) => match s.to_lowercase().as_str() {
+            "oneshot" => Ok(0),
+            "loop" => Ok(1),
+            "pingpong" => Ok(2),
+            _ => Err(format!(
+                "unknown loop_type: '{}' (expected oneshot, loop, or pingpong)",
+                s
+            )),
+        },
+        _ => Err(format!("loop_type must be a string or integer, got: {}", v)),
+    }
+}
+
+fn parse_trim_mode(v: &serde_json::Value) -> Result<u64, String> {
+    match v {
+        serde_json::Value::Number(n) => {
+            let val = n
+                .as_u64()
+                .ok_or_else(|| format!("invalid mode value: {}", v))?;
+            if val != 1 && val != 2 {
+                return Err(format!(
+                    "mode must be 1 (sequential) or 2 (synchronized), got {}",
+                    val
+                ));
+            }
+            Ok(val)
+        }
+        serde_json::Value::String(s) => match s.to_lowercase().as_str() {
+            "sequential" => Ok(1),
+            "synchronized" => Ok(2),
+            _ => Err(format!(
+                "unknown trim mode: '{}' (expected sequential or synchronized)",
+                s
+            )),
+        },
+        _ => Err(format!("mode must be a string or integer, got: {}", v)),
+    }
+}
+
 fn parse_color(color: &str) -> Result<u32, String> {
+    let has_hash = color.starts_with('#');
     let hex = color.trim_start_matches('#');
     if hex.len() == 8 {
-        return u32::from_str_radix(hex, 16)
-            .map_err(|_| format!("invalid 8-digit color literal: '{}'", color));
+        let raw = u32::from_str_radix(hex, 16)
+            .map_err(|_| format!("invalid 8-digit color literal: '{}'", color))?;
+        if has_hash {
+            let r = (raw >> 24) & 0xFF;
+            let g = (raw >> 16) & 0xFF;
+            let b = (raw >> 8) & 0xFF;
+            let a = raw & 0xFF;
+            return Ok((a << 24) | (r << 16) | (g << 8) | b);
+        }
+        return Ok(raw);
     }
 
     if hex.len() == 6 {
@@ -2571,14 +2678,8 @@ fn validate_object_spec(
             {
                 return Err(format!("trim_path '{}' end must be non-negative", name));
             }
-            if let Some(mode) = mode
-                && *mode != 1
-                && *mode != 2
-            {
-                return Err(format!(
-                    "trim_path '{}' mode must be 1 (sequential) or 2 (synchronized)",
-                    name
-                ));
+            if let Some(mode) = mode {
+                parse_trim_mode(mode).map_err(|e| format!("trim_path '{}': {}", name, e))?;
             }
         }
         ObjectSpec::NestedArtboard { name, .. } => {
@@ -3079,7 +3180,7 @@ mod tests {
                     fps: 60,
                     duration: 120,
                     speed: Some(1.0),
-                    loop_type: Some(1),
+                    loop_type: Some(serde_json::json!(1)),
                     interpolators: None,
                     keyframes: vec![KeyframeGroupSpec {
                         object: "ellipse_1".to_string(),
@@ -3257,6 +3358,69 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_stroke_cap_accepts_string_integer_and_rejects_invalid() {
+        assert_eq!(parse_stroke_cap(&serde_json::json!("butt")).unwrap(), 0);
+        assert_eq!(parse_stroke_cap(&serde_json::json!("round")).unwrap(), 1);
+        assert_eq!(parse_stroke_cap(&serde_json::json!("square")).unwrap(), 2);
+        assert_eq!(parse_stroke_cap(&serde_json::json!(2)).unwrap(), 2);
+        assert!(parse_stroke_cap(&serde_json::json!("flat")).is_err());
+        assert!(parse_stroke_cap(&serde_json::json!(true)).is_err());
+    }
+
+    #[test]
+    fn test_parse_stroke_join_accepts_string_integer_and_rejects_invalid() {
+        assert_eq!(parse_stroke_join(&serde_json::json!("miter")).unwrap(), 0);
+        assert_eq!(parse_stroke_join(&serde_json::json!("round")).unwrap(), 1);
+        assert_eq!(parse_stroke_join(&serde_json::json!("bevel")).unwrap(), 2);
+        assert_eq!(parse_stroke_join(&serde_json::json!(1)).unwrap(), 1);
+        assert!(parse_stroke_join(&serde_json::json!("sharp")).is_err());
+        assert!(parse_stroke_join(&serde_json::json!(false)).is_err());
+    }
+
+    #[test]
+    fn test_parse_fill_rule_accepts_string_integer_and_rejects_invalid() {
+        assert_eq!(parse_fill_rule(&serde_json::json!("nonzero")).unwrap(), 0);
+        assert_eq!(parse_fill_rule(&serde_json::json!("evenodd")).unwrap(), 1);
+        assert_eq!(parse_fill_rule(&serde_json::json!(1)).unwrap(), 1);
+        assert!(parse_fill_rule(&serde_json::json!("winding")).is_err());
+        assert!(parse_fill_rule(&serde_json::json!(null)).is_err());
+    }
+
+    #[test]
+    fn test_parse_loop_type_accepts_string_integer_and_rejects_invalid() {
+        assert_eq!(parse_loop_type(&serde_json::json!("oneshot")).unwrap(), 0);
+        assert_eq!(parse_loop_type(&serde_json::json!("loop")).unwrap(), 1);
+        assert_eq!(parse_loop_type(&serde_json::json!("pingpong")).unwrap(), 2);
+        assert_eq!(parse_loop_type(&serde_json::json!(2)).unwrap(), 2);
+        assert!(parse_loop_type(&serde_json::json!("repeat")).is_err());
+        assert!(parse_loop_type(&serde_json::json!([])).is_err());
+    }
+
+    #[test]
+    fn test_parse_trim_mode_accepts_string_integer_and_rejects_invalid() {
+        assert_eq!(
+            parse_trim_mode(&serde_json::json!("sequential")).unwrap(),
+            1
+        );
+        assert_eq!(
+            parse_trim_mode(&serde_json::json!("synchronized")).unwrap(),
+            2
+        );
+        assert_eq!(parse_trim_mode(&serde_json::json!(1)).unwrap(), 1);
+        assert_eq!(parse_trim_mode(&serde_json::json!(2)).unwrap(), 2);
+        assert!(parse_trim_mode(&serde_json::json!(0)).is_err());
+        assert!(parse_trim_mode(&serde_json::json!("sync")).is_err());
+    }
+
+    #[test]
+    fn test_parse_color_hash_and_legacy_formats() {
+        assert_eq!(parse_color("#FF0000").unwrap(), 0xFFFF_0000);
+        assert_eq!(parse_color("FF0000").unwrap(), 0xFFFF_0000);
+        assert_eq!(parse_color("#00FF0066").unwrap(), 0x6600_FF00);
+        assert_eq!(parse_color("6600FF00").unwrap(), 0x6600_FF00);
+    }
+
+    #[test]
     fn test_trim_path_rejects_shape_parent() {
         let spec = SceneSpec {
             scene_format_version: 1,
@@ -3321,7 +3485,7 @@ mod tests {
                                 start: None,
                                 end: Some(0.75),
                                 offset: None,
-                                mode: Some(1),
+                                mode: Some(serde_json::json!(1)),
                             },
                         ]),
                     }]),

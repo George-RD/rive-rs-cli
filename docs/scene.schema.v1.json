@@ -147,7 +147,12 @@
           "type": "object",
           "properties": {
             "type": { "const": "fill" },
-            "fill_rule": { "type": "integer", "minimum": 0 },
+            "fill_rule": {
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "enum": ["nonzero", "evenodd"] }
+              ]
+            },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
           }
         }
@@ -162,8 +167,18 @@
           "properties": {
             "type": { "const": "stroke" },
             "thickness": { "type": "number", "minimum": 0 },
-            "cap": { "type": "integer", "minimum": 0 },
-            "join": { "type": "integer", "minimum": 0 },
+            "cap": {
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "enum": ["butt", "round", "square"] }
+              ]
+            },
+            "join": {
+              "oneOf": [
+                { "type": "integer", "minimum": 0 },
+                { "type": "string", "enum": ["miter", "round", "bevel"] }
+              ]
+            },
             "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
           }
         }
@@ -287,7 +302,12 @@
             "start": { "type": "number", "minimum": 0 },
             "end": { "type": "number", "minimum": 0 },
             "offset": { "type": "number" },
-            "mode": { "type": "integer", "enum": [1, 2] }
+            "mode": {
+              "oneOf": [
+                { "type": "integer", "enum": [1, 2] },
+                { "type": "string", "enum": ["sequential", "synchronized"] }
+              ]
+            }
           }
         }
       ],
@@ -317,7 +337,12 @@
         "fps": { "type": "integer", "minimum": 1 },
         "duration": { "type": "integer", "minimum": 1 },
         "speed": { "type": "number" },
-        "loop_type": { "type": "integer", "minimum": 0 },
+        "loop_type": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string", "enum": ["oneshot", "loop", "pingpong"] }
+          ]
+        },
         "interpolators": {
           "type": "array",
           "items": { "$ref": "#/$defs/interpolator" }
