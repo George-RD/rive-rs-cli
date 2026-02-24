@@ -149,7 +149,7 @@
             "type": { "const": "fill" },
             "fill_rule": {
               "oneOf": [
-                { "type": "integer", "minimum": 0 },
+                { "type": "integer", "enum": [0, 1] },
                 { "type": "string", "enum": ["nonzero", "evenodd"] }
               ]
             },
@@ -169,13 +169,13 @@
             "thickness": { "type": "number", "minimum": 0 },
             "cap": {
               "oneOf": [
-                { "type": "integer", "minimum": 0 },
+                { "type": "integer", "enum": [0, 1, 2] },
                 { "type": "string", "enum": ["butt", "round", "square"] }
               ]
             },
             "join": {
               "oneOf": [
-                { "type": "integer", "minimum": 0 },
+                { "type": "integer", "enum": [0, 1, 2] },
                 { "type": "string", "enum": ["miter", "round", "bevel"] }
               ]
             },
@@ -339,7 +339,7 @@
         "speed": { "type": "number" },
         "loop_type": {
           "oneOf": [
-            { "type": "integer", "minimum": 0 },
+            { "type": "integer", "enum": [0, 1, 2] },
             { "type": "string", "enum": ["oneshot", "loop", "pingpong"] }
           ]
         },

@@ -2127,9 +2127,15 @@ fn interpolation_type_from_name(name: &str) -> Result<u64, String> {
 
 fn parse_stroke_cap(v: &serde_json::Value) -> Result<u64, String> {
     match v {
-        serde_json::Value::Number(n) => n
-            .as_u64()
-            .ok_or_else(|| format!("invalid cap value: {}", v)),
+        serde_json::Value::Number(n) => {
+            let val = n
+                .as_u64()
+                .ok_or_else(|| format!("invalid cap value: {}", v))?;
+            if val > 2 {
+                return Err(format!("cap must be 0-2, got {}", val));
+            }
+            Ok(val)
+        }
         serde_json::Value::String(s) => match s.to_lowercase().as_str() {
             "butt" => Ok(0),
             "round" => Ok(1),
@@ -2145,9 +2151,15 @@ fn parse_stroke_cap(v: &serde_json::Value) -> Result<u64, String> {
 
 fn parse_stroke_join(v: &serde_json::Value) -> Result<u64, String> {
     match v {
-        serde_json::Value::Number(n) => n
-            .as_u64()
-            .ok_or_else(|| format!("invalid join value: {}", v)),
+        serde_json::Value::Number(n) => {
+            let val = n
+                .as_u64()
+                .ok_or_else(|| format!("invalid join value: {}", v))?;
+            if val > 2 {
+                return Err(format!("join must be 0-2, got {}", val));
+            }
+            Ok(val)
+        }
         serde_json::Value::String(s) => match s.to_lowercase().as_str() {
             "miter" => Ok(0),
             "round" => Ok(1),
@@ -2163,9 +2175,15 @@ fn parse_stroke_join(v: &serde_json::Value) -> Result<u64, String> {
 
 fn parse_fill_rule(v: &serde_json::Value) -> Result<u64, String> {
     match v {
-        serde_json::Value::Number(n) => n
-            .as_u64()
-            .ok_or_else(|| format!("invalid fill_rule value: {}", v)),
+        serde_json::Value::Number(n) => {
+            let val = n
+                .as_u64()
+                .ok_or_else(|| format!("invalid fill_rule value: {}", v))?;
+            if val > 1 {
+                return Err(format!("fill_rule must be 0-1, got {}", val));
+            }
+            Ok(val)
+        }
         serde_json::Value::String(s) => match s.to_lowercase().as_str() {
             "nonzero" => Ok(0),
             "evenodd" => Ok(1),
@@ -2180,9 +2198,15 @@ fn parse_fill_rule(v: &serde_json::Value) -> Result<u64, String> {
 
 fn parse_loop_type(v: &serde_json::Value) -> Result<u64, String> {
     match v {
-        serde_json::Value::Number(n) => n
-            .as_u64()
-            .ok_or_else(|| format!("invalid loop_type value: {}", v)),
+        serde_json::Value::Number(n) => {
+            let val = n
+                .as_u64()
+                .ok_or_else(|| format!("invalid loop_type value: {}", v))?;
+            if val > 2 {
+                return Err(format!("loop_type must be 0-2, got {}", val));
+            }
+            Ok(val)
+        }
         serde_json::Value::String(s) => match s.to_lowercase().as_str() {
             "oneshot" => Ok(0),
             "loop" => Ok(1),
@@ -2388,6 +2412,10 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
             }
             animation_names.insert(animation.name.clone());
 
+            if let Some(loop_type) = &animation.loop_type {
+                parse_loop_type(loop_type)
+                    .map_err(|e| format!("animation '{}': {}", animation.name, e))?;
+            }
             let mut interp_names: HashSet<String> = HashSet::new();
             if let Some(interpolators) = &animation.interpolators {
                 for interp in interpolators {
@@ -2582,8 +2610,16 @@ fn validate_object_spec(
                 ));
             }
         }
-        ObjectSpec::Fill { name, children, .. } => {
+        ObjectSpec::Fill {
+            name,
+            fill_rule,
+            children,
+            ..
+        } => {
             ensure_unique_name(name, object_names)?;
+            if let Some(fill_rule) = fill_rule {
+                parse_fill_rule(fill_rule).map_err(|e| format!("fill '{}': {}", name, e))?;
+            }
             if let Some(children) = children {
                 for child in children {
                     validate_object_spec(child, object_names, &ParentKind::Fill)?;
@@ -2593,6 +2629,8 @@ fn validate_object_spec(
         ObjectSpec::Stroke {
             name,
             thickness,
+            cap,
+            join,
             children,
             ..
         } => {
@@ -2601,6 +2639,12 @@ fn validate_object_spec(
                 && *thickness < 0.0
             {
                 return Err(format!("stroke '{}' thickness must be non-negative", name));
+            }
+            if let Some(cap) = cap {
+                parse_stroke_cap(cap).map_err(|e| format!("stroke '{}': {}", name, e))?;
+            }
+            if let Some(join) = join {
+                parse_stroke_join(join).map_err(|e| format!("stroke '{}': {}", name, e))?;
             }
             if let Some(children) = children {
                 for child in children {
@@ -3410,6 +3454,76 @@ mod tests {
         assert_eq!(parse_trim_mode(&serde_json::json!(2)).unwrap(), 2);
         assert!(parse_trim_mode(&serde_json::json!(0)).is_err());
         assert!(parse_trim_mode(&serde_json::json!("sync")).is_err());
+    }
+
+    #[test]
+    fn test_parse_stroke_cap_negative() {
+        assert!(parse_stroke_cap(&serde_json::json!(-1)).is_err());
+    }
+
+    #[test]
+    fn test_parse_stroke_cap_float() {
+        assert!(parse_stroke_cap(&serde_json::json!(1.5)).is_err());
+    }
+
+    #[test]
+    fn test_parse_stroke_cap_out_of_range() {
+        assert!(parse_stroke_cap(&serde_json::json!(3)).is_err());
+    }
+
+    #[test]
+    fn test_parse_stroke_join_negative() {
+        assert!(parse_stroke_join(&serde_json::json!(-1)).is_err());
+    }
+
+    #[test]
+    fn test_parse_stroke_join_float() {
+        assert!(parse_stroke_join(&serde_json::json!(1.5)).is_err());
+    }
+
+    #[test]
+    fn test_parse_stroke_join_out_of_range() {
+        assert!(parse_stroke_join(&serde_json::json!(3)).is_err());
+    }
+
+    #[test]
+    fn test_parse_fill_rule_negative() {
+        assert!(parse_fill_rule(&serde_json::json!(-1)).is_err());
+    }
+
+    #[test]
+    fn test_parse_fill_rule_float() {
+        assert!(parse_fill_rule(&serde_json::json!(1.5)).is_err());
+    }
+
+    #[test]
+    fn test_parse_fill_rule_out_of_range() {
+        assert!(parse_fill_rule(&serde_json::json!(2)).is_err());
+    }
+
+    #[test]
+    fn test_parse_loop_type_negative() {
+        assert!(parse_loop_type(&serde_json::json!(-1)).is_err());
+    }
+
+    #[test]
+    fn test_parse_loop_type_float() {
+        assert!(parse_loop_type(&serde_json::json!(1.5)).is_err());
+    }
+
+    #[test]
+    fn test_parse_loop_type_out_of_range() {
+        assert!(parse_loop_type(&serde_json::json!(3)).is_err());
+    }
+
+    #[test]
+    fn test_parse_trim_mode_negative() {
+        assert!(parse_trim_mode(&serde_json::json!(-1)).is_err());
+    }
+
+    #[test]
+    fn test_parse_trim_mode_float() {
+        assert!(parse_trim_mode(&serde_json::json!(1.5)).is_err());
     }
 
     #[test]
