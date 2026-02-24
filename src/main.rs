@@ -4,6 +4,8 @@ mod ai;
 mod builder;
 mod cli;
 mod encoder;
+#[cfg(feature = "mcp")]
+mod mcp;
 mod objects;
 mod validator;
 
@@ -16,6 +18,12 @@ fn main() {
         for preset in builder::artboard_presets() {
             println!("{}: {}x{}", preset.name, preset.width, preset.height);
         }
+        return;
+    }
+
+    #[cfg(feature = "mcp")]
+    if cli.mcp {
+        mcp::run_server();
         return;
     }
 

@@ -3,5 +3,7 @@
 pub mod ai;
 pub mod builder;
 pub mod encoder;
+#[cfg(feature = "mcp")]
+pub mod mcp;
 pub mod objects;
 pub mod validator;

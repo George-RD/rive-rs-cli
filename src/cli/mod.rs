@@ -11,6 +11,10 @@ pub struct Cli {
     #[arg(long, help = "List available artboard size presets")]
     pub list_presets: bool,
 
+    #[cfg(feature = "mcp")]
+    #[arg(long, help = "Run as MCP server over stdio")]
+    pub mcp: bool,
+
     #[command(subcommand)]
     pub command: Option<Command>,
 }
