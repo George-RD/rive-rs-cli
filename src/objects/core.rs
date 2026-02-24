@@ -103,6 +103,7 @@ pub mod type_keys {
     pub const TRANSFORM_SPACE_CONSTRAINT: u16 = 90;
     pub const WORLD_TRANSFORM_COMPONENT: u16 = 91;
     pub const NESTED_ARTBOARD: u16 = 92;
+    pub const IMAGE: u16 = 100;
     pub const CUBIC_VALUE_INTERPOLATOR: u16 = 138;
     pub const CUBIC_INTERPOLATOR: u16 = 139;
     pub const INTERPOLATING_KEY_FRAME: u16 = 170;
@@ -261,6 +262,7 @@ pub mod property_keys {
     pub const TRANSFORM_CONSTRAINT_ORIGIN_Y: u16 = 373;
     pub const ASSET_NAME: u16 = 203;
     pub const FILE_ASSET_ASSET_ID: u16 = 204;
+    pub const IMAGE_ASSET_ID: u16 = 206;
     pub const FILE_ASSET_CDN_BASE_URL: u16 = 362;
     pub const FILE_ASSET_CONTENTS_BYTES: u16 = 212;
     pub const TEXT_ALIGN_VALUE: u16 = 281;
@@ -518,6 +520,7 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TEXT_STYLE_FONT_ASSET_ID
         | property_keys::TEXT_VALUE_RUN_STYLE_ID
         | property_keys::FILE_ASSET_ASSET_ID
+        | property_keys::IMAGE_ASSET_ID
         | property_keys::FILE_ASSET_CONTENTS_BYTES
         | property_keys::LAYOUT_STYLE_FLEX_DIRECTION
         | property_keys::LAYOUT_STYLE_FLEX_WRAP
@@ -627,6 +630,10 @@ mod tests {
             property_backing_type(property_keys::PATH_IS_HOLE),
             Some(BackingType::UInt)
         );
+        assert_eq!(
+            property_backing_type(property_keys::IMAGE_ASSET_ID),
+            Some(BackingType::UInt)
+        );
     }
 
     #[test]
@@ -725,6 +732,7 @@ mod tests {
         assert_eq!(type_keys::TRIM_PATH, 47);
         assert_eq!(type_keys::WORLD_TRANSFORM_COMPONENT, 91);
         assert_eq!(type_keys::NESTED_ARTBOARD, 92);
+        assert_eq!(type_keys::IMAGE, 100);
         assert_eq!(type_keys::CUBIC_VALUE_INTERPOLATOR, 138);
         assert_eq!(type_keys::CUBIC_INTERPOLATOR, 139);
         assert_eq!(type_keys::INTERPOLATING_KEY_FRAME, 170);

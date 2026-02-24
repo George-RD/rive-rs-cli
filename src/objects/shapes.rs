@@ -695,6 +695,62 @@ impl RiveObject for Drawable {
     }
 }
 
+pub struct Image {
+    pub name: String,
+    pub parent_id: u64,
+    pub asset_id: u64,
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Image {
+    pub fn new(name: String, parent_id: u64, asset_id: u64) -> Self {
+        Image {
+            name,
+            parent_id,
+            asset_id,
+            x: 0.0,
+            y: 0.0,
+        }
+    }
+}
+
+impl RiveObject for Image {
+    fn type_key(&self) -> u16 {
+        type_keys::IMAGE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::IMAGE_ASSET_ID,
+                value: PropertyValue::UInt(self.asset_id),
+            },
+        ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        props
+    }
+}
+
 pub struct ShapePaint {
     pub name: String,
     pub parent_id: u64,
@@ -1154,6 +1210,36 @@ mod tests {
             drawable_flags: 0,
         };
         assert_eq!(d.type_key(), 13);
+    }
+
+    #[test]
+    fn test_image_type_key() {
+        let image = Image::new("Img".to_string(), 1, 0);
+        assert_eq!(image.type_key(), 100);
+    }
+
+    #[test]
+    fn test_image_default_properties() {
+        let image = Image::new("Img".to_string(), 2, 0);
+        let props = image.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[2].key, property_keys::IMAGE_ASSET_ID);
+        assert_eq!(props[2].value, PropertyValue::UInt(0));
+    }
+
+    #[test]
+    fn test_image_with_position() {
+        let mut image = Image::new("Img".to_string(), 2, 1);
+        image.x = 12.0;
+        image.y = 24.0;
+        let props = image.properties();
+        assert_eq!(props.len(), 5);
+        assert_eq!(props[3].key, property_keys::NODE_X);
+        assert_eq!(props[3].value, PropertyValue::Float(12.0));
+        assert_eq!(props[4].key, property_keys::NODE_Y);
+        assert_eq!(props[4].value, PropertyValue::Float(24.0));
     }
 
     #[test]

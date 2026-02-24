@@ -2021,6 +2021,7 @@ fn test_inspect_json_constraints() {
 const TEXT_TYPE_KEY: u64 = 134;
 const TEXT_STYLE_TYPE_KEY: u64 = 573;
 const TEXT_VALUE_RUN_TYPE_KEY: u64 = 135;
+const IMAGE_TYPE_KEY: u64 = 100;
 const IMAGE_ASSET_TYPE_KEY: u64 = 105;
 const FONT_ASSET_TYPE_KEY: u64 = 141;
 const AUDIO_ASSET_TYPE_KEY: u64 = 406;
@@ -2251,6 +2252,98 @@ fn test_inspect_json_assets() {
         .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == AUDIO_ASSET_TYPE_KEY)
         .collect();
     assert_eq!(audio.len(), 1, "expected 1 AudioAsset");
+
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_image_node() {
+    let input = fixture_path("image_node.json");
+    let output = temp_output("image_node");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_image_node() {
+    let input = fixture_path("image_node.json");
+    let output = temp_output("validate_image_node");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    assert!(
+        stdout.contains("valid"),
+        "expected 'valid' in stdout, got: {}",
+        stdout
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_json_image_node() {
+    let input = fixture_path("image_node.json");
+    let output = temp_output("inspect_json_image_node");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+
+    let images: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == IMAGE_TYPE_KEY)
+        .collect();
+    assert_eq!(images.len(), 1, "expected 1 Image");
+
+    let image_assets: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == IMAGE_ASSET_TYPE_KEY)
+        .collect();
+    assert_eq!(image_assets.len(), 1, "expected 1 ImageAsset");
 
     cleanup(&output);
 }

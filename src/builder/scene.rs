@@ -17,8 +17,8 @@ use crate::objects::core::{RiveObject, property_keys};
 use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
 use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
-    Ellipse, Fill, GradientStop, LinearGradient, Node, PathObject, RadialGradient, Rectangle,
-    Shape, SolidColor, Stroke, TrimPath,
+    Ellipse, Fill, GradientStop, Image, LinearGradient, Node, PathObject, RadialGradient,
+    Rectangle, Shape, SolidColor, Stroke, TrimPath,
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, EntryState, ExitState, StateMachine, StateMachineBool,
@@ -218,6 +218,12 @@ pub enum ObjectSpec {
     },
     Node {
         name: String,
+        x: Option<f32>,
+        y: Option<f32>,
+    },
+    Image {
+        name: String,
+        asset_id: u64,
         x: Option<f32>,
         y: Option<f32>,
     },
@@ -1128,6 +1134,22 @@ fn append_object(
                 x: x.unwrap_or(0.0),
                 y: y.unwrap_or(0.0),
             }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::Image {
+            name,
+            asset_id,
+            x,
+            y,
+        } => {
+            let mut image = Image::new(name.clone(), parent_id, *asset_id);
+            if let Some(v) = x {
+                image.x = *v;
+            }
+            if let Some(v) = y {
+                image.y = *v;
+            }
+            objects.push(Box::new(image));
             name_to_index.insert(name.clone(), object_index);
         }
         ObjectSpec::Path { name, path_flags } => {
@@ -2243,6 +2265,7 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
     for child in &artboard_spec.children {
         validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
     }
+    validate_image_asset_references(&artboard_spec.children)?;
 
     let mut animation_names: HashSet<String> = HashSet::new();
     if let Some(animations) = &artboard_spec.animations {
@@ -2518,6 +2541,9 @@ fn validate_object_spec(
         ObjectSpec::Node { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
+        ObjectSpec::Image { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
         ObjectSpec::Path { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
@@ -2651,6 +2677,48 @@ fn ensure_unique_name(name: &str, object_names: &mut HashSet<String>) -> Result<
         return Err(format!("duplicate object name '{}'", name));
     }
     object_names.insert(name.to_string());
+    Ok(())
+}
+
+fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String> {
+    fn walk(spec: &ObjectSpec, image_assets_seen: &mut u64) -> Result<(), String> {
+        match spec {
+            ObjectSpec::ImageAsset { .. } => {
+                *image_assets_seen += 1;
+            }
+            ObjectSpec::Image { name, asset_id, .. } => {
+                if *asset_id >= *image_assets_seen {
+                    return Err(format!(
+                        "image '{}' references image asset index {} but only {} image asset(s) were defined before it",
+                        name, asset_id, image_assets_seen
+                    ));
+                }
+            }
+            ObjectSpec::Shape { children, .. }
+            | ObjectSpec::Fill { children, .. }
+            | ObjectSpec::Stroke { children, .. }
+            | ObjectSpec::LinearGradient { children, .. }
+            | ObjectSpec::RadialGradient { children, .. }
+            | ObjectSpec::Bone { children, .. }
+            | ObjectSpec::RootBone { children, .. }
+            | ObjectSpec::Text { children, .. }
+            | ObjectSpec::LayoutComponent { children, .. }
+            | ObjectSpec::ViewModel { children, .. } => {
+                if let Some(children) = children {
+                    for child in children {
+                        walk(child, image_assets_seen)?;
+                    }
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+
+    let mut image_assets_seen = 0;
+    for child in children {
+        walk(child, &mut image_assets_seen)?;
+    }
     Ok(())
 }
 
@@ -3258,6 +3326,68 @@ mod tests {
                         ]),
                     }]),
                 }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        build_scene(&spec).unwrap();
+    }
+
+    #[test]
+    fn test_image_reference_requires_preceding_asset() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Image {
+                    name: "sprite_1".to_string(),
+                    asset_id: 0,
+                    x: Some(10.0),
+                    y: Some(20.0),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        match build_scene(&spec) {
+            Err(err) => assert!(
+                err.contains("references image asset index"),
+                "unexpected error: {}",
+                err
+            ),
+            Ok(_) => panic!("expected missing image asset error"),
+        }
+    }
+
+    #[test]
+    fn test_image_reference_accepts_preceding_asset() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![
+                    ObjectSpec::ImageAsset {
+                        name: "img_asset".to_string(),
+                        asset_id: Some(100),
+                        cdn_base_url: None,
+                    },
+                    ObjectSpec::Image {
+                        name: "sprite_1".to_string(),
+                        asset_id: 0,
+                        x: Some(10.0),
+                        y: Some(20.0),
+                    },
+                ],
                 animations: None,
                 state_machines: None,
             }),
