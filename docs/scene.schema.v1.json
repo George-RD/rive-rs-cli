@@ -3,24 +3,44 @@
   "$id": "https://github.com/George-RD/rive-rs-cli/docs/scene.schema.v1.json",
   "title": "rive-cli SceneSpec v1",
   "type": "object",
-  "required": ["scene_format_version"],
+  "required": [
+    "scene_format_version"
+  ],
   "oneOf": [
     {
-      "required": ["artboard"],
+      "required": [
+        "artboard"
+      ],
       "properties": {
-        "scene_format_version": { "type": "integer", "const": 1 },
-        "artboard": { "$ref": "#/$defs/artboard" }
+        "scene_format_version": {
+          "type": "integer",
+          "const": 1,
+          "description": "Schema version identifier. Must be 1."
+        },
+        "artboard": {
+          "$ref": "#/$defs/artboard",
+          "description": "Root artboard for single-artboard scenes."
+        }
       },
       "unevaluatedProperties": false
     },
     {
-      "required": ["artboards"],
+      "required": [
+        "artboards"
+      ],
       "properties": {
-        "scene_format_version": { "type": "integer", "const": 1 },
+        "scene_format_version": {
+          "type": "integer",
+          "const": 1,
+          "description": "Schema version identifier. Must be 1."
+        },
         "artboards": {
           "type": "array",
-          "items": { "$ref": "#/$defs/artboard" },
-          "minItems": 1
+          "items": {
+            "$ref": "#/$defs/artboard"
+          },
+          "minItems": 1,
+          "description": "Array of artboards for multi-artboard scenes."
         }
       },
       "unevaluatedProperties": false
@@ -29,77 +49,179 @@
   "$defs": {
     "artboard": {
       "type": "object",
-      "required": ["name", "children"],
+      "required": [
+        "name",
+        "children"
+      ],
       "anyOf": [
-        { "required": ["preset"] },
         {
-          "required": ["width", "height"],
+          "required": [
+            "preset"
+          ]
+        },
+        {
+          "required": [
+            "width",
+            "height"
+          ],
           "properties": {
-            "width": { "type": "number", "exclusiveMinimum": 0 },
-            "height": { "type": "number", "exclusiveMinimum": 0 }
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Artboard width in pixels."
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Artboard height in pixels."
+            }
           }
         }
       ],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique name for this artboard."
+        },
         "preset": {
           "type": "string",
-          "enum": ["mobile", "tablet", "desktop", "square", "banner", "story"]
+          "enum": [
+            "mobile",
+            "tablet",
+            "desktop",
+            "square",
+            "banner",
+            "story"
+          ],
+          "description": "Artboard size preset. Overrides width/height."
         },
-        "width": { "type": "number", "minimum": 0 },
-        "height": { "type": "number", "minimum": 0 },
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Artboard width in pixels."
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Artboard height in pixels."
+        },
         "children": {
           "type": "array",
-          "items": { "$ref": "#/$defs/object" }
+          "items": {
+            "$ref": "#/$defs/object"
+          },
+          "description": "Child objects in this artboard (shapes, nodes, etc.)."
         },
         "animations": {
           "type": "array",
-          "items": { "$ref": "#/$defs/animation" }
+          "items": {
+            "$ref": "#/$defs/animation"
+          },
+          "description": "Linear animations defined on this artboard."
         },
         "state_machines": {
           "type": "array",
-          "items": { "$ref": "#/$defs/state_machine" }
+          "items": {
+            "$ref": "#/$defs/state_machine"
+          },
+          "description": "State machines for interactive behavior."
         }
       },
       "unevaluatedProperties": false
     },
     "object": {
       "oneOf": [
-        { "$ref": "#/$defs/shape" },
-        { "$ref": "#/$defs/ellipse" },
-        { "$ref": "#/$defs/rectangle" },
-        { "$ref": "#/$defs/fill" },
-        { "$ref": "#/$defs/stroke" },
-        { "$ref": "#/$defs/solid_color" },
-        { "$ref": "#/$defs/linear_gradient" },
-        { "$ref": "#/$defs/radial_gradient" },
-        { "$ref": "#/$defs/gradient_stop" },
-        { "$ref": "#/$defs/node" },
-        { "$ref": "#/$defs/image" },
-        { "$ref": "#/$defs/path" },
-        { "$ref": "#/$defs/trim_path" },
-        { "$ref": "#/$defs/nested_artboard" }
+        {
+          "$ref": "#/$defs/shape"
+        },
+        {
+          "$ref": "#/$defs/ellipse"
+        },
+        {
+          "$ref": "#/$defs/rectangle"
+        },
+        {
+          "$ref": "#/$defs/fill"
+        },
+        {
+          "$ref": "#/$defs/stroke"
+        },
+        {
+          "$ref": "#/$defs/solid_color"
+        },
+        {
+          "$ref": "#/$defs/linear_gradient"
+        },
+        {
+          "$ref": "#/$defs/radial_gradient"
+        },
+        {
+          "$ref": "#/$defs/gradient_stop"
+        },
+        {
+          "$ref": "#/$defs/node"
+        },
+        {
+          "$ref": "#/$defs/image"
+        },
+        {
+          "$ref": "#/$defs/path"
+        },
+        {
+          "$ref": "#/$defs/trim_path"
+        },
+        {
+          "$ref": "#/$defs/nested_artboard"
+        }
       ],
       "unevaluatedProperties": false
     },
     "base_object": {
       "type": "object",
-      "required": ["type", "name"],
+      "required": [
+        "type",
+        "name"
+      ],
       "properties": {
-        "type": { "type": "string" },
-        "name": { "type": "string", "minLength": 1 }
+        "type": {
+          "type": "string",
+          "description": "Object type discriminator."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique name for this object within its artboard."
+        }
       }
     },
     "shape": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
           "properties": {
-            "type": { "const": "shape" },
-            "x": { "type": "number" },
-            "y": { "type": "number" },
-            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+            "type": {
+              "const": "shape",
+              "description": "Must be 'shape'."
+            },
+            "x": {
+              "type": "number",
+              "description": "Horizontal position in pixels (SVG: cx/x attribute)."
+            },
+            "y": {
+              "type": "number",
+              "description": "Vertical position in pixels (SVG: cy/y attribute)."
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object"
+              },
+              "description": "Child objects: paths (ellipse, rectangle), paint (fill, stroke), and effects (trim_path)."
+            }
           }
         }
       ],
@@ -107,16 +229,38 @@
     },
     "ellipse": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
-          "required": ["width", "height"],
+          "required": [
+            "width",
+            "height"
+          ],
           "properties": {
-            "type": { "const": "ellipse" },
-            "width": { "type": "number", "minimum": 0 },
-            "height": { "type": "number", "minimum": 0 },
-            "origin_x": { "type": "number" },
-            "origin_y": { "type": "number" }
+            "type": {
+              "const": "ellipse",
+              "description": "Must be 'ellipse'."
+            },
+            "width": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Ellipse width in pixels (SVG: rx * 2)."
+            },
+            "height": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Ellipse height in pixels (SVG: ry * 2)."
+            },
+            "origin_x": {
+              "type": "number",
+              "description": "Horizontal origin (0=left, 0.5=center, 1=right). Like CSS transform-origin."
+            },
+            "origin_y": {
+              "type": "number",
+              "description": "Vertical origin (0=top, 0.5=center, 1=bottom). Like CSS transform-origin."
+            }
           }
         }
       ],
@@ -124,17 +268,43 @@
     },
     "rectangle": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
-          "required": ["width", "height"],
+          "required": [
+            "width",
+            "height"
+          ],
           "properties": {
-            "type": { "const": "rectangle" },
-            "width": { "type": "number", "minimum": 0 },
-            "height": { "type": "number", "minimum": 0 },
-            "corner_radius": { "type": "number", "minimum": 0 },
-            "origin_x": { "type": "number" },
-            "origin_y": { "type": "number" }
+            "type": {
+              "const": "rectangle",
+              "description": "Must be 'rectangle'."
+            },
+            "width": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Rectangle width in pixels."
+            },
+            "height": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Rectangle height in pixels."
+            },
+            "corner_radius": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Uniform corner radius in pixels (CSS: border-radius)."
+            },
+            "origin_x": {
+              "type": "number",
+              "description": "Horizontal origin (0=left, 0.5=center, 1=right)."
+            },
+            "origin_y": {
+              "type": "number",
+              "description": "Vertical origin (0=top, 0.5=center, 1=bottom)."
+            }
           }
         }
       ],
@@ -142,18 +312,42 @@
     },
     "fill": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
           "properties": {
-            "type": { "const": "fill" },
+            "type": {
+              "const": "fill",
+              "description": "Must be 'fill'."
+            },
             "fill_rule": {
               "oneOf": [
-                { "type": "integer", "enum": [0, 1] },
-                { "type": "string", "enum": ["nonzero", "evenodd"] }
-              ]
+                {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "nonzero",
+                    "evenodd"
+                  ]
+                }
+              ],
+              "description": "Fill rule: 'nonzero' (default) or 'evenodd' (SVG: fill-rule). Integer 0 or 1 also accepted."
             },
-            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object"
+              },
+              "description": "Paint sources: solid_color, linear_gradient, or radial_gradient."
+            }
           }
         }
       ],
@@ -161,25 +355,70 @@
     },
     "stroke": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
           "properties": {
-            "type": { "const": "stroke" },
-            "thickness": { "type": "number", "minimum": 0 },
+            "type": {
+              "const": "stroke",
+              "description": "Must be 'stroke'."
+            },
+            "thickness": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Stroke width in pixels (SVG: stroke-width). Default: 1."
+            },
             "cap": {
               "oneOf": [
-                { "type": "integer", "enum": [0, 1, 2] },
-                { "type": "string", "enum": ["butt", "round", "square"] }
-              ]
+                {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "butt",
+                    "round",
+                    "square"
+                  ]
+                }
+              ],
+              "description": "Line cap style: 'butt' (default), 'round', or 'square' (SVG: stroke-linecap). Integer 0-2 also accepted."
             },
             "join": {
               "oneOf": [
-                { "type": "integer", "enum": [0, 1, 2] },
-                { "type": "string", "enum": ["miter", "round", "bevel"] }
-              ]
+                {
+                  "type": "integer",
+                  "enum": [
+                    0,
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "miter",
+                    "round",
+                    "bevel"
+                  ]
+                }
+              ],
+              "description": "Line join style: 'miter' (default), 'round', or 'bevel' (SVG: stroke-linejoin). Integer 0-2 also accepted."
             },
-            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object"
+              },
+              "description": "Paint sources: solid_color, linear_gradient, or radial_gradient."
+            }
           }
         }
       ],
@@ -187,13 +426,24 @@
     },
     "solid_color": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
-          "required": ["color"],
+          "required": [
+            "color"
+          ],
           "properties": {
-            "type": { "const": "solid_color" },
-            "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" }
+            "type": {
+              "const": "solid_color",
+              "description": "Must be 'solid_color'."
+            },
+            "color": {
+              "type": "string",
+              "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$",
+              "description": "Color in #RRGGBB or #RRGGBBAA format. Legacy AARRGGBB without # also accepted."
+            }
           }
         }
       ],
@@ -201,17 +451,45 @@
     },
     "linear_gradient": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
-          "required": ["start_x", "start_y", "end_x", "end_y"],
+          "required": [
+            "start_x",
+            "start_y",
+            "end_x",
+            "end_y"
+          ],
           "properties": {
-            "type": { "const": "linear_gradient" },
-            "start_x": { "type": "number" },
-            "start_y": { "type": "number" },
-            "end_x": { "type": "number" },
-            "end_y": { "type": "number" },
-            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+            "type": {
+              "const": "linear_gradient",
+              "description": "Must be 'linear_gradient'."
+            },
+            "start_x": {
+              "type": "number",
+              "description": "Gradient start X coordinate."
+            },
+            "start_y": {
+              "type": "number",
+              "description": "Gradient start Y coordinate."
+            },
+            "end_x": {
+              "type": "number",
+              "description": "Gradient end X coordinate."
+            },
+            "end_y": {
+              "type": "number",
+              "description": "Gradient end Y coordinate."
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object"
+              },
+              "description": "Gradient stops (gradient_stop objects)."
+            }
           }
         }
       ],
@@ -219,17 +497,45 @@
     },
     "radial_gradient": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
-          "required": ["start_x", "start_y", "end_x", "end_y"],
+          "required": [
+            "start_x",
+            "start_y",
+            "end_x",
+            "end_y"
+          ],
           "properties": {
-            "type": { "const": "radial_gradient" },
-            "start_x": { "type": "number" },
-            "start_y": { "type": "number" },
-            "end_x": { "type": "number" },
-            "end_y": { "type": "number" },
-            "children": { "type": "array", "items": { "$ref": "#/$defs/object" } }
+            "type": {
+              "const": "radial_gradient",
+              "description": "Must be 'radial_gradient'."
+            },
+            "start_x": {
+              "type": "number",
+              "description": "Gradient center X coordinate."
+            },
+            "start_y": {
+              "type": "number",
+              "description": "Gradient center Y coordinate."
+            },
+            "end_x": {
+              "type": "number",
+              "description": "Gradient edge X coordinate (defines radius)."
+            },
+            "end_y": {
+              "type": "number",
+              "description": "Gradient edge Y coordinate (defines radius)."
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/object"
+              },
+              "description": "Gradient stops (gradient_stop objects)."
+            }
           }
         }
       ],
@@ -237,24 +543,55 @@
     },
     "gradient_stop": {
       "type": "object",
-      "required": ["type", "color", "position"],
+      "required": [
+        "type",
+        "color",
+        "position"
+      ],
       "properties": {
-        "type": { "const": "gradient_stop" },
-        "name": { "type": "string", "minLength": 1 },
-        "color": { "type": "string", "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" },
-        "position": { "type": "number", "minimum": 0, "maximum": 1 }
+        "type": {
+          "const": "gradient_stop",
+          "description": "Must be 'gradient_stop'."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional name for this stop."
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$",
+          "description": "Stop color in #RRGGBB or #RRGGBBAA format."
+        },
+        "position": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Stop position from 0 (start) to 1 (end). Like CSS gradient color-stop."
+        }
       },
       "unevaluatedProperties": false
     },
     "node": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
           "properties": {
-            "type": { "const": "node" },
-            "x": { "type": "number" },
-            "y": { "type": "number" }
+            "type": {
+              "const": "node",
+              "description": "Must be 'node'."
+            },
+            "x": {
+              "type": "number",
+              "description": "Horizontal position in pixels."
+            },
+            "y": {
+              "type": "number",
+              "description": "Vertical position in pixels."
+            }
           },
           "unevaluatedProperties": false
         }
@@ -263,15 +600,32 @@
     },
     "image": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
-          "required": ["asset_id"],
+          "required": [
+            "asset_id"
+          ],
           "properties": {
-            "type": { "const": "image" },
-            "asset_id": { "type": "integer", "minimum": 0 },
-            "x": { "type": "number" },
-            "y": { "type": "number" }
+            "type": {
+              "const": "image",
+              "description": "Must be 'image'."
+            },
+            "asset_id": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Reference to an image asset by ID."
+            },
+            "x": {
+              "type": "number",
+              "description": "Horizontal position in pixels."
+            },
+            "y": {
+              "type": "number",
+              "description": "Vertical position in pixels."
+            }
           },
           "unevaluatedProperties": false
         }
@@ -280,12 +634,21 @@
     },
     "path": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
           "properties": {
-            "type": { "const": "path" },
-            "path_flags": { "type": "integer", "minimum": 0 }
+            "type": {
+              "const": "path",
+              "description": "Must be 'path'."
+            },
+            "path_flags": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Path flags bitfield."
+            }
           },
           "unevaluatedProperties": false
         }
@@ -294,19 +657,48 @@
     },
     "trim_path": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
           "properties": {
-            "type": { "const": "trim_path" },
-            "start": { "type": "number", "minimum": 0 },
-            "end": { "type": "number", "minimum": 0 },
-            "offset": { "type": "number" },
+            "type": {
+              "const": "trim_path",
+              "description": "Must be 'trim_path'. Must be child of a fill or stroke."
+            },
+            "start": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Trim start position (0-1 range, 0=beginning)."
+            },
+            "end": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Trim end position (0-1 range, 1=full path)."
+            },
+            "offset": {
+              "type": "number",
+              "description": "Trim offset for rotating the visible segment."
+            },
             "mode": {
               "oneOf": [
-                { "type": "integer", "enum": [1, 2] },
-                { "type": "string", "enum": ["sequential", "synchronized"] }
-              ]
+                {
+                  "type": "integer",
+                  "enum": [
+                    1,
+                    2
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "sequential",
+                    "synchronized"
+                  ]
+                }
+              ],
+              "description": "Trim mode: 'sequential' or 'synchronized'. Integer 1 or 2 also accepted."
             }
           }
         }
@@ -315,15 +707,32 @@
     },
     "nested_artboard": {
       "allOf": [
-        { "$ref": "#/$defs/base_object" },
+        {
+          "$ref": "#/$defs/base_object"
+        },
         {
           "type": "object",
-          "required": ["source_artboard"],
+          "required": [
+            "source_artboard"
+          ],
           "properties": {
-            "type": { "const": "nested_artboard" },
-            "source_artboard": { "type": "string", "minLength": 1 },
-            "x": { "type": "number" },
-            "y": { "type": "number" }
+            "type": {
+              "const": "nested_artboard",
+              "description": "Must be 'nested_artboard'."
+            },
+            "source_artboard": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Name of the artboard to embed."
+            },
+            "x": {
+              "type": "number",
+              "description": "Horizontal position in pixels."
+            },
+            "y": {
+              "type": "number",
+              "description": "Vertical position in pixels."
+            }
           }
         }
       ],
@@ -331,74 +740,200 @@
     },
     "animation": {
       "type": "object",
-      "required": ["name", "fps", "duration", "keyframes"],
+      "required": [
+        "name",
+        "fps",
+        "duration",
+        "keyframes"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "fps": { "type": "integer", "minimum": 1 },
-        "duration": { "type": "integer", "minimum": 1 },
-        "speed": { "type": "number" },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique animation name within this artboard."
+        },
+        "fps": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Frames per second (typically 60)."
+        },
+        "duration": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total duration in frames."
+        },
+        "speed": {
+          "type": "number",
+          "description": "Playback speed multiplier (default: 1.0)."
+        },
         "loop_type": {
           "oneOf": [
-            { "type": "integer", "enum": [0, 1, 2] },
-            { "type": "string", "enum": ["oneshot", "loop", "pingpong"] }
-          ]
+            {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2
+              ]
+            },
+            {
+              "type": "string",
+              "enum": [
+                "oneshot",
+                "loop",
+                "pingpong"
+              ]
+            }
+          ],
+          "description": "Loop behavior: 'oneshot' (default), 'loop', or 'pingpong'. Integer 0-2 also accepted."
         },
         "interpolators": {
           "type": "array",
-          "items": { "$ref": "#/$defs/interpolator" }
+          "items": {
+            "$ref": "#/$defs/interpolator"
+          },
+          "description": "Named cubic easing curves for keyframes."
         },
         "keyframes": {
           "type": "array",
-          "items": { "$ref": "#/$defs/keyframe_group" }
+          "items": {
+            "$ref": "#/$defs/keyframe_group"
+          },
+          "description": "Keyframe groups targeting specific object properties."
         }
       },
       "unevaluatedProperties": false
     },
     "interpolator": {
       "type": "object",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "x1": { "type": "number", "minimum": 0, "maximum": 1 },
-        "y1": { "type": "number" },
-        "x2": { "type": "number", "minimum": 0, "maximum": 1 },
-        "y2": { "type": "number" }
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique interpolator name (referenced by keyframes)."
+        },
+        "x1": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "First control point X (0-1). Like CSS cubic-bezier()."
+        },
+        "y1": {
+          "type": "number",
+          "description": "First control point Y. Like CSS cubic-bezier()."
+        },
+        "x2": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Second control point X (0-1). Like CSS cubic-bezier()."
+        },
+        "y2": {
+          "type": "number",
+          "description": "Second control point Y. Like CSS cubic-bezier()."
+        }
       },
       "unevaluatedProperties": false
     },
     "keyframe_group": {
       "type": "object",
-      "required": ["object", "property", "frames"],
+      "required": [
+        "object",
+        "property",
+        "frames"
+      ],
       "properties": {
-        "object": { "type": "string", "minLength": 1 },
+        "object": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the target object to animate."
+        },
         "property": {
           "type": "string",
-          "enum": ["x", "y", "rotation", "scale_x", "scale_y", "opacity", "width", "height", "color", "trim_start", "trim_end", "trim_offset"]
+          "enum": [
+            "x",
+            "y",
+            "rotation",
+            "scale_x",
+            "scale_y",
+            "opacity",
+            "width",
+            "height",
+            "color",
+            "trim_start",
+            "trim_end",
+            "trim_offset"
+          ],
+          "description": "Property to animate (x, y, rotation, scale_x, scale_y, opacity, width, height, color, trim_start, trim_end, trim_offset)."
         },
         "frames": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["frame", "value"],
+            "required": [
+              "frame",
+              "value"
+            ],
             "properties": {
-              "frame": { "type": "integer", "minimum": 0 },
-              "value": {},
-              "interpolation": { "type": "string", "enum": ["hold", "linear", "cubic"] },
-              "interpolator": { "type": "string", "minLength": 1 }
+              "frame": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Frame number (0-based, must be < animation duration)."
+              },
+              "value": {
+                "description": "Property value at this frame. Type depends on the animated property."
+              },
+              "interpolation": {
+                "type": "string",
+                "enum": [
+                  "hold",
+                  "linear",
+                  "cubic"
+                ],
+                "description": "Easing type: 'hold', 'linear' (default), or 'cubic'."
+              },
+              "interpolator": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Name of a cubic interpolator (only used when interpolation is 'cubic')."
+              }
             },
             "unevaluatedProperties": false
-          }
+          },
+          "description": "Array of keyframes for this property."
         }
       },
       "unevaluatedProperties": false
     },
     "state_machine": {
       "type": "object",
-      "required": ["name", "layers"],
+      "required": [
+        "name",
+        "layers"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "inputs": { "type": "array", "items": { "$ref": "#/$defs/input" } },
-        "layers": { "type": "array", "items": { "$ref": "#/$defs/layer" } }
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique state machine name."
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/input"
+          },
+          "description": "Input variables that drive transitions (number, bool, trigger)."
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/layer"
+          },
+          "description": "Animation layers with states and transitions."
+        }
       },
       "unevaluatedProperties": false
     },
@@ -406,30 +941,68 @@
       "oneOf": [
         {
           "type": "object",
-          "required": ["type", "name", "value"],
+          "required": [
+            "type",
+            "name",
+            "value"
+          ],
           "properties": {
-            "type": { "const": "number" },
-            "name": { "type": "string", "minLength": 1 },
-            "value": { "type": "number" }
+            "type": {
+              "const": "number",
+              "description": "Must be 'number'."
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Input variable name."
+            },
+            "value": {
+              "type": "number",
+              "description": "Initial numeric value."
+            }
           },
           "unevaluatedProperties": false
         },
         {
           "type": "object",
-          "required": ["type", "name", "value"],
+          "required": [
+            "type",
+            "name",
+            "value"
+          ],
           "properties": {
-            "type": { "const": "bool" },
-            "name": { "type": "string", "minLength": 1 },
-            "value": { "type": "boolean" }
+            "type": {
+              "const": "bool",
+              "description": "Must be 'bool'."
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Input variable name."
+            },
+            "value": {
+              "type": "boolean",
+              "description": "Initial boolean value."
+            }
           },
           "unevaluatedProperties": false
         },
         {
           "type": "object",
-          "required": ["type", "name"],
+          "required": [
+            "type",
+            "name"
+          ],
           "properties": {
-            "type": { "const": "trigger" },
-            "name": { "type": "string", "minLength": 1 }
+            "type": {
+              "const": "trigger",
+              "description": "Must be 'trigger'."
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Input variable name."
+            }
           },
           "unevaluatedProperties": false
         }
@@ -438,10 +1011,24 @@
     },
     "layer": {
       "type": "object",
-      "required": ["states"],
+      "required": [
+        "states"
+      ],
       "properties": {
-        "states": { "type": "array", "items": { "$ref": "#/$defs/state" } },
-        "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } }
+        "states": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/state"
+          },
+          "description": "States in this layer (entry, exit, any, animation)."
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/transition"
+          },
+          "description": "Transitions between states."
+        }
       },
       "unevaluatedProperties": false
     },
@@ -449,28 +1036,59 @@
       "oneOf": [
         {
           "type": "object",
-          "required": ["type"],
-          "properties": { "type": { "const": "entry" } },
-          "unevaluatedProperties": false
-        },
-        {
-          "type": "object",
-          "required": ["type"],
-          "properties": { "type": { "const": "exit" } },
-          "unevaluatedProperties": false
-        },
-        {
-          "type": "object",
-          "required": ["type"],
-          "properties": { "type": { "const": "any" } },
-          "unevaluatedProperties": false
-        },
-        {
-          "type": "object",
-          "required": ["type", "animation"],
+          "required": [
+            "type"
+          ],
           "properties": {
-            "type": { "const": "animation" },
-            "animation": { "type": "string", "minLength": 1 }
+            "type": {
+              "const": "entry",
+              "description": "Must be 'entry'. Automatic entry point."
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "exit",
+              "description": "Must be 'exit'. Terminal state."
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "any",
+              "description": "Must be 'any'. Matches any state."
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "type",
+            "animation"
+          ],
+          "properties": {
+            "type": {
+              "const": "animation",
+              "description": "Must be 'animation'. Plays a named animation."
+            },
+            "animation": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Name of the animation to play."
+            }
           },
           "unevaluatedProperties": false
         }
@@ -479,22 +1097,54 @@
     },
     "transition": {
       "type": "object",
-      "required": ["from", "to"],
+      "required": [
+        "from",
+        "to"
+      ],
       "properties": {
-        "from": { "type": "integer", "minimum": 0 },
-        "to": { "type": "integer", "minimum": 0 },
-        "duration": { "type": "integer", "minimum": 0 },
-        "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+        "from": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Source state index (0-based)."
+        },
+        "to": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Target state index (0-based)."
+        },
+        "duration": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Transition duration in milliseconds."
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "description": "Conditions that must be met for this transition."
+        }
       },
       "unevaluatedProperties": false
     },
     "condition": {
       "type": "object",
-      "required": ["input"],
+      "required": [
+        "input"
+      ],
       "properties": {
-        "input": { "type": "string", "minLength": 1 },
-        "op": { "type": "string" },
-        "value": {}
+        "input": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the input variable to check."
+        },
+        "op": {
+          "type": "string",
+          "description": "Comparison operator: '==', '!=', '>', '>=', '<', '<=' (or: eq, ne, gt, gte, lt, lte)."
+        },
+        "value": {
+          "description": "Value to compare against."
+        }
       },
       "unevaluatedProperties": false
     }
