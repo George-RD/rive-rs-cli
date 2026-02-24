@@ -254,19 +254,85 @@ const FADE_TEMPLATE: &str = r#"
 }
 "#;
 
+const MINIMAL_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/minimal.json"
+));
+const SHAPES_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/shapes.json"
+));
+const ANIMATION_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/animation.json"
+));
+const STATE_MACHINE_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/state_machine.json"
+));
+const GRADIENTS_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/gradients.json"
+));
+const TEXT_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/text.json"
+));
+const LAYOUT_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/layout.json"
+));
+const DATA_BINDING_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/data_binding.json"
+));
+const BONES_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/bones.json"
+));
+const CONSTRAINTS_TEMPLATE: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/fixtures/constraints.json"
+));
+
 pub fn get_template(name: &str) -> Result<serde_json::Value, AiError> {
     let json_str = match name {
         "bounce" => BOUNCE_TEMPLATE,
         "spinner" => SPINNER_TEMPLATE,
         "pulse" => PULSE_TEMPLATE,
         "fade" => FADE_TEMPLATE,
+        "minimal" => MINIMAL_TEMPLATE,
+        "shapes" => SHAPES_TEMPLATE,
+        "animation" => ANIMATION_TEMPLATE,
+        "state_machine" => STATE_MACHINE_TEMPLATE,
+        "gradients" => GRADIENTS_TEMPLATE,
+        "text" => TEXT_TEMPLATE,
+        "layout" => LAYOUT_TEMPLATE,
+        "data_binding" => DATA_BINDING_TEMPLATE,
+        "bones" => BONES_TEMPLATE,
+        "constraints" => CONSTRAINTS_TEMPLATE,
         _ => return Err(AiError::UnknownTemplate(name.to_string())),
     };
     serde_json::from_str(json_str).map_err(|e| AiError::InvalidResponse(e.to_string()))
 }
 
 pub fn list_templates() -> &'static [&'static str] {
-    &["bounce", "spinner", "pulse", "fade"]
+    &[
+        "bounce",
+        "spinner",
+        "pulse",
+        "fade",
+        "minimal",
+        "shapes",
+        "animation",
+        "state_machine",
+        "gradients",
+        "text",
+        "layout",
+        "data_binding",
+        "bones",
+        "constraints",
+    ]
 }
 
 #[cfg(test)]
@@ -291,5 +357,10 @@ mod tests {
     #[test]
     fn test_unknown_template() {
         assert!(get_template("nonexistent").is_err());
+    }
+
+    #[test]
+    fn test_template_catalog_has_minimum_size() {
+        assert!(list_templates().len() >= 10);
     }
 }

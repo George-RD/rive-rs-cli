@@ -89,4 +89,26 @@ pub enum AiCommand {
         )]
         max_retries: u8,
     },
+    Lab {
+        #[arg(long, help = "Path to eval suite JSON file")]
+        suite: PathBuf,
+        #[arg(
+            long,
+            default_value = "evals/runs",
+            help = "Output directory for eval runs"
+        )]
+        output_dir: PathBuf,
+        #[arg(long, default_value = "0", help = "Rive file id")]
+        file_id: u64,
+        #[arg(
+            long,
+            default_value = "3",
+            help = "Max auto-repair retries (0 = no repair)"
+        )]
+        max_retries: u8,
+        #[arg(long, help = "Optional baseline JSON file for drift detection")]
+        baseline: Option<PathBuf>,
+        #[arg(long, help = "Write baseline JSON from this run")]
+        write_baseline: Option<PathBuf>,
+    },
 }

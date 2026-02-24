@@ -1602,6 +1602,115 @@ fn test_ai_max_retries_flag_accepted() {
     cleanup(&output);
 }
 
+#[test]
+fn test_ai_lab_generates_report_and_artifacts() {
+    let root = std::env::temp_dir().join("rive_ai_lab_e2e_run");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).expect("failed to create temp root");
+
+    let suite_path = root.join("suite.json");
+    let suite_json = r#"{
+  "suite_name": "e2e-suite",
+  "suite_version": 1,
+  "cases": [
+    {
+      "id": "bounce-case",
+      "input_kind": "template",
+      "input": "bounce",
+      "expected_traits": ["has_animation"]
+    }
+  ]
+}"#;
+    std::fs::write(&suite_path, suite_json).expect("failed to write suite json");
+
+    let output_dir = root.join("runs");
+    let result = cargo_run(&[
+        "ai",
+        "lab",
+        "--suite",
+        suite_path.to_str().unwrap(),
+        "--output-dir",
+        output_dir.to_str().unwrap(),
+    ]);
+
+    assert!(
+        result.status.success(),
+        "ai lab failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    let run_id_line = stdout
+        .lines()
+        .find(|line| line.starts_with("run_id="))
+        .expect("missing run_id output");
+    let run_id = run_id_line.trim_start_matches("run_id=");
+
+    let run_dir = output_dir.join(run_id);
+    assert!(run_dir.join("report.json").exists());
+    assert!(run_dir.join("samples/bounce-case/scene.json").exists());
+    assert!(run_dir.join("samples/bounce-case/output.riv").exists());
+    assert!(run_dir.join("samples/bounce-case/validate.json").exists());
+    assert!(run_dir.join("samples/bounce-case/inspect.json").exists());
+
+    let report_str = std::fs::read_to_string(run_dir.join("report.json")).unwrap();
+    let report: serde_json::Value = serde_json::from_str(&report_str).unwrap();
+    assert_eq!(report["case_count"].as_u64(), Some(1));
+    assert_eq!(report["valid_count"].as_u64(), Some(1));
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn test_ai_lab_regression_flags_drift() {
+    let root = std::env::temp_dir().join("rive_ai_lab_e2e_drift");
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).expect("failed to create temp root");
+
+    let suite_path = root.join("suite.json");
+    let suite_json = r#"{
+  "suite_name": "e2e-drift-suite",
+  "suite_version": 1,
+  "cases": [
+    {
+      "id": "bounce-case",
+      "input_kind": "template",
+      "input": "bounce",
+      "expected_traits": ["has_animation"]
+    }
+  ]
+}"#;
+    std::fs::write(&suite_path, suite_json).expect("failed to write suite json");
+
+    let baseline_path = root.join("baseline.json");
+    let baseline_json = r#"{
+  "suite_name": "e2e-drift-suite",
+  "suite_version": 1,
+  "case_hashes": {
+    "bounce-case": "deadbeefdeadbeef"
+  }
+}"#;
+    std::fs::write(&baseline_path, baseline_json).expect("failed to write baseline json");
+
+    let output_dir = root.join("runs");
+    let result = cargo_run(&[
+        "ai",
+        "lab",
+        "--suite",
+        suite_path.to_str().unwrap(),
+        "--output-dir",
+        output_dir.to_str().unwrap(),
+        "--baseline",
+        baseline_path.to_str().unwrap(),
+    ]);
+
+    assert!(!result.status.success(), "expected drift failure");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("regression drift detected"));
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
 const BONE_TYPE_KEY: u64 = 40;
 const ROOT_BONE_TYPE_KEY: u64 = 41;
 const SKIN_TYPE_KEY: u64 = 43;
