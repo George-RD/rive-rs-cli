@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rive-cli Demo Gallery</title>
+    <script src="https://unpkg.com/@rive-app/canvas@2.35.0"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #e2e8f0;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-purple: #a855f7;
+            --accent-red: #ef4444;
+            --accent-yellow: #eab308;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            margin: 10px 0 0;
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .filter-btn {
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #334155;
+        }
+
+        .filter-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 300px;
+            background: var(--bg-color);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .card-info {
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #334155;
+        }
+
+        .name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .badges {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .badge-static { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+        .badge-animated { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+        .badge-interactive { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+
+        .status {
+            font-size: 1.2rem;
+        }
+
+        .status.loading { color: var(--accent-yellow); animation: spin 1s linear infinite; }
+        .status.success { color: var(--accent-green); }
+        .status.error { color: var(--accent-red); }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .controls {
+            padding: 10px 16px;
+            background: #0f172a;
+            border-top: 1px solid #334155;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .controls button {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .controls button:hover {
+            background: #2563eb;
+        }
+
+        .error-msg {
+            color: var(--accent-red);
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        footer {
+            margin-top: 40px;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>rive-cli Demo Gallery</h1>
+        <p class="subtitle">Generated .riv files loaded in Rive web runtime</p>
+    </header>
+
+    <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="static">Static</button>
+        <button class="filter-btn" data-filter="animated">Animated</button>
+        <button class="filter-btn" data-filter="interactive">Interactive</button>
+    </div>
+
+    <div class="grid" id="gallery">
+        <!-- Cards will be injected here -->
+    </div>
+
+    <footer id="summary">
+        Loading...
+    </footer>
+
+    <script>
+        const fixtures = [
+            { name: 'minimal', category: 'static' },
+            { name: 'shapes', category: 'static' },
+            { name: 'gradients', category: 'static' },
+            { name: 'stroke_styles', category: 'static' },
+            { name: 'path', category: 'static' },
+            { name: 'artboard_preset', category: 'static' },
+            { name: 'bones', category: 'static' },
+            { name: 'constraints', category: 'static' },
+            { name: 'text', category: 'static' },
+            { name: 'layout', category: 'static' },
+            { name: 'data_binding', category: 'static' },
+            { name: 'animation', category: 'animated' },
+            { name: 'color_animation', category: 'animated' },
+            { name: 'cubic_easing', category: 'animated' },
+            { name: 'loop_animation', category: 'animated' },
+            { name: 'trim_path', category: 'animated' },
+            { name: 'multi_artboard', category: 'animated' },
+            { name: 'nested_artboard', category: 'animated' },
+            { name: 'state_machine', category: 'interactive' }
+        ];
+
+        const gallery = document.getElementById('gallery');
+        const summary = document.getElementById('summary');
+        let loadedCount = 0;
+
+        // Render cards
+        fixtures.forEach(fixture => {
+            const card = document.createElement('div');
+            card.className = `card category-${fixture.category}`;
+            card.dataset.category = fixture.category;
+            
+            let controlsHtml = '';
+            if (fixture.name === 'state_machine') {
+                controlsHtml = `
+                    <div class="controls">
+                        <label><input type="checkbox" id="isOn-toggle"> isOn</label>
+                        <button id="trigger-btn">Fire Toggle</button>
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="canvas-container">
+                    <canvas id="canvas-${fixture.name}"></canvas>
+                </div>
+                <div class="card-info">
+                    <span class="name">${fixture.name}</span>
+                    <div class="badges">
+                        <span class="badge badge-${fixture.category}">${fixture.category}</span>
+                        <span class="status loading" id="status-${fixture.name}">⟳</span>
+                    </div>
+                </div>
+                <div class="error-msg" id="error-${fixture.name}"></div>
+                ${controlsHtml}
+            `;
+            gallery.appendChild(card);
+
+            // Initialize Rive
+            const canvas = document.getElementById(`canvas-${fixture.name}`);
+            const statusEl = document.getElementById(`status-${fixture.name}`);
+            const errorEl = document.getElementById(`error-${fixture.name}`);
+
+            let r;
+            const params = {
+                src: `riv/${fixture.name}.riv`,
+                canvas: canvas,
+                autoplay: true,
+                stateMachines: fixture.name === 'state_machine' ? ['Logic'] : undefined,
+                onLoad: () => {
+                    statusEl.className = 'status success';
+                    statusEl.textContent = '✓';
+                    loadedCount++;
+                    updateSummary();
+
+                    if (fixture.name === 'state_machine' && r) {
+                        setupStateMachine(r);
+                    }
+                },
+                onLoadError: (err) => {
+                    statusEl.className = 'status error';
+                    statusEl.textContent = '✗';
+                    errorEl.textContent = 'Error loading file';
+                    errorEl.style.display = 'block';
+                    console.error(`Error loading ${fixture.name}:`, err);
+                    updateSummary();
+                }
+            };
+
+            r = new rive.Rive(params);
+        });
+
+        function updateSummary() {
+            summary.textContent = `${loadedCount} of ${fixtures.length} animations loaded successfully`;
+        }
+
+        function setupStateMachine(riveInstance) {
+            const inputs = riveInstance.stateMachineInputs('Logic');
+            const isOnInput = inputs.find(i => i.name === 'isOn');
+            const triggerInput = inputs.find(i => i.name === 'trigger');
+
+            const checkbox = document.getElementById('isOn-toggle');
+            const button = document.getElementById('trigger-btn');
+
+            if (isOnInput && checkbox) {
+                checkbox.checked = isOnInput.value;
+                checkbox.onchange = (e) => {
+                    isOnInput.value = e.target.checked;
+                };
+            }
+
+            if (triggerInput && button) {
+                button.onclick = () => {
+                    triggerInput.fire();
+                };
+            }
+        }
+
+        // Filter logic
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active button
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const filter = btn.dataset.filter;
+                document.querySelectorAll('.card').forEach(card => {
+                    if (filter === 'all' || card.dataset.category === filter) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
