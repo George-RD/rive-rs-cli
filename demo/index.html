@@ -258,6 +258,7 @@
 
         // Render cards
         const riveInstances = {};
+        const riveSources = {};
 
         fixtures.forEach(fixture => {
             const card = document.createElement('div');
@@ -327,6 +328,7 @@
             };
 
             riveInstances[fixture.name] = new rive.Rive(params);
+            riveSources[fixture.name] = `riv/${fixture.name}.riv`;
         });
 
         function updateSummary() {
@@ -361,7 +363,13 @@
             const name = btn.dataset.fixture;
             const inst = riveInstances[name];
             if (inst) {
-                inst.reset({ autoplay: true });
+                inst.cleanup();
+                const canvas = document.getElementById(`canvas-${name}`);
+                riveInstances[name] = new rive.Rive({
+                    src: riveSources[name],
+                    canvas: canvas,
+                    autoplay: true
+                });
             }
         });
 
