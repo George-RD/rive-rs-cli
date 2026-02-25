@@ -23,13 +23,47 @@
         "name": "idle",
         "fps": 60,
         "duration": 60,
-        "keyframes": []
+        "keyframes": [
+          {
+            "object": "Indicator",
+            "property": "x",
+            "frames": [
+              { "frame": 0, "value": 200.0 },
+              { "frame": 59, "value": 200.0 }
+            ]
+          },
+          {
+            "object": "Magenta",
+            "property": "color",
+            "frames": [
+              { "frame": 0, "value": "#FF00FF" },
+              { "frame": 59, "value": "#FF00FF" }
+            ]
+          }
+        ]
       },
       {
         "name": "active",
         "fps": 60,
         "duration": 60,
-        "keyframes": []
+        "keyframes": [
+          {
+            "object": "Indicator",
+            "property": "x",
+            "frames": [
+              { "frame": 0, "value": 200.0 },
+              { "frame": 59, "value": 290.0 }
+            ]
+          },
+          {
+            "object": "Magenta",
+            "property": "color",
+            "frames": [
+              { "frame": 0, "value": "#FF00FF" },
+              { "frame": 59, "value": "#22C55E" }
+            ]
+          }
+        ]
       }
     ],
     "state_machines": [

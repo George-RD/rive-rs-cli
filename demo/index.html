@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <title>rive-cli Demo Gallery</title>
     <script src="https://unpkg.com/@rive-app/canvas@2.35.0"></script>
     <style>
@@ -201,6 +202,22 @@
             display: none;
         }
 
+        .expectation {
+            padding: 0 16px 12px;
+            color: #94a3b8;
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+
+        .controls select {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+        }
+
         footer {
             margin-top: 40px;
             color: #64748b;
@@ -215,10 +232,10 @@
     </header>
 
     <div class="filters">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="static">Static</button>
-        <button class="filter-btn" data-filter="animated">Animated</button>
-        <button class="filter-btn" data-filter="interactive">Interactive</button>
+        <button type="button" class="filter-btn active" data-filter="all">All</button>
+        <button type="button" class="filter-btn" data-filter="static">Static</button>
+        <button type="button" class="filter-btn" data-filter="animated">Animated</button>
+        <button type="button" class="filter-btn" data-filter="interactive">Interactive</button>
     </div>
 
     <div class="grid" id="gallery">
@@ -231,25 +248,26 @@
 
     <script>
         const fixtures = [
-            { name: 'minimal', category: 'static' },
-            { name: 'shapes', category: 'static' },
-            { name: 'gradients', category: 'static' },
-            { name: 'stroke_styles', category: 'static' },
-            { name: 'path', category: 'static' },
-            { name: 'artboard_preset', category: 'static' },
-            { name: 'bones', category: 'static' },
-            { name: 'constraints', category: 'static' },
-            { name: 'text', category: 'static' },
-            { name: 'layout', category: 'static' },
-            { name: 'data_binding', category: 'static' },
-            { name: 'animation', category: 'animated' },
-            { name: 'color_animation', category: 'animated' },
-            { name: 'cubic_easing', category: 'animated' },
-            { name: 'loop_animation', category: 'animated' },
-            { name: 'trim_path', category: 'animated' },
-            { name: 'multi_artboard', category: 'animated' },
-            { name: 'nested_artboard', category: 'animated' },
-            { name: 'state_machine', category: 'interactive' }
+            { name: 'minimal', category: 'static', expectation: 'Tiny baseline file; expected to look mostly empty.' },
+            { name: 'shapes', category: 'static', expectation: 'Basic visible geometry (shape and fill sanity check).' },
+            { name: 'gradients', category: 'static', expectation: 'Gradient-filled shape with visible color falloff.' },
+            { name: 'stroke_styles', category: 'static', expectation: 'Stroke thickness/style showcase around paths.' },
+            { name: 'path', category: 'static', expectation: 'Path-based drawing rendered as static art.' },
+            { name: 'artboard_preset', category: 'static', expectation: 'Preset artboard sizing and placement reference.' },
+            { name: 'bones', category: 'static', expectation: 'Bone/rig scaffold preview; currently minimal visual output.' },
+            { name: 'empty_artboard', category: 'static', expectation: 'Intentionally empty: this card should be blank.' },
+            { name: 'text', category: 'static', expectation: 'Text object fixture; currently sparse by design.' },
+            { name: 'layout', category: 'static', expectation: 'Layout data fixture; visual output is intentionally limited.' },
+            { name: 'data_binding', category: 'static', expectation: 'Data-binding schema fixture; minimal visual output expected.' },
+            { name: 'animation', category: 'animated', expectation: 'Red ball bounce one-shot. Use Replay to run it again.' },
+            { name: 'color_animation', category: 'animated', expectation: 'Color transitions over time.' },
+            { name: 'cubic_easing', category: 'animated', expectation: 'Width animation with cubic easing curve.' },
+            { name: 'loop_animation', category: 'animated', expectation: 'Continuous looping motion.' },
+            { name: 'trim_path', category: 'animated', expectation: '3/4 ring stroke via TrimPath (a gap in the circle is expected).' },
+            { name: 'multi_artboard', category: 'animated', expectation: 'Two artboards in one file. Switch artboard to compare Screen A/B.', artboards: ['Screen A', 'Screen B'] },
+            { name: 'nested_artboard', category: 'animated', expectation: 'Main embeds Component. Switch artboard to inspect nested source directly.', artboards: ['Main', 'Component'] },
+            { name: 'state_machine', category: 'interactive', expectation: 'Toggle isOn to switch magenta dot into active state (moves right + turns green).', stateMachine: 'Logic' },
+            { name: 'official_test', category: 'interactive', expectation: 'Official fire_button.riv. Toggle ON to ignite fire, OFF to extinguish.', stateMachine: 'State Machine 1' }
         ];
 
         const gallery = document.getElementById('gallery');
@@ -257,6 +275,65 @@
         let loadedCount = 0;
 
         // Render cards
+        const riveInstances = {};
+        const riveSources = {};
+        const fixturesByName = {};
+
+        fixtures.forEach(fixture => {
+            fixturesByName[fixture.name] = fixture;
+        });
+
+        function runtimeOptions(fixtureName) {
+            const fixture = fixturesByName[fixtureName];
+            const options = {};
+            if (fixture?.stateMachine) {
+                options.stateMachines = [fixture.stateMachine];
+            }
+            const select = document.querySelector(`select.artboard-select[data-fixture="${fixtureName}"]`);
+            if (select?.value) {
+                options.artboard = select.value;
+            }
+            return options;
+        }
+
+        function createRiveInstance(fixture, isReplay = false) {
+            const name = fixture.name;
+            const canvas = document.getElementById(`canvas-${name}`);
+            const statusEl = document.getElementById(`status-${name}`);
+            const errorEl = document.getElementById(`error-${name}`);
+            const options = runtimeOptions(name);
+            riveInstances[name] = new rive.Rive({
+                src: riveSources[name],
+                canvas: canvas,
+                autoplay: true,
+                ...options,
+                onLoad: () => {
+                    if (!isReplay) {
+                        statusEl.className = 'status success';
+                        statusEl.textContent = '✓';
+                        loadedCount++;
+                        updateSummary();
+                    }
+                    if (name === 'state_machine') {
+                        setupStateMachine(riveInstances[name]);
+                    }
+                    if (name === 'official_test') {
+                        setupOfficialFire(riveInstances[name]);
+                    }
+                },
+                onLoadError: (err) => {
+                    if (!isReplay) {
+                        statusEl.className = 'status error';
+                        statusEl.textContent = '✗';
+                        errorEl.textContent = 'Error loading file';
+                        errorEl.style.display = 'block';
+                        updateSummary();
+                    }
+                    console.error(`Error loading ${name}:`, err);
+                }
+            });
+        }
+
         fixtures.forEach(fixture => {
             const card = document.createElement('div');
             card.className = `card category-${fixture.category}`;
@@ -266,8 +343,32 @@
             if (fixture.name === 'state_machine') {
                 controlsHtml = `
                     <div class="controls">
-                        <label><input type="checkbox" id="isOn-toggle"> isOn</label>
-                        <button id="trigger-btn">Fire Toggle</button>
+                        <label><input type="checkbox" data-fixture="state_machine" data-input="isOn"> isOn</label>
+                        <button type="button" data-fixture="state_machine" data-action="fire-toggle">Fire toggle trigger</button>
+                    </div>
+                `;
+            } else if (fixture.name === 'official_test') {
+                controlsHtml = `
+                    <div class="controls">
+                        <label><input type="checkbox" data-fixture="official_test" data-input="ON"> ON</label>
+                        <button type="button" data-fixture="official_test" data-action="toggle-on">Toggle ON</button>
+                    </div>
+                `;
+            } else if (fixture.artboards) {
+                controlsHtml = `
+                    <div class="controls">
+                        <label>Artboard:
+                            <select class="artboard-select" data-fixture="${fixture.name}">
+                                ${fixture.artboards.map(name => `<option value="${name}">${name}</option>`).join('')}
+                            </select>
+                        </label>
+                        <button type="button" class="replay-btn" data-fixture="${fixture.name}">↻ Replay</button>
+                    </div>
+                `;
+            } else if (fixture.category === 'animated') {
+                controlsHtml = `
+                    <div class="controls">
+                        <button type="button" class="replay-btn" data-fixture="${fixture.name}">↻ Replay</button>
                     </div>
                 `;
             }
@@ -283,43 +384,13 @@
                         <span class="status loading" id="status-${fixture.name}">⟳</span>
                     </div>
                 </div>
+                <div class="expectation">${fixture.expectation || ''}</div>
                 <div class="error-msg" id="error-${fixture.name}"></div>
                 ${controlsHtml}
             `;
             gallery.appendChild(card);
-
-            // Initialize Rive
-            const canvas = document.getElementById(`canvas-${fixture.name}`);
-            const statusEl = document.getElementById(`status-${fixture.name}`);
-            const errorEl = document.getElementById(`error-${fixture.name}`);
-
-            let r;
-            const params = {
-                src: `riv/${fixture.name}.riv`,
-                canvas: canvas,
-                autoplay: true,
-                stateMachines: fixture.name === 'state_machine' ? ['Logic'] : undefined,
-                onLoad: () => {
-                    statusEl.className = 'status success';
-                    statusEl.textContent = '✓';
-                    loadedCount++;
-                    updateSummary();
-
-                    if (fixture.name === 'state_machine' && r) {
-                        setupStateMachine(r);
-                    }
-                },
-                onLoadError: (err) => {
-                    statusEl.className = 'status error';
-                    statusEl.textContent = '✗';
-                    errorEl.textContent = 'Error loading file';
-                    errorEl.style.display = 'block';
-                    console.error(`Error loading ${fixture.name}:`, err);
-                    updateSummary();
-                }
-            };
-
-            r = new rive.Rive(params);
+            riveSources[fixture.name] = `riv/${fixture.name}.riv`;
+            createRiveInstance(fixture);
         });
 
         function updateSummary() {
@@ -329,10 +400,10 @@
         function setupStateMachine(riveInstance) {
             const inputs = riveInstance.stateMachineInputs('Logic');
             const isOnInput = inputs.find(i => i.name === 'isOn');
-            const triggerInput = inputs.find(i => i.name === 'trigger');
+            const triggerInput = inputs.find(i => i.name === 'toggle');
 
-            const checkbox = document.getElementById('isOn-toggle');
-            const button = document.getElementById('trigger-btn');
+            const checkbox = document.querySelector('input[data-fixture="state_machine"][data-input="isOn"]');
+            const button = document.querySelector('button[data-fixture="state_machine"][data-action="fire-toggle"]');
 
             if (isOnInput && checkbox) {
                 checkbox.checked = isOnInput.value;
@@ -348,11 +419,59 @@
             }
         }
 
+        function setupOfficialFire(riveInstance) {
+            const inputs = riveInstance.stateMachineInputs('State Machine 1');
+            const onInput = inputs.find(i => i.name === 'ON');
+            const checkbox = document.querySelector('input[data-fixture="official_test"][data-input="ON"]');
+            const button = document.querySelector('button[data-fixture="official_test"][data-action="toggle-on"]');
+
+            if (onInput && checkbox) {
+                checkbox.checked = onInput.value;
+                checkbox.onchange = (e) => {
+                    onInput.value = e.target.checked;
+                };
+            }
+
+            if (onInput && button) {
+                button.onclick = () => {
+                    const next = !onInput.value;
+                    onInput.value = next;
+                    if (checkbox) {
+                        checkbox.checked = next;
+                    }
+                };
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.replay-btn');
+            if (!btn) return;
+            const name = btn.dataset.fixture;
+            const inst = riveInstances[name];
+            if (inst && fixturesByName[name]) {
+                inst.cleanup();
+                createRiveInstance(fixturesByName[name], true);
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            const select = e.target.closest('.artboard-select');
+            if (!select) return;
+            const name = select.dataset.fixture;
+            const inst = riveInstances[name];
+            if (inst && fixturesByName[name]) {
+                inst.cleanup();
+                createRiveInstance(fixturesByName[name], true);
+            }
+        });
+
         // Filter logic
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 // Update active button
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
                 btn.classList.add('active');
 
                 const filter = btn.dataset.filter;
