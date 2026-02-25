@@ -848,12 +848,18 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                                         ),
                                                     ));
                                                 }
-                                                Some(serde_json::Value::Bool(_v)) => {
-                                                    let bool_op = condition
-                                                        .op
-                                                        .as_deref()
-                                                        .map(parse_condition_op)
-                                                        .unwrap_or(0);
+                                                Some(serde_json::Value::Bool(v)) => {
+                                                    let bool_op = if condition.op.is_some() {
+                                                        condition
+                                                            .op
+                                                            .as_deref()
+                                                            .map(parse_condition_op)
+                                                            .unwrap_or(0)
+                                                    } else if *v {
+                                                        0 // equal: true when input is true
+                                                    } else {
+                                                        1 // notEqual: true when input is false
+                                                    };
                                                     objects.push(Box::new(
                                                         TransitionBoolCondition::new(
                                                             input_id, bool_op,
