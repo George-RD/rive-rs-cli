@@ -238,7 +238,7 @@
             { name: 'path', category: 'static' },
             { name: 'artboard_preset', category: 'static' },
             { name: 'bones', category: 'static' },
-            { name: 'constraints', category: 'static' },
+            { name: 'empty_artboard', category: 'static' },
             { name: 'text', category: 'static' },
             { name: 'layout', category: 'static' },
             { name: 'data_binding', category: 'static' },
@@ -257,13 +257,21 @@
         let loadedCount = 0;
 
         // Render cards
+        const riveInstances = {};
+
         fixtures.forEach(fixture => {
             const card = document.createElement('div');
             card.className = `card category-${fixture.category}`;
             card.dataset.category = fixture.category;
             
             let controlsHtml = '';
-            if (fixture.name === 'state_machine') {
+            if (fixture.category === 'animated') {
+                controlsHtml = `
+                    <div class="controls">
+                        <button class="replay-btn" data-fixture="${fixture.name}">↻ Replay</button>
+                    </div>
+                `;
+            } else if (fixture.name === 'state_machine') {
                 controlsHtml = `
                     <div class="controls">
                         <label><input type="checkbox" id="isOn-toggle"> isOn</label>
@@ -293,7 +301,6 @@
             const statusEl = document.getElementById(`status-${fixture.name}`);
             const errorEl = document.getElementById(`error-${fixture.name}`);
 
-            let r;
             const params = {
                 src: `riv/${fixture.name}.riv`,
                 canvas: canvas,
@@ -305,8 +312,8 @@
                     loadedCount++;
                     updateSummary();
 
-                    if (fixture.name === 'state_machine' && r) {
-                        setupStateMachine(r);
+                    if (fixture.name === 'state_machine' && riveInstances[fixture.name]) {
+                        setupStateMachine(riveInstances[fixture.name]);
                     }
                 },
                 onLoadError: (err) => {
@@ -319,7 +326,7 @@
                 }
             };
 
-            r = new rive.Rive(params);
+            riveInstances[fixture.name] = new rive.Rive(params);
         });
 
         function updateSummary() {
@@ -329,7 +336,7 @@
         function setupStateMachine(riveInstance) {
             const inputs = riveInstance.stateMachineInputs('Logic');
             const isOnInput = inputs.find(i => i.name === 'isOn');
-            const triggerInput = inputs.find(i => i.name === 'trigger');
+            const triggerInput = inputs.find(i => i.name === 'toggle');
 
             const checkbox = document.getElementById('isOn-toggle');
             const button = document.getElementById('trigger-btn');
@@ -347,6 +354,17 @@
                 };
             }
         }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.replay-btn');
+            if (!btn) return;
+            const name = btn.dataset.fixture;
+            const inst = riveInstances[name];
+            if (inst) {
+                inst.stop();
+                inst.play();
+            }
+        });
 
         // Filter logic
         document.querySelectorAll('.filter-btn').forEach(btn => {

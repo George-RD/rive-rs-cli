@@ -6,7 +6,7 @@ const path = require('path');
 const FIXTURES = [
   'minimal', 'shapes', 'animation', 'state_machine', 'path', 'cubic_easing', 'trim_path',
   'multi_artboard', 'nested_artboard', 'artboard_preset', 'gradients', 'color_animation',
-  'loop_animation', 'stroke_styles', 'bones', 'constraints', 'text', 'layout', 'data_binding'
+  'loop_animation', 'stroke_styles', 'bones', 'text', 'layout', 'data_binding', 'empty_artboard'
 ];
 
 const DEMO_DIR = path.join(__dirname);
