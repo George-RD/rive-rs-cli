@@ -12,6 +12,8 @@ const FIXTURES = [
 const DEMO_DIR = path.join(__dirname);
 const RIV_DIR = path.join(DEMO_DIR, 'riv');
 const FIXTURES_DIR = path.join(__dirname, '..', 'tests', 'fixtures');
+const OFFICIAL_FIRE_SOURCE = '/tmp/rive-runtime/renderer/webgpu_player/rivs/fire_button.riv';
+const OFFICIAL_FIRE_TARGET = path.join(RIV_DIR, 'official_test.riv');
 
 // 1. Ensure cargo build works
 console.log('Building project...');
@@ -51,6 +53,15 @@ for (const fixture of FIXTURES) {
 }
 
 console.log(`Generated ${successCount}/${FIXTURES.length} files.`);
+
+if (!fs.existsSync(OFFICIAL_FIRE_TARGET) && fs.existsSync(OFFICIAL_FIRE_SOURCE)) {
+  fs.copyFileSync(OFFICIAL_FIRE_SOURCE, OFFICIAL_FIRE_TARGET);
+  console.log('Copied official fire_button.riv to demo/riv/official_test.riv');
+}
+
+if (!fs.existsSync(OFFICIAL_FIRE_TARGET)) {
+  console.warn('Warning: official_test.riv missing. Add /tmp/rive-runtime/renderer/webgpu_player/rivs/fire_button.riv or place demo/riv/official_test.riv manually.');
+}
 
 // 4. Start HTTP server
 const PORT = 3000;
