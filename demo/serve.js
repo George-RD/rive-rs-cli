@@ -18,6 +18,7 @@ function discoverFixtures() {
 
 const DEMO_DIR = path.join(__dirname);
 const RIV_DIR = path.join(DEMO_DIR, 'riv');
+const REFERENCE_DIR = path.join(RIV_DIR, 'reference');
 const FIXTURES_DIR = path.join(__dirname, '..', 'tests', 'fixtures');
 const OFFICIAL_FIRE_SOURCE = '/tmp/rive-runtime/renderer/webgpu_player/rivs/fire_button.riv';
 const OFFICIAL_FIRE_TARGET = path.join(RIV_DIR, 'official_test.riv');
@@ -192,6 +193,12 @@ function inferFixtureMetadata(fixtureName, spec) {
     replay: category === 'animated' || hasAnimations
   };
 
+  const refPath = path.join(REFERENCE_DIR, `${fixtureName}.riv`);
+  if (fs.existsSync(refPath)) {
+    metadata.hasReference = true;
+    metadata.referenceSource = `riv/reference/${fixtureName}.riv`;
+  }
+
   const override = FIXTURE_OVERRIDES[fixtureName];
   if (override) {
     return {
@@ -213,11 +220,18 @@ function generateManifest(generatedFixtures, includeOfficialTest) {
     .filter(Boolean);
 
   if (includeOfficialTest) {
-    fixtures.push({
+    const officialTestMetadata = {
       name: 'official_test',
       ...FIXTURE_OVERRIDES.official_test
-    });
-  }
+    };
+    const refPath = path.join(REFERENCE_DIR, 'official_test.riv');
+      if (fs.existsSync(refPath)) {
+      officialTestMetadata.hasReference = true;
+      officialTestMetadata.referenceSource = 'riv/reference/official_test.riv';
+    }
+
+    fixtures.push(officialTestMetadata);
+}
 
   return {
     generatedAt: new Date().toISOString(),
@@ -235,7 +249,10 @@ if (buildResult.status !== 0) {
 
 // 2. Create demo/riv/ directory
 if (!fs.existsSync(RIV_DIR)) {
-  fs.mkdirSync(RIV_DIR, { recursive: true });
+fs.mkdirSync(RIV_DIR, { recursive: true });
+}
+if (!fs.existsSync(REFERENCE_DIR)) {
+  fs.mkdirSync(REFERENCE_DIR, { recursive: true });
 }
 
 // 3. Generate .riv files

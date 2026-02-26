@@ -1,0 +1,148 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Loader",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "BackgroundShape",
+        "x": 200,
+        "y": 200,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "BackgroundRect",
+            "width": 400,
+            "height": 400,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "BackgroundFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "BackgroundColor",
+                "color": "#081018"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "TrackShape",
+        "x": 200,
+        "y": 200,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "TrackOuterPath",
+            "width": 220,
+            "height": 220,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "TrackOuterStroke",
+            "thickness": 10,
+            "cap": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "TrackOuterColor",
+                "color": "#1B2B34"
+              }
+            ]
+          },
+          {
+            "type": "ellipse",
+            "name": "TrackInnerPath",
+            "width": 180,
+            "height": 180,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "TrackInnerStroke",
+            "thickness": 3,
+            "cap": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "TrackInnerColor",
+                "color": "#11313B"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "SpinnerShape",
+        "x": 200,
+        "y": 200,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "SpinnerArcPath",
+            "width": 220,
+            "height": 220,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "SpinnerArcStroke",
+            "thickness": 10,
+            "cap": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "SpinnerArcColor",
+                "color": "#00E5FF"
+              },
+              {
+                "type": "trim_path",
+                "name": "SpinnerTrim",
+                "start": 0.0,
+                "end": 0.75,
+                "offset": 0.0,
+                "mode": "sequential"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "spin",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "keyframes": [
+          {
+            "object": "SpinnerShape",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0
+              },
+              {
+                "frame": 59,
+                "value": 6.283185
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
