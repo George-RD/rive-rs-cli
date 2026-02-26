@@ -63,6 +63,10 @@ pub enum Command {
         )]
         property_key: Vec<u16>,
     },
+    Decompile {
+        #[arg(help = "Path to .riv file to decompile")]
+        file: PathBuf,
+    },
     Ai {
         #[command(subcommand)]
         command: AiCommand,

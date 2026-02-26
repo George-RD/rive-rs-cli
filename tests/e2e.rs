@@ -229,6 +229,80 @@ fn test_inspect_json_flag() {
         serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
     assert!(parsed.get("header").is_some());
     assert!(parsed.get("objects").is_some());
+    let objects = parsed
+        .get("objects")
+        .and_then(|v| v.as_array())
+        .expect("objects array missing");
+    assert!(
+        objects
+            .iter()
+            .any(|o| o.get("type_name").and_then(|v| v.as_str()).is_some()),
+        "expected at least one resolved type_name"
+    );
+    let artboard = objects
+        .iter()
+        .find(|o| o.get("type_key").and_then(|v| v.as_u64()) == Some(ARTBOARD_TYPE_KEY))
+        .expect("artboard object missing");
+    let properties = artboard
+        .get("properties")
+        .and_then(|v| v.as_array())
+        .expect("properties array missing");
+    assert!(
+        properties
+            .iter()
+            .any(|p| p.get("name").and_then(|v| v.as_str()) == Some("name")),
+        "expected resolved property name for component name"
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_decompile_outputs_resolved_names_json() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("decompile_minimal");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let decompile = cargo_run(&["decompile", output.to_str().unwrap()]);
+    assert!(
+        decompile.status.success(),
+        "decompile failed: {}",
+        String::from_utf8_lossy(&decompile.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&decompile.stdout).expect("decompile output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|v| v.as_array())
+        .expect("objects array missing");
+
+    assert!(
+        objects
+            .iter()
+            .any(|o| o.get("type_name").and_then(|v| v.as_str()) == Some("Artboard"))
+    );
+    let artboard = objects
+        .iter()
+        .find(|o| o.get("type_key").and_then(|v| v.as_u64()) == Some(ARTBOARD_TYPE_KEY))
+        .expect("artboard object missing");
+    let properties = artboard
+        .get("properties")
+        .and_then(|v| v.as_array())
+        .expect("properties array missing");
+    assert!(
+        properties
+            .iter()
+            .any(|p| p.get("name").and_then(|v| v.as_str()) == Some("name"))
+    );
+
     cleanup(&output);
 }
 
