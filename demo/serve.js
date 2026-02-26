@@ -133,6 +133,24 @@ const FIXTURE_OVERRIDES = {
     scope: 'visual',
     tags: ['animated']
   },
+  comparison_trim: {
+    category: 'static',
+    expectation: 'Recreation of official trim.riv. Uses Rectangle approximation — PointsPath/StraightVertex not yet supported.',
+    scope: 'visual',
+    tags: ['static', 'comparison'],
+    hasReference: true,
+    referenceSource: 'riv/reference/trim.riv',
+    gapTypes: ['PointsPath', 'StraightVertex']
+  },
+  comparison_clip_tests: {
+    category: 'static',
+    expectation: 'Recreation of official clip_tests.riv. ClippingShape not yet supported — shapes render without clipping.',
+    scope: 'visual',
+    tags: ['static', 'comparison'],
+    hasReference: true,
+    referenceSource: 'riv/reference/clip_tests.riv',
+    gapTypes: ['ClippingShape']
+  },
   multi_artboard: {
     expectation: 'Two artboards with per-artboard animations. Replay checks timeline behavior; Artboard switch checks scoping.',
     scope: 'visual',

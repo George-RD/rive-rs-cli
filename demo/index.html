@@ -163,6 +163,15 @@
             border-color: var(--border-emphasis);
         }
 
+        .card.comparison-card {
+            border-color: rgba(245, 158, 11, 0.35);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(245, 158, 11, 0.12);
+        }
+
+        .card.comparison-card:hover {
+            border-color: rgba(245, 158, 11, 0.6);
+        }
+
         .canvas-container {
             width: 100%;
             height: 280px;
@@ -202,14 +211,6 @@
 
         .canvas-half + .canvas-half {
             border-left: 1px solid var(--border-emphasis);
-        }
-
-        .canvas-half canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            position: relative;
-            z-index: 1;
         }
 
         .canvas-label,
@@ -304,6 +305,30 @@
             color: var(--text-muted);
             font-size: 0.85rem;
             line-height: 1.5;
+        }
+
+        .gap-section {
+            padding: 0 20px 12px;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .gap-label {
+            color: #fca5a5;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+
+        .gap-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 4px;
+            margin: 2px;
         }
 
         .card-tags {
@@ -456,6 +481,7 @@
             <button type="button" class="filter-btn" data-tag="static" aria-pressed="false">Static</button>
             <button type="button" class="filter-btn" data-tag="animated" aria-pressed="false">Animated</button>
             <button type="button" class="filter-btn" data-tag="interactive" aria-pressed="false">Interactive</button>
+            <button type="button" class="filter-btn" data-tag="comparison" aria-pressed="false">Comparison</button>
             <button type="button" class="filter-btn" data-tag="structure" aria-pressed="false">Structure</button>
             <button type="button" class="filter-btn" data-tag="schema" aria-pressed="false">Schema</button>
             <button type="button" class="filter-btn" data-action="clear-tags">Clear Tags</button>
@@ -585,7 +611,8 @@
 
         fixtures.forEach(fixture => {
             const card = document.createElement('div');
-            card.className = `card category-${fixture.category}`;
+            const isComparison = Array.isArray(fixture.tags) && fixture.tags.includes('comparison');
+            card.className = `card category-${fixture.category}${isComparison ? ' comparison-card' : ''}`;
             card.dataset.category = fixture.category;
             card.dataset.scope = fixture.scope || 'visual';
             card.dataset.tags = (fixture.tags || []).join(',');
@@ -633,21 +660,40 @@
             }
 
             const tagPillsHtml = (fixture.tags || []).map(tag => `<span class="tag-pill">${tag}</span>`).join('');
+            const gapPillsHtml = (fixture.gapTypes || []).map(typeName => `<span class="gap-pill">${typeName}</span>`).join('');
+            const gapSectionHtml = fixture.gapTypes?.length
+                ? `<div class="gap-section"><span class="gap-label">Missing types:</span>${gapPillsHtml}</div>`
+                : '';
 
             let canvasHtml = '';
             if (fixture.hasReference) {
-                canvasHtml = `
-                    <div class="canvas-container comparison">
-                        <div class="canvas-half">
-                            <canvas id="canvas-${fixture.name}"></canvas>
-                            <span class="canvas-label">${fixture.tags?.includes('official') ? 'Official' : 'Generated'}</span>
+                if (isComparison) {
+                    canvasHtml = `
+                        <div class="canvas-container comparison">
+                            <div class="canvas-half">
+                                <canvas id="canvas-${fixture.name}-ref"></canvas>
+                                <span class="canvas-label">Official</span>
+                            </div>
+                            <div class="canvas-half">
+                                <canvas id="canvas-${fixture.name}"></canvas>
+                                <span class="canvas-label">Generated</span>
+                            </div>
                         </div>
-                        <div class="canvas-half">
-                            <canvas id="canvas-${fixture.name}-ref"></canvas>
-                            <span class="canvas-label">Reference</span>
+                    `;
+                } else {
+                    canvasHtml = `
+                        <div class="canvas-container comparison">
+                            <div class="canvas-half">
+                                <canvas id="canvas-${fixture.name}"></canvas>
+                                <span class="canvas-label">${fixture.tags?.includes('official') ? 'Official' : 'Generated'}</span>
+                            </div>
+                            <div class="canvas-half">
+                                <canvas id="canvas-${fixture.name}-ref"></canvas>
+                                <span class="canvas-label">Reference</span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             } else {
                 canvasHtml = `
                     <div class="canvas-container">
@@ -667,6 +713,7 @@
                     </div>
                 </div>
                 <div class="expectation">${fixture.expectation || ''}</div>
+                ${gapSectionHtml}
                 <div class="card-tags">${tagPillsHtml}</div>
                 <div class="error-msg" id="error-${fixture.name}"></div>
                 ${controlsHtml}
