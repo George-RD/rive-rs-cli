@@ -1,0 +1,425 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ButtonArtboard",
+    "width": 400,
+    "height": 200,
+    "children": [
+      {
+        "type": "shape",
+        "name": "ButtonBody",
+        "x": 200,
+        "y": 100,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "ButtonBodyPath",
+            "width": 300,
+            "height": 80,
+            "corner_radius": 12,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "ButtonBodyFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "ButtonBodyColor",
+                "color": "#3366FF"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "ButtonLabelArea",
+        "x": 200,
+        "y": 100,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "ButtonLabelPath",
+            "width": 250,
+            "height": 52,
+            "corner_radius": 8,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "ButtonLabelFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "ButtonLabelColor",
+                "color": "#80FFFFFF"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "ButtonLoadingRing",
+        "x": 200,
+        "y": 100,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "ButtonLoadingPath",
+            "width": 316,
+            "height": 96,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "ButtonLoadingStroke",
+            "thickness": 4,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "ButtonLoadingColor",
+                "color": "#FFFFFFFF"
+              },
+              {
+                "type": "trim_path",
+                "name": "ButtonLoadingTrim",
+                "start": 0.0,
+                "end": 0.18,
+                "offset": 0.0,
+                "mode": "sequential"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "idle",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "keyframes": [
+          {
+            "object": "ButtonBody",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0
+              },
+              {
+                "frame": 59,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "ButtonBody",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0
+              },
+              {
+                "frame": 59,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "ButtonBodyColor",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#3366FF"
+              },
+              {
+                "frame": 59,
+                "value": "#3366FF"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "hover_in",
+        "fps": 60,
+        "duration": 15,
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "object": "ButtonBody",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0
+              },
+              {
+                "frame": 14,
+                "value": 1.05
+              }
+            ]
+          },
+          {
+            "object": "ButtonBody",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0
+              },
+              {
+                "frame": 14,
+                "value": 1.05
+              }
+            ]
+          },
+          {
+            "object": "ButtonBodyColor",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#3366FF"
+              },
+              {
+                "frame": 14,
+                "value": "#5588FF"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "press",
+        "fps": 60,
+        "duration": 10,
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "object": "ButtonBody",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.05
+              },
+              {
+                "frame": 9,
+                "value": 0.95
+              }
+            ]
+          },
+          {
+            "object": "ButtonBody",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.05
+              },
+              {
+                "frame": 9,
+                "value": 0.95
+              }
+            ]
+          },
+          {
+            "object": "ButtonBodyColor",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#5588FF"
+              },
+              {
+                "frame": 9,
+                "value": "#2244CC"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "loading",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "keyframes": [
+          {
+            "object": "ButtonLoadingTrim",
+            "property": "trim_start",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0
+              },
+              {
+                "frame": 30,
+                "value": 0.42
+              },
+              {
+                "frame": 59,
+                "value": 0.85
+              }
+            ]
+          },
+          {
+            "object": "ButtonLoadingTrim",
+            "property": "trim_end",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.18
+              },
+              {
+                "frame": 30,
+                "value": 0.68
+              },
+              {
+                "frame": 59,
+                "value": 1.0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "state_machines": [
+      {
+        "name": "ButtonStateMachine",
+        "inputs": [
+          {
+            "type": "bool",
+            "name": "isHovered",
+            "value": false
+          },
+          {
+            "type": "bool",
+            "name": "isPressed",
+            "value": false
+          },
+          {
+            "type": "bool",
+            "name": "isLoading",
+            "value": false
+          }
+        ],
+        "layers": [
+          {
+            "states": [
+              {
+                "type": "entry"
+              },
+              {
+                "type": "any"
+              },
+              {
+                "type": "exit"
+              },
+              {
+                "type": "animation",
+                "animation": "idle"
+              },
+              {
+                "type": "animation",
+                "animation": "hover_in"
+              },
+              {
+                "type": "animation",
+                "animation": "press"
+              },
+              {
+                "type": "animation",
+                "animation": "loading"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 0,
+                "to": 3
+              },
+              {
+                "from": 3,
+                "to": 4,
+                "conditions": [
+                  {
+                    "input": "isHovered",
+                    "op": "==",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "from": 4,
+                "to": 3,
+                "conditions": [
+                  {
+                    "input": "isHovered",
+                    "op": "==",
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "from": 4,
+                "to": 5,
+                "conditions": [
+                  {
+                    "input": "isPressed",
+                    "op": "==",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "from": 5,
+                "to": 4,
+                "conditions": [
+                  {
+                    "input": "isPressed",
+                    "op": "==",
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "from": 1,
+                "to": 6,
+                "conditions": [
+                  {
+                    "input": "isLoading",
+                    "op": "==",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "from": 6,
+                "to": 3,
+                "conditions": [
+                  {
+                    "input": "isLoading",
+                    "op": "==",
+                    "value": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

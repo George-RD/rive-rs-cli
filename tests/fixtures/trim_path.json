@@ -18,6 +18,34 @@
           ]}
         ]
       }
+    ],
+    "animations": [
+      {
+        "name": "trim_sweep",
+        "fps": 60,
+        "duration": 120,
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "object": "Trimmer",
+            "property": "trim_start",
+            "frames": [
+              { "frame": 0, "value": 0.0 },
+              { "frame": 60, "value": 0.32 },
+              { "frame": 119, "value": 0.65 }
+            ]
+          },
+          {
+            "object": "Trimmer",
+            "property": "trim_end",
+            "frames": [
+              { "frame": 0, "value": 0.25 },
+              { "frame": 60, "value": 0.57 },
+              { "frame": 119, "value": 0.9 }
+            ]
+          }
+        ]
+      }
     ]
   }
 }

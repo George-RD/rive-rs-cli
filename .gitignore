@@ -1,3 +1,4 @@
 /target
 *.riv
 evals/runs/
+data/rive_ledger.db

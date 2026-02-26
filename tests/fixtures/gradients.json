@@ -26,10 +26,10 @@
               {
                 "type": "linear_gradient",
                 "name": "LG",
-                "start_x": 0,
+                "start_x": 20,
                 "start_y": 0,
-                "end_x": 200,
-                "end_y": 0,
+                "end_x": 180,
+                "end_y": 120,
                 "children": [
                   {
                     "type": "gradient_stop",
@@ -40,6 +40,11 @@
                     "type": "gradient_stop",
                     "color": "#0000FF",
                     "position": 1.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "color": "#FF00FF",
+                    "position": 0.65
                   }
                 ]
               }
@@ -56,8 +61,8 @@
           {
             "type": "ellipse",
             "name": "RadialEllipse",
-            "width": 200,
-            "height": 200,
+            "width": 220,
+            "height": 170,
             "origin_x": 0.5,
             "origin_y": 0.5
           },
@@ -68,10 +73,10 @@
               {
                 "type": "radial_gradient",
                 "name": "RG",
-                "start_x": 100,
-                "start_y": 100,
+                "start_x": 70,
+                "start_y": 85,
                 "end_x": 200,
-                "end_y": 100,
+                "end_y": 120,
                 "children": [
                   {
                     "type": "gradient_stop",
@@ -82,9 +87,42 @@
                     "type": "gradient_stop",
                     "color": "#00FF00",
                     "position": 1.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "color": "#99FF00",
+                    "position": 0.45
                   }
                 ]
               }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "gradient_motion",
+        "fps": 60,
+        "duration": 120,
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "object": "LinearBox",
+            "property": "rotation",
+            "frames": [
+              { "frame": 0, "value": 0.0 },
+              { "frame": 60, "value": 0.8 },
+              { "frame": 119, "value": 0.0 }
+            ]
+          },
+          {
+            "object": "RadialCircle",
+            "property": "rotation",
+            "frames": [
+              { "frame": 0, "value": 0.0 },
+              { "frame": 60, "value": -0.8 },
+              { "frame": 119, "value": 0.0 }
             ]
           }
         ]

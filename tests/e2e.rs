@@ -2537,3 +2537,86 @@ fn test_inspect_json_data_binding() {
 
     cleanup(&output);
 }
+
+#[test]
+fn test_generate_button_states() {
+    let input = fixture_path("button_states.json");
+    let output = temp_output("button_states");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    assert!(bytes.len() > 500, "button_states should be a substantial file");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_button_states() {
+    let input = fixture_path("button_states.json");
+    let output = temp_output("button_states_validate");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&v.stdout);
+    assert!(v.status.success());
+    assert!(stdout.contains("valid"));
+    assert!(stdout.contains("90 objects"));
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_button_states() {
+    let input = fixture_path("button_states.json");
+    let output = temp_output("button_states_inspect");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(insp.status.success());
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+    assert_eq!(objects.len(), 90);
+
+    let state_machines: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == 53)
+        .collect();
+    assert_eq!(state_machines.len(), 1, "expected 1 StateMachine");
+
+    let animations: Vec<_> = objects
+        .iter()
+        .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == 31)
+        .collect();
+    assert_eq!(animations.len(), 4, "expected 4 LinearAnimations");
+
+    cleanup(&output);
+}

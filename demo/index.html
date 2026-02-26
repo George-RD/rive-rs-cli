@@ -6,6 +6,7 @@
     <link rel="icon" href="data:,">
     <title>rive-cli Demo Gallery</title>
     <script src="https://unpkg.com/@rive-app/canvas@2.35.0"></script>
+    <script src="riv/manifest.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -48,8 +49,29 @@
 
         .filters {
             display: flex;
+            align-items: center;
+            flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 30px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 6px 10px;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.45);
+        }
+
+        .filters-label {
+            color: #94a3b8;
+            font-size: 0.82rem;
+            margin-right: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .filter-btn {
@@ -117,6 +139,20 @@
             align-items: center;
         }
 
+        .canvas-note {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            font-size: 0.72rem;
+            color: #cbd5e1;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 999px;
+            padding: 4px 10px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
         canvas {
             width: 100%;
             height: 100%;
@@ -153,6 +189,7 @@
         .badge-static { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
         .badge-animated { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
         .badge-interactive { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+        .badge-nonvisual { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
 
         .status {
             font-size: 1.2rem;
@@ -209,6 +246,24 @@
             line-height: 1.35;
         }
 
+        .card-tags {
+            padding: 0 16px 12px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag-pill {
+            font-size: 0.7rem;
+            color: #cbd5e1;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(15, 23, 42, 0.45);
+            border-radius: 999px;
+            padding: 2px 8px;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
         .controls select {
             background: #1e293b;
             border: 1px solid #334155;
@@ -232,10 +287,20 @@
     </header>
 
     <div class="filters">
-        <button type="button" class="filter-btn active" data-filter="all">All</button>
-        <button type="button" class="filter-btn" data-filter="static">Static</button>
-        <button type="button" class="filter-btn" data-filter="animated">Animated</button>
-        <button type="button" class="filter-btn" data-filter="interactive">Interactive</button>
+        <div class="filter-group">
+            <span class="filters-label">Scope</span>
+            <button type="button" class="filter-btn active" data-scope="visual" aria-pressed="true">Visual</button>
+            <button type="button" class="filter-btn" data-scope="nonvisual" aria-pressed="false">Non-Visual</button>
+        </div>
+        <div class="filter-group">
+            <span class="filters-label">Tags</span>
+            <button type="button" class="filter-btn" data-tag="static" aria-pressed="false">Static</button>
+            <button type="button" class="filter-btn" data-tag="animated" aria-pressed="false">Animated</button>
+            <button type="button" class="filter-btn" data-tag="interactive" aria-pressed="false">Interactive</button>
+            <button type="button" class="filter-btn" data-tag="structure" aria-pressed="false">Structure</button>
+            <button type="button" class="filter-btn" data-tag="schema" aria-pressed="false">Schema</button>
+            <button type="button" class="filter-btn" data-action="clear-tags">Clear Tags</button>
+        </div>
     </div>
 
     <div class="grid" id="gallery">
@@ -247,28 +312,8 @@
     </footer>
 
     <script>
-        const fixtures = [
-            { name: 'minimal', category: 'static', expectation: 'Tiny baseline file; expected to look mostly empty.' },
-            { name: 'shapes', category: 'static', expectation: 'Basic visible geometry (shape and fill sanity check).' },
-            { name: 'gradients', category: 'static', expectation: 'Gradient-filled shape with visible color falloff.' },
-            { name: 'stroke_styles', category: 'static', expectation: 'Stroke thickness/style showcase around paths.' },
-            { name: 'path', category: 'static', expectation: 'Path-based drawing rendered as static art.' },
-            { name: 'artboard_preset', category: 'static', expectation: 'Preset artboard sizing and placement reference.' },
-            { name: 'bones', category: 'static', expectation: 'Bone/rig scaffold preview; currently minimal visual output.' },
-            { name: 'empty_artboard', category: 'static', expectation: 'Intentionally empty: this card should be blank.' },
-            { name: 'text', category: 'static', expectation: 'Text object fixture; currently sparse by design.' },
-            { name: 'layout', category: 'static', expectation: 'Layout data fixture; visual output is intentionally limited.' },
-            { name: 'data_binding', category: 'static', expectation: 'Data-binding schema fixture; minimal visual output expected.' },
-            { name: 'animation', category: 'animated', expectation: 'Red ball bounce one-shot. Use Replay to run it again.' },
-            { name: 'color_animation', category: 'animated', expectation: 'Color transitions over time.' },
-            { name: 'cubic_easing', category: 'animated', expectation: 'Width animation with cubic easing curve.' },
-            { name: 'loop_animation', category: 'animated', expectation: 'Continuous looping motion.' },
-            { name: 'trim_path', category: 'animated', expectation: '3/4 ring stroke via TrimPath (a gap in the circle is expected).' },
-            { name: 'multi_artboard', category: 'animated', expectation: 'Two artboards in one file. Switch artboard to compare Screen A/B.', artboards: ['Screen A', 'Screen B'] },
-            { name: 'nested_artboard', category: 'animated', expectation: 'Main embeds Component. Switch artboard to inspect nested source directly.', artboards: ['Main', 'Component'] },
-            { name: 'state_machine', category: 'interactive', expectation: 'Toggle isOn to switch magenta dot into active state (moves right + turns green).', stateMachine: 'Logic' },
-            { name: 'official_test', category: 'interactive', expectation: 'Official fire_button.riv. Toggle ON to ignite fire, OFF to extinguish.', stateMachine: 'State Machine 1' }
-        ];
+        const manifest = window.__RIVE_FIXTURE_MANIFEST || { fixtures: [] };
+        const fixtures = manifest.fixtures || [];
 
         const gallery = document.getElementById('gallery');
         const summary = document.getElementById('summary');
@@ -278,6 +323,10 @@
         const riveInstances = {};
         const riveSources = {};
         const fixturesByName = {};
+
+        if (fixtures.length === 0) {
+            summary.textContent = 'No fixtures found in manifest. Run node demo/serve.js to regenerate demo/riv/manifest.js';
+        }
 
         fixtures.forEach(fixture => {
             fixturesByName[fixture.name] = fixture;
@@ -338,6 +387,8 @@
             const card = document.createElement('div');
             card.className = `card category-${fixture.category}`;
             card.dataset.category = fixture.category;
+            card.dataset.scope = fixture.scope || 'visual';
+            card.dataset.tags = (fixture.tags || []).join(',');
             
             let controlsHtml = '';
             if (fixture.name === 'state_machine') {
@@ -362,7 +413,7 @@
                                 ${fixture.artboards.map(name => `<option value="${name}">${name}</option>`).join('')}
                             </select>
                         </label>
-                        <button type="button" class="replay-btn" data-fixture="${fixture.name}">↻ Replay</button>
+                        ${fixture.replay === false ? '' : `<button type="button" class="replay-btn" data-fixture="${fixture.name}">↻ Replay</button>`}
                     </div>
                 `;
             } else if (fixture.category === 'animated') {
@@ -373,9 +424,12 @@
                 `;
             }
 
+            const tagPillsHtml = (fixture.tags || []).map(tag => `<span class="tag-pill">${tag}</span>`).join('');
+
             card.innerHTML = `
                 <div class="canvas-container">
                     <canvas id="canvas-${fixture.name}"></canvas>
+                    ${fixture.category === 'nonvisual' ? '<div class="canvas-note">Structural Check</div>' : ''}
                 </div>
                 <div class="card-info">
                     <span class="name">${fixture.name}</span>
@@ -385,6 +439,7 @@
                     </div>
                 </div>
                 <div class="expectation">${fixture.expectation || ''}</div>
+                <div class="card-tags">${tagPillsHtml}</div>
                 <div class="error-msg" id="error-${fixture.name}"></div>
                 ${controlsHtml}
             `;
@@ -394,7 +449,7 @@
         });
 
         function updateSummary() {
-            summary.textContent = `${loadedCount} of ${fixtures.length} animations loaded successfully`;
+            summary.textContent = `${loadedCount} of ${fixtures.length} fixtures loaded successfully`;
         }
 
         function setupStateMachine(riveInstance) {
@@ -465,25 +520,75 @@
             }
         });
 
-        // Filter logic
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Update active button
-                document.querySelectorAll('.filter-btn').forEach(b => {
-                    b.classList.remove('active');
-                });
-                btn.classList.add('active');
+        // Filter logic: high-level scope + optional tags
+        const scopeValues = ['visual', 'nonvisual'];
+        const selectedScopes = new Set(['visual']);
+        const selectedTags = new Set();
 
-                const filter = btn.dataset.filter;
-                document.querySelectorAll('.card').forEach(card => {
-                    if (filter === 'all' || card.dataset.category === filter) {
-                        card.style.display = 'flex';
-                    } else {
-                        card.style.display = 'none';
+        function syncFilterButtons() {
+            scopeValues.forEach((scope) => {
+                const btn = document.querySelector(`.filter-btn[data-scope="${scope}"]`);
+                if (!btn) return;
+                const active = selectedScopes.has(scope);
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+
+            document.querySelectorAll('.filter-btn[data-tag]').forEach((btn) => {
+                const tag = btn.dataset.tag;
+                const active = selectedTags.has(tag);
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+
+        function applyFilters() {
+            document.querySelectorAll('.card').forEach(card => {
+                const scope = card.dataset.scope;
+                const tags = (card.dataset.tags || '').split(',').filter(Boolean);
+                const scopeMatch = selectedScopes.has(scope);
+                const tagMatch = selectedTags.size === 0 || tags.some(tag => selectedTags.has(tag));
+                card.style.display = scopeMatch && tagMatch ? 'flex' : 'none';
+            });
+        }
+
+        document.querySelectorAll('.filter-btn[data-scope]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const scope = btn.dataset.scope;
+                if (selectedScopes.has(scope)) {
+                    if (selectedScopes.size === 1) {
+                        return;
                     }
-                });
+                    selectedScopes.delete(scope);
+                } else {
+                    selectedScopes.add(scope);
+                }
+                syncFilterButtons();
+                applyFilters();
             });
         });
+
+        document.querySelectorAll('.filter-btn[data-tag]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const tag = btn.dataset.tag;
+                if (selectedTags.has(tag)) {
+                    selectedTags.delete(tag);
+                } else {
+                    selectedTags.add(tag);
+                }
+                syncFilterButtons();
+                applyFilters();
+            });
+        });
+
+        document.querySelector('.filter-btn[data-action="clear-tags"]')?.addEventListener('click', () => {
+            selectedTags.clear();
+            syncFilterButtons();
+            applyFilters();
+        });
+
+        syncFilterButtons();
+        applyFilters();
     </script>
 </body>
 </html>
