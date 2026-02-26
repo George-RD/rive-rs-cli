@@ -1,0 +1,58 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "work",
+    "width": 1920,
+    "height": 1080,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Shape I",
+        "x": 960,
+        "y": 540,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "I",
+            "width": 120,
+            "height": 520,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "I Stroke",
+            "thickness": 15,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "I Stroke Color",
+                "color": "#FFFFFF"
+              },
+              {
+                "type": "trim_path",
+                "name": "I Trim",
+                "start": 0.0,
+                "end": 0.85,
+                "mode": "synchronized"
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "I Fill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "I Fill Color",
+                "color": "#FFFFFF"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
