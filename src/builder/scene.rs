@@ -182,6 +182,7 @@ pub enum ObjectSpec {
     Fill {
         name: String,
         fill_rule: Option<serde_json::Value>,
+        is_visible: Option<bool>,
         children: Option<Vec<ObjectSpec>>,
     },
     Stroke {
@@ -189,6 +190,7 @@ pub enum ObjectSpec {
         thickness: Option<f32>,
         cap: Option<serde_json::Value>,
         join: Option<serde_json::Value>,
+        is_visible: Option<bool>,
         children: Option<Vec<ObjectSpec>>,
     },
     SolidColor {
@@ -992,11 +994,15 @@ fn append_object(
         ObjectSpec::Fill {
             name,
             fill_rule,
+            is_visible,
             children,
         } => {
             let mut fill = Fill::new(name.clone(), parent_id);
             if let Some(fill_rule) = fill_rule {
                 fill.fill_rule = parse_fill_rule(fill_rule)?;
+            }
+            if let Some(false) = is_visible {
+                fill.is_visible = 0;
             }
             objects.push(Box::new(fill));
             name_to_index.insert(name.clone(), object_index);
@@ -1019,6 +1025,7 @@ fn append_object(
             thickness,
             cap,
             join,
+            is_visible,
             children,
         } => {
             let mut stroke = Stroke::new(name.clone(), parent_id, thickness.unwrap_or(1.0));
@@ -1027,6 +1034,9 @@ fn append_object(
             }
             if let Some(join) = join {
                 stroke.join = parse_stroke_join(join)?;
+            }
+            if let Some(false) = is_visible {
+                stroke.is_visible = 0;
             }
             objects.push(Box::new(stroke));
             name_to_index.insert(name.clone(), object_index);
@@ -3153,6 +3163,7 @@ mod tests {
                         ObjectSpec::Fill {
                             name: "fill_1".to_string(),
                             fill_rule: None,
+                            is_visible: None,
                             children: Some(vec![ObjectSpec::SolidColor {
                                 name: "color_1".to_string(),
                                 color: "FFFF0000".to_string(),
@@ -3595,6 +3606,7 @@ mod tests {
                         thickness: Some(2.0),
                         cap: None,
                         join: None,
+                        is_visible: None,
                         children: Some(vec![
                             ObjectSpec::SolidColor {
                                 name: "color_1".to_string(),

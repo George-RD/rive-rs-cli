@@ -2661,7 +2661,7 @@ fn test_validate_loader() {
     let stdout = String::from_utf8_lossy(&v.stdout);
     assert!(v.status.success());
     assert!(stdout.contains("valid"));
-    assert!(stdout.contains("23 objects"));
+    assert!(stdout.contains("27 objects"));
     cleanup(&output);
 }
 
@@ -2685,6 +2685,6 @@ fn test_inspect_loader() {
     let parsed: serde_json::Value =
         serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
     let objects = parsed.get("objects").unwrap().as_array().unwrap();
-    assert_eq!(objects.len(), 23);
+    assert_eq!(objects.len(), 27);
     cleanup(&output);
 }
