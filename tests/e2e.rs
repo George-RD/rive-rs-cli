@@ -147,6 +147,59 @@ fn test_generate_path() {
 }
 
 #[test]
+fn test_generate_validate_points_path() {
+    let input = fixture_path("points_path.json");
+    let output = temp_output("points_path");
+    cleanup(&output);
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+    assert!(output.exists());
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+    let validate_stdout = String::from_utf8_lossy(&validate.stdout);
+    assert!(
+        validate_stdout.contains("valid"),
+        "expected 'valid' in validate stdout, got: {}",
+        validate_stdout
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    let inspect_stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect_stdout.contains("PointsPath") || inspect_stdout.contains("Points Path"),
+        "expected PointsPath object in inspect output, got: {}",
+        inspect_stdout
+    );
+    assert!(
+        inspect_stdout.contains("StraightVertex") || inspect_stdout.contains("Straight Vertex"),
+        "expected StraightVertex object in inspect output, got: {}",
+        inspect_stdout
+    );
+
+    cleanup(&output);
+}
+
+#[test]
 fn test_validate_generated_file() {
     let input = fixture_path("minimal.json");
     let output = temp_output("validate_gen");

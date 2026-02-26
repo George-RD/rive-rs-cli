@@ -17,8 +17,9 @@ use crate::objects::core::{RiveObject, property_keys};
 use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
 use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
-    Ellipse, Fill, GradientStop, Image, LinearGradient, Node, PathObject, RadialGradient,
-    Rectangle, Shape, SolidColor, Stroke, TrimPath,
+    CubicDetachedVertexObject, CubicMirroredVertexObject, Ellipse, Fill, GradientStop, Image,
+    LinearGradient, Node, PathObject, PointsPathObject, RadialGradient, Rectangle, Shape,
+    SolidColor, StraightVertexObject, Stroke, TrimPath,
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, EntryState, ExitState, StateMachine, StateMachineBool,
@@ -232,6 +233,58 @@ pub enum ObjectSpec {
     Path {
         name: String,
         path_flags: Option<u64>,
+    },
+    #[serde(rename = "points_path")]
+    PointsPath {
+        name: String,
+        #[serde(default)]
+        x: Option<f32>,
+        #[serde(default)]
+        y: Option<f32>,
+        #[serde(default)]
+        is_closed: Option<bool>,
+        #[serde(default)]
+        path_flags: Option<u64>,
+        #[serde(default)]
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "straight_vertex")]
+    StraightVertex {
+        name: String,
+        #[serde(default)]
+        x: Option<f32>,
+        #[serde(default)]
+        y: Option<f32>,
+        #[serde(default)]
+        radius: Option<f32>,
+    },
+    #[serde(rename = "cubic_mirrored_vertex")]
+    CubicMirroredVertex {
+        name: String,
+        #[serde(default)]
+        x: Option<f32>,
+        #[serde(default)]
+        y: Option<f32>,
+        #[serde(default)]
+        rotation: Option<f32>,
+        #[serde(default)]
+        distance: Option<f32>,
+    },
+    #[serde(rename = "cubic_detached_vertex")]
+    CubicDetachedVertex {
+        name: String,
+        #[serde(default)]
+        x: Option<f32>,
+        #[serde(default)]
+        y: Option<f32>,
+        #[serde(default)]
+        in_rotation: Option<f32>,
+        #[serde(default)]
+        in_distance: Option<f32>,
+        #[serde(default)]
+        out_rotation: Option<f32>,
+        #[serde(default)]
+        out_distance: Option<f32>,
     },
     TrimPath {
         name: String,
@@ -1173,6 +1226,85 @@ fn append_object(
                 name: name.clone(),
                 parent_id,
                 path_flags: path_flags.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::PointsPath {
+            name,
+            x,
+            y,
+            is_closed,
+            path_flags,
+            children,
+        } => {
+            objects.push(Box::new(PointsPathObject {
+                name: name.clone(),
+                parent_id: Some(parent_id as u32),
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+                is_closed: is_closed.unwrap_or(false),
+                path_flags: path_flags.unwrap_or(0) as u32,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::StraightVertex { name, x, y, radius } => {
+            objects.push(Box::new(StraightVertexObject {
+                name: name.clone(),
+                parent_id: Some(parent_id as u32),
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+                radius: radius.unwrap_or(0.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CubicMirroredVertex {
+            name,
+            x,
+            y,
+            rotation,
+            distance,
+        } => {
+            objects.push(Box::new(CubicMirroredVertexObject {
+                name: name.clone(),
+                parent_id: Some(parent_id as u32),
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+                rotation: rotation.unwrap_or(0.0),
+                distance: distance.unwrap_or(0.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CubicDetachedVertex {
+            name,
+            x,
+            y,
+            in_rotation,
+            in_distance,
+            out_rotation,
+            out_distance,
+        } => {
+            objects.push(Box::new(CubicDetachedVertexObject {
+                name: name.clone(),
+                parent_id: Some(parent_id as u32),
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+                in_rotation: in_rotation.unwrap_or(0.0),
+                in_distance: in_distance.unwrap_or(0.0),
+                out_rotation: out_rotation.unwrap_or(0.0),
+                out_distance: out_distance.unwrap_or(0.0),
             }));
             name_to_index.insert(name.clone(), object_index);
         }
@@ -2320,6 +2452,7 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             ObjectSpec::Shape { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
+            | ObjectSpec::PointsPath { children, .. }
             | ObjectSpec::Bone { children, .. }
             | ObjectSpec::RootBone { children, .. }
             | ObjectSpec::Skin { children, .. }
@@ -2566,6 +2699,7 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
 enum ParentKind {
     Artboard,
     Shape,
+    PointsPath,
     Fill,
     Stroke,
     Gradient,
@@ -2714,6 +2848,81 @@ fn validate_object_spec(
         ObjectSpec::Path { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
+        ObjectSpec::PointsPath { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::Shape) {
+                return Err(format!("points_path '{}' must be a child of a shape", name));
+            }
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::PointsPath)?;
+                }
+            }
+        }
+        ObjectSpec::StraightVertex { name, radius, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::PointsPath) {
+                return Err(format!(
+                    "straight_vertex '{}' must be a child of points_path",
+                    name
+                ));
+            }
+            if let Some(radius) = radius
+                && *radius < 0.0
+            {
+                return Err(format!(
+                    "straight_vertex '{}' radius must be non-negative",
+                    name
+                ));
+            }
+        }
+        ObjectSpec::CubicMirroredVertex { name, distance, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::PointsPath) {
+                return Err(format!(
+                    "cubic_mirrored_vertex '{}' must be a child of points_path",
+                    name
+                ));
+            }
+            if let Some(distance) = distance
+                && *distance < 0.0
+            {
+                return Err(format!(
+                    "cubic_mirrored_vertex '{}' distance must be non-negative",
+                    name
+                ));
+            }
+        }
+        ObjectSpec::CubicDetachedVertex {
+            name,
+            in_distance,
+            out_distance,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::PointsPath) {
+                return Err(format!(
+                    "cubic_detached_vertex '{}' must be a child of points_path",
+                    name
+                ));
+            }
+            if let Some(distance) = in_distance
+                && *distance < 0.0
+            {
+                return Err(format!(
+                    "cubic_detached_vertex '{}' in_distance must be non-negative",
+                    name
+                ));
+            }
+            if let Some(distance) = out_distance
+                && *distance < 0.0
+            {
+                return Err(format!(
+                    "cubic_detached_vertex '{}' out_distance must be non-negative",
+                    name
+                ));
+            }
+        }
         ObjectSpec::TrimPath {
             name,
             start,
@@ -2858,6 +3067,7 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
             ObjectSpec::Shape { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
+            | ObjectSpec::PointsPath { children, .. }
             | ObjectSpec::LinearGradient { children, .. }
             | ObjectSpec::RadialGradient { children, .. }
             | ObjectSpec::Bone { children, .. }
@@ -3374,6 +3584,53 @@ mod tests {
             .find(|p| p.key == property_keys::PATH_FLAGS)
             .unwrap();
         assert_eq!(path_flags.value, PropertyValue::UInt(3));
+    }
+
+    #[test]
+    fn test_build_scene_with_points_path_object() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::PointsPath {
+                        name: "points_path_1".to_string(),
+                        x: None,
+                        y: None,
+                        is_closed: Some(true),
+                        path_flags: Some(3),
+                        children: Some(vec![
+                            ObjectSpec::StraightVertex {
+                                name: "v1".to_string(),
+                                x: Some(0.0),
+                                y: Some(0.0),
+                                radius: None,
+                            },
+                            ObjectSpec::StraightVertex {
+                                name: "v2".to_string(),
+                                x: Some(10.0),
+                                y: Some(0.0),
+                                radius: None,
+                            },
+                        ]),
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert_eq!(objects[3].type_key(), type_keys::POINTS_PATH);
+        assert_eq!(objects[4].type_key(), type_keys::STRAIGHT_VERTEX);
+        assert_eq!(objects[5].type_key(), type_keys::STRAIGHT_VERTEX);
     }
 
     #[test]

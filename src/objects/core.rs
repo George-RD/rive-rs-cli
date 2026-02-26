@@ -41,12 +41,15 @@ pub mod type_keys {
     pub const NODE: u16 = 2;
     pub const SHAPE: u16 = 3;
     pub const ELLIPSE: u16 = 4;
+    pub const STRAIGHT_VERTEX: u16 = 5;
+    pub const CUBIC_DETACHED_VERTEX: u16 = 6;
     pub const RECTANGLE: u16 = 7;
     pub const COMPONENT: u16 = 10;
     pub const CONTAINER_COMPONENT: u16 = 11;
     pub const PATH: u16 = 12;
     pub const DRAWABLE: u16 = 13;
     pub const PARAMETRIC_PATH: u16 = 15;
+    pub const POINTS_PATH: u16 = 16;
     pub const RADIAL_GRADIENT: u16 = 17;
     pub const SOLID_COLOR: u16 = 18;
     pub const GRADIENT_STOP: u16 = 19;
@@ -62,6 +65,7 @@ pub mod type_keys {
     pub const KEY_FRAME: u16 = 29;
     pub const KEY_FRAME_DOUBLE: u16 = 30;
     pub const LINEAR_ANIMATION: u16 = 31;
+    pub const CUBIC_MIRRORED_VERTEX: u16 = 35;
     pub const KEY_FRAME_COLOR: u16 = 37;
     pub const TRANSFORM_COMPONENT: u16 = 38;
     pub const TRIM_PATH: u16 = 47;
@@ -137,6 +141,9 @@ pub mod property_keys {
     pub const ARTBOARD_ORIGIN_Y: u16 = 12;
     pub const NODE_X: u16 = 13;
     pub const NODE_Y: u16 = 14;
+    pub const VERTEX_X: u16 = 24;
+    pub const VERTEX_Y: u16 = 25;
+    pub const STRAIGHT_VERTEX_RADIUS: u16 = 26;
     pub const TRANSFORM_ROTATION: u16 = 15;
     pub const TRANSFORM_SCALE_X: u16 = 16;
     pub const TRANSFORM_SCALE_Y: u16 = 17;
@@ -145,6 +152,7 @@ pub mod property_keys {
     pub const PARAMETRIC_PATH_HEIGHT: u16 = 21;
     pub const DRAWABLE_BLEND_MODE: u16 = 23;
     pub const RECTANGLE_CORNER_RADIUS_TL: u16 = 31;
+    pub const POINTS_PATH_IS_CLOSED: u16 = 32;
     pub const LINEAR_GRADIENT_START_Y: u16 = 33;
     pub const LINEAR_GRADIENT_END_X: u16 = 34;
     pub const LINEAR_GRADIENT_END_Y: u16 = 35;
@@ -178,6 +186,12 @@ pub mod property_keys {
     pub const INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID: u16 = 69;
     pub const KEY_FRAME_DOUBLE_VALUE: u16 = 70;
     pub const KEY_FRAME_COLOR_VALUE: u16 = 88;
+    pub const CUBIC_MIRRORED_VERTEX_ROTATION: u16 = 82;
+    pub const CUBIC_MIRRORED_VERTEX_DISTANCE: u16 = 83;
+    pub const CUBIC_DETACHED_VERTEX_IN_ROTATION: u16 = 84;
+    pub const CUBIC_DETACHED_VERTEX_IN_DISTANCE: u16 = 85;
+    pub const CUBIC_DETACHED_VERTEX_OUT_ROTATION: u16 = 86;
+    pub const CUBIC_DETACHED_VERTEX_OUT_DISTANCE: u16 = 87;
     pub const TRIM_PATH_START: u16 = 114;
     pub const TRIM_PATH_END: u16 = 115;
     pub const TRIM_PATH_OFFSET: u16 = 116;
@@ -331,6 +345,7 @@ pub fn is_bool_property(key: u16) -> bool {
             | property_keys::STATE_MACHINE_BOOL_VALUE
             | property_keys::RECTANGLE_LINK_CORNER_RADIUS
             | property_keys::LINEAR_ANIMATION_QUANTIZE
+            | property_keys::POINTS_PATH_IS_CLOSED
             | property_keys::LAYOUT_COMPONENT_CLIP
             | property_keys::PATH_IS_HOLE
             | property_keys::IK_CONSTRAINT_INVERT_DIRECTION
@@ -360,6 +375,9 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::ARTBOARD_ORIGIN_Y
         | property_keys::NODE_X
         | property_keys::NODE_Y
+        | property_keys::VERTEX_X
+        | property_keys::VERTEX_Y
+        | property_keys::STRAIGHT_VERTEX_RADIUS
         | property_keys::TRANSFORM_ROTATION
         | property_keys::TRANSFORM_SCALE_X
         | property_keys::TRANSFORM_SCALE_Y
@@ -387,6 +405,12 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::CUBIC_INTERPOLATOR_Y1
         | property_keys::CUBIC_INTERPOLATOR_X2
         | property_keys::CUBIC_INTERPOLATOR_Y2
+        | property_keys::CUBIC_MIRRORED_VERTEX_ROTATION
+        | property_keys::CUBIC_MIRRORED_VERTEX_DISTANCE
+        | property_keys::CUBIC_DETACHED_VERTEX_IN_ROTATION
+        | property_keys::CUBIC_DETACHED_VERTEX_IN_DISTANCE
+        | property_keys::CUBIC_DETACHED_VERTEX_OUT_ROTATION
+        | property_keys::CUBIC_DETACHED_VERTEX_OUT_DISTANCE
         | property_keys::TRIM_PATH_START
         | property_keys::TRIM_PATH_END
         | property_keys::TRIM_PATH_OFFSET
@@ -471,6 +495,7 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::KEY_FRAME_FRAME
         | property_keys::INTERPOLATING_KEY_FRAME_TYPE
         | property_keys::INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID
+        | property_keys::POINTS_PATH_IS_CLOSED
         | property_keys::PATH_FLAGS
         | property_keys::DRAWABLE_FLAGS
         | property_keys::STATE_MACHINE_BOOL_VALUE
@@ -690,12 +715,15 @@ mod tests {
         assert_eq!(type_keys::NODE, 2);
         assert_eq!(type_keys::SHAPE, 3);
         assert_eq!(type_keys::ELLIPSE, 4);
+        assert_eq!(type_keys::STRAIGHT_VERTEX, 5);
+        assert_eq!(type_keys::CUBIC_DETACHED_VERTEX, 6);
         assert_eq!(type_keys::RECTANGLE, 7);
         assert_eq!(type_keys::COMPONENT, 10);
         assert_eq!(type_keys::CONTAINER_COMPONENT, 11);
         assert_eq!(type_keys::PATH, 12);
         assert_eq!(type_keys::DRAWABLE, 13);
         assert_eq!(type_keys::PARAMETRIC_PATH, 15);
+        assert_eq!(type_keys::POINTS_PATH, 16);
         assert_eq!(type_keys::RADIAL_GRADIENT, 17);
         assert_eq!(type_keys::SOLID_COLOR, 18);
         assert_eq!(type_keys::GRADIENT_STOP, 19);
@@ -709,6 +737,7 @@ mod tests {
         assert_eq!(type_keys::KEY_FRAME, 29);
         assert_eq!(type_keys::KEY_FRAME_DOUBLE, 30);
         assert_eq!(type_keys::LINEAR_ANIMATION, 31);
+        assert_eq!(type_keys::CUBIC_MIRRORED_VERTEX, 35);
         assert_eq!(type_keys::KEY_FRAME_COLOR, 37);
         assert_eq!(type_keys::TRANSFORM_COMPONENT, 38);
         assert_eq!(type_keys::STATE_MACHINE, 53);

@@ -321,6 +321,108 @@ Vector path object.
 | `name` | String | Yes | - |
 | `path_flags` | u64 | No | 0 |
 
+### PointsPath
+
+Custom vector path defined by explicit vertex children.
+
+```json
+{
+  "type": "points_path",
+  "name": "TrianglePath",
+  "x": 0,
+  "y": 0,
+  "is_closed": true,
+  "path_flags": 0,
+  "children": [
+    { "type": "straight_vertex", "name": "V1", "x": 0, "y": -100 },
+    { "type": "straight_vertex", "name": "V2", "x": 87, "y": 50 },
+    { "type": "straight_vertex", "name": "V3", "x": -87, "y": 50 }
+  ]
+}
+```
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| `name` | String | Yes | - |
+| `x` | f32 | No | 0.0 |
+| `y` | f32 | No | 0.0 |
+| `is_closed` | bool | No | false |
+| `path_flags` | u64 | No | 0 |
+| `children` | Vec<ObjectSpec> | No | [] |
+
+Children must be vertex types: `straight_vertex`, `cubic_mirrored_vertex`, or `cubic_detached_vertex`.
+
+### StraightVertex
+
+Straight path vertex.
+
+```json
+{
+  "type": "straight_vertex",
+  "name": "V1",
+  "x": 0,
+  "y": -100,
+  "radius": 0
+}
+```
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| `name` | String | Yes | - |
+| `x` | f32 | No | 0.0 |
+| `y` | f32 | No | 0.0 |
+| `radius` | f32 | No | 0.0 |
+
+### CubicMirroredVertex
+
+Cubic path vertex with mirrored control handles.
+
+```json
+{
+  "type": "cubic_mirrored_vertex",
+  "name": "V2",
+  "x": 50,
+  "y": 0,
+  "rotation": 0.0,
+  "distance": 20.0
+}
+```
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| `name` | String | Yes | - |
+| `x` | f32 | No | 0.0 |
+| `y` | f32 | No | 0.0 |
+| `rotation` | f32 | No | 0.0 |
+| `distance` | f32 | No | 0.0 |
+
+### CubicDetachedVertex
+
+Cubic path vertex with independent in/out control handles.
+
+```json
+{
+  "type": "cubic_detached_vertex",
+  "name": "V3",
+  "x": 100,
+  "y": 0,
+  "in_rotation": 3.14,
+  "in_distance": 20.0,
+  "out_rotation": 0.0,
+  "out_distance": 20.0
+}
+```
+
+| Field | Type | Required | Default |
+|-------|------|----------|---------|
+| `name` | String | Yes | - |
+| `x` | f32 | No | 0.0 |
+| `y` | f32 | No | 0.0 |
+| `in_rotation` | f32 | No | 0.0 |
+| `in_distance` | f32 | No | 0.0 |
+| `out_rotation` | f32 | No | 0.0 |
+| `out_distance` | f32 | No | 0.0 |
+
 ### TrimPath
 
 Path trimming effect. Must be child of Fill or Stroke, NOT Shape.
@@ -965,7 +1067,8 @@ Valid parent-child relationships:
 | Parent Type | Valid Children |
 |-------------|----------------|
 | Artboard | shape, node, image, path, bone, root_bone, skin, weight, cubic_weight, constraint types, text, layout_component, view_model, image_asset, font_asset, audio_asset |
-| Shape | ellipse, rectangle, path, fill, stroke |
+| Shape | ellipse, rectangle, path, points_path, fill, stroke |
+| PointsPath | straight_vertex, cubic_mirrored_vertex, cubic_detached_vertex |
 | Fill | solid_color, linear_gradient, radial_gradient, trim_path |
 | Stroke | solid_color, linear_gradient, radial_gradient, trim_path |
 | LinearGradient | gradient_stop |
