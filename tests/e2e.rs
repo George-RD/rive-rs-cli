@@ -2558,7 +2558,10 @@ fn test_generate_button_states() {
     assert!(output.exists());
     let bytes = std::fs::read(&output).unwrap();
     assert_eq!(&bytes[0..4], b"RIVE");
-    assert!(bytes.len() > 500, "button_states should be a substantial file");
+    assert!(
+        bytes.len() > 500,
+        "button_states should be a substantial file"
+    );
     cleanup(&output);
 }
 
