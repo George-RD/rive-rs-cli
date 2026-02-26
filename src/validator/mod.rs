@@ -5,6 +5,7 @@ use serde::Serialize;
 use crate::objects::core::{
     BackingType, is_bool_property, property_backing_type, property_keys, type_keys,
 };
+use crate::objects::generated_registry;
 
 #[derive(Debug, Clone, Default)]
 pub struct InspectFilter {
@@ -113,12 +114,16 @@ pub enum PropertyValueRead {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RivProperty {
     pub key: u16,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     pub value: PropertyValueRead,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct RivObject {
     pub type_key: u16,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub type_name: Option<String>,
     pub properties: Vec<RivProperty>,
 }
 
@@ -221,6 +226,7 @@ pub fn parse_riv(data: &[u8], filter: &InspectFilter) -> Result<ParsedRiv, Strin
                 .get(&prop_key)
                 .copied()
                 .or_else(|| property_backing_type(prop_key))
+                .or_else(|| generated_registry::property_backing_type_generated(prop_key))
                 .ok_or_else(|| {
                     format!(
                         "unknown backing type for property key {} in object type {}",
@@ -265,14 +271,26 @@ pub fn parse_riv(data: &[u8], filter: &InspectFilter) -> Result<ParsedRiv, Strin
                 }
             };
 
+            let property_name = generated_registry::property_name(prop_key);
             properties.push(RivProperty {
                 key: prop_key,
+                name: if property_name == "Unknown" {
+                    None
+                } else {
+                    Some(property_name.to_string())
+                },
                 value,
             });
         }
 
+        let object_type_name = generated_registry::type_name(type_key);
         objects.push(RivObject {
             type_key,
+            type_name: if object_type_name == "Unknown" {
+                None
+            } else {
+                Some(object_type_name.to_string())
+            },
             properties,
         });
     }
@@ -364,64 +382,7 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
 }
 
 fn type_name(key: u16) -> &'static str {
-    match key {
-        type_keys::ARTBOARD => "Artboard",
-        type_keys::NODE => "Node",
-        type_keys::SHAPE => "Shape",
-        type_keys::ELLIPSE => "Ellipse",
-        type_keys::RECTANGLE => "Rectangle",
-        type_keys::COMPONENT => "Component",
-        type_keys::CONTAINER_COMPONENT => "ContainerComponent",
-        type_keys::PATH => "Path",
-        type_keys::DRAWABLE => "Drawable",
-        type_keys::PARAMETRIC_PATH => "ParametricPath",
-        type_keys::RADIAL_GRADIENT => "RadialGradient",
-        type_keys::SOLID_COLOR => "SolidColor",
-        type_keys::GRADIENT_STOP => "GradientStop",
-        type_keys::FILL => "Fill",
-        type_keys::SHAPE_PAINT => "ShapePaint",
-        type_keys::LINEAR_GRADIENT => "LinearGradient",
-        type_keys::BACKBOARD => "Backboard",
-        type_keys::STROKE => "Stroke",
-        type_keys::KEYED_OBJECT => "KeyedObject",
-        type_keys::KEYED_PROPERTY => "KeyedProperty",
-        type_keys::ANIMATION => "Animation",
-        type_keys::CUBIC_EASE_INTERPOLATOR => "CubicEaseInterpolator",
-        type_keys::KEY_FRAME => "KeyFrame",
-        type_keys::KEY_FRAME_DOUBLE => "KeyFrameDouble",
-        type_keys::LINEAR_ANIMATION => "LinearAnimation",
-        type_keys::KEY_FRAME_COLOR => "KeyFrameColor",
-        type_keys::TRANSFORM_COMPONENT => "TransformComponent",
-        type_keys::TRIM_PATH => "TrimPath",
-        type_keys::STATE_MACHINE => "StateMachine",
-        type_keys::STATE_MACHINE_COMPONENT => "StateMachineComponent",
-        type_keys::STATE_MACHINE_INPUT => "StateMachineInput",
-        type_keys::STATE_MACHINE_NUMBER => "StateMachineNumber",
-        type_keys::STATE_MACHINE_LAYER => "StateMachineLayer",
-        type_keys::STATE_MACHINE_TRIGGER => "StateMachineTrigger",
-        type_keys::STATE_MACHINE_BOOL => "StateMachineBool",
-        type_keys::LAYER_STATE => "LayerState",
-        type_keys::ANIMATION_STATE => "AnimationState",
-        type_keys::ANY_STATE => "AnyState",
-        type_keys::ENTRY_STATE => "EntryState",
-        type_keys::EXIT_STATE => "ExitState",
-        type_keys::STATE_TRANSITION => "StateTransition",
-        type_keys::TRANSITION_INPUT_CONDITION => "TransitionInputCondition",
-        type_keys::TRANSITION_TRIGGER_CONDITION => "TransitionTriggerCondition",
-        type_keys::TRANSITION_VALUE_CONDITION => "TransitionValueCondition",
-        type_keys::TRANSITION_NUMBER_CONDITION => "TransitionNumberCondition",
-        type_keys::TRANSITION_BOOL_CONDITION => "TransitionBoolCondition",
-        type_keys::WORLD_TRANSFORM_COMPONENT => "WorldTransformComponent",
-        type_keys::NESTED_ARTBOARD => "NestedArtboard",
-        type_keys::IMAGE => "Image",
-        type_keys::CUBIC_VALUE_INTERPOLATOR => "CubicValueInterpolator",
-        type_keys::CUBIC_INTERPOLATOR => "CubicInterpolator",
-        type_keys::INTERPOLATING_KEY_FRAME => "InterpolatingKeyFrame",
-        type_keys::KEYFRAME_INTERPOLATOR => "KeyFrameInterpolator",
-        type_keys::LAYOUT_COMPONENT => "LayoutComponent",
-        type_keys::TRANSITION_CONDITION => "TransitionCondition",
-        _ => "Unknown",
-    }
+    generated_registry::type_name(key)
 }
 
 fn matches_object_filter(filter: &InspectFilter, index: usize, object: &RivObject) -> bool {
@@ -527,7 +488,12 @@ pub fn inspect_riv(data: &[u8], filter: &InspectFilter) -> Result<String, String
                 PropertyValueRead::Float(v) => format!("float({})", v),
                 PropertyValueRead::Color(v) => format!("color(0x{:08X})", v),
             };
-            out.push_str(&format!("  key={} {}\n", prop.key, val_str));
+            out.push_str(&format!(
+                "  {}({}) {}\n",
+                prop.name.as_deref().unwrap_or("?"),
+                prop.key,
+                val_str
+            ));
         }
     }
 

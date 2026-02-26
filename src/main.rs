@@ -132,6 +132,25 @@ fn main() {
                 }
             }
         }
+        cli::Command::Decompile { file } => {
+            let bytes = std::fs::read(&file).unwrap_or_else(|e| {
+                eprintln!("error reading {:?}: {}", file, e);
+                std::process::exit(1);
+            });
+            match validator::parse_riv(&bytes, &validator::InspectFilter::default()) {
+                Ok(parsed) => match serde_json::to_string_pretty(&parsed) {
+                    Ok(json_str) => println!("{}", json_str),
+                    Err(e) => {
+                        eprintln!("JSON serialization failed: {}", e);
+                        std::process::exit(1);
+                    }
+                },
+                Err(e) => {
+                    eprintln!("decompile failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
         cli::Command::Ai { command } => match command {
             cli::AiCommand::Generate {
                 prompt,
