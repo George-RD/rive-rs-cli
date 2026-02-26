@@ -1,0 +1,66 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "PointsPathDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Triangle",
+        "x": 250,
+        "y": 250,
+        "children": [
+          {
+            "type": "points_path",
+            "name": "TrianglePath",
+            "is_closed": true,
+            "children": [
+              {
+                "type": "straight_vertex",
+                "name": "V1",
+                "x": 0,
+                "y": -100
+              },
+              {
+                "type": "straight_vertex",
+                "name": "V2",
+                "x": 87,
+                "y": 50
+              },
+              {
+                "type": "straight_vertex",
+                "name": "V3",
+                "x": -87,
+                "y": 50
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "TriangleFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Cyan",
+                "color": "#22D3EE"
+              }
+            ]
+          },
+          {
+            "type": "stroke",
+            "name": "TriangleStroke",
+            "thickness": 3,
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "White",
+                "color": "#FFFFFF"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

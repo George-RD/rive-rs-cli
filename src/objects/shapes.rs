@@ -630,6 +630,225 @@ pub struct PathObject {
     pub path_flags: u64,
 }
 
+pub struct PointsPathObject {
+    pub name: String,
+    pub parent_id: Option<u32>,
+    pub x: f32,
+    pub y: f32,
+    pub is_closed: bool,
+    pub path_flags: u32,
+}
+
+impl RiveObject for PointsPathObject {
+    fn type_key(&self) -> u16 {
+        type_keys::POINTS_PATH
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if let Some(parent_id) = self.parent_id {
+            props.push(Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(parent_id as u64),
+            });
+        }
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.is_closed {
+            props.push(Property {
+                key: property_keys::POINTS_PATH_IS_CLOSED,
+                value: PropertyValue::UInt(1),
+            });
+        }
+        if self.path_flags != 0 {
+            props.push(Property {
+                key: property_keys::PATH_FLAGS,
+                value: PropertyValue::UInt(self.path_flags as u64),
+            });
+        }
+        props
+    }
+}
+
+pub struct StraightVertexObject {
+    pub name: String,
+    pub parent_id: Option<u32>,
+    pub x: f32,
+    pub y: f32,
+    pub radius: f32,
+}
+
+impl RiveObject for StraightVertexObject {
+    fn type_key(&self) -> u16 {
+        type_keys::STRAIGHT_VERTEX
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if let Some(parent_id) = self.parent_id {
+            props.push(Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(parent_id as u64),
+            });
+        }
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.radius != 0.0 {
+            props.push(Property {
+                key: property_keys::STRAIGHT_VERTEX_RADIUS,
+                value: PropertyValue::Float(self.radius),
+            });
+        }
+        props
+    }
+}
+
+pub struct CubicMirroredVertexObject {
+    pub name: String,
+    pub parent_id: Option<u32>,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub distance: f32,
+}
+
+impl RiveObject for CubicMirroredVertexObject {
+    fn type_key(&self) -> u16 {
+        type_keys::CUBIC_MIRRORED_VERTEX
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if let Some(parent_id) = self.parent_id {
+            props.push(Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(parent_id as u64),
+            });
+        }
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_MIRRORED_VERTEX_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.distance != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_MIRRORED_VERTEX_DISTANCE,
+                value: PropertyValue::Float(self.distance),
+            });
+        }
+        props
+    }
+}
+
+pub struct CubicDetachedVertexObject {
+    pub name: String,
+    pub parent_id: Option<u32>,
+    pub x: f32,
+    pub y: f32,
+    pub in_rotation: f32,
+    pub in_distance: f32,
+    pub out_rotation: f32,
+    pub out_distance: f32,
+}
+
+impl RiveObject for CubicDetachedVertexObject {
+    fn type_key(&self) -> u16 {
+        type_keys::CUBIC_DETACHED_VERTEX
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if let Some(parent_id) = self.parent_id {
+            props.push(Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(parent_id as u64),
+            });
+        }
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.in_rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_DETACHED_VERTEX_IN_ROTATION,
+                value: PropertyValue::Float(self.in_rotation),
+            });
+        }
+        if self.in_distance != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_DETACHED_VERTEX_IN_DISTANCE,
+                value: PropertyValue::Float(self.in_distance),
+            });
+        }
+        if self.out_rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_DETACHED_VERTEX_OUT_ROTATION,
+                value: PropertyValue::Float(self.out_rotation),
+            });
+        }
+        if self.out_distance != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_DETACHED_VERTEX_OUT_DISTANCE,
+                value: PropertyValue::Float(self.out_distance),
+            });
+        }
+        props
+    }
+}
+
 impl RiveObject for PathObject {
     fn type_key(&self) -> u16 {
         type_keys::PATH
@@ -1331,6 +1550,89 @@ mod tests {
         assert_eq!(props.len(), 3);
         assert_eq!(props[2].key, property_keys::PATH_FLAGS);
         assert_eq!(props[2].value, PropertyValue::UInt(2));
+    }
+
+    #[test]
+    fn test_points_path_object_properties() {
+        let ppo = PointsPathObject {
+            name: "pp".to_string(),
+            parent_id: Some(1),
+            x: 10.0,
+            y: 20.0,
+            is_closed: true,
+            path_flags: 3,
+        };
+        assert_eq!(ppo.type_key(), type_keys::POINTS_PATH);
+        let props = ppo.properties();
+        assert_eq!(props.len(), 6);
+        assert_eq!(props[2].key, property_keys::NODE_X);
+        assert_eq!(props[3].key, property_keys::NODE_Y);
+        assert_eq!(props[4].key, property_keys::POINTS_PATH_IS_CLOSED);
+        assert_eq!(props[5].key, property_keys::PATH_FLAGS);
+    }
+
+    #[test]
+    fn test_straight_vertex_uses_vertex_xy_keys() {
+        let vertex = StraightVertexObject {
+            name: "v".to_string(),
+            parent_id: Some(2),
+            x: 1.0,
+            y: 2.0,
+            radius: 3.0,
+        };
+        assert_eq!(vertex.type_key(), type_keys::STRAIGHT_VERTEX);
+        let props = vertex.properties();
+        assert_eq!(props[2].key, property_keys::VERTEX_X);
+        assert_eq!(props[3].key, property_keys::VERTEX_Y);
+        assert_eq!(props[4].key, property_keys::STRAIGHT_VERTEX_RADIUS);
+    }
+
+    #[test]
+    fn test_cubic_mirrored_vertex_properties() {
+        let vertex = CubicMirroredVertexObject {
+            name: "cmv".to_string(),
+            parent_id: Some(2),
+            x: 1.0,
+            y: 2.0,
+            rotation: 0.5,
+            distance: 9.0,
+        };
+        assert_eq!(vertex.type_key(), type_keys::CUBIC_MIRRORED_VERTEX);
+        let props = vertex.properties();
+        assert_eq!(props[4].key, property_keys::CUBIC_MIRRORED_VERTEX_ROTATION);
+        assert_eq!(props[5].key, property_keys::CUBIC_MIRRORED_VERTEX_DISTANCE);
+    }
+
+    #[test]
+    fn test_cubic_detached_vertex_properties() {
+        let vertex = CubicDetachedVertexObject {
+            name: "cdv".to_string(),
+            parent_id: Some(2),
+            x: 1.0,
+            y: 2.0,
+            in_rotation: 0.1,
+            in_distance: 10.0,
+            out_rotation: 0.2,
+            out_distance: 20.0,
+        };
+        assert_eq!(vertex.type_key(), type_keys::CUBIC_DETACHED_VERTEX);
+        let props = vertex.properties();
+        assert_eq!(
+            props[4].key,
+            property_keys::CUBIC_DETACHED_VERTEX_IN_ROTATION
+        );
+        assert_eq!(
+            props[5].key,
+            property_keys::CUBIC_DETACHED_VERTEX_IN_DISTANCE
+        );
+        assert_eq!(
+            props[6].key,
+            property_keys::CUBIC_DETACHED_VERTEX_OUT_ROTATION
+        );
+        assert_eq!(
+            props[7].key,
+            property_keys::CUBIC_DETACHED_VERTEX_OUT_DISTANCE
+        );
     }
 
     #[test]
