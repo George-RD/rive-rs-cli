@@ -213,7 +213,7 @@ function inferFixtureMetadata(fixtureName, spec) {
     expectation: `${fixtureName} fixture loaded.`,
     artboards: artboardNames.length > 1 ? artboardNames : undefined,
     stateMachine: firstStateMachine?.name,
-    animations: hasAnimations ? artboards.flatMap((a) => a.animations || []).map((a) => a.name).filter(Boolean) : undefined,
+    animations: hasAnimations ? (artboards[0]?.animations || []).map((a) => a.name).filter(Boolean) : undefined,
     replay: category === 'animated' || hasAnimations
   };
 
