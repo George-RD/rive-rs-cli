@@ -7,34 +7,7 @@
     "children": [
       {
         "type": "shape",
-        "name": "BackgroundShape",
-        "x": 200,
-        "y": 200,
-        "children": [
-          {
-            "type": "rectangle",
-            "name": "BackgroundRect",
-            "width": 400,
-            "height": 400,
-            "origin_x": 0.5,
-            "origin_y": 0.5
-          },
-          {
-            "type": "fill",
-            "name": "BackgroundFill",
-            "children": [
-              {
-                "type": "solid_color",
-                "name": "BackgroundColor",
-                "color": "#081018"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "shape",
-        "name": "TrackShape",
+        "name": "TrackOuterShape",
         "x": 200,
         "y": 200,
         "children": [
@@ -45,18 +18,6 @@
             "height": 220,
             "origin_x": 0.5,
             "origin_y": 0.5
-          },
-          {
-            "type": "fill",
-            "name": "TrackFillHidden",
-            "is_visible": false,
-            "children": [
-              {
-                "type": "solid_color",
-                "name": "TrackFillColor",
-                "color": "#000000"
-              }
-            ]
           },
           {
             "type": "stroke",
@@ -70,7 +31,15 @@
                 "color": "#1B2B34"
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "TrackInnerShape",
+        "x": 200,
+        "y": 200,
+        "children": [
           {
             "type": "ellipse",
             "name": "TrackInnerPath",
@@ -107,18 +76,6 @@
             "height": 220,
             "origin_x": 0.5,
             "origin_y": 0.5
-          },
-          {
-            "type": "fill",
-            "name": "SpinnerFillHidden",
-            "is_visible": false,
-            "children": [
-              {
-                "type": "solid_color",
-                "name": "SpinnerFillColor",
-                "color": "#000000"
-              }
-            ]
           },
           {
             "type": "stroke",
