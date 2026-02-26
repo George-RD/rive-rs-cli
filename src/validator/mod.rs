@@ -723,10 +723,9 @@ mod tests {
                     && p.value == PropertyValueRead::UInt(1))
         );
         assert!(
-            fill_props
+            !fill_props
                 .iter()
-                .any(|p| p.key == property_keys::SHAPE_PAINT_IS_VISIBLE
-                    && p.value == PropertyValueRead::UInt(1))
+                .any(|p| p.key == property_keys::SHAPE_PAINT_IS_VISIBLE)
         );
 
         let solid_props = &parsed.objects[5].properties;

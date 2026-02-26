@@ -339,7 +339,7 @@ impl RiveObject for Fill {
                 value: PropertyValue::UInt(self.fill_rule),
             });
         }
-        if self.is_visible != 0 {
+        if self.is_visible != 1 {
             props.push(Property {
                 key: property_keys::SHAPE_PAINT_IS_VISIBLE,
                 value: PropertyValue::UInt(self.is_visible),
@@ -407,7 +407,7 @@ impl RiveObject for Stroke {
                 value: PropertyValue::UInt(self.join),
             });
         }
-        if self.is_visible != 0 {
+        if self.is_visible != 1 {
             props.push(Property {
                 key: property_keys::SHAPE_PAINT_IS_VISIBLE,
                 value: PropertyValue::UInt(self.is_visible),
@@ -773,7 +773,7 @@ impl RiveObject for ShapePaint {
                 value: PropertyValue::UInt(self.parent_id),
             },
         ];
-        if self.is_visible != 0 {
+        if self.is_visible != 1 {
             props.push(Property {
                 key: property_keys::SHAPE_PAINT_IS_VISIBLE,
                 value: PropertyValue::UInt(self.is_visible),
@@ -980,12 +980,20 @@ mod tests {
     fn test_fill_properties_defaults() {
         let fill = Fill::new("Fill".to_string(), 5);
         let props = fill.properties();
-        assert_eq!(props.len(), 3);
+        assert_eq!(props.len(), 2);
         assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
         assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
         assert_eq!(props[1].value, PropertyValue::UInt(5));
+    }
+
+    #[test]
+    fn test_fill_invisible() {
+        let mut fill = Fill::new("F".to_string(), 1);
+        fill.is_visible = 0;
+        let props = fill.properties();
+        assert_eq!(props.len(), 3);
         assert_eq!(props[2].key, property_keys::SHAPE_PAINT_IS_VISIBLE);
-        assert_eq!(props[2].value, PropertyValue::UInt(1));
+        assert_eq!(props[2].value, PropertyValue::UInt(0));
     }
 
     #[test]
@@ -993,7 +1001,7 @@ mod tests {
         let mut fill = Fill::new("F".to_string(), 1);
         fill.fill_rule = 1;
         let props = fill.properties();
-        assert_eq!(props.len(), 4);
+        assert_eq!(props.len(), 3);
         let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
         assert!(keys.contains(&property_keys::FILL_RULE));
     }
@@ -1008,14 +1016,26 @@ mod tests {
     fn test_stroke_properties_defaults() {
         let stroke = Stroke::new("Stroke".to_string(), 3, 5.0);
         let props = stroke.properties();
-        assert_eq!(props.len(), 4);
+        assert_eq!(props.len(), 3);
         assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
         assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
         assert_eq!(props[1].value, PropertyValue::UInt(3));
         assert_eq!(props[2].key, property_keys::STROKE_THICKNESS);
         assert_eq!(props[2].value, PropertyValue::Float(5.0));
-        assert_eq!(props[3].key, property_keys::SHAPE_PAINT_IS_VISIBLE);
-        assert_eq!(props[3].value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_stroke_invisible() {
+        let mut stroke = Stroke::new("S".to_string(), 1, 2.0);
+        stroke.is_visible = 0;
+        let props = stroke.properties();
+        assert_eq!(props.len(), 4);
+        assert!(
+            props
+                .iter()
+                .any(|p| p.key == property_keys::SHAPE_PAINT_IS_VISIBLE
+                    && p.value == PropertyValue::UInt(0))
+        );
     }
 
     #[test]
@@ -1025,7 +1045,7 @@ mod tests {
         stroke.join = 2;
         stroke.transform_affects = 1;
         let props = stroke.properties();
-        assert_eq!(props.len(), 7);
+        assert_eq!(props.len(), 6);
         let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
         assert!(keys.contains(&property_keys::STROKE_CAP));
         assert!(keys.contains(&property_keys::STROKE_JOIN));
@@ -1321,9 +1341,9 @@ mod tests {
             is_visible: 1,
         };
         let props = sp.properties();
-        assert_eq!(props.len(), 3);
-        assert_eq!(props[2].key, property_keys::SHAPE_PAINT_IS_VISIBLE);
-        assert_eq!(props[2].value, PropertyValue::UInt(1));
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
     }
 
     #[test]

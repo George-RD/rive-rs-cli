@@ -47,6 +47,18 @@
             "origin_y": 0.5
           },
           {
+            "type": "fill",
+            "name": "TrackFillHidden",
+            "is_visible": false,
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "TrackFillColor",
+                "color": "#000000"
+              }
+            ]
+          },
+          {
             "type": "stroke",
             "name": "TrackOuterStroke",
             "thickness": 10,
@@ -95,6 +107,18 @@
             "height": 220,
             "origin_x": 0.5,
             "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "SpinnerFillHidden",
+            "is_visible": false,
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "SpinnerFillColor",
+                "color": "#000000"
+              }
+            ]
           },
           {
             "type": "stroke",

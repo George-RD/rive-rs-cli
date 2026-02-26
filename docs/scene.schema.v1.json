@@ -341,6 +341,10 @@
               ],
               "description": "Fill rule: 0='nonzero' (default) or 1='evenodd' (SVG: fill-rule)."
             },
+            "is_visible": {
+              "type": "boolean",
+              "description": "Whether this fill is visible. Default: true. Set false to hide (e.g. workaround for stroke-only shape rendering)."
+            },
             "children": {
               "type": "array",
               "items": {
@@ -411,6 +415,10 @@
                 }
               ],
               "description": "Stroke line join: 0='miter' (default), 1='round', 2='bevel' (SVG: stroke-linejoin)."
+            },
+            "is_visible": {
+              "type": "boolean",
+              "description": "Whether this stroke is visible. Default: true. Set false to hide."
             },
             "children": {
               "type": "array",

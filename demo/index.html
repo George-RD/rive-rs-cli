@@ -421,6 +421,8 @@
             const options = {};
             if (fixture?.stateMachine) {
                 options.stateMachines = [fixture.stateMachine];
+            } else if (fixture?.animations?.length) {
+                options.animations = fixture.animations;
             }
             const select = document.querySelector(`select.artboard-select[data-fixture="${fixtureName}"]`);
             if (select?.value) {
@@ -554,7 +556,7 @@
                     <div class="canvas-container comparison">
                         <div class="canvas-half">
                             <canvas id="canvas-${fixture.name}"></canvas>
-                            <span class="canvas-label">Generated</span>
+                            <span class="canvas-label">${fixture.tags?.includes('official') ? 'Official' : 'Generated'}</span>
                         </div>
                         <div class="canvas-half">
                             <canvas id="canvas-${fixture.name}-ref"></canvas>
@@ -688,8 +690,8 @@
                 checkbox.onchange = (e) => {
                     instances.forEach(inst => {
                         const smInputs = inst.stateMachineInputs('ButtonStateMachine');
-                        const input = smInputs.find(i => i.name === inputName);
-                        if (input) input.value = e.target.checked;
+                        const smInput = smInputs.find(i => i.name === inputName);
+                        if (smInput) smInput.value = e.target.checked;
                     });
                 };
             });
