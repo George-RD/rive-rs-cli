@@ -541,9 +541,18 @@
             return options;
         }
 
+        function resizeCanvasForHiDPI(canvas) {
+            if (!canvas) return;
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(rect.width * dpr);
+            canvas.height = Math.round(rect.height * dpr);
+        }
+
         function createRiveInstance(fixture, isReplay = false) {
             const name = fixture.name;
             const canvas = document.getElementById(`canvas-${name}`);
+            resizeCanvasForHiDPI(canvas);
             const statusEl = document.getElementById(`status-${name}`);
             const errorEl = document.getElementById(`error-${name}`);
             const options = runtimeOptions(name);
@@ -584,6 +593,7 @@
 
             if (fixture.hasReference) {
                 const refCanvas = document.getElementById(`canvas-${name}-ref`);
+                resizeCanvasForHiDPI(refCanvas);
                 riveRefInstances[name] = new rive.Rive({
                     src: fixture.referenceSource,
                     canvas: refCanvas,
