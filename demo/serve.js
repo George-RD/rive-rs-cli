@@ -214,6 +214,14 @@ function inferFixtureMetadata(fixtureName, spec) {
     artboards: artboardNames.length > 1 ? artboardNames : undefined,
     stateMachine: firstStateMachine?.name,
     animations: hasAnimations ? (artboards[0]?.animations || []).map((a) => a.name).filter(Boolean) : undefined,
+    animationsByArtboard: hasAnimations ? Object.fromEntries(
+      artboards
+        .filter((artboard) => typeof artboard?.name === 'string')
+        .map((artboard) => [
+          artboard.name,
+          (artboard.animations || []).map((a) => a.name).filter(Boolean)
+        ])
+    ) : undefined,
     replay: category === 'animated' || hasAnimations
   };
 

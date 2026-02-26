@@ -212,25 +212,7 @@
             z-index: 1;
         }
 
-        .canvas-label {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            padding: 4px 8px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            z-index: 2;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
+        .canvas-label,
         .canvas-note {
             position: absolute;
             top: 12px;
@@ -513,14 +495,22 @@
         function runtimeOptions(fixtureName) {
             const fixture = fixturesByName[fixtureName];
             const options = {};
+            const select = document.querySelector(`select.artboard-select[data-fixture="${fixtureName}"]`);
+            const selectedArtboard = select?.value;
+
+            if (selectedArtboard) {
+                options.artboard = selectedArtboard;
+            }
+
             if (fixture?.stateMachine) {
                 options.stateMachines = [fixture.stateMachine];
+            } else if (fixture?.animationsByArtboard && selectedArtboard) {
+                const scopedAnimations = fixture.animationsByArtboard[selectedArtboard] || [];
+                if (scopedAnimations.length) {
+                    options.animations = scopedAnimations;
+                }
             } else if (fixture?.animations?.length) {
                 options.animations = fixture.animations;
-            }
-            const select = document.querySelector(`select.artboard-select[data-fixture="${fixtureName}"]`);
-            if (select?.value) {
-                options.artboard = select.value;
             }
             return options;
         }
