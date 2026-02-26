@@ -477,7 +477,22 @@
                     canvas: refCanvas,
                     autoplay: true,
                     ...options,
-                    onLoadError: (err) => console.error(`Error loading reference for ${name}:`, err)
+                    onLoad: () => {
+                        if (name === 'state_machine') {
+                            setupStateMachine(riveInstances[name], riveRefInstances[name]);
+                        }
+                        if (name === 'official_test') {
+                            setupOfficialFire(riveInstances[name], riveRefInstances[name]);
+                        }
+                        if (name === 'button_states') {
+                            setupButtonStates(riveInstances[name], riveRefInstances[name]);
+                        }
+                    },
+                    onLoadError: (err) => {
+                        errorEl.textContent = 'Reference failed to load';
+                        errorEl.style.display = 'block';
+                        console.error(`Error loading reference for ${name}:`, err);
+                    }
                 });
             }
         }
