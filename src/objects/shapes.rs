@@ -257,6 +257,15 @@ pub struct Rectangle {
     pub link_corner_radius: u64,
 }
 
+pub struct Triangle {
+    pub name: String,
+    pub parent_id: u64,
+    pub width: f32,
+    pub height: f32,
+    pub origin_x: f32,
+    pub origin_y: f32,
+}
+
 impl Rectangle {
     pub fn new(name: String, parent_id: u64, width: f32, height: f32) -> Self {
         Rectangle {
@@ -339,6 +348,59 @@ impl RiveObject for Rectangle {
             props.push(Property {
                 key: property_keys::RECTANGLE_LINK_CORNER_RADIUS,
                 value: PropertyValue::UInt(self.link_corner_radius),
+            });
+        }
+        props
+    }
+}
+
+impl Triangle {
+    pub fn new(name: String, parent_id: u64, width: f32, height: f32) -> Self {
+        Triangle {
+            name,
+            parent_id,
+            width,
+            height,
+            origin_x: 0.5,
+            origin_y: 0.5,
+        }
+    }
+}
+
+impl RiveObject for Triangle {
+    fn type_key(&self) -> u16 {
+        type_keys::TRIANGLE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_WIDTH,
+                value: PropertyValue::Float(self.width),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_HEIGHT,
+                value: PropertyValue::Float(self.height),
+            },
+        ];
+        if self.origin_x != 0.5 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
+                value: PropertyValue::Float(self.origin_x),
+            });
+        }
+        if self.origin_y != 0.5 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_Y,
+                value: PropertyValue::Float(self.origin_y),
             });
         }
         props
@@ -1233,6 +1295,36 @@ mod tests {
         assert!(keys.contains(&property_keys::RECTANGLE_CORNER_RADIUS_BL));
         assert!(keys.contains(&property_keys::RECTANGLE_CORNER_RADIUS_BR));
         assert!(keys.contains(&property_keys::RECTANGLE_LINK_CORNER_RADIUS));
+    }
+
+    #[test]
+    fn test_triangle_type_key() {
+        let tri = Triangle::new("T".to_string(), 1, 100.0, 50.0);
+        assert_eq!(tri.type_key(), type_keys::TRIANGLE);
+    }
+
+    #[test]
+    fn test_triangle_properties_defaults() {
+        let tri = Triangle::new("Tri".to_string(), 2, 300.0, 150.0);
+        let props = tri.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[2].key, property_keys::PARAMETRIC_PATH_WIDTH);
+        assert_eq!(props[2].value, PropertyValue::Float(300.0));
+        assert_eq!(props[3].key, property_keys::PARAMETRIC_PATH_HEIGHT);
+        assert_eq!(props[3].value, PropertyValue::Float(150.0));
+    }
+
+    #[test]
+    fn test_triangle_properties_with_origin() {
+        let mut tri = Triangle::new("Tri".to_string(), 2, 300.0, 150.0);
+        tri.origin_x = 0.0;
+        tri.origin_y = 1.0;
+        let props = tri.properties();
+        assert_eq!(props.len(), 6);
+        assert_eq!(props[4].key, property_keys::PARAMETRIC_PATH_ORIGIN_X);
+        assert_eq!(props[4].value, PropertyValue::Float(0.0));
+        assert_eq!(props[5].key, property_keys::PARAMETRIC_PATH_ORIGIN_Y);
+        assert_eq!(props[5].value, PropertyValue::Float(1.0));
     }
 
     #[test]

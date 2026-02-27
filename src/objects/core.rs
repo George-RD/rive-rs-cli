@@ -9,6 +9,7 @@ pub enum BackingType {
 #[derive(Debug, Clone, PartialEq)]
 pub enum PropertyValue {
     UInt(u64),
+    Bool(bool),
     String(String),
     Float(f32),
     Color(u32),
@@ -18,6 +19,7 @@ impl PropertyValue {
     pub fn backing_type(&self) -> BackingType {
         match self {
             PropertyValue::UInt(_) => BackingType::UInt,
+            PropertyValue::Bool(_) => BackingType::UInt,
             PropertyValue::String(_) => BackingType::String,
             PropertyValue::Float(_) => BackingType::Float,
             PropertyValue::Color(_) => BackingType::Color,
@@ -44,6 +46,7 @@ pub mod type_keys {
     pub const STRAIGHT_VERTEX: u16 = 5;
     pub const CUBIC_DETACHED_VERTEX: u16 = 6;
     pub const RECTANGLE: u16 = 7;
+    pub const TRIANGLE: u16 = 8;
     pub const COMPONENT: u16 = 10;
     pub const CONTAINER_COMPONENT: u16 = 11;
     pub const PATH: u16 = 12;
@@ -110,13 +113,19 @@ pub mod type_keys {
     pub const NESTED_ARTBOARD: u16 = 92;
     pub const NESTED_ANIMATION: u16 = 93;
     pub const NESTED_STATE_MACHINE: u16 = 95;
+    pub const NESTED_SIMPLE_ANIMATION: u16 = 96;
     pub const IMAGE: u16 = 100;
     pub const STATE_MACHINE_LISTENER: u16 = 114;
+    pub const LISTENER_TRIGGER_CHANGE: u16 = 115;
     pub const LISTENER_BOOL_CHANGE: u16 = 117;
+    pub const LISTENER_NUMBER_CHANGE: u16 = 118;
+    pub const EVENT: u16 = 128;
     pub const CUBIC_VALUE_INTERPOLATOR: u16 = 138;
     pub const CUBIC_INTERPOLATOR: u16 = 139;
     pub const SOLO: u16 = 147;
     pub const INTERPOLATING_KEY_FRAME: u16 = 170;
+    pub const KEY_FRAME_CALLBACK: u16 = 171;
+    pub const ELASTIC_INTERPOLATOR: u16 = 174;
     pub const KEYFRAME_INTERPOLATOR: u16 = 175;
     pub const LAYOUT_COMPONENT: u16 = 409;
     pub const TRANSITION_CONDITION: u16 = 476;
@@ -225,6 +234,9 @@ pub mod property_keys {
     pub const LAYOUT_COMPONENT_CLIP: u16 = 196;
     pub const NESTED_ARTBOARD_ARTBOARD_ID: u16 = 197;
     pub const NESTED_ANIMATION_ID: u16 = 198;
+    pub const NESTED_SPEED: u16 = 199;
+    pub const NESTED_MIX: u16 = 200;
+    pub const NESTED_IS_PLAYING: u16 = 201;
     pub const ARTBOARD_DEFAULT_STATE_MACHINE_ID: u16 = 236;
     pub const LINEAR_ANIMATION_QUANTIZE: u16 = 376;
     pub const LAYOUT_COMPONENT_STYLE_ID: u16 = 494;
@@ -292,6 +304,7 @@ pub mod property_keys {
     pub const LISTENER_ACTION_ID: u16 = 226;
     pub const LISTENER_INPUT_ID: u16 = 227;
     pub const LISTENER_BOOL_VALUE: u16 = 228;
+    pub const LISTENER_NUMBER_VALUE: u16 = 229;
     pub const TEXT_ALIGN_VALUE: u16 = 281;
     pub const TEXT_SIZING_VALUE: u16 = 284;
     pub const TEXT_WIDTH: u16 = 285;
@@ -305,6 +318,11 @@ pub mod property_keys {
     pub const TEXT_STYLE_FONT_SIZE: u16 = 274;
     pub const TEXT_STYLE_LINE_HEIGHT: u16 = 370;
     pub const TEXT_STYLE_LETTER_SPACING: u16 = 390;
+    pub const EVENT_TRIGGER: u16 = 395;
+    pub const NESTED_INPUT_ID: u16 = 400;
+    pub const ELASTIC_EASING_VALUE: u16 = 405;
+    pub const ELASTIC_AMPLITUDE: u16 = 406;
+    pub const ELASTIC_PERIOD: u16 = 407;
     pub const TEXT_STYLE_FONT_ASSET_ID: u16 = 279;
     pub const TEXT_VALUE_RUN_STYLE_ID: u16 = 272;
     pub const TEXT_VALUE_RUN_TEXT: u16 = 268;
@@ -370,6 +388,7 @@ pub fn is_bool_property(key: u16) -> bool {
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_DOES_COPY_Y
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_Y
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y
+            | property_keys::NESTED_IS_PLAYING
     )
 }
 
@@ -489,7 +508,12 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::LAYOUT_STYLE_FLEX_GROW
         | property_keys::LAYOUT_STYLE_FLEX_SHRINK
         | property_keys::LAYOUT_STYLE_FLEX_BASIS
-        | property_keys::LAYOUT_STYLE_ASPECT_RATIO => Some(BackingType::Float),
+        | property_keys::LAYOUT_STYLE_ASPECT_RATIO
+        | property_keys::ELASTIC_AMPLITUDE
+        | property_keys::ELASTIC_PERIOD
+        | property_keys::NESTED_SPEED
+        | property_keys::NESTED_MIX
+        | property_keys::LISTENER_NUMBER_VALUE => Some(BackingType::Float),
 
         property_keys::COMPONENT_PARENT_ID
         | property_keys::DRAWABLE_BLEND_MODE
@@ -583,6 +607,10 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::LISTENER_ACTION_ID
         | property_keys::LISTENER_INPUT_ID
         | property_keys::LISTENER_BOOL_VALUE
+        | property_keys::EVENT_TRIGGER
+        | property_keys::NESTED_INPUT_ID
+        | property_keys::ELASTIC_EASING_VALUE
+        | property_keys::NESTED_IS_PLAYING
         | property_keys::SOLO_ACTIVE_COMPONENT_ID => Some(BackingType::UInt),
 
         property_keys::SOLID_COLOR_VALUE
@@ -649,6 +677,26 @@ mod tests {
             property_backing_type(property_keys::TRIM_PATH_OFFSET),
             Some(BackingType::Float)
         );
+        assert_eq!(
+            property_backing_type(property_keys::ELASTIC_AMPLITUDE),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::ELASTIC_PERIOD),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::NESTED_SPEED),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::NESTED_MIX),
+            Some(BackingType::Float)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::LISTENER_NUMBER_VALUE),
+            Some(BackingType::Float)
+        );
     }
 
     #[test]
@@ -697,6 +745,22 @@ mod tests {
             property_backing_type(property_keys::SOLO_ACTIVE_COMPONENT_ID),
             Some(BackingType::UInt)
         );
+        assert_eq!(
+            property_backing_type(property_keys::ELASTIC_EASING_VALUE),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::NESTED_IS_PLAYING),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::EVENT_TRIGGER),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::NESTED_INPUT_ID),
+            Some(BackingType::UInt)
+        );
     }
 
     #[test]
@@ -721,6 +785,7 @@ mod tests {
             PropertyValue::String("test".to_string()).backing_type(),
             BackingType::String
         );
+        assert_eq!(PropertyValue::Bool(true).backing_type(), BackingType::UInt);
         assert_eq!(
             PropertyValue::Color(0xFF0000FF).backing_type(),
             BackingType::Color
@@ -740,6 +805,7 @@ mod tests {
         assert!(is_bool_property(property_keys::LINEAR_ANIMATION_QUANTIZE));
         assert!(is_bool_property(property_keys::LAYOUT_COMPONENT_CLIP));
         assert!(is_bool_property(property_keys::PATH_IS_HOLE));
+        assert!(is_bool_property(property_keys::NESTED_IS_PLAYING));
         assert!(!is_bool_property(property_keys::COMPONENT_NAME));
         assert!(!is_bool_property(property_keys::NODE_X));
         assert!(!is_bool_property(property_keys::SOLID_COLOR_VALUE));
@@ -756,6 +822,7 @@ mod tests {
         assert_eq!(type_keys::STRAIGHT_VERTEX, 5);
         assert_eq!(type_keys::CUBIC_DETACHED_VERTEX, 6);
         assert_eq!(type_keys::RECTANGLE, 7);
+        assert_eq!(type_keys::TRIANGLE, 8);
         assert_eq!(type_keys::COMPONENT, 10);
         assert_eq!(type_keys::CONTAINER_COMPONENT, 11);
         assert_eq!(type_keys::PATH, 12);
@@ -802,13 +869,19 @@ mod tests {
         assert_eq!(type_keys::NESTED_ARTBOARD, 92);
         assert_eq!(type_keys::NESTED_ANIMATION, 93);
         assert_eq!(type_keys::NESTED_STATE_MACHINE, 95);
+        assert_eq!(type_keys::NESTED_SIMPLE_ANIMATION, 96);
         assert_eq!(type_keys::IMAGE, 100);
         assert_eq!(type_keys::STATE_MACHINE_LISTENER, 114);
+        assert_eq!(type_keys::LISTENER_TRIGGER_CHANGE, 115);
         assert_eq!(type_keys::LISTENER_BOOL_CHANGE, 117);
+        assert_eq!(type_keys::LISTENER_NUMBER_CHANGE, 118);
+        assert_eq!(type_keys::EVENT, 128);
         assert_eq!(type_keys::CUBIC_VALUE_INTERPOLATOR, 138);
         assert_eq!(type_keys::CUBIC_INTERPOLATOR, 139);
         assert_eq!(type_keys::SOLO, 147);
         assert_eq!(type_keys::INTERPOLATING_KEY_FRAME, 170);
+        assert_eq!(type_keys::KEY_FRAME_CALLBACK, 171);
+        assert_eq!(type_keys::ELASTIC_INTERPOLATOR, 174);
         assert_eq!(type_keys::KEYFRAME_INTERPOLATOR, 175);
         assert_eq!(type_keys::CUBIC_EASE_INTERPOLATOR, 28);
         assert_eq!(type_keys::LAYOUT_COMPONENT, 409);

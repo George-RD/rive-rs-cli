@@ -1,0 +1,85 @@
+{
+  "scene_format_version": 1,
+  "artboards": [
+    {
+      "name": "Inner",
+      "width": 300,
+      "height": 300,
+      "children": [
+        {
+          "type": "shape",
+          "name": "InnerShape",
+          "x": 150,
+          "y": 150,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "InnerPath",
+              "width": 80,
+              "height": 80
+            },
+            {
+              "type": "fill",
+              "name": "InnerFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "InnerColor",
+                  "color": "#3B82F6"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "name": "pulse",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": [
+            {
+              "object": "InnerShape",
+              "property": "x",
+              "frames": [
+                { "frame": 0, "value": 150.0 },
+                { "frame": 30, "value": 170.0 },
+                { "frame": 59, "value": 150.0 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Outer",
+      "width": 500,
+      "height": 500,
+      "children": [
+        {
+          "type": "nested_artboard",
+          "name": "InnerInstance",
+          "source_artboard": "Inner",
+          "x": 100,
+          "y": 100
+        },
+        {
+          "type": "nested_simple_animation",
+          "name": "InnerPlayback",
+          "animation": "pulse",
+          "speed": 1.25,
+          "is_playing": true,
+          "mix": 0.75
+        }
+      ],
+      "animations": [
+        {
+          "name": "pulse",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": []
+        }
+      ]
+    }
+  ]
+}

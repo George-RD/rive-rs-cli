@@ -192,6 +192,10 @@ pub struct KeyFrameId {
     pub value: u64,
 }
 
+pub struct KeyFrameCallback {
+    pub frame: u64,
+}
+
 impl KeyFrameId {
     pub fn new(frame: u64, value: u64) -> Self {
         Self {
@@ -227,6 +231,19 @@ impl RiveObject for KeyFrameId {
                 value: PropertyValue::UInt(self.value),
             },
         ]
+    }
+}
+
+impl RiveObject for KeyFrameCallback {
+    fn type_key(&self) -> u16 {
+        type_keys::KEY_FRAME_CALLBACK
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::KEY_FRAME_FRAME,
+            value: PropertyValue::UInt(self.frame),
+        }]
     }
 }
 
@@ -327,6 +344,22 @@ pub struct CubicEaseInterpolator {
     pub y2: f32,
 }
 
+pub struct ElasticInterpolator {
+    pub easing_value: u64,
+    pub amplitude: f32,
+    pub period: f32,
+}
+
+impl ElasticInterpolator {
+    pub fn new() -> Self {
+        Self {
+            easing_value: 1,
+            amplitude: 1.0,
+            period: 1.0,
+        }
+    }
+}
+
 impl CubicEaseInterpolator {
     pub fn new(x1: f32, y1: f32, x2: f32, y2: f32) -> Self {
         Self { x1, y1, x2, y2 }
@@ -362,6 +395,35 @@ impl RiveObject for CubicEaseInterpolator {
             props.push(Property {
                 key: property_keys::CUBIC_INTERPOLATOR_Y2,
                 value: PropertyValue::Float(self.y2),
+            });
+        }
+        props
+    }
+}
+
+impl RiveObject for ElasticInterpolator {
+    fn type_key(&self) -> u16 {
+        type_keys::ELASTIC_INTERPOLATOR
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.easing_value != 1 {
+            props.push(Property {
+                key: property_keys::ELASTIC_EASING_VALUE,
+                value: PropertyValue::UInt(self.easing_value),
+            });
+        }
+        if self.amplitude != 1.0 {
+            props.push(Property {
+                key: property_keys::ELASTIC_AMPLITUDE,
+                value: PropertyValue::Float(self.amplitude),
+            });
+        }
+        if self.period != 1.0 {
+            props.push(Property {
+                key: property_keys::ELASTIC_PERIOD,
+                value: PropertyValue::Float(self.period),
             });
         }
         props
@@ -529,6 +591,21 @@ mod tests {
     }
 
     #[test]
+    fn test_key_frame_callback_type_key() {
+        let kf = KeyFrameCallback { frame: 7 };
+        assert_eq!(kf.type_key(), type_keys::KEY_FRAME_CALLBACK);
+    }
+
+    #[test]
+    fn test_key_frame_callback_properties() {
+        let kf = KeyFrameCallback { frame: 7 };
+        let props = kf.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::KEY_FRAME_FRAME);
+        assert_eq!(props[0].value, PropertyValue::UInt(7));
+    }
+
+    #[test]
     fn test_cubic_ease_interpolator_type_key() {
         let interp = CubicEaseInterpolator::new(0.42, 0.0, 0.58, 1.0);
         assert_eq!(interp.type_key(), type_keys::CUBIC_EASE_INTERPOLATOR);
@@ -585,6 +662,39 @@ mod tests {
                 .iter()
                 .all(|p| p.key != property_keys::COMPONENT_PARENT_ID)
         );
+    }
+
+    #[test]
+    fn test_elastic_interpolator_type_key() {
+        let interp = ElasticInterpolator::new();
+        assert_eq!(interp.type_key(), type_keys::ELASTIC_INTERPOLATOR);
+    }
+
+    #[test]
+    fn test_elastic_interpolator_default_properties() {
+        let interp = ElasticInterpolator::new();
+        let props = interp.properties();
+        assert_eq!(props.len(), 0);
+    }
+
+    #[test]
+    fn test_elastic_interpolator_custom_properties() {
+        let interp = ElasticInterpolator {
+            easing_value: 2,
+            amplitude: 1.5,
+            period: 0.8,
+        };
+        let props = interp.properties();
+        assert_eq!(props.len(), 3);
+        assert!(props.iter().any(|p| {
+            p.key == property_keys::ELASTIC_EASING_VALUE && p.value == PropertyValue::UInt(2)
+        }));
+        assert!(props.iter().any(|p| {
+            p.key == property_keys::ELASTIC_AMPLITUDE && p.value == PropertyValue::Float(1.5)
+        }));
+        assert!(props.iter().any(|p| {
+            p.key == property_keys::ELASTIC_PERIOD && p.value == PropertyValue::Float(0.8)
+        }));
     }
 
     #[test]
