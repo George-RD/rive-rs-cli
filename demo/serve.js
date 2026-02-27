@@ -143,7 +143,7 @@ const FIXTURE_OVERRIDES = {
     gapTypes: []
   },
   comparison_quantize_test: {
-    category: 'static',
+    category: 'animated',
     expectation: 'Recreation of official quantize_test.riv. Animated ellipse with state machine.',
     scope: 'visual',
     tags: ['animated', 'comparison'],
