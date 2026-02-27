@@ -8,48 +8,77 @@
       {
         "type": "shape",
         "name": "Shape I",
-        "x": 960,
-        "y": 540,
+        "x": 1285.5,
+        "y": 476.5,
         "children": [
           {
-            "type": "rectangle",
+            "type": "shape",
             "name": "I",
-            "width": 120,
-            "height": 520,
-            "origin_x": 0.5,
-            "origin_y": 0.5
-          },
-          {
-            "type": "stroke",
-            "name": "I Stroke",
-            "thickness": 15,
-            "cap": "round",
-            "join": "round",
+            "x": -0.95,
+            "y": -0.95,
             "children": [
               {
-                "type": "solid_color",
-                "name": "I Stroke Color",
-                "color": "#FFFFFF"
+                "type": "points_path",
+                "name": "I Path",
+                "y": -1.0,
+                "children": [
+                  {
+                    "type": "straight_vertex",
+                    "name": "I V1",
+                    "x": -10.75,
+                    "y": 18.05
+                  },
+                  {
+                    "type": "straight_vertex",
+                    "name": "I V2",
+                    "x": 11.25,
+                    "y": 18.05
+                  },
+                  {
+                    "type": "straight_vertex",
+                    "name": "I V3",
+                    "x": -0.05,
+                    "y": 18.05
+                  },
+                  {
+                    "type": "straight_vertex",
+                    "name": "I V4",
+                    "x": 0.15,
+                    "y": -12.15
+                  }
+                ]
               },
               {
-                "type": "trim_path",
-                "name": "I Trim",
-                "start": 0.0,
-                "end": 0.85,
-                "mode": "synchronized"
+                "type": "stroke",
+                "name": "I Stroke",
+                "thickness": 15,
+                "cap": "round",
+                "join": "round",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "I Stroke Color",
+                    "color": "#FFE1E1E1"
+                  },
+                  {
+                    "type": "trim_path",
+                    "name": "I Trim",
+                    "mode": "synchronized"
+                  }
+                ]
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "fill",
+        "name": "Background Fill",
+        "children": [
           {
-            "type": "fill",
-            "name": "I Fill",
-            "children": [
-              {
-                "type": "solid_color",
-                "name": "I Fill Color",
-                "color": "#FFFFFF"
-              }
-            ]
+            "type": "solid_color",
+            "name": "Background Color",
+            "color": "#FFFFFFFF"
           }
         ]
       }

@@ -135,21 +135,21 @@ const FIXTURE_OVERRIDES = {
   },
   comparison_trim: {
     category: 'static',
-    expectation: 'Recreation of official trim.riv. Uses Rectangle approximation — PointsPath/StraightVertex not yet supported.',
+    expectation: 'Recreation of official trim.riv using PointsPath and StraightVertex. Near-exact match.',
     scope: 'visual',
     tags: ['static', 'comparison'],
     hasReference: true,
     referenceSource: 'riv/reference/trim.riv',
-    gapTypes: ['PointsPath', 'StraightVertex']
+    gapTypes: []
   },
-  comparison_clip_tests: {
+  comparison_quantize_test: {
     category: 'static',
-    expectation: 'Recreation of official clip_tests.riv. ClippingShape not yet supported — shapes render without clipping.',
+    expectation: 'Recreation of official quantize_test.riv. Animated ellipse with state machine.',
     scope: 'visual',
-    tags: ['static', 'comparison'],
+    tags: ['animated', 'comparison'],
     hasReference: true,
-    referenceSource: 'riv/reference/clip_tests.riv',
-    gapTypes: ['ClippingShape']
+    referenceSource: 'riv/reference/quantize_test.riv',
+    gapTypes: []
   },
   multi_artboard: {
     expectation: 'Two artboards with per-artboard animations. Replay checks timeline behavior; Artboard switch checks scoping.',
