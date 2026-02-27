@@ -185,6 +185,51 @@ impl KeyFrameColor {
     }
 }
 
+pub struct KeyFrameId {
+    pub frame: u64,
+    pub interpolation_type: u64,
+    pub interpolator_id: u64,
+    pub value: u64,
+}
+
+impl KeyFrameId {
+    pub fn new(frame: u64, value: u64) -> Self {
+        Self {
+            frame,
+            interpolation_type: 1,
+            interpolator_id: u32::MAX as u64,
+            value,
+        }
+    }
+}
+
+impl RiveObject for KeyFrameId {
+    fn type_key(&self) -> u16 {
+        type_keys::KEY_FRAME_ID
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::KEY_FRAME_FRAME,
+                value: PropertyValue::UInt(self.frame),
+            },
+            Property {
+                key: property_keys::INTERPOLATING_KEY_FRAME_TYPE,
+                value: PropertyValue::UInt(self.interpolation_type),
+            },
+            Property {
+                key: property_keys::INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID,
+                value: PropertyValue::UInt(self.interpolator_id),
+            },
+            Property {
+                key: property_keys::KEY_FRAME_ID_VALUE,
+                value: PropertyValue::UInt(self.value),
+            },
+        ]
+    }
+}
+
 impl RiveObject for KeyFrameColor {
     fn type_key(&self) -> u16 {
         type_keys::KEY_FRAME_COLOR
@@ -460,6 +505,30 @@ mod tests {
     }
 
     #[test]
+    fn test_key_frame_id_type_key() {
+        let kf = KeyFrameId::new(12, 42);
+        assert_eq!(kf.type_key(), type_keys::KEY_FRAME_ID);
+    }
+
+    #[test]
+    fn test_key_frame_id_properties() {
+        let kf = KeyFrameId::new(12, 42);
+        let props = kf.properties();
+        assert_eq!(props.len(), 4);
+        assert_eq!(props[0].key, property_keys::KEY_FRAME_FRAME);
+        assert_eq!(props[0].value, PropertyValue::UInt(12));
+        assert_eq!(props[1].key, property_keys::INTERPOLATING_KEY_FRAME_TYPE);
+        assert_eq!(props[1].value, PropertyValue::UInt(1));
+        assert_eq!(
+            props[2].key,
+            property_keys::INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID
+        );
+        assert_eq!(props[2].value, PropertyValue::UInt(u32::MAX as u64));
+        assert_eq!(props[3].key, property_keys::KEY_FRAME_ID_VALUE);
+        assert_eq!(props[3].value, PropertyValue::UInt(42));
+    }
+
+    #[test]
     fn test_cubic_ease_interpolator_type_key() {
         let interp = CubicEaseInterpolator::new(0.42, 0.0, 0.58, 1.0);
         assert_eq!(interp.type_key(), type_keys::CUBIC_EASE_INTERPOLATOR);
@@ -527,6 +596,12 @@ mod tests {
     #[test]
     fn test_key_frame_color_default_interpolator_sentinel() {
         let kf = KeyFrameColor::new(0, 0);
+        assert_eq!(kf.interpolator_id, u32::MAX as u64);
+    }
+
+    #[test]
+    fn test_key_frame_id_default_interpolator_sentinel() {
+        let kf = KeyFrameId::new(0, 0);
         assert_eq!(kf.interpolator_id, u32::MAX as u64);
     }
 }

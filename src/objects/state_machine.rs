@@ -139,6 +139,87 @@ impl RiveObject for StateMachineLayer {
     }
 }
 
+pub struct StateMachineListener {
+    pub target_id: u64,
+    pub listener_type_value: u64,
+}
+
+impl RiveObject for StateMachineListener {
+    fn type_key(&self) -> u16 {
+        type_keys::STATE_MACHINE_LISTENER
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.target_id != 0 {
+            props.push(Property {
+                key: property_keys::LISTENER_TARGET_ID,
+                value: PropertyValue::UInt(self.target_id),
+            });
+        }
+        if self.listener_type_value != 0 {
+            props.push(Property {
+                key: property_keys::LISTENER_TYPE_VALUE,
+                value: PropertyValue::UInt(self.listener_type_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct ListenerBoolChange {
+    pub input_id: u64,
+    pub value: u64,
+}
+
+impl RiveObject for ListenerBoolChange {
+    fn type_key(&self) -> u16 {
+        type_keys::LISTENER_BOOL_CHANGE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::LISTENER_INPUT_ID,
+                value: PropertyValue::UInt(self.input_id),
+            },
+            Property {
+                key: property_keys::LISTENER_BOOL_VALUE,
+                value: PropertyValue::UInt(self.value),
+            },
+        ]
+    }
+}
+
+pub struct NestedStateMachine {
+    pub name: String,
+    pub parent_id: u64,
+    pub animation_id: u64,
+}
+
+impl RiveObject for NestedStateMachine {
+    fn type_key(&self) -> u16 {
+        type_keys::NESTED_STATE_MACHINE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::NESTED_ANIMATION_ID,
+                value: PropertyValue::UInt(self.animation_id),
+            },
+        ]
+    }
+}
+
 pub struct EntryState;
 
 impl RiveObject for EntryState {
@@ -491,6 +572,66 @@ mod tests {
         let props = l.properties();
         assert_eq!(props.len(), 1);
         assert_eq!(props[0].key, 138);
+    }
+
+    #[test]
+    fn test_state_machine_listener_properties_default_omission() {
+        let listener = StateMachineListener {
+            target_id: 0,
+            listener_type_value: 0,
+        };
+        assert_eq!(listener.type_key(), type_keys::STATE_MACHINE_LISTENER);
+        assert!(listener.properties().is_empty());
+    }
+
+    #[test]
+    fn test_state_machine_listener_properties() {
+        let listener = StateMachineListener {
+            target_id: 3,
+            listener_type_value: 1,
+        };
+        let props = listener.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::LISTENER_TARGET_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(3));
+        assert_eq!(props[1].key, property_keys::LISTENER_TYPE_VALUE);
+        assert_eq!(props[1].value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_listener_bool_change_properties() {
+        let action = ListenerBoolChange {
+            input_id: 2,
+            value: 1,
+        };
+        assert_eq!(action.type_key(), type_keys::LISTENER_BOOL_CHANGE);
+        let props = action.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::LISTENER_INPUT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(2));
+        assert_eq!(props[1].key, property_keys::LISTENER_BOOL_VALUE);
+        assert_eq!(props[1].value, PropertyValue::UInt(1));
+    }
+
+    #[test]
+    fn test_nested_state_machine_properties() {
+        let nested = NestedStateMachine {
+            name: "NestedSM".to_string(),
+            parent_id: 5,
+            animation_id: 9,
+        };
+        assert_eq!(nested.type_key(), type_keys::NESTED_STATE_MACHINE);
+        let props = nested.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(
+            props[0].value,
+            PropertyValue::String("NestedSM".to_string())
+        );
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(5));
+        assert_eq!(props[2].key, property_keys::NESTED_ANIMATION_ID);
+        assert_eq!(props[2].value, PropertyValue::UInt(9));
     }
 
     #[test]

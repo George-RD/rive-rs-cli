@@ -1,0 +1,66 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ListenerDemo",
+    "width": 320,
+    "height": 240,
+    "children": [
+      {
+        "type": "shape",
+        "name": "TapTarget",
+        "x": 160,
+        "y": 120,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "TapTargetPath",
+            "width": 120,
+            "height": 120,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "TapTargetFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "TapTargetColor",
+                "color": "#16A34A"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "state_machines": [
+      {
+        "name": "InputMachine",
+        "inputs": [
+          { "type": "bool", "name": "is_active", "value": false }
+        ],
+        "listeners": [
+          {
+            "target": "TapTarget",
+            "listener_type_value": 1,
+            "actions": [
+              {
+                "type": "bool_change",
+                "input": "is_active",
+                "value": true
+              }
+            ]
+          }
+        ],
+        "layers": [
+          {
+            "states": [
+              { "type": "entry" },
+              { "type": "exit" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

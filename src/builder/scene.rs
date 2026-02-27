@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use serde::Deserialize;
 
 use crate::objects::animation::{
-    CubicEaseInterpolator, KeyFrameColor, KeyFrameDouble, KeyedObject, KeyedProperty,
+    CubicEaseInterpolator, KeyFrameColor, KeyFrameDouble, KeyFrameId, KeyedObject, KeyedProperty,
     LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
@@ -13,19 +13,19 @@ use crate::objects::constraints::{
     DistanceConstraint, IKConstraint, RotationConstraint, ScaleConstraint, TransformConstraint,
     TranslationConstraint,
 };
-use crate::objects::core::{RiveObject, property_keys};
+use crate::objects::core::{BackingType, RiveObject, property_backing_type, property_keys};
 use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
 use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
     CubicDetachedVertexObject, CubicMirroredVertexObject, Ellipse, Fill, GradientStop, Image,
     LinearGradient, Node, PathObject, PointsPathObject, RadialGradient, Rectangle, Shape,
-    SolidColor, StraightVertexObject, Stroke, TrimPath,
+    SolidColor, Solo, StraightVertexObject, Stroke, TrimPath,
 };
 use crate::objects::state_machine::{
-    AnimationState, AnyState, EntryState, ExitState, StateMachine, StateMachineBool,
-    StateMachineLayer, StateMachineNumber, StateMachineTrigger, StateTransition,
-    TransitionBoolCondition, TransitionInputCondition, TransitionNumberCondition,
-    TransitionTriggerCondition, TransitionValueCondition,
+    AnimationState, AnyState, EntryState, ExitState, ListenerBoolChange, NestedStateMachine,
+    StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener, StateMachineNumber,
+    StateMachineTrigger, StateTransition, TransitionBoolCondition, TransitionInputCondition,
+    TransitionNumberCondition, TransitionTriggerCondition, TransitionValueCondition,
 };
 use crate::objects::text::{Text, TextStyle, TextValueRun};
 
@@ -165,6 +165,13 @@ pub enum ObjectSpec {
         y: Option<f32>,
         children: Option<Vec<ObjectSpec>>,
     },
+    Solo {
+        name: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+        active_component: Option<String>,
+    },
     Ellipse {
         name: String,
         width: f32,
@@ -298,6 +305,10 @@ pub enum ObjectSpec {
         source_artboard: String,
         x: Option<f32>,
         y: Option<f32>,
+    },
+    NestedStateMachine {
+        name: String,
+        animation: String,
     },
     Bone {
         name: String,
@@ -567,7 +578,24 @@ pub struct KeyframeSpec {
 pub struct StateMachineSpec {
     pub name: String,
     pub inputs: Option<Vec<InputSpec>>,
+    pub listeners: Option<Vec<StateMachineListenerSpec>>,
     pub layers: Vec<LayerSpec>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StateMachineListenerSpec {
+    pub target: String,
+    pub listener_type_value: Option<u64>,
+    pub actions: Option<Vec<ListenerActionSpec>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ListenerActionSpec {
+    BoolChange {
+        input: String,
+        value: Option<serde_json::Value>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -654,6 +682,12 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
         let mut interpolator_name_to_index: HashMap<String, usize> = HashMap::new();
         let mut interpolator_control_points: HashMap<String, (f32, f32, f32, f32)> = HashMap::new();
 
+        if let Some(animations) = &artboard_spec.animations {
+            for (animation_list_index, animation) in animations.iter().enumerate() {
+                animation_name_to_index.insert(animation.name.clone(), animation_list_index);
+            }
+        }
+
         for child in &artboard_spec.children {
             append_object(
                 child,
@@ -663,6 +697,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                 &mut object_name_to_index,
                 &artboard_name_to_index,
                 &artboard_spec.name,
+                &animation_name_to_index,
             )?;
         }
 
@@ -753,28 +788,43 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                             None => u32::MAX as u64,
                         };
 
-                        if property_key == property_keys::SOLID_COLOR_VALUE {
-                            let color = json_value_to_color(&frame.value).ok_or_else(|| {
-                                format!(
-                                    "invalid color keyframe value for object '{}' property '{}' at frame {}",
-                                    group.object, group.property, frame.frame
-                                )
-                            })?;
-                            let mut kf = KeyFrameColor::new(frame.frame, color);
-                            kf.interpolation_type = interp_type;
-                            kf.interpolator_id = interp_id;
-                            objects.push(Box::new(kf));
-                        } else {
-                            let value = json_value_to_f32(&frame.value).ok_or_else(|| {
-                                format!(
-                                    "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
-                                    group.object, group.property, frame.frame
-                                )
-                            })?;
-                            let mut kf = KeyFrameDouble::new(frame.frame, value);
-                            kf.interpolation_type = interp_type;
-                            kf.interpolator_id = interp_id;
-                            objects.push(Box::new(kf));
+                        match property_backing_type(property_key) {
+                            Some(BackingType::Color) => {
+                                let color = json_value_to_color(&frame.value).ok_or_else(|| {
+                                    format!(
+                                        "invalid color keyframe value for object '{}' property '{}' at frame {}",
+                                        group.object, group.property, frame.frame
+                                    )
+                                })?;
+                                let mut kf = KeyFrameColor::new(frame.frame, color);
+                                kf.interpolation_type = interp_type;
+                                kf.interpolator_id = interp_id;
+                                objects.push(Box::new(kf));
+                            }
+                            Some(BackingType::UInt) => {
+                                let value = json_value_to_u64(&frame.value).ok_or_else(|| {
+                                    format!(
+                                        "invalid integer keyframe value for object '{}' property '{}' at frame {}",
+                                        group.object, group.property, frame.frame
+                                    )
+                                })?;
+                                let mut kf = KeyFrameId::new(frame.frame, value);
+                                kf.interpolation_type = interp_type;
+                                kf.interpolator_id = interp_id;
+                                objects.push(Box::new(kf));
+                            }
+                            _ => {
+                                let value = json_value_to_f32(&frame.value).ok_or_else(|| {
+                                    format!(
+                                        "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
+                                        group.object, group.property, frame.frame
+                                    )
+                                })?;
+                                let mut kf = KeyFrameDouble::new(frame.frame, value);
+                                kf.interpolation_type = interp_type;
+                                kf.interpolator_id = interp_id;
+                                objects.push(Box::new(kf));
+                            }
                         }
                     }
                 }
@@ -806,6 +856,68 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                             InputSpec::Trigger { name } => {
                                 objects.push(Box::new(StateMachineTrigger { name: name.clone() }));
                                 input_name_to_index.insert(name.clone(), input_index);
+                            }
+                        }
+                    }
+                }
+
+                if let Some(listeners) = &state_machine.listeners {
+                    for listener in listeners {
+                        let target_global =
+                            *object_name_to_index.get(&listener.target).ok_or_else(|| {
+                                format!(
+                                    "unknown target referenced in state machine listener: '{}'",
+                                    listener.target
+                                )
+                            })?;
+                        let listener_target_id =
+                            target_global.checked_sub(artboard_start).ok_or_else(|| {
+                                format!(
+                                    "state machine listener target '{}' precedes current artboard",
+                                    listener.target
+                                )
+                            })? as u64;
+                        objects.push(Box::new(StateMachineListener {
+                            target_id: listener_target_id,
+                            listener_type_value: listener.listener_type_value.unwrap_or(0),
+                        }));
+
+                        if let Some(actions) = &listener.actions {
+                            for action in actions {
+                                match action {
+                                    ListenerActionSpec::BoolChange { input, value } => {
+                                        let input_index = *input_name_to_index.get(input).ok_or_else(|| {
+                                            format!(
+                                                "unknown input referenced in listener action: '{}'",
+                                                input
+                                            )
+                                        })?;
+                                        let bool_value = match value {
+                                            Some(serde_json::Value::Bool(v)) => {
+                                                if *v { 1 } else { 0 }
+                                            }
+                                            Some(serde_json::Value::Number(n)) => n
+                                                .as_u64()
+                                                .ok_or_else(|| {
+                                                    format!(
+                                                        "listener bool_change value for input '{}' must be bool or unsigned integer",
+                                                        input
+                                                    )
+                                                })?,
+                                            Some(_) => {
+                                                return Err(format!(
+                                                    "listener bool_change value for input '{}' must be bool or unsigned integer",
+                                                    input
+                                                ))
+                                            }
+                                            None => 1,
+                                        };
+                                        objects.push(Box::new(ListenerBoolChange {
+                                            input_id: input_index as u64,
+                                            value: bool_value,
+                                        }));
+                                    }
+                                }
                             }
                         }
                     }
@@ -957,6 +1069,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
     Ok(objects)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn append_object(
     spec: &ObjectSpec,
     parent_index: usize,
@@ -965,6 +1078,7 @@ fn append_object(
     name_to_index: &mut HashMap<String, usize>,
     artboard_name_to_index: &HashMap<String, usize>,
     current_artboard_name: &str,
+    animation_name_to_index: &HashMap<String, usize>,
 ) -> Result<(), String> {
     let object_index = objects.len();
     let parent_id = parent_index
@@ -998,8 +1112,62 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
+            }
+        }
+        ObjectSpec::Solo {
+            name,
+            x,
+            y,
+            children,
+            active_component,
+        } => {
+            let mut solo = Solo {
+                name: name.clone(),
+                parent_id,
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+                active_component_id: 0,
+            };
+            objects.push(Box::new(Solo {
+                name: solo.name.clone(),
+                parent_id: solo.parent_id,
+                x: solo.x,
+                y: solo.y,
+                active_component_id: 0,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+            if let Some(active_component_name) = active_component {
+                let active_global = *name_to_index.get(active_component_name).ok_or_else(|| {
+                    format!(
+                        "solo '{}' references unknown active_component '{}'",
+                        name, active_component_name
+                    )
+                })?;
+                solo.active_component_id =
+                    active_global.checked_sub(artboard_start).ok_or_else(|| {
+                        format!(
+                            "solo '{}' active_component '{}' precedes current artboard",
+                            name, active_component_name
+                        )
+                    })? as u64;
+                objects[object_index] = Box::new(solo);
             }
         }
         ObjectSpec::Ellipse {
@@ -1069,6 +1237,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1103,6 +1272,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1144,6 +1314,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1176,6 +1347,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1256,6 +1428,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1362,6 +1535,20 @@ fn append_object(
             }));
             name_to_index.insert(name.clone(), object_index);
         }
+        ObjectSpec::NestedStateMachine { name, animation } => {
+            let animation_id = *animation_name_to_index.get(animation).ok_or_else(|| {
+                format!(
+                    "nested_state_machine '{}' references unknown animation '{}'",
+                    name, animation
+                )
+            })? as u64;
+            objects.push(Box::new(NestedStateMachine {
+                name: name.clone(),
+                parent_id,
+                animation_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
         ObjectSpec::Bone {
             name,
             length,
@@ -1383,6 +1570,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1416,6 +1604,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1461,6 +1650,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -1920,6 +2110,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -2045,6 +2236,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -2218,6 +2410,7 @@ fn append_object(
                         name_to_index,
                         artboard_name_to_index,
                         current_artboard_name,
+                        animation_name_to_index,
                     )?;
                 }
             }
@@ -2260,6 +2453,7 @@ fn property_key_from_name(name: &str) -> Option<u16> {
         "trim_start" => Some(property_keys::TRIM_PATH_START),
         "trim_end" => Some(property_keys::TRIM_PATH_END),
         "trim_offset" => Some(property_keys::TRIM_PATH_OFFSET),
+        "active_component_id" => Some(property_keys::SOLO_ACTIVE_COMPONENT_ID),
         _ => None,
     }
 }
@@ -2429,6 +2623,14 @@ fn json_value_to_f32(value: &serde_json::Value) -> Option<f32> {
     }
 }
 
+fn json_value_to_u64(value: &serde_json::Value) -> Option<u64> {
+    match value {
+        serde_json::Value::Number(number) => number.as_u64(),
+        serde_json::Value::Bool(v) => Some(if *v { 1 } else { 0 }),
+        _ => None,
+    }
+}
+
 fn json_value_to_color(value: &serde_json::Value) -> Option<u32> {
     match value {
         serde_json::Value::String(s) => parse_color(s).ok(),
@@ -2450,6 +2652,7 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
                 refs.push(source_artboard.clone());
             }
             ObjectSpec::Shape { children, .. }
+            | ObjectSpec::Solo { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
             | ObjectSpec::PointsPath { children, .. }
@@ -2605,18 +2808,31 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                         interpolation_type_from_name(interp_type)?;
                     }
 
-                    if property_key == property_keys::SOLID_COLOR_VALUE {
-                        if json_value_to_color(&frame.value).is_none() {
-                            return Err(format!(
-                                "invalid color keyframe value for object '{}' property '{}' at frame {}",
-                                group.object, group.property, frame.frame
-                            ));
+                    match property_backing_type(property_key) {
+                        Some(BackingType::Color) => {
+                            if json_value_to_color(&frame.value).is_none() {
+                                return Err(format!(
+                                    "invalid color keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                ));
+                            }
                         }
-                    } else if json_value_to_f32(&frame.value).is_none() {
-                        return Err(format!(
-                            "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
-                            group.object, group.property, frame.frame
-                        ));
+                        Some(BackingType::UInt) => {
+                            if json_value_to_u64(&frame.value).is_none() {
+                                return Err(format!(
+                                    "invalid integer keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                ));
+                            }
+                        }
+                        _ => {
+                            if json_value_to_f32(&frame.value).is_none() {
+                                return Err(format!(
+                                    "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                ));
+                            }
+                        }
                     }
                 }
             }
@@ -2640,6 +2856,39 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                         ));
                     }
                     input_names.insert(name.clone());
+                }
+            }
+
+            if let Some(listeners) = &state_machine.listeners {
+                for listener in listeners {
+                    if !object_names.contains(&listener.target) {
+                        return Err(format!(
+                            "unknown target referenced in state machine listener: '{}'",
+                            listener.target
+                        ));
+                    }
+                    if let Some(actions) = &listener.actions {
+                        for action in actions {
+                            match action {
+                                ListenerActionSpec::BoolChange { input, value } => {
+                                    if !input_names.contains(input) {
+                                        return Err(format!(
+                                            "unknown input referenced in listener action: '{}'",
+                                            input
+                                        ));
+                                    }
+                                    if let Some(value) = value
+                                        && json_value_to_u64(value).is_none()
+                                    {
+                                        return Err(format!(
+                                            "listener bool_change value for input '{}' must be bool or unsigned integer",
+                                            input
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2720,6 +2969,79 @@ fn validate_object_spec(
             if let Some(children) = children {
                 for child in children {
                     validate_object_spec(child, object_names, &ParentKind::Shape)?;
+                }
+            }
+        }
+        ObjectSpec::Solo {
+            name,
+            children,
+            active_component,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                let mut child_names: HashSet<String> = HashSet::new();
+                for child in children {
+                    match child {
+                        ObjectSpec::Shape { name, .. }
+                        | ObjectSpec::Solo { name, .. }
+                        | ObjectSpec::Ellipse { name, .. }
+                        | ObjectSpec::Rectangle { name, .. }
+                        | ObjectSpec::Fill { name, .. }
+                        | ObjectSpec::Stroke { name, .. }
+                        | ObjectSpec::SolidColor { name, .. }
+                        | ObjectSpec::LinearGradient { name, .. }
+                        | ObjectSpec::RadialGradient { name, .. }
+                        | ObjectSpec::Node { name, .. }
+                        | ObjectSpec::Image { name, .. }
+                        | ObjectSpec::Path { name, .. }
+                        | ObjectSpec::PointsPath { name, .. }
+                        | ObjectSpec::StraightVertex { name, .. }
+                        | ObjectSpec::CubicMirroredVertex { name, .. }
+                        | ObjectSpec::CubicDetachedVertex { name, .. }
+                        | ObjectSpec::TrimPath { name, .. }
+                        | ObjectSpec::NestedArtboard { name, .. }
+                        | ObjectSpec::NestedStateMachine { name, .. }
+                        | ObjectSpec::Bone { name, .. }
+                        | ObjectSpec::RootBone { name, .. }
+                        | ObjectSpec::Skin { name, .. }
+                        | ObjectSpec::Tendon { name, .. }
+                        | ObjectSpec::Weight { name, .. }
+                        | ObjectSpec::CubicWeight { name, .. }
+                        | ObjectSpec::IkConstraint { name, .. }
+                        | ObjectSpec::DistanceConstraint { name, .. }
+                        | ObjectSpec::TransformConstraint { name, .. }
+                        | ObjectSpec::TranslationConstraint { name, .. }
+                        | ObjectSpec::ScaleConstraint { name, .. }
+                        | ObjectSpec::RotationConstraint { name, .. }
+                        | ObjectSpec::Text { name, .. }
+                        | ObjectSpec::TextStyle { name, .. }
+                        | ObjectSpec::TextValueRun { name, .. }
+                        | ObjectSpec::ImageAsset { name, .. }
+                        | ObjectSpec::FontAsset { name, .. }
+                        | ObjectSpec::AudioAsset { name, .. }
+                        | ObjectSpec::LayoutComponent { name, .. }
+                        | ObjectSpec::LayoutComponentStyle { name, .. }
+                        | ObjectSpec::ViewModel { name, .. }
+                        | ObjectSpec::ViewModelProperty { name, .. } => {
+                            child_names.insert(name.clone());
+                        }
+                        ObjectSpec::GradientStop { name, .. } => {
+                            if let Some(name) = name {
+                                child_names.insert(name.clone());
+                            }
+                        }
+                        ObjectSpec::DataBind { .. } => {}
+                    }
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+                if let Some(active_component_name) = active_component
+                    && !child_names.contains(active_component_name)
+                {
+                    return Err(format!(
+                        "solo '{}' active_component '{}' must reference a direct child",
+                        name, active_component_name
+                    ));
                 }
             }
         }
@@ -2954,6 +3276,9 @@ fn validate_object_spec(
         ObjectSpec::NestedArtboard { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
+        ObjectSpec::NestedStateMachine { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
         ObjectSpec::Bone { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
@@ -3065,6 +3390,7 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
                 }
             }
             ObjectSpec::Shape { children, .. }
+            | ObjectSpec::Solo { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
             | ObjectSpec::PointsPath { children, .. }
@@ -3497,6 +3823,166 @@ mod tests {
     }
 
     #[test]
+    fn test_build_scene_with_solo_and_key_frame_id() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 300.0,
+                height: 300.0,
+                children: vec![ObjectSpec::Solo {
+                    name: "SoloRoot".to_string(),
+                    x: None,
+                    y: None,
+                    active_component: Some("ChildShape".to_string()),
+                    children: Some(vec![ObjectSpec::Shape {
+                        name: "ChildShape".to_string(),
+                        x: None,
+                        y: None,
+                        children: Some(vec![ObjectSpec::Ellipse {
+                            name: "ChildPath".to_string(),
+                            width: 40.0,
+                            height: 40.0,
+                            origin_x: None,
+                            origin_y: None,
+                        }]),
+                    }]),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "switch".to_string(),
+                    fps: 60,
+                    duration: 60,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![KeyframeGroupSpec {
+                        object: "SoloRoot".to_string(),
+                        property: "active_component_id".to_string(),
+                        frames: vec![
+                            KeyframeSpec {
+                                frame: 0,
+                                value: serde_json::json!(0),
+                                interpolation: None,
+                                interpolator: None,
+                            },
+                            KeyframeSpec {
+                                frame: 59,
+                                value: serde_json::json!(2),
+                                interpolation: None,
+                                interpolator: None,
+                            },
+                        ],
+                    }],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert!(objects.iter().any(|o| o.type_key() == type_keys::SOLO));
+        assert!(
+            objects
+                .iter()
+                .any(|o| o.type_key() == type_keys::KEY_FRAME_ID)
+        );
+    }
+
+    #[test]
+    fn test_build_scene_with_state_machine_listener() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 200.0,
+                height: 200.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "Target".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::Ellipse {
+                        name: "TargetPath".to_string(),
+                        width: 20.0,
+                        height: 20.0,
+                        origin_x: None,
+                        origin_y: None,
+                    }]),
+                }],
+                animations: None,
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "Logic".to_string(),
+                    inputs: Some(vec![InputSpec::Bool {
+                        name: "is_on".to_string(),
+                        value: false,
+                    }]),
+                    listeners: Some(vec![StateMachineListenerSpec {
+                        target: "Target".to_string(),
+                        listener_type_value: Some(1),
+                        actions: Some(vec![ListenerActionSpec::BoolChange {
+                            input: "is_on".to_string(),
+                            value: Some(serde_json::json!(true)),
+                        }]),
+                    }]),
+                    layers: vec![LayerSpec {
+                        states: vec![StateSpec::Entry, StateSpec::Exit],
+                        transitions: None,
+                    }],
+                }]),
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert!(
+            objects
+                .iter()
+                .any(|o| o.type_key() == type_keys::STATE_MACHINE_LISTENER)
+        );
+        assert!(
+            objects
+                .iter()
+                .any(|o| o.type_key() == type_keys::LISTENER_BOOL_CHANGE)
+        );
+    }
+
+    #[test]
+    fn test_build_scene_with_nested_state_machine_object() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 300.0,
+                height: 300.0,
+                children: vec![ObjectSpec::NestedStateMachine {
+                    name: "NestedSM".to_string(),
+                    animation: "switch".to_string(),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "switch".to_string(),
+                    fps: 60,
+                    duration: 30,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        assert!(
+            objects
+                .iter()
+                .any(|o| o.type_key() == type_keys::NESTED_STATE_MACHINE)
+        );
+    }
+
+    #[test]
     fn test_build_scene_rejects_invalid_color() {
         let spec = SceneSpec {
             scene_format_version: 1,
@@ -3536,6 +4022,7 @@ mod tests {
                 state_machines: Some(vec![StateMachineSpec {
                     name: "sm".to_string(),
                     inputs: None,
+                    listeners: None,
                     layers: vec![LayerSpec {
                         states: vec![StateSpec::Entry, StateSpec::Exit],
                         transitions: Some(vec![TransitionSpec {
