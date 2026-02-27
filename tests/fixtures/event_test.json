@@ -1,0 +1,37 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "EventTimeline",
+    "width": 320,
+    "height": 240,
+    "children": [
+      {
+        "type": "event",
+        "name": "HitEvent"
+      }
+    ],
+    "animations": [
+      {
+        "name": "timeline",
+        "fps": 60,
+        "duration": 120,
+        "keyframes": [
+          {
+            "object": "HitEvent",
+            "property": "trigger",
+            "frames": [
+              {
+                "frame": 30,
+                "value": 1
+              },
+              {
+                "frame": 90,
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

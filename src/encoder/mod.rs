@@ -18,6 +18,7 @@ pub fn encode_object(object: &dyn RiveObject) -> Vec<u8> {
                     writer.write_varuint(v);
                 }
             }
+            PropertyValue::Bool(v) => writer.write_bool(v),
             PropertyValue::String(s) => writer.write_string(&s),
             PropertyValue::Float(f) => writer.write_float(f),
             PropertyValue::Color(c) => writer.write_color(c),

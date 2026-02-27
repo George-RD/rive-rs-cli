@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use serde::Deserialize;
 
 use crate::objects::animation::{
-    CubicEaseInterpolator, KeyFrameColor, KeyFrameDouble, KeyFrameId, KeyedObject, KeyedProperty,
-    LinearAnimation,
+    CubicEaseInterpolator, ElasticInterpolator, KeyFrameCallback, KeyFrameColor, KeyFrameDouble,
+    KeyFrameId, KeyedObject, KeyedProperty, LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
 use crate::objects::assets::{AudioAsset, FontAsset, ImageAsset};
@@ -19,10 +19,11 @@ use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
     CubicDetachedVertexObject, CubicMirroredVertexObject, Ellipse, Fill, GradientStop, Image,
     LinearGradient, Node, PathObject, PointsPathObject, RadialGradient, Rectangle, Shape,
-    SolidColor, Solo, StraightVertexObject, Stroke, TrimPath,
+    SolidColor, Solo, StraightVertexObject, Stroke, Triangle, TrimPath,
 };
 use crate::objects::state_machine::{
-    AnimationState, AnyState, EntryState, ExitState, ListenerBoolChange, NestedStateMachine,
+    AnimationState, AnyState, EntryState, Event, ExitState, ListenerBoolChange,
+    ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation, NestedStateMachine,
     StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener, StateMachineNumber,
     StateMachineTrigger, StateTransition, TransitionBoolCondition, TransitionInputCondition,
     TransitionNumberCondition, TransitionTriggerCondition, TransitionValueCondition,
@@ -187,6 +188,14 @@ pub enum ObjectSpec {
         origin_x: Option<f32>,
         origin_y: Option<f32>,
     },
+    Triangle {
+        name: String,
+        width: f32,
+        height: f32,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
     Fill {
         name: String,
         fill_rule: Option<serde_json::Value>,
@@ -309,6 +318,17 @@ pub enum ObjectSpec {
     NestedStateMachine {
         name: String,
         animation: String,
+    },
+    Event {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    NestedSimpleAnimation {
+        name: String,
+        animation: String,
+        speed: Option<f32>,
+        is_playing: Option<bool>,
+        mix: Option<f32>,
     },
     Bone {
         name: String,
@@ -542,10 +562,15 @@ pub enum ObjectSpec {
 #[derive(Debug, Deserialize)]
 pub struct InterpolatorSpec {
     pub name: String,
+    #[serde(default, rename = "type")]
+    pub interpolation_type: Option<String>,
     pub x1: Option<f32>,
     pub y1: Option<f32>,
     pub x2: Option<f32>,
     pub y2: Option<f32>,
+    pub easing_value: Option<u64>,
+    pub amplitude: Option<f32>,
+    pub period: Option<f32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -591,10 +616,33 @@ pub struct StateMachineListenerSpec {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::enum_variant_names)]
 pub enum ListenerActionSpec {
     BoolChange {
         input: String,
         value: Option<serde_json::Value>,
+    },
+    TriggerChange {
+        input: String,
+    },
+    NumberChange {
+        input: String,
+        value: Option<serde_json::Value>,
+    },
+}
+
+#[derive(Clone, Copy)]
+enum InterpolatorDef {
+    Cubic {
+        x1: f32,
+        y1: f32,
+        x2: f32,
+        y2: f32,
+    },
+    Elastic {
+        easing_value: u64,
+        amplitude: f32,
+        period: f32,
     },
 }
 
@@ -680,7 +728,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
         let mut object_name_to_index: HashMap<String, usize> = HashMap::new();
         let mut animation_name_to_index: HashMap<String, usize> = HashMap::new();
         let mut interpolator_name_to_index: HashMap<String, usize> = HashMap::new();
-        let mut interpolator_control_points: HashMap<String, (f32, f32, f32, f32)> = HashMap::new();
+        let mut interpolator_defs: HashMap<String, InterpolatorDef> = HashMap::new();
 
         if let Some(animations) = &artboard_spec.animations {
             for (animation_list_index, animation) in animations.iter().enumerate() {
@@ -705,18 +753,31 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
             for animation in animations {
                 if let Some(interpolators) = &animation.interpolators {
                     for interp in interpolators {
-                        let x1 = interp.x1.unwrap_or(0.42);
-                        let y1 = interp.y1.unwrap_or(0.0);
-                        let x2 = interp.x2.unwrap_or(0.58);
-                        let y2 = interp.y2.unwrap_or(1.0);
+                        let interp_def =
+                            match interp.interpolation_type.as_deref().unwrap_or("cubic") {
+                                "cubic" => InterpolatorDef::Cubic {
+                                    x1: interp.x1.unwrap_or(0.42),
+                                    y1: interp.y1.unwrap_or(0.0),
+                                    x2: interp.x2.unwrap_or(0.58),
+                                    y2: interp.y2.unwrap_or(1.0),
+                                },
+                                "elastic" => InterpolatorDef::Elastic {
+                                    easing_value: interp.easing_value.unwrap_or(1),
+                                    amplitude: interp.amplitude.unwrap_or(1.0),
+                                    period: interp.period.unwrap_or(1.0),
+                                },
+                                other => {
+                                    return Err(format!(
+                                        "unknown interpolator type '{}' for '{}'",
+                                        other, interp.name
+                                    ));
+                                }
+                            };
 
-                        if let Some((stored_x1, stored_y1, stored_x2, stored_y2)) =
-                            interpolator_control_points.get(&interp.name)
-                        {
-                            if (stored_x1, stored_y1, stored_x2, stored_y2) != (&x1, &y1, &x2, &y2)
-                            {
+                        if let Some(stored_def) = interpolator_defs.get(&interp.name) {
+                            if !interpolator_def_equals(*stored_def, interp_def) {
                                 return Err(format!(
-                                    "duplicate interpolator '{}' with different control points",
+                                    "duplicate interpolator '{}' with different parameters",
                                     interp.name
                                 ));
                             }
@@ -730,8 +791,23 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                             )?;
                         interpolator_name_to_index
                             .insert(interp.name.clone(), artboard_local_index);
-                        interpolator_control_points.insert(interp.name.clone(), (x1, y1, x2, y2));
-                        objects.push(Box::new(CubicEaseInterpolator::new(x1, y1, x2, y2)));
+                        interpolator_defs.insert(interp.name.clone(), interp_def);
+                        match interp_def {
+                            InterpolatorDef::Cubic { x1, y1, x2, y2 } => {
+                                objects.push(Box::new(CubicEaseInterpolator::new(x1, y1, x2, y2)));
+                            }
+                            InterpolatorDef::Elastic {
+                                easing_value,
+                                amplitude,
+                                period,
+                            } => {
+                                objects.push(Box::new(ElasticInterpolator {
+                                    easing_value,
+                                    amplitude,
+                                    period,
+                                }));
+                            }
+                        }
                     }
                 }
             }
@@ -802,6 +878,10 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 objects.push(Box::new(kf));
                             }
                             Some(BackingType::UInt) => {
+                                if property_key == property_keys::EVENT_TRIGGER {
+                                    objects.push(Box::new(KeyFrameCallback { frame: frame.frame }));
+                                    continue;
+                                }
                                 let value = json_value_to_u64(&frame.value).ok_or_else(|| {
                                     format!(
                                         "invalid integer keyframe value for object '{}' property '{}' at frame {}",
@@ -915,6 +995,38 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                         objects.push(Box::new(ListenerBoolChange {
                                             input_id: input_index as u64,
                                             value: bool_value,
+                                        }));
+                                    }
+                                    ListenerActionSpec::TriggerChange { input } => {
+                                        let input_index = *input_name_to_index.get(input).ok_or_else(|| {
+                                            format!(
+                                                "unknown input referenced in listener action: '{}'",
+                                                input
+                                            )
+                                        })?;
+                                        objects.push(Box::new(ListenerTriggerChange {
+                                            input_id: input_index as u64,
+                                        }));
+                                    }
+                                    ListenerActionSpec::NumberChange { input, value } => {
+                                        let input_index = *input_name_to_index.get(input).ok_or_else(|| {
+                                            format!(
+                                                "unknown input referenced in listener action: '{}'",
+                                                input
+                                            )
+                                        })?;
+                                        let number_value = match value {
+                                            Some(v) => json_value_to_f32(v).ok_or_else(|| {
+                                                format!(
+                                                    "listener number_change value for input '{}' must be numeric",
+                                                    input
+                                                )
+                                            })?,
+                                            None => 0.0,
+                                        };
+                                        objects.push(Box::new(ListenerNumberChange {
+                                            input_id: input_index as u64,
+                                            value: number_value,
                                         }));
                                     }
                                 }
@@ -1211,6 +1323,38 @@ fn append_object(
             }
             objects.push(Box::new(rectangle));
             name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::Triangle {
+            name,
+            width,
+            height,
+            origin_x,
+            origin_y,
+            children,
+        } => {
+            let mut triangle = Triangle::new(name.clone(), parent_id, *width, *height);
+            if let Some(origin_x) = origin_x {
+                triangle.origin_x = *origin_x;
+            }
+            if let Some(origin_y) = origin_y {
+                triangle.origin_y = *origin_y;
+            }
+            objects.push(Box::new(triangle));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
         }
         ObjectSpec::Fill {
             name,
@@ -1548,6 +1692,50 @@ fn append_object(
                 animation_id,
             }));
             name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedSimpleAnimation {
+            name,
+            animation,
+            speed,
+            is_playing,
+            mix,
+        } => {
+            let animation_id = *animation_name_to_index.get(animation).ok_or_else(|| {
+                format!(
+                    "nested_simple_animation '{}' references unknown animation '{}'",
+                    name, animation
+                )
+            })? as u64;
+            objects.push(Box::new(NestedSimpleAnimation {
+                name: name.clone(),
+                parent_id,
+                animation_id,
+                speed: speed.unwrap_or(1.0),
+                is_playing: is_playing.unwrap_or(false),
+                mix: mix.unwrap_or(1.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::Event { name, children } => {
+            objects.push(Box::new(Event {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
         }
         ObjectSpec::Bone {
             name,
@@ -2453,8 +2641,41 @@ fn property_key_from_name(name: &str) -> Option<u16> {
         "trim_start" => Some(property_keys::TRIM_PATH_START),
         "trim_end" => Some(property_keys::TRIM_PATH_END),
         "trim_offset" => Some(property_keys::TRIM_PATH_OFFSET),
+        "trigger" => Some(property_keys::EVENT_TRIGGER),
         "active_component_id" => Some(property_keys::SOLO_ACTIVE_COMPONENT_ID),
         _ => None,
+    }
+}
+
+fn interpolator_def_equals(left: InterpolatorDef, right: InterpolatorDef) -> bool {
+    match (left, right) {
+        (
+            InterpolatorDef::Cubic {
+                x1: lx1,
+                y1: ly1,
+                x2: lx2,
+                y2: ly2,
+            },
+            InterpolatorDef::Cubic {
+                x1: rx1,
+                y1: ry1,
+                x2: rx2,
+                y2: ry2,
+            },
+        ) => lx1 == rx1 && ly1 == ry1 && lx2 == rx2 && ly2 == ry2,
+        (
+            InterpolatorDef::Elastic {
+                easing_value: le,
+                amplitude: la,
+                period: lp,
+            },
+            InterpolatorDef::Elastic {
+                easing_value: re,
+                amplitude: ra,
+                period: rp,
+            },
+        ) => le == re && la == ra && lp == rp,
+        _ => false,
     }
 }
 
@@ -2653,8 +2874,10 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             }
             ObjectSpec::Shape { children, .. }
             | ObjectSpec::Solo { children, .. }
+            | ObjectSpec::Triangle { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
+            | ObjectSpec::Event { children, .. }
             | ObjectSpec::PointsPath { children, .. }
             | ObjectSpec::Bone { children, .. }
             | ObjectSpec::RootBone { children, .. }
@@ -2886,6 +3109,30 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                         ));
                                     }
                                 }
+                                ListenerActionSpec::TriggerChange { input } => {
+                                    if !input_names.contains(input) {
+                                        return Err(format!(
+                                            "unknown input referenced in listener action: '{}'",
+                                            input
+                                        ));
+                                    }
+                                }
+                                ListenerActionSpec::NumberChange { input, value } => {
+                                    if !input_names.contains(input) {
+                                        return Err(format!(
+                                            "unknown input referenced in listener action: '{}'",
+                                            input
+                                        ));
+                                    }
+                                    if let Some(value) = value
+                                        && json_value_to_f32(value).is_none()
+                                    {
+                                        return Err(format!(
+                                            "listener number_change value for input '{}' must be numeric",
+                                            input
+                                        ));
+                                    }
+                                }
                             }
                         }
                     }
@@ -2987,6 +3234,7 @@ fn validate_object_spec(
                         | ObjectSpec::Solo { name, .. }
                         | ObjectSpec::Ellipse { name, .. }
                         | ObjectSpec::Rectangle { name, .. }
+                        | ObjectSpec::Triangle { name, .. }
                         | ObjectSpec::Fill { name, .. }
                         | ObjectSpec::Stroke { name, .. }
                         | ObjectSpec::SolidColor { name, .. }
@@ -3002,6 +3250,8 @@ fn validate_object_spec(
                         | ObjectSpec::TrimPath { name, .. }
                         | ObjectSpec::NestedArtboard { name, .. }
                         | ObjectSpec::NestedStateMachine { name, .. }
+                        | ObjectSpec::NestedSimpleAnimation { name, .. }
+                        | ObjectSpec::Event { name, .. }
                         | ObjectSpec::Bone { name, .. }
                         | ObjectSpec::RootBone { name, .. }
                         | ObjectSpec::Skin { name, .. }
@@ -3080,6 +3330,20 @@ fn validate_object_spec(
                     "rectangle '{}' corner_radius must be non-negative",
                     name
                 ));
+            }
+        }
+        ObjectSpec::Triangle {
+            name,
+            width,
+            height,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if *width < 0.0 {
+                return Err(format!("triangle '{}' width must be non-negative", name));
+            }
+            if *height < 0.0 {
+                return Err(format!("triangle '{}' height must be non-negative", name));
             }
         }
         ObjectSpec::Fill {
@@ -3279,6 +3543,17 @@ fn validate_object_spec(
         ObjectSpec::NestedStateMachine { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
+        ObjectSpec::NestedSimpleAnimation { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::Event { name, children } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
         ObjectSpec::Bone { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
@@ -3391,8 +3666,10 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
             }
             ObjectSpec::Shape { children, .. }
             | ObjectSpec::Solo { children, .. }
+            | ObjectSpec::Triangle { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
+            | ObjectSpec::Event { children, .. }
             | ObjectSpec::PointsPath { children, .. }
             | ObjectSpec::LinearGradient { children, .. }
             | ObjectSpec::RadialGradient { children, .. }
