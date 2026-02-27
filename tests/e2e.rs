@@ -124,6 +124,93 @@ fn test_generate_state_machine() {
 }
 
 #[test]
+fn test_generate_validate_solo_test() {
+    let input = fixture_path("solo_test.json");
+    let output = temp_output("solo_test");
+    cleanup(&output);
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    assert!(
+        stdout.contains("Solo"),
+        "expected 'Solo' in inspect output, got: {}",
+        stdout
+    );
+
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_validate_listener_test() {
+    let input = fixture_path("listener_test.json");
+    let output = temp_output("listener_test");
+    cleanup(&output);
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    assert!(
+        stdout.contains("StateMachineListener"),
+        "expected 'StateMachineListener' in inspect output, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("ListenerBoolChange"),
+        "expected 'ListenerBoolChange' in inspect output, got: {}",
+        stdout
+    );
+
+    cleanup(&output);
+}
+
+#[test]
 fn test_generate_path() {
     let input = fixture_path("path.json");
     let output = temp_output("path");

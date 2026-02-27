@@ -7,6 +7,14 @@ pub struct Node {
     pub y: f32,
 }
 
+pub struct Solo {
+    pub name: String,
+    pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
+    pub active_component_id: u64,
+}
+
 impl RiveObject for Node {
     fn type_key(&self) -> u16 {
         type_keys::NODE
@@ -33,6 +41,44 @@ impl RiveObject for Node {
             props.push(Property {
                 key: property_keys::NODE_Y,
                 value: PropertyValue::Float(self.y),
+            });
+        }
+        props
+    }
+}
+
+impl RiveObject for Solo {
+    fn type_key(&self) -> u16 {
+        type_keys::SOLO
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.active_component_id != 0 {
+            props.push(Property {
+                key: property_keys::SOLO_ACTIVE_COMPONENT_ID,
+                value: PropertyValue::UInt(self.active_component_id),
             });
         }
         props
@@ -1398,6 +1444,59 @@ mod tests {
             y: 0.0,
         };
         assert_eq!(node.type_key(), 2);
+    }
+
+    #[test]
+    fn test_solo_type_key() {
+        let solo = Solo {
+            name: "SoloNode".to_string(),
+            parent_id: 1,
+            x: 0.0,
+            y: 0.0,
+            active_component_id: 0,
+        };
+        assert_eq!(solo.type_key(), type_keys::SOLO);
+    }
+
+    #[test]
+    fn test_solo_properties_default_omission() {
+        let solo = Solo {
+            name: "SoloNode".to_string(),
+            parent_id: 1,
+            x: 0.0,
+            y: 0.0,
+            active_component_id: 0,
+        };
+        let props = solo.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert!(!props.iter().any(|p| p.key == property_keys::NODE_X));
+        assert!(!props.iter().any(|p| p.key == property_keys::NODE_Y));
+        assert!(
+            !props
+                .iter()
+                .any(|p| p.key == property_keys::SOLO_ACTIVE_COMPONENT_ID)
+        );
+    }
+
+    #[test]
+    fn test_solo_properties_with_active_component() {
+        let solo = Solo {
+            name: "SoloNode".to_string(),
+            parent_id: 2,
+            x: 12.0,
+            y: 24.0,
+            active_component_id: 5,
+        };
+        let props = solo.properties();
+        assert_eq!(props.len(), 5);
+        assert_eq!(props[2].key, property_keys::NODE_X);
+        assert_eq!(props[2].value, PropertyValue::Float(12.0));
+        assert_eq!(props[3].key, property_keys::NODE_Y);
+        assert_eq!(props[3].value, PropertyValue::Float(24.0));
+        assert_eq!(props[4].key, property_keys::SOLO_ACTIVE_COMPONENT_ID);
+        assert_eq!(props[4].value, PropertyValue::UInt(5));
     }
 
     #[test]

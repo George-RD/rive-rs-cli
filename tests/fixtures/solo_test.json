@@ -1,0 +1,88 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "SoloDemo",
+    "width": 400,
+    "height": 300,
+    "children": [
+      {
+        "type": "solo",
+        "name": "Switcher",
+        "x": 200,
+        "y": 150,
+        "active_component": "OptionA",
+        "children": [
+          {
+            "type": "shape",
+            "name": "OptionA",
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "OptionAPath",
+                "width": 120,
+                "height": 120,
+                "origin_x": 0.5,
+                "origin_y": 0.5
+              },
+              {
+                "type": "fill",
+                "name": "OptionAFill",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "OptionAColor",
+                    "color": "#FF6B35"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "shape",
+            "name": "OptionB",
+            "children": [
+              {
+                "type": "rectangle",
+                "name": "OptionBPath",
+                "width": 120,
+                "height": 120,
+                "origin_x": 0.5,
+                "origin_y": 0.5,
+                "corner_radius": 18
+              },
+              {
+                "type": "fill",
+                "name": "OptionBFill",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "OptionBColor",
+                    "color": "#1D4ED8"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "toggle_active",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "Switcher",
+            "property": "active_component_id",
+            "frames": [
+              { "frame": 0, "value": 2 },
+              { "frame": 30, "value": 5 },
+              { "frame": 59, "value": 2 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

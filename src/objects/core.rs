@@ -69,6 +69,7 @@ pub mod type_keys {
     pub const KEY_FRAME_COLOR: u16 = 37;
     pub const TRANSFORM_COMPONENT: u16 = 38;
     pub const TRIM_PATH: u16 = 47;
+    pub const KEY_FRAME_ID: u16 = 50;
     pub const STATE_MACHINE: u16 = 53;
     pub const STATE_MACHINE_COMPONENT: u16 = 54;
     pub const STATE_MACHINE_INPUT: u16 = 55;
@@ -107,9 +108,14 @@ pub mod type_keys {
     pub const TRANSFORM_SPACE_CONSTRAINT: u16 = 90;
     pub const WORLD_TRANSFORM_COMPONENT: u16 = 91;
     pub const NESTED_ARTBOARD: u16 = 92;
+    pub const NESTED_ANIMATION: u16 = 93;
+    pub const NESTED_STATE_MACHINE: u16 = 95;
     pub const IMAGE: u16 = 100;
+    pub const STATE_MACHINE_LISTENER: u16 = 114;
+    pub const LISTENER_BOOL_CHANGE: u16 = 117;
     pub const CUBIC_VALUE_INTERPOLATOR: u16 = 138;
     pub const CUBIC_INTERPOLATOR: u16 = 139;
+    pub const SOLO: u16 = 147;
     pub const INTERPOLATING_KEY_FRAME: u16 = 170;
     pub const KEYFRAME_INTERPOLATOR: u16 = 175;
     pub const LAYOUT_COMPONENT: u16 = 409;
@@ -196,6 +202,7 @@ pub mod property_keys {
     pub const TRIM_PATH_END: u16 = 115;
     pub const TRIM_PATH_OFFSET: u16 = 116;
     pub const TRIM_PATH_MODE_VALUE: u16 = 117;
+    pub const KEY_FRAME_ID_VALUE: u16 = 122;
     pub const PARAMETRIC_PATH_ORIGIN_X: u16 = 123;
     pub const PARAMETRIC_PATH_ORIGIN_Y: u16 = 124;
     pub const PATH_FLAGS: u16 = 128;
@@ -217,6 +224,7 @@ pub mod property_keys {
     pub const RECTANGLE_LINK_CORNER_RADIUS: u16 = 164;
     pub const LAYOUT_COMPONENT_CLIP: u16 = 196;
     pub const NESTED_ARTBOARD_ARTBOARD_ID: u16 = 197;
+    pub const NESTED_ANIMATION_ID: u16 = 198;
     pub const ARTBOARD_DEFAULT_STATE_MACHINE_ID: u16 = 236;
     pub const LINEAR_ANIMATION_QUANTIZE: u16 = 376;
     pub const LAYOUT_COMPONENT_STYLE_ID: u16 = 494;
@@ -279,11 +287,17 @@ pub mod property_keys {
     pub const IMAGE_ASSET_ID: u16 = 206;
     pub const FILE_ASSET_CDN_BASE_URL: u16 = 362;
     pub const FILE_ASSET_CONTENTS_BYTES: u16 = 212;
+    pub const LISTENER_TARGET_ID: u16 = 224;
+    pub const LISTENER_TYPE_VALUE: u16 = 225;
+    pub const LISTENER_ACTION_ID: u16 = 226;
+    pub const LISTENER_INPUT_ID: u16 = 227;
+    pub const LISTENER_BOOL_VALUE: u16 = 228;
     pub const TEXT_ALIGN_VALUE: u16 = 281;
     pub const TEXT_SIZING_VALUE: u16 = 284;
     pub const TEXT_WIDTH: u16 = 285;
     pub const TEXT_HEIGHT: u16 = 286;
     pub const TEXT_OVERFLOW_VALUE: u16 = 287;
+    pub const SOLO_ACTIVE_COMPONENT_ID: u16 = 296;
     pub const TEXT_ORIGIN_X: u16 = 366;
     pub const TEXT_ORIGIN_Y: u16 = 367;
     pub const TEXT_PARAGRAPH_SPACING: u16 = 371;
@@ -500,6 +514,7 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::DRAWABLE_FLAGS
         | property_keys::STATE_MACHINE_BOOL_VALUE
         | property_keys::ANIMATION_STATE_ANIMATION_ID
+        | property_keys::NESTED_ANIMATION_ID
         | property_keys::STATE_TRANSITION_STATE_TO_ID
         | property_keys::STATE_TRANSITION_FLAGS
         | property_keys::TRANSITION_INPUT_CONDITION_INPUT_ID
@@ -561,7 +576,14 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::VIEW_MODEL_PROPERTY_TYPE_VALUE
         | property_keys::DATA_BIND_PROPERTY_KEY
         | property_keys::DATA_BIND_FLAGS
-        | property_keys::DATA_BIND_CONVERTER_ID => Some(BackingType::UInt),
+        | property_keys::DATA_BIND_CONVERTER_ID
+        | property_keys::KEY_FRAME_ID_VALUE
+        | property_keys::LISTENER_TARGET_ID
+        | property_keys::LISTENER_TYPE_VALUE
+        | property_keys::LISTENER_ACTION_ID
+        | property_keys::LISTENER_INPUT_ID
+        | property_keys::LISTENER_BOOL_VALUE
+        | property_keys::SOLO_ACTIVE_COMPONENT_ID => Some(BackingType::UInt),
 
         property_keys::SOLID_COLOR_VALUE
         | property_keys::GRADIENT_STOP_COLOR
@@ -659,6 +681,22 @@ mod tests {
             property_backing_type(property_keys::IMAGE_ASSET_ID),
             Some(BackingType::UInt)
         );
+        assert_eq!(
+            property_backing_type(property_keys::KEY_FRAME_ID_VALUE),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::NESTED_ANIMATION_ID),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::LISTENER_INPUT_ID),
+            Some(BackingType::UInt)
+        );
+        assert_eq!(
+            property_backing_type(property_keys::SOLO_ACTIVE_COMPONENT_ID),
+            Some(BackingType::UInt)
+        );
     }
 
     #[test]
@@ -740,6 +778,7 @@ mod tests {
         assert_eq!(type_keys::CUBIC_MIRRORED_VERTEX, 35);
         assert_eq!(type_keys::KEY_FRAME_COLOR, 37);
         assert_eq!(type_keys::TRANSFORM_COMPONENT, 38);
+        assert_eq!(type_keys::KEY_FRAME_ID, 50);
         assert_eq!(type_keys::STATE_MACHINE, 53);
         assert_eq!(type_keys::STATE_MACHINE_COMPONENT, 54);
         assert_eq!(type_keys::STATE_MACHINE_INPUT, 55);
@@ -761,9 +800,14 @@ mod tests {
         assert_eq!(type_keys::TRIM_PATH, 47);
         assert_eq!(type_keys::WORLD_TRANSFORM_COMPONENT, 91);
         assert_eq!(type_keys::NESTED_ARTBOARD, 92);
+        assert_eq!(type_keys::NESTED_ANIMATION, 93);
+        assert_eq!(type_keys::NESTED_STATE_MACHINE, 95);
         assert_eq!(type_keys::IMAGE, 100);
+        assert_eq!(type_keys::STATE_MACHINE_LISTENER, 114);
+        assert_eq!(type_keys::LISTENER_BOOL_CHANGE, 117);
         assert_eq!(type_keys::CUBIC_VALUE_INTERPOLATOR, 138);
         assert_eq!(type_keys::CUBIC_INTERPOLATOR, 139);
+        assert_eq!(type_keys::SOLO, 147);
         assert_eq!(type_keys::INTERPOLATING_KEY_FRAME, 170);
         assert_eq!(type_keys::KEYFRAME_INTERPOLATOR, 175);
         assert_eq!(type_keys::CUBIC_EASE_INTERPOLATOR, 28);
