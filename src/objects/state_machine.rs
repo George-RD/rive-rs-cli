@@ -197,6 +197,29 @@ pub struct NestedStateMachine {
     pub animation_id: u64,
 }
 
+pub struct Event {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+pub struct NestedSimpleAnimation {
+    pub name: String,
+    pub parent_id: u64,
+    pub animation_id: u64,
+    pub speed: f32,
+    pub is_playing: bool,
+    pub mix: f32,
+}
+
+pub struct ListenerTriggerChange {
+    pub input_id: u64,
+}
+
+pub struct ListenerNumberChange {
+    pub input_id: u64,
+    pub value: f32,
+}
+
 impl RiveObject for NestedStateMachine {
     fn type_key(&self) -> u16 {
         type_keys::NESTED_STATE_MACHINE
@@ -215,6 +238,99 @@ impl RiveObject for NestedStateMachine {
             Property {
                 key: property_keys::NESTED_ANIMATION_ID,
                 value: PropertyValue::UInt(self.animation_id),
+            },
+        ]
+    }
+}
+
+impl RiveObject for Event {
+    fn type_key(&self) -> u16 {
+        type_keys::EVENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+impl RiveObject for NestedSimpleAnimation {
+    fn type_key(&self) -> u16 {
+        type_keys::NESTED_SIMPLE_ANIMATION
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::NESTED_ANIMATION_ID,
+                value: PropertyValue::UInt(self.animation_id),
+            },
+        ];
+        if self.speed != 1.0 {
+            props.push(Property {
+                key: property_keys::NESTED_SPEED,
+                value: PropertyValue::Float(self.speed),
+            });
+        }
+        if self.is_playing {
+            props.push(Property {
+                key: property_keys::NESTED_IS_PLAYING,
+                value: PropertyValue::Bool(self.is_playing),
+            });
+        }
+        if self.mix != 1.0 {
+            props.push(Property {
+                key: property_keys::NESTED_MIX,
+                value: PropertyValue::Float(self.mix),
+            });
+        }
+        props
+    }
+}
+
+impl RiveObject for ListenerTriggerChange {
+    fn type_key(&self) -> u16 {
+        type_keys::LISTENER_TRIGGER_CHANGE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::LISTENER_INPUT_ID,
+            value: PropertyValue::UInt(self.input_id),
+        }]
+    }
+}
+
+impl RiveObject for ListenerNumberChange {
+    fn type_key(&self) -> u16 {
+        type_keys::LISTENER_NUMBER_CHANGE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::LISTENER_INPUT_ID,
+                value: PropertyValue::UInt(self.input_id),
+            },
+            Property {
+                key: property_keys::LISTENER_NUMBER_VALUE,
+                value: PropertyValue::Float(self.value),
             },
         ]
     }
@@ -632,6 +748,91 @@ mod tests {
         assert_eq!(props[1].value, PropertyValue::UInt(5));
         assert_eq!(props[2].key, property_keys::NESTED_ANIMATION_ID);
         assert_eq!(props[2].value, PropertyValue::UInt(9));
+    }
+
+    #[test]
+    fn test_event_properties() {
+        let event = Event {
+            name: "Evt".to_string(),
+            parent_id: 4,
+        };
+        assert_eq!(event.type_key(), type_keys::EVENT);
+        let props = event.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[1].value, PropertyValue::UInt(4));
+    }
+
+    #[test]
+    fn test_nested_simple_animation_properties_defaults() {
+        let nested = NestedSimpleAnimation {
+            name: "NestedSimple".to_string(),
+            parent_id: 5,
+            animation_id: 9,
+            speed: 1.0,
+            is_playing: false,
+            mix: 1.0,
+        };
+        assert_eq!(nested.type_key(), type_keys::NESTED_SIMPLE_ANIMATION);
+        let props = nested.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[2].key, property_keys::NESTED_ANIMATION_ID);
+    }
+
+    #[test]
+    fn test_nested_simple_animation_properties_custom() {
+        let nested = NestedSimpleAnimation {
+            name: "NestedSimple".to_string(),
+            parent_id: 5,
+            animation_id: 9,
+            speed: 2.0,
+            is_playing: true,
+            mix: 0.25,
+        };
+        let props = nested.properties();
+        assert_eq!(props.len(), 6);
+        assert!(
+            props
+                .iter()
+                .any(|p| p.key == property_keys::NESTED_SPEED
+                    && p.value == PropertyValue::Float(2.0))
+        );
+        assert!(props.iter().any(|p| {
+            p.key == property_keys::NESTED_IS_PLAYING && p.value == PropertyValue::Bool(true)
+        }));
+        assert!(
+            props.iter().any(
+                |p| p.key == property_keys::NESTED_MIX && p.value == PropertyValue::Float(0.25)
+            )
+        );
+    }
+
+    #[test]
+    fn test_listener_trigger_change_properties() {
+        let action = ListenerTriggerChange { input_id: 2 };
+        assert_eq!(action.type_key(), type_keys::LISTENER_TRIGGER_CHANGE);
+        let props = action.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::LISTENER_INPUT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(2));
+    }
+
+    #[test]
+    fn test_listener_number_change_properties() {
+        let action = ListenerNumberChange {
+            input_id: 2,
+            value: 3.5,
+        };
+        assert_eq!(action.type_key(), type_keys::LISTENER_NUMBER_CHANGE);
+        let props = action.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::LISTENER_INPUT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(2));
+        assert_eq!(props[1].key, property_keys::LISTENER_NUMBER_VALUE);
+        assert_eq!(props[1].value, PropertyValue::Float(3.5));
     }
 
     #[test]

@@ -206,6 +206,16 @@ fn test_generate_validate_listener_test() {
         "expected 'ListenerBoolChange' in inspect output, got: {}",
         stdout
     );
+    assert!(
+        stdout.contains("ListenerTriggerChange"),
+        "expected 'ListenerTriggerChange' in inspect output, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("ListenerNumberChange"),
+        "expected 'ListenerNumberChange' in inspect output, got: {}",
+        stdout
+    );
 
     cleanup(&output);
 }
@@ -2900,5 +2910,150 @@ fn test_inspect_loader() {
         serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
     let objects = parsed.get("objects").unwrap().as_array().unwrap();
     assert_eq!(objects.len(), 20);
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_validate_inspect_elastic_interpolator() {
+    let input = fixture_path("elastic_interpolator.json");
+    let output = temp_output("elastic_interpolator");
+    cleanup(&output);
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    assert!(stdout.contains("ElasticInterpolator"));
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_validate_inspect_triangle() {
+    let input = fixture_path("triangle.json");
+    let output = temp_output("triangle");
+    cleanup(&output);
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    assert!(stdout.contains("Triangle"));
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_validate_inspect_event_test() {
+    let input = fixture_path("event_test.json");
+    let output = temp_output("event_test");
+    cleanup(&output);
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    assert!(stdout.contains("Event"));
+    assert!(stdout.contains("KeyFrameCallback"));
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_validate_inspect_nested_simple_animation() {
+    let input = fixture_path("nested_simple_animation.json");
+    let output = temp_output("nested_simple_animation");
+    cleanup(&output);
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    assert!(stdout.contains("NestedSimpleAnimation"));
     cleanup(&output);
 }

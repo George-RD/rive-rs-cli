@@ -1,0 +1,77 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ElasticInterpolator",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Ball",
+        "x": 250,
+        "y": 250,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "BallPath",
+            "width": 80,
+            "height": 80,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "BallFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "BallColor",
+                "color": "#22C55E"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "bounce",
+        "fps": 60,
+        "duration": 120,
+        "interpolators": [
+          {
+            "name": "elastic_bounce",
+            "type": "elastic",
+            "easing_value": 2,
+            "amplitude": 1.5,
+            "period": 0.8
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "BallPath",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "elastic_bounce"
+              },
+              {
+                "frame": 60,
+                "value": 220.0,
+                "interpolation": "cubic",
+                "interpolator": "elastic_bounce"
+              },
+              {
+                "frame": 119,
+                "value": 0.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

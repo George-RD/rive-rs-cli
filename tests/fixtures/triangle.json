@@ -1,0 +1,37 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "TriangleDemo",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "TriangleShape",
+        "x": 200,
+        "y": 200,
+        "children": [
+          {
+            "type": "triangle",
+            "name": "TrianglePath",
+            "width": 180,
+            "height": 160,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "TriangleFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "TriangleColor",
+                "color": "#F97316"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
