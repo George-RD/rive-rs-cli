@@ -194,7 +194,6 @@ pub enum ObjectSpec {
         height: f32,
         origin_x: Option<f32>,
         origin_y: Option<f32>,
-        children: Option<Vec<ObjectSpec>>,
     },
     Fill {
         name: String,
@@ -562,7 +561,7 @@ pub enum ObjectSpec {
 #[derive(Debug, Deserialize)]
 pub struct InterpolatorSpec {
     pub name: String,
-    #[serde(default, rename = "type")]
+    #[serde(default, rename = "type", alias = "interpolation_type")]
     pub interpolation_type: Option<String>,
     pub x1: Option<f32>,
     pub y1: Option<f32>,
@@ -1330,7 +1329,6 @@ fn append_object(
             height,
             origin_x,
             origin_y,
-            children,
         } => {
             let mut triangle = Triangle::new(name.clone(), parent_id, *width, *height);
             if let Some(origin_x) = origin_x {
@@ -1341,20 +1339,6 @@ fn append_object(
             }
             objects.push(Box::new(triangle));
             name_to_index.insert(name.clone(), object_index);
-            if let Some(children) = children {
-                for child in children {
-                    append_object(
-                        child,
-                        object_index,
-                        artboard_start,
-                        objects,
-                        name_to_index,
-                        artboard_name_to_index,
-                        current_artboard_name,
-                        animation_name_to_index,
-                    )?;
-                }
-            }
         }
         ObjectSpec::Fill {
             name,
@@ -2874,7 +2858,6 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             }
             ObjectSpec::Shape { children, .. }
             | ObjectSpec::Solo { children, .. }
-            | ObjectSpec::Triangle { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
             | ObjectSpec::Event { children, .. }
@@ -3064,7 +3047,8 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
 
     if let Some(state_machines) = &artboard_spec.state_machines {
         for state_machine in state_machines {
-            let mut input_names: HashSet<String> = HashSet::new();
+            let mut input_names: std::collections::HashMap<String, &str> =
+                std::collections::HashMap::new();
             if let Some(inputs) = &state_machine.inputs {
                 for input in inputs {
                     let name = match input {
@@ -3072,13 +3056,18 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                         InputSpec::Bool { name, .. } => name,
                         InputSpec::Trigger { name } => name,
                     };
-                    if input_names.contains(name) {
+                    if input_names.contains_key(name) {
                         return Err(format!(
                             "duplicate state machine input '{}' in '{}'",
                             name, state_machine.name
                         ));
                     }
-                    input_names.insert(name.clone());
+                    let kind = match input {
+                        InputSpec::Number { .. } => "number",
+                        InputSpec::Bool { .. } => "bool",
+                        InputSpec::Trigger { .. } => "trigger",
+                    };
+                    input_names.insert(name.clone(), kind);
                 }
             }
 
@@ -3094,11 +3083,20 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                         for action in actions {
                             match action {
                                 ListenerActionSpec::BoolChange { input, value } => {
-                                    if !input_names.contains(input) {
-                                        return Err(format!(
-                                            "unknown input referenced in listener action: '{}'",
-                                            input
-                                        ));
+                                    match input_names.get(input.as_str()) {
+                                        Some(&"bool") => {}
+                                        Some(kind) => {
+                                            return Err(format!(
+                                                "listener bool_change targets {} input '{}', expected bool",
+                                                kind, input
+                                            ));
+                                        }
+                                        None => {
+                                            return Err(format!(
+                                                "unknown input referenced in listener action: '{}'",
+                                                input
+                                            ));
+                                        }
                                     }
                                     if let Some(value) = value
                                         && json_value_to_u64(value).is_none()
@@ -3110,19 +3108,37 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                     }
                                 }
                                 ListenerActionSpec::TriggerChange { input } => {
-                                    if !input_names.contains(input) {
-                                        return Err(format!(
-                                            "unknown input referenced in listener action: '{}'",
-                                            input
-                                        ));
+                                    match input_names.get(input.as_str()) {
+                                        Some(&"trigger") => {}
+                                        Some(kind) => {
+                                            return Err(format!(
+                                                "listener trigger_change targets {} input '{}', expected trigger",
+                                                kind, input
+                                            ));
+                                        }
+                                        None => {
+                                            return Err(format!(
+                                                "unknown input referenced in listener action: '{}'",
+                                                input
+                                            ));
+                                        }
                                     }
                                 }
                                 ListenerActionSpec::NumberChange { input, value } => {
-                                    if !input_names.contains(input) {
-                                        return Err(format!(
-                                            "unknown input referenced in listener action: '{}'",
-                                            input
-                                        ));
+                                    match input_names.get(input.as_str()) {
+                                        Some(&"number") => {}
+                                        Some(kind) => {
+                                            return Err(format!(
+                                                "listener number_change targets {} input '{}', expected number",
+                                                kind, input
+                                            ));
+                                        }
+                                        None => {
+                                            return Err(format!(
+                                                "unknown input referenced in listener action: '{}'",
+                                                input
+                                            ));
+                                        }
                                     }
                                     if let Some(value) = value
                                         && json_value_to_f32(value).is_none()
@@ -3170,7 +3186,7 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
 
                         if let Some(conditions) = &transition.conditions {
                             for condition in conditions {
-                                if !input_names.contains(&condition.input) {
+                                if !input_names.contains_key(&condition.input) {
                                     return Err(format!(
                                         "unknown input referenced in condition: '{}'",
                                         condition.input
@@ -3666,7 +3682,6 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
             }
             ObjectSpec::Shape { children, .. }
             | ObjectSpec::Solo { children, .. }
-            | ObjectSpec::Triangle { children, .. }
             | ObjectSpec::Fill { children, .. }
             | ObjectSpec::Stroke { children, .. }
             | ObjectSpec::Event { children, .. }

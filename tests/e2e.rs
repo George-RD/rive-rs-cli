@@ -206,6 +206,16 @@ fn test_generate_validate_listener_test() {
         "expected 'ListenerBoolChange' in inspect output, got: {}",
         stdout
     );
+    assert!(
+        stdout.contains("ListenerTriggerChange"),
+        "expected 'ListenerTriggerChange' in inspect output, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("ListenerNumberChange"),
+        "expected 'ListenerNumberChange' in inspect output, got: {}",
+        stdout
+    );
 
     cleanup(&output);
 }

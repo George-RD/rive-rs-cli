@@ -66,7 +66,7 @@
         {
           "type": "nested_simple_animation",
           "name": "InnerPlayback",
-          "animation": "pulse",
+          "animation": "outer_idle",
           "speed": 1.25,
           "is_playing": true,
           "mix": 0.75
@@ -74,7 +74,7 @@
       ],
       "animations": [
         {
-          "name": "pulse",
+          "name": "outer_idle",
           "fps": 60,
           "duration": 60,
           "keyframes": []
