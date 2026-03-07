@@ -15,6 +15,17 @@ COMPLEXITY="$6"        # static | animated | interactive
 JSON_PATH="$7"
 ATTEMPT_NUM="${8:-0}"
 
+# Validate inputs to prevent path traversal and SQL injection
+if [[ ! "$TARGET_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    echo "ERROR: target_name contains invalid characters" >&2; exit 1
+fi
+if [[ ! "$RUN_ID" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    echo "ERROR: run_id contains invalid characters" >&2; exit 1
+fi
+if [[ ! "$ATTEMPT_NUM" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: attempt_num must be a non-negative integer" >&2; exit 1
+fi
+
 DB="data/rive_ledger.db"
 RESULTS_DIR="docs/race-results/${TARGET_NAME}/${RUN_ID}"
 mkdir -p "$RESULTS_DIR"

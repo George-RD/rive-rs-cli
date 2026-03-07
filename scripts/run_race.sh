@@ -49,7 +49,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DB="$PROJECT_ROOT/data/rive_ledger.db"
 SKILLS_DIR="$PROJECT_ROOT/.opencode/skills"
-RUN_ID="race_$(date +%s)_${TARGET_NAME}"
+RUN_ID="race_$(date +%s)_${RANDOM}_${TARGET_NAME}"
 RESULTS_DIR="$PROJECT_ROOT/docs/race-results/$TARGET_NAME/$RUN_ID"
 
 # Ensure ledger exists
@@ -142,6 +142,13 @@ for model_spec in "${MODELS[@]}"; do
         continue
     fi
 
+    ATTEMPTED_MODELS=$((ATTEMPTED_MODELS + 1))
+    if [ -n "$ATTEMPTED_MODEL_NAMES" ]; then
+        ATTEMPTED_MODEL_NAMES="$ATTEMPTED_MODEL_NAMES,$MODEL_NAME"
+    else
+        ATTEMPTED_MODEL_NAMES="$MODEL_NAME"
+    fi
+
     JSON_OUT="$RESULTS_DIR/${MODEL_NAME}.json"
 
     echo "--- $MODEL_NAME ($MODEL_ID) ---"
@@ -222,13 +229,6 @@ for model_spec in "${MODELS[@]}"; do
     fi
 
     echo "  JSON saved to $JSON_OUT"
-
-    ATTEMPTED_MODELS=$((ATTEMPTED_MODELS + 1))
-    if [ -n "$ATTEMPTED_MODEL_NAMES" ]; then
-        ATTEMPTED_MODEL_NAMES="$ATTEMPTED_MODEL_NAMES,$MODEL_NAME"
-    else
-        ATTEMPTED_MODEL_NAMES="$MODEL_NAME"
-    fi
 
     # Run log_attempt.sh (handles generate, validate, inspect, ledger logging)
     cd "$PROJECT_ROOT"
