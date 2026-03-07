@@ -7,7 +7,7 @@
 #
 # Prerequisites:
 #   - At least one model API key set (see Model Configuration below)
-#   - SQLite3 installed
+#   - jq, curl, sqlite3, python3 installed
 #   - cargo build passes
 #
 # Model Configuration (via environment variables):
@@ -24,16 +24,33 @@
 
 set -euo pipefail
 
+# Check required tools
+for cmd in jq curl sqlite3 python3; do
+    if ! command -v "$cmd" &>/dev/null; then
+        echo "ERROR: Required tool '$cmd' not found. Please install it."
+        exit 1
+    fi
+done
+
 TARGET_NAME="${1:?Usage: run_race.sh <target_name> <prompt> [complexity]}"
 PROMPT="${2:?Usage: run_race.sh <target_name> <prompt> [complexity]}"
 COMPLEXITY="${3:-animated}"
 
+# Validate target name (alphanumeric, hyphens, underscores only)
+if [[ ! "$TARGET_NAME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    echo "ERROR: target_name must contain only alphanumeric characters, hyphens, and underscores"
+    exit 1
+fi
+
+# SQL escape helper
+sql_escape() { printf "%s" "$1" | sed "s/'/''/g"; }
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 DB="$PROJECT_ROOT/data/rive_ledger.db"
-RESULTS_DIR="$PROJECT_ROOT/docs/race-results/$TARGET_NAME"
 SKILLS_DIR="$PROJECT_ROOT/.opencode/skills"
 RUN_ID="race_$(date +%s)_${TARGET_NAME}"
+RESULTS_DIR="$PROJECT_ROOT/docs/race-results/$TARGET_NAME/$RUN_ID"
 
 # Ensure ledger exists
 if [ ! -f "$DB" ]; then
@@ -108,10 +125,11 @@ echo "Complexity: $COMPLEXITY"
 echo "Prompt: $PROMPT"
 echo ""
 
-ACTIVE_MODELS=0
+ATTEMPTED_MODELS=0
 SUCCESSFUL_MODELS=0
 BEST_MODEL=""
 BEST_OBJECTS=0
+ATTEMPTED_MODEL_NAMES=""
 
 for model_spec in "${MODELS[@]}"; do
     IFS='|' read -r MODEL_NAME API_KEY_ENV ENDPOINT MODEL_ID CATEGORY <<< "$model_spec"
@@ -122,7 +140,6 @@ for model_spec in "${MODELS[@]}"; do
         continue
     fi
 
-    ACTIVE_MODELS=$((ACTIVE_MODELS + 1))
     JSON_OUT="$RESULTS_DIR/${MODEL_NAME}.json"
 
     echo "--- $MODEL_NAME ($MODEL_ID) ---"
@@ -191,7 +208,20 @@ for model_spec in "${MODELS[@]}"; do
         continue
     fi
 
+    # Validate scene_format_version
+    if ! jq -e '(.scene_format_version | type == "number") and (.scene_format_version == 1)' "$JSON_OUT" >/dev/null 2>&1; then
+        echo "  FAIL: Missing or invalid scene_format_version (must be 1)"
+        continue
+    fi
+
     echo "  JSON saved to $JSON_OUT"
+
+    ATTEMPTED_MODELS=$((ATTEMPTED_MODELS + 1))
+    if [ -n "$ATTEMPTED_MODEL_NAMES" ]; then
+        ATTEMPTED_MODEL_NAMES="$ATTEMPTED_MODEL_NAMES,$MODEL_NAME"
+    else
+        ATTEMPTED_MODEL_NAMES="$MODEL_NAME"
+    fi
 
     # Run log_attempt.sh (handles generate, validate, inspect, ledger logging)
     cd "$PROJECT_ROOT"
@@ -212,33 +242,24 @@ for model_spec in "${MODELS[@]}"; do
     echo ""
 done
 
-if [ "$ACTIVE_MODELS" -eq 0 ]; then
-    echo "ERROR: No models configured. Set at least one of: OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY"
+if [ "$ATTEMPTED_MODELS" -eq 0 ]; then
+    echo "ERROR: No models produced valid output. Check API keys and responses."
+    echo "Set at least one of: OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY"
     exit 1
 fi
 
-# Log run summary
+# Log run summary with SQL escaping
 if [ -n "$BEST_MODEL" ]; then
-    BEST_MODEL_SQL="'$BEST_MODEL'"
+    BEST_MODEL_SQL="'$(sql_escape "$BEST_MODEL")'"
 else
     BEST_MODEL_SQL="NULL"
 fi
 
-MODELS_USED=""
-for m in "${MODELS[@]}"; do
-    name="${m%%|*}"
-    if [ -n "$MODELS_USED" ]; then
-        MODELS_USED="$MODELS_USED,$name"
-    else
-        MODELS_USED="$name"
-    fi
-done
-
-sqlite3 "$DB" "INSERT OR REPLACE INTO run_summaries (run_id, target_name, models_used, best_model, total_attempts, successful_attempts, notes) VALUES ('$RUN_ID', '$TARGET_NAME', '$MODELS_USED', $BEST_MODEL_SQL, $ACTIVE_MODELS, $SUCCESSFUL_MODELS, 'Automated race via scripts/run_race.sh');"
+sqlite3 "$DB" "INSERT OR REPLACE INTO run_summaries (run_id, target_name, models_used, best_model, total_attempts, successful_attempts, notes) VALUES ('$(sql_escape "$RUN_ID")', '$(sql_escape "$TARGET_NAME")', '$(sql_escape "$ATTEMPTED_MODEL_NAMES")', $BEST_MODEL_SQL, $ATTEMPTED_MODELS, $SUCCESSFUL_MODELS, 'Automated race via scripts/run_race.sh');"
 
 echo "=== Race Summary ==="
 echo "Target: $TARGET_NAME"
-echo "Models: $ACTIVE_MODELS active, $SUCCESSFUL_MODELS successful"
+echo "Models: $ATTEMPTED_MODELS attempted, $SUCCESSFUL_MODELS successful"
 if [ -n "$BEST_MODEL" ]; then
     echo "Best: $BEST_MODEL ($BEST_OBJECTS objects)"
     echo ""
