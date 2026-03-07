@@ -1,4 +1,6 @@
 /target
 *.riv
+!docs/race-results/**/*.riv
+!docs/race-results/**/*.json
 evals/runs/
 data/rive_ledger.db
