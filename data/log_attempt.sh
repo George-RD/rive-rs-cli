@@ -16,17 +16,20 @@ JSON_PATH="$7"
 ATTEMPT_NUM="${8:-0}"
 
 DB="data/rive_ledger.db"
-RIV_PATH="/tmp/rive-attempt-${RUN_ID}-${MODEL//\//_}.riv"
+RESULTS_DIR="docs/race-results/${TARGET_NAME}"
+mkdir -p "$RESULTS_DIR"
+RIV_PATH="${RESULTS_DIR}/${MODEL//\//_}.riv"
 
-START_MS=$(date +%s%3N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1000))')
+START_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 
 # Step 1: Generate
 GENERATE_OK=0
 GENERATE_ERR=""
-if cargo run --quiet -- generate "$JSON_PATH" -o "$RIV_PATH" 2>/tmp/rive-gen-err.txt; then
+GEN_ERR_FILE="${RESULTS_DIR}/.gen-err-${MODEL//\//_}.txt"
+if cargo run --quiet -- generate "$JSON_PATH" -o "$RIV_PATH" 2>"$GEN_ERR_FILE"; then
     GENERATE_OK=1
 else
-    GENERATE_ERR=$(cat /tmp/rive-gen-err.txt | head -5 | tr '\n' ' ')
+    GENERATE_ERR=$(head -5 "$GEN_ERR_FILE" | tr '\n' ' ')
 fi
 
 # Step 2: Validate (only if generate succeeded)
@@ -43,7 +46,7 @@ if [ "$VALIDATE_OK" -eq 1 ]; then
     OBJECT_COUNT=$(cargo run --quiet -- inspect "$RIV_PATH" --json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('objects',[])))" 2>/dev/null || echo 0)
 fi
 
-END_MS=$(date +%s%3N 2>/dev/null || python3 -c 'import time; print(int(time.time()*1000))')
+END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 DURATION=$((END_MS - START_MS))
 
 # Determine error stage
