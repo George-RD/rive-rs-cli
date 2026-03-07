@@ -32,6 +32,7 @@ GENERATE_ERR=""
 GEN_ERR_FILE="${RESULTS_DIR}/.gen-err-${MODEL_SAFE}.txt"
 if cargo run --quiet -- generate "$JSON_PATH" -o "$RIV_PATH" 2>"$GEN_ERR_FILE"; then
     GENERATE_OK=1
+    rm -f "$GEN_ERR_FILE"
 else
     GENERATE_ERR=$(head -5 "$GEN_ERR_FILE" | tr '\n' ' ')
 fi
@@ -64,7 +65,7 @@ elif [ "$VALIDATE_OK" -eq 0 ]; then
     ERROR_MSG="'validation failed'"
 fi
 
-SUCCESS=$((GENERATE_OK & VALIDATE_OK))
+SUCCESS=$((GENERATE_OK && VALIDATE_OK))
 
 # Log to SQLite
 sqlite3 "$DB" "INSERT INTO attempts (run_id, target_name, model, category, skills_loaded, attempt_num, output_json_path, output_riv_path, generate_ok, validate_ok, inspect_object_count, error_stage, error_message, action_type, complexity_tier, success, duration_ms) VALUES ('$(sql_escape "$RUN_ID")', '$(sql_escape "$TARGET_NAME")', '$(sql_escape "$MODEL")', '$(sql_escape "$CATEGORY")', '$(sql_escape "$SKILLS")', $ATTEMPT_NUM, '$(sql_escape "$JSON_PATH")', '$(sql_escape "$RIV_PATH")', $GENERATE_OK, $VALIDATE_OK, $OBJECT_COUNT, $ERROR_STAGE, $ERROR_MSG, 'create', '$(sql_escape "$COMPLEXITY")', $SUCCESS, $DURATION);"

@@ -65,6 +65,7 @@ SKILLS_CONTEXT=""
 SKILLS_LIST="[]"
 if [ -d "$SKILLS_DIR" ]; then
     SKILL_NAMES=()
+    shopt -s nullglob
     for skill_dir in "$SKILLS_DIR"/rive-*/; do
         skill_file="$skill_dir/SKILL.md"
         if [ -f "$skill_file" ]; then
@@ -77,6 +78,7 @@ $(cat "$skill_file")
 "
         fi
     done
+    shopt -u nullglob
     if [ ${#SKILL_NAMES[@]} -gt 0 ]; then
         SKILLS_LIST="[$(IFS=,; echo "${SKILL_NAMES[*]}")]"
     fi
@@ -148,7 +150,7 @@ for model_spec in "${MODELS[@]}"; do
     CALL_OK=0
     if [ "$MODEL_NAME" = "opus" ]; then
         # Anthropic uses a different API format
-        RESPONSE=$(curl -s -w "\n%{http_code}" "$ENDPOINT" \
+        RESPONSE=$(curl -s --connect-timeout 30 --max-time 300 -w "\n%{http_code}" "$ENDPOINT" \
             -H "Content-Type: application/json" \
             -H "x-api-key: $API_KEY" \
             -H "anthropic-version: 2023-06-01" \
@@ -171,7 +173,7 @@ for model_spec in "${MODELS[@]}"; do
         fi
     else
         # OpenAI-compatible API (Codex, Gemini)
-        RESPONSE=$(curl -s -w "\n%{http_code}" "$ENDPOINT" \
+        RESPONSE=$(curl -s --connect-timeout 30 --max-time 300 -w "\n%{http_code}" "$ENDPOINT" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $API_KEY" \
             -d "$(jq -n \
@@ -197,9 +199,14 @@ for model_spec in "${MODELS[@]}"; do
         continue
     fi
 
-    # Strip markdown fences if present
-    if head -1 "$JSON_OUT" | grep -q '```'; then
-        sed -i.bak '/^```/d' "$JSON_OUT" && rm -f "$JSON_OUT.bak"
+    # Strip markdown fences if present (only first/last lines)
+    if head -1 "$JSON_OUT" | grep -q '^```'; then
+        TMP_STRIP="${JSON_OUT}.strip"
+        tail -n +2 "$JSON_OUT" > "$TMP_STRIP" && mv "$TMP_STRIP" "$JSON_OUT"
+    fi
+    if tail -1 "$JSON_OUT" | grep -q '^```'; then
+        TMP_STRIP="${JSON_OUT}.strip"
+        head -n -1 "$JSON_OUT" > "$TMP_STRIP" && mv "$TMP_STRIP" "$JSON_OUT"
     fi
 
     # Validate JSON syntax
