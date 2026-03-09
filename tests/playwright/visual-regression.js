@@ -213,8 +213,8 @@ function shotFramesForFixture(fixture) {
 
 function thresholdForShot(fixture, frame) {
   return THRESHOLD_OVERRIDES[`${fixture}@f${frame}`]
-    || THRESHOLD_OVERRIDES[fixture]
-    || THRESHOLD_PERCENT;
+    ?? THRESHOLD_OVERRIDES[fixture]
+    ?? THRESHOLD_PERCENT;
 }
 
 async function advanceFrames(page, frames) {
@@ -297,7 +297,6 @@ async function main() {
   const update = process.argv.includes("--update");
   fs.mkdirSync(CURRENT_DIR, { recursive: true });
   fs.mkdirSync(BASELINE_DIR, { recursive: true });
-  buildFixtures();
 
   let server;
   let browser;
@@ -306,6 +305,7 @@ async function main() {
   let hasNewBaselines = false;
 
   try {
+    buildFixtures();
     server = startServer(PORT);
     await waitForServer(PORT);
     browser = await chromium.launch({
@@ -340,13 +340,16 @@ async function main() {
           const baselinePath = path.join(BASELINE_DIR, name);
           await page.screenshot({ path: currentPath });
 
-          if (update || !fs.existsSync(baselinePath)) {
+          if (update) {
             fs.copyFileSync(currentPath, baselinePath);
-            const status = update ? "updated" : "new";
-            rows.push({ name: label, status, diffText: "0.0000" });
-            if (!update) {
-              hasNewBaselines = true;
-            }
+            rows.push({ name: label, status: "updated", diffText: "0.0000" });
+            await page.close();
+            continue;
+          }
+
+          if (!fs.existsSync(baselinePath)) {
+            rows.push({ name: label, status: "missing", diffText: "-" });
+            hasNewBaselines = true;
             await page.close();
             continue;
           }
@@ -382,7 +385,7 @@ async function main() {
     console.log("created new baselines; manual review required before relying on comparisons");
   }
 
-  if (hasFailures) {
+  if (hasFailures || hasNewBaselines) {
     process.exit(1);
   }
 }

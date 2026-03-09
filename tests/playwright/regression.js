@@ -16,12 +16,12 @@ const PORT = Number(process.env.PLAYWRIGHT_PORT || 8765);
 
 async function main() {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
-  buildFixtures();
 
   let server;
   let browser;
 
   try {
+    buildFixtures();
     server = startServer(PORT);
     await waitForServer(PORT);
     browser = await chromium.launch({ headless: true });

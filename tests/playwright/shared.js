@@ -45,7 +45,7 @@ async function waitForServer(port, timeoutMs = 5000) {
     try {
       await new Promise((resolve, reject) => {
         const request = http.get(
-          { hostname: "127.0.0.1", port, path: "/harness.html" },
+          { hostname: "127.0.0.1", port, path: "/harness.html", timeout: 2000 },
           (response) => {
             response.resume();
             if (response.statusCode === 200) {
@@ -55,6 +55,10 @@ async function waitForServer(port, timeoutMs = 5000) {
             }
           }
         );
+        request.on("timeout", () => {
+          request.destroy();
+          reject(new Error("request timed out"));
+        });
         request.on("error", reject);
       });
       return;
