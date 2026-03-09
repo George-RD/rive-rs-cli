@@ -3968,9 +3968,20 @@ fn validate_object_spec(
                 return Err(format!("constraint '{}' must specify a target", name));
             }
         }
-        ObjectSpec::ClippingShape { name, .. }
-        | ObjectSpec::DrawTarget { name, .. }
-        | ObjectSpec::Joystick { name, .. } => {
+        ObjectSpec::ClippingShape {
+            name, fill_rule, ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(fr) = fill_rule
+                && *fr > 1
+            {
+                return Err(format!(
+                    "clipping_shape '{}' fill_rule must be 0 (non-zero) or 1 (even-odd)",
+                    name
+                ));
+            }
+        }
+        ObjectSpec::DrawTarget { name, .. } | ObjectSpec::Joystick { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::DrawRules { name, children, .. } => {
@@ -4059,7 +4070,8 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
             | ObjectSpec::RootBone { children, .. }
             | ObjectSpec::Text { children, .. }
             | ObjectSpec::LayoutComponent { children, .. }
-            | ObjectSpec::ViewModel { children, .. } => {
+            | ObjectSpec::ViewModel { children, .. }
+            | ObjectSpec::DrawRules { children, .. } => {
                 if let Some(children) = children {
                     for child in children {
                         walk(child, image_assets_seen)?;
