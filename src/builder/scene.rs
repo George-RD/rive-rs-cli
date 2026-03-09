@@ -18,9 +18,9 @@ use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
 use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
     ClippingShape, CubicAsymmetricVertexObject, CubicDetachedVertexObject,
-    CubicMirroredVertexObject, DrawRules, DrawTarget, Ellipse, Fill, GradientStop, Image,
-    Joystick, LinearGradient, Node, PathObject, PointsPathObject, Polygon, RadialGradient,
-    Rectangle, Shape, SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
+    CubicMirroredVertexObject, DrawRules, DrawTarget, Ellipse, Fill, GradientStop, Image, Joystick,
+    LinearGradient, Node, PathObject, PointsPathObject, Polygon, RadialGradient, Rectangle, Shape,
+    SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, EntryState, Event, ExitState, ListenerBoolChange,
