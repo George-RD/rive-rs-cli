@@ -2452,17 +2452,7 @@ fn append_object(
             draw_target,
             children,
         } => {
-            let mut dr = DrawRules::new(name.clone(), parent_id);
-            if let Some(target_name) = draw_target {
-                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
-                    format!(
-                        "draw_rules '{}' references unknown draw_target '{}'",
-                        name, target_name
-                    )
-                })?;
-                dr.draw_target_id = (target_global - artboard_start) as u64;
-            }
-            objects.push(Box::new(dr));
+            objects.push(Box::new(DrawRules::new(name.clone(), parent_id)));
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
                 for child in children {
@@ -2477,6 +2467,17 @@ fn append_object(
                         animation_name_to_index,
                     )?;
                 }
+            }
+            if let Some(target_name) = draw_target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "draw_rules '{}' references unknown draw_target '{}'",
+                        name, target_name
+                    )
+                })?;
+                let mut dr = DrawRules::new(name.clone(), parent_id);
+                dr.draw_target_id = (target_global - artboard_start) as u64;
+                objects[object_index] = Box::new(dr);
             }
         }
         ObjectSpec::DrawTarget {
@@ -3688,17 +3689,20 @@ fn validate_object_spec(
             width,
             height,
             ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if *width < 0.0 {
+                return Err(format!("'{}' width must be non-negative", name));
+            }
+            if *height < 0.0 {
+                return Err(format!("'{}' height must be non-negative", name));
+            }
         }
-        | ObjectSpec::Polygon {
+        ObjectSpec::Polygon {
             name,
             width,
             height,
-            ..
-        }
-        | ObjectSpec::Star {
-            name,
-            width,
-            height,
+            corner_radius,
             ..
         } => {
             ensure_unique_name(name, object_names)?;
@@ -3707,6 +3711,37 @@ fn validate_object_spec(
             }
             if *height < 0.0 {
                 return Err(format!("'{}' height must be non-negative", name));
+            }
+            if let Some(cr) = corner_radius
+                && *cr < 0.0
+            {
+                return Err(format!("'{}' corner_radius must be non-negative", name));
+            }
+        }
+        ObjectSpec::Star {
+            name,
+            width,
+            height,
+            corner_radius,
+            inner_radius,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if *width < 0.0 {
+                return Err(format!("'{}' width must be non-negative", name));
+            }
+            if *height < 0.0 {
+                return Err(format!("'{}' height must be non-negative", name));
+            }
+            if let Some(cr) = corner_radius
+                && *cr < 0.0
+            {
+                return Err(format!("'{}' corner_radius must be non-negative", name));
+            }
+            if let Some(ir) = inner_radius
+                && *ir < 0.0
+            {
+                return Err(format!("'{}' inner_radius must be non-negative", name));
             }
         }
         ObjectSpec::Fill {
