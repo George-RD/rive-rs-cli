@@ -45,7 +45,7 @@
             "type": "clipping_shape",
             "name": "Clip1",
             "source": "CircleMask",
-            "fill_rule": 0,
+            "fill_rule": "nonzero",
             "is_visible": true
           }
         ]

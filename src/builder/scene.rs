@@ -502,7 +502,7 @@ pub enum ObjectSpec {
     ClippingShape {
         name: String,
         source: Option<String>,
-        fill_rule: Option<u64>,
+        fill_rule: Option<serde_json::Value>,
         is_visible: Option<bool>,
     },
     #[serde(rename = "draw_rules")]
@@ -2439,7 +2439,7 @@ fn append_object(
                 cs.source_id = (source_global - artboard_start) as u64;
             }
             if let Some(fr) = fill_rule {
-                cs.fill_rule = *fr;
+                cs.fill_rule = parse_fill_rule(fr)?;
             }
             if let Some(v) = is_visible {
                 cs.is_visible = *v;
@@ -3972,17 +3972,30 @@ fn validate_object_spec(
             name, fill_rule, ..
         } => {
             ensure_unique_name(name, object_names)?;
-            if let Some(fr) = fill_rule
-                && *fr > 1
-            {
-                return Err(format!(
-                    "clipping_shape '{}' fill_rule must be 0 (non-zero) or 1 (even-odd)",
-                    name
-                ));
+            if let Some(fr) = fill_rule {
+                parse_fill_rule(fr).map_err(|e| format!("clipping_shape '{}': {}", name, e))?;
             }
         }
-        ObjectSpec::DrawTarget { name, .. } | ObjectSpec::Joystick { name, .. } => {
+        ObjectSpec::DrawTarget { name, .. } => {
             ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::Joystick {
+            name,
+            width,
+            height,
+            ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(w) = width
+                && *w < 0.0
+            {
+                return Err(format!("joystick '{}' width must be non-negative", name));
+            }
+            if let Some(h) = height
+                && *h < 0.0
+            {
+                return Err(format!("joystick '{}' height must be non-negative", name));
+            }
         }
         ObjectSpec::DrawRules { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
