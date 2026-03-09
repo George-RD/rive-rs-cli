@@ -1528,8 +1528,8 @@ impl Joystick {
             parent_id,
             x: 0.0,
             y: 0.0,
-            x_id: 0,
-            y_id: 0,
+            x_id: u32::MAX as u64,
+            y_id: u32::MAX as u64,
             pos_x: 0.0,
             pos_y: 0.0,
             width: 100.0,
@@ -1537,7 +1537,7 @@ impl Joystick {
             origin_x: 0.5,
             origin_y: 0.5,
             flags: 0,
-            handle_source_id: 0,
+            handle_source_id: u32::MAX as u64,
         }
     }
 }
@@ -1570,13 +1570,13 @@ impl RiveObject for Joystick {
                 value: PropertyValue::Float(self.y),
             });
         }
-        if self.x_id != 0 {
+        if self.x_id != u32::MAX as u64 {
             props.push(Property {
                 key: property_keys::JOYSTICK_X_ID,
                 value: PropertyValue::UInt(self.x_id),
             });
         }
-        if self.y_id != 0 {
+        if self.y_id != u32::MAX as u64 {
             props.push(Property {
                 key: property_keys::JOYSTICK_Y_ID,
                 value: PropertyValue::UInt(self.y_id),
@@ -1624,7 +1624,7 @@ impl RiveObject for Joystick {
                 value: PropertyValue::UInt(self.flags),
             });
         }
-        if self.handle_source_id != 0 {
+        if self.handle_source_id != u32::MAX as u64 {
             props.push(Property {
                 key: property_keys::JOYSTICK_HANDLE_SOURCE_ID,
                 value: PropertyValue::UInt(self.handle_source_id),

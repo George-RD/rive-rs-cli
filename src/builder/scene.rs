@@ -3702,6 +3702,7 @@ fn validate_object_spec(
             name,
             width,
             height,
+            points,
             corner_radius,
             ..
         } => {
@@ -3711,6 +3712,11 @@ fn validate_object_spec(
             }
             if *height < 0.0 {
                 return Err(format!("'{}' height must be non-negative", name));
+            }
+            if let Some(p) = points
+                && *p == 0
+            {
+                return Err(format!("polygon '{}' points must be greater than 0", name));
             }
             if let Some(cr) = corner_radius
                 && *cr < 0.0
@@ -3722,6 +3728,7 @@ fn validate_object_spec(
             name,
             width,
             height,
+            points,
             corner_radius,
             inner_radius,
             ..
@@ -3732,6 +3739,11 @@ fn validate_object_spec(
             }
             if *height < 0.0 {
                 return Err(format!("'{}' height must be non-negative", name));
+            }
+            if let Some(p) = points
+                && *p == 0
+            {
+                return Err(format!("star '{}' points must be greater than 0", name));
             }
             if let Some(cr) = corner_radius
                 && *cr < 0.0
