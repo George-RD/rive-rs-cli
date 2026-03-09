@@ -1,55 +1,44 @@
 const { chromium } = require("playwright");
-const { spawnSync, spawn } = require("node:child_process");
 const fs = require("node:fs");
-const http = require("node:http");
 const path = require("node:path");
 const zlib = require("node:zlib");
+const {
+  ROOT,
+  FIXTURES,
+  buildFixtures,
+  startServer,
+  waitForServer,
+  cleanupFixtures,
+  openFixturePage,
+} = require("./shared");
 
-const ROOT = path.resolve(__dirname, "..", "..");
-const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
-const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const CURRENT_DIR = path.join(ROOT, "target", "playwright-visual");
 const BASELINE_DIR = path.join(ROOT, "tests", "playwright", "baselines");
-const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard", "nested_artboard", "artboard_preset", "gradients", "color_animation", "loop_animation", "stroke_styles", "empty_artboard", "icon_set", "game_hud", "mascot"];
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8766);
 const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "1.0");
 
-function run(command, args, cwd = ROOT) {
-  const result = spawnSync(command, args, { cwd, stdio: "inherit" });
-  if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(" ")} failed with exit code ${result.status}`);
-  }
-}
+const ARTBOARD_PLANS = {
+  icon_set: ["Home", "Settings", "Profile"],
+  multi_artboard: ["Screen A", "Screen B"],
+};
 
-function wait(delayMs) {
-  return new Promise((resolve) => setTimeout(resolve, delayMs));
-}
+const SHOT_FRAMES = {
+  animation: [0, 30, 60],
+  cubic_easing: [0, 15, 30, 45, 60],
+  multi_artboard: [0, 30],
+  color_animation: [0, 30, 60],
+  loop_animation: [0, 30],
+  game_hud: [0, 60, 120],
+  mascot: [0, 30, 60],
+};
 
-async function waitForServer(port, timeoutMs = 5000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      await new Promise((resolve, reject) => {
-        const request = http.get(
-          { hostname: "127.0.0.1", port, path: "/harness.html" },
-          (response) => {
-            response.resume();
-            if (response.statusCode === 200) {
-              resolve();
-            } else {
-              reject(new Error(`server returned status ${response.statusCode}`));
-            }
-          }
-        );
-        request.on("error", reject);
-      });
-      return;
-    } catch {
-      await wait(100);
-    }
-  }
-  throw new Error(`server did not start on port ${port}`);
-}
+// Per-fixture or per-fixture+frame threshold overrides (animation non-determinism)
+const THRESHOLD_OVERRIDES = {
+  "multi_artboard@f30": 5.0,
+  "color_animation@f30": 20.0,
+  "color_animation@f60": 20.0,
+  "loop_animation": 5.0,
+};
 
 function readUInt32BE(buffer, offset) {
   return (
@@ -218,31 +207,14 @@ function printSummary(rows) {
   }
 }
 
-const SHOT_FRAMES = {
-  animation: [0, 30, 60],
-  cubic_easing: [0, 15, 30, 45, 60],
-  multi_artboard: [0, 30],
-  color_animation: [0, 30, 60],
-  loop_animation: [0, 30],
-  game_hud: [0, 60, 120],
-  mascot: [0, 30, 60],
-};
-
-function shotPlanForFixture(fixture) {
-  return (SHOT_FRAMES[fixture] || [0]).map((f) => ({ frame: f, waitFrames: f }));
+function shotFramesForFixture(fixture) {
+  return SHOT_FRAMES[fixture] || [0];
 }
 
-function thresholdForShot(fixture, shot) {
-  if (fixture === "multi_artboard" && shot.frame === 30) {
-    return 5.0;
-  }
-  if (fixture === "color_animation" && (shot.frame === 30 || shot.frame === 60)) {
-    return 20.0;
-  }
-  if (fixture === "loop_animation") {
-    return 5.0;
-  }
-  return THRESHOLD_PERCENT;
+function thresholdForShot(fixture, frame) {
+  return THRESHOLD_OVERRIDES[`${fixture}@f${frame}`]
+    || THRESHOLD_OVERRIDES[fixture]
+    || THRESHOLD_PERCENT;
 }
 
 async function advanceFrames(page, frames) {
@@ -265,8 +237,12 @@ async function advanceFrames(page, frames) {
   }, frames);
 }
 
-async function mountControlledRive(page, fixture) {
-  const result = await page.evaluate(async (file) => {
+function sanitizeArtboardName(name) {
+  return name.toLowerCase().replace(/\s+/g, "_");
+}
+
+async function mountControlledRive(page, fixture, artboard) {
+  const result = await page.evaluate(async ({ file, artboard: ab }) => {
     const originalCanvas = document.getElementById("canvas");
     if (!originalCanvas) {
       return { ok: false, error: "missing canvas" };
@@ -283,41 +259,45 @@ async function mountControlledRive(page, fixture) {
 
     try {
       await new Promise((resolve, reject) => {
-        window.__VISUAL_RIVE = new rive.Rive({
+        const opts = {
           src: file,
           canvas: controlledCanvas,
           autoplay: false,
           onLoad: resolve,
           onLoadError: (error) => reject(new Error(String(error || "rive load error"))),
-        });
+        };
+        if (ab) {
+          opts.artboard = ab;
+        }
+        window.__VISUAL_RIVE = new rive.Rive(opts);
       });
       return { ok: true, error: "" };
     } catch (error) {
       return { ok: false, error: String(error || "unknown error") };
     }
-  }, `${fixture}.riv`);
+  }, { file: `${fixture}.riv`, artboard: artboard || null });
 
   if (!result.ok) {
     throw new Error(`${fixture}.riv failed to mount controlled runtime: ${result.error}`);
   }
 }
 
-function baselineName(fixture, frame) {
+function baselineName(fixture, frame, artboard) {
+  if (artboard) {
+    return `${fixture}-${sanitizeArtboardName(artboard)}-f${frame}.png`;
+  }
   return `${fixture}-f${frame}.png`;
+}
+
+function artboardPlansForFixture(fixture) {
+  return ARTBOARD_PLANS[fixture] || [null];
 }
 
 async function main() {
   const update = process.argv.includes("--update");
-  fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.mkdirSync(CURRENT_DIR, { recursive: true });
   fs.mkdirSync(BASELINE_DIR, { recursive: true });
-
-  for (const fixture of FIXTURES) {
-    const input = path.join(ROOT, "tests", "fixtures", `${fixture}.json`);
-    const output = path.join(OUT_DIR, `${fixture}.riv`);
-    run("cargo", ["run", "--quiet", "--", "generate", input, "-o", output]);
-    fs.copyFileSync(output, path.join(HARNESS_DIR, `${fixture}.riv`));
-  }
+  buildFixtures();
 
   let server;
   let browser;
@@ -326,11 +306,7 @@ async function main() {
   let hasNewBaselines = false;
 
   try {
-    server = spawn("python3", ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"], {
-      cwd: HARNESS_DIR,
-      stdio: "ignore",
-    });
-
+    server = startServer(PORT);
     await waitForServer(PORT);
     browser = await chromium.launch({
       headless: true,
@@ -338,76 +314,56 @@ async function main() {
     });
 
     for (const fixture of FIXTURES) {
-      for (const shot of shotPlanForFixture(fixture)) {
-        const page = await browser.newPage({ viewport: { width: 512, height: 512 }, deviceScaleFactor: 2 });
-        const runtimeErrors = [];
-        page.on("pageerror", (err) => runtimeErrors.push(String(err)));
-        page.on("console", (msg) => {
-          if (msg.type() === "error") {
-            runtimeErrors.push(msg.text());
-          }
-        });
-
-        await page.goto(`http://127.0.0.1:${PORT}/harness.html?file=${fixture}.riv`, {
-          waitUntil: "domcontentloaded",
-        });
-        await page.waitForFunction(() => window.__RIVE_OK || window.__RIVE_ERROR, {
-          timeout: 15000,
-        });
-
-        const state = await page.evaluate(() => ({
-          ok: window.__RIVE_OK,
-          error: window.__RIVE_ERROR,
-        }));
-
-        if (runtimeErrors.length > 0) {
-          throw new Error(`${fixture}.riv runtime errors: ${runtimeErrors.join(" | ")}`);
-        }
-        if (!state.ok || state.error) {
-          throw new Error(`${fixture}.riv failed to load: ${state.error || "unknown error"}`);
-        }
-
-        await mountControlledRive(page, fixture);
-
-        if (shot.waitFrames > 0) {
-          await page.evaluate(() => {
-            if (!window.__VISUAL_RIVE || typeof window.__VISUAL_RIVE.play !== "function") {
-              return false;
-            }
-            window.__VISUAL_RIVE.play();
-            return true;
+      for (const artboard of artboardPlansForFixture(fixture)) {
+        for (const frame of shotFramesForFixture(fixture)) {
+          const page = await openFixturePage(browser, PORT, fixture, {
+            artboard,
+            pageOptions: { viewport: { width: 512, height: 512 }, deviceScaleFactor: 2 },
           });
-        }
 
-        await advanceFrames(page, shot.waitFrames);
-        const name = baselineName(fixture, shot.frame);
-        const currentPath = path.join(CURRENT_DIR, name);
-        const baselinePath = path.join(BASELINE_DIR, name);
-        await page.screenshot({ path: currentPath });
+          await mountControlledRive(page, fixture, artboard);
 
-        if (update || !fs.existsSync(baselinePath)) {
-          fs.copyFileSync(currentPath, baselinePath);
-          const status = update ? "updated" : "new";
-          rows.push({ name: `${fixture}@f${shot.frame}`, status, diffText: "0.0000" });
-          if (!update) {
-            hasNewBaselines = true;
+          if (frame > 0) {
+            await page.evaluate(() => {
+              if (!window.__VISUAL_RIVE || typeof window.__VISUAL_RIVE.play !== "function") {
+                return false;
+              }
+              window.__VISUAL_RIVE.play();
+              return true;
+            });
           }
+
+          await advanceFrames(page, frame);
+          const name = baselineName(fixture, frame, artboard);
+          const label = artboard ? `${fixture}[${artboard}]@f${frame}` : `${fixture}@f${frame}`;
+          const currentPath = path.join(CURRENT_DIR, name);
+          const baselinePath = path.join(BASELINE_DIR, name);
+          await page.screenshot({ path: currentPath });
+
+          if (update || !fs.existsSync(baselinePath)) {
+            fs.copyFileSync(currentPath, baselinePath);
+            const status = update ? "updated" : "new";
+            rows.push({ name: label, status, diffText: "0.0000" });
+            if (!update) {
+              hasNewBaselines = true;
+            }
+            await page.close();
+            continue;
+          }
+
+          const diffPercent = comparePngPixels(currentPath, baselinePath);
+          const pass = diffPercent <= thresholdForShot(fixture, frame);
+          rows.push({
+            name: label,
+            status: pass ? "pass" : "fail",
+            diffText: diffPercent.toFixed(4),
+          });
+          if (!pass) {
+            hasFailures = true;
+          }
+
           await page.close();
-          continue;
         }
-
-        const diffPercent = comparePngPixels(currentPath, baselinePath);
-        const pass = diffPercent <= thresholdForShot(fixture, shot);
-        rows.push({
-          name: `${fixture}@f${shot.frame}`,
-          status: pass ? "pass" : "fail",
-          diffText: diffPercent.toFixed(4),
-        });
-        if (!pass) {
-          hasFailures = true;
-        }
-
-        await page.close();
       }
     }
   } finally {
@@ -417,12 +373,7 @@ async function main() {
     if (server) {
       server.kill("SIGTERM");
     }
-    for (const fixture of FIXTURES) {
-      const filePath = path.join(HARNESS_DIR, `${fixture}.riv`);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
+    cleanupFixtures();
   }
 
   printSummary(rows);
@@ -434,7 +385,6 @@ async function main() {
   if (hasFailures) {
     process.exit(1);
   }
-  process.exit(0);
 }
 
 main().catch((err) => {
