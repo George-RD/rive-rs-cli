@@ -2381,4 +2381,176 @@ mod tests {
         assert!(trim.set_mode(3).is_err());
         assert!(trim.set_mode(999).is_err());
     }
+
+    #[test]
+    fn test_polygon_type_key_and_defaults() {
+        let p = Polygon::new("Hex".to_string(), 1, 100.0, 100.0);
+        assert_eq!(p.type_key(), type_keys::POLYGON);
+        let props = p.properties();
+        assert_eq!(props.len(), 4); // name, parent_id, width, height (origin defaults to 0.5, points to 5)
+    }
+
+    #[test]
+    fn test_polygon_custom_points_and_corner_radius() {
+        let mut p = Polygon::new("Oct".to_string(), 1, 80.0, 80.0);
+        p.points = 8;
+        p.corner_radius = 5.0;
+        let props = p.properties();
+        assert!(props.iter().any(
+            |pr| pr.key == property_keys::POLYGON_POINTS && pr.value == PropertyValue::UInt(8)
+        ));
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::POLYGON_CORNER_RADIUS
+                    && pr.value == PropertyValue::Float(5.0))
+        );
+    }
+
+    #[test]
+    fn test_star_type_key_and_composition() {
+        let s = Star::new("S".to_string(), 1, 100.0, 100.0);
+        assert_eq!(s.type_key(), type_keys::STAR);
+        let props = s.properties();
+        // Star delegates to Polygon, so base props are the same
+        assert_eq!(props.len(), 4); // inner_radius default 0.5 is omitted
+    }
+
+    #[test]
+    fn test_star_inner_radius() {
+        let mut s = Star::new("S".to_string(), 1, 100.0, 100.0);
+        s.inner_radius = 0.3;
+        let props = s.properties();
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::STAR_INNER_RADIUS
+                    && pr.value == PropertyValue::Float(0.3))
+        );
+    }
+
+    #[test]
+    fn test_clipping_shape_type_key_and_defaults() {
+        let cs = ClippingShape::new("Clip".to_string(), 1);
+        assert_eq!(cs.type_key(), type_keys::CLIPPING_SHAPE);
+        let props = cs.properties();
+        assert_eq!(props.len(), 2); // source_id=MAX, fill_rule=0, is_visible=true all omitted
+    }
+
+    #[test]
+    fn test_clipping_shape_with_source() {
+        let mut cs = ClippingShape::new("Clip".to_string(), 1);
+        cs.source_id = 3;
+        cs.is_visible = false;
+        let props = cs.properties();
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::CLIPPING_SHAPE_SOURCE_ID
+                    && pr.value == PropertyValue::UInt(3))
+        );
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::CLIPPING_SHAPE_IS_VISIBLE
+                    && pr.value == PropertyValue::UInt(0))
+        );
+    }
+
+    #[test]
+    fn test_cubic_asymmetric_vertex_type_key() {
+        let v = CubicAsymmetricVertexObject {
+            name: "AV".to_string(),
+            parent_id: Some(1),
+            x: 10.0,
+            y: 20.0,
+            rotation: 0.5,
+            in_distance: 30.0,
+            out_distance: 40.0,
+        };
+        assert_eq!(v.type_key(), type_keys::CUBIC_ASYMMETRIC_VERTEX);
+        let props = v.properties();
+        assert!(props.iter().any(
+            |pr| pr.key == property_keys::CUBIC_ASYMMETRIC_VERTEX_ROTATION
+                && pr.value == PropertyValue::Float(0.5)
+        ));
+        assert!(props.iter().any(|pr| pr.key
+            == property_keys::CUBIC_ASYMMETRIC_VERTEX_IN_DISTANCE
+            && pr.value == PropertyValue::Float(30.0)));
+        assert!(props.iter().any(|pr| pr.key
+            == property_keys::CUBIC_ASYMMETRIC_VERTEX_OUT_DISTANCE
+            && pr.value == PropertyValue::Float(40.0)));
+    }
+
+    #[test]
+    fn test_draw_target_type_key_and_defaults() {
+        let dt = DrawTarget::new("DT".to_string(), 1);
+        assert_eq!(dt.type_key(), type_keys::DRAW_TARGET);
+        let props = dt.properties();
+        assert_eq!(props.len(), 2); // drawable_id=MAX and placement_value=0 omitted
+    }
+
+    #[test]
+    fn test_draw_target_with_drawable() {
+        let mut dt = DrawTarget::new("DT".to_string(), 1);
+        dt.drawable_id = 5;
+        dt.placement_value = 1;
+        let props = dt.properties();
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::DRAW_TARGET_DRAWABLE_ID
+                    && pr.value == PropertyValue::UInt(5))
+        );
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::DRAW_TARGET_PLACEMENT_VALUE
+                    && pr.value == PropertyValue::UInt(1))
+        );
+    }
+
+    #[test]
+    fn test_draw_rules_type_key_and_defaults() {
+        let dr = DrawRules::new("DR".to_string(), 1);
+        assert_eq!(dr.type_key(), type_keys::DRAW_RULES);
+        let props = dr.properties();
+        assert_eq!(props.len(), 2); // draw_target_id=MAX omitted
+    }
+
+    #[test]
+    fn test_joystick_type_key_and_defaults() {
+        let js = Joystick::new("JS".to_string(), 1);
+        assert_eq!(js.type_key(), type_keys::JOYSTICK);
+        let props = js.properties();
+        assert_eq!(props.len(), 2); // all defaults omitted
+    }
+
+    #[test]
+    fn test_joystick_with_custom_values() {
+        let mut js = Joystick::new("JS".to_string(), 1);
+        js.x = 10.0;
+        js.pos_x = 200.0;
+        js.width = 150.0;
+        js.flags = 1;
+        let props = js.properties();
+        assert!(props.iter().any(
+            |pr| pr.key == property_keys::JOYSTICK_X && pr.value == PropertyValue::Float(10.0)
+        ));
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::JOYSTICK_POS_X
+                    && pr.value == PropertyValue::Float(200.0))
+        );
+        assert!(
+            props
+                .iter()
+                .any(|pr| pr.key == property_keys::JOYSTICK_WIDTH
+                    && pr.value == PropertyValue::Float(150.0))
+        );
+        assert!(props.iter().any(
+            |pr| pr.key == property_keys::JOYSTICK_FLAGS && pr.value == PropertyValue::UInt(1)
+        ));
+    }
 }
