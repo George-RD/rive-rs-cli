@@ -20,17 +20,19 @@
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <script src="https://unpkg.com/@rive-app/canvas@2.35.0"></script>
+    <script src="rive.min.js"></script>
     <script>
       window.__RIVE_OK = false;
       window.__RIVE_ERROR = "";
 
-      const file = new URLSearchParams(window.location.search).get("file");
+      const params = new URLSearchParams(window.location.search);
+      const file = params.get("file");
+      const artboard = params.get("artboard");
       if (!file) {
         window.__RIVE_ERROR = "missing file query param";
       } else {
         try {
-          new rive.Rive({
+          const opts = {
             src: file,
             canvas: document.getElementById("canvas"),
             autoplay: true,
@@ -40,7 +42,11 @@
             onLoadError: (error) => {
               window.__RIVE_ERROR = String(error || "rive load error");
             },
-          });
+          };
+          if (artboard) {
+            opts.artboard = artboard;
+          }
+          new rive.Rive(opts);
         } catch (error) {
           window.__RIVE_ERROR = String(error || "rive init error");
         }
