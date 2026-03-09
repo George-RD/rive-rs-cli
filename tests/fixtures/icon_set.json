@@ -1,0 +1,189 @@
+{
+  "scene_format_version": 1,
+  "artboards": [
+    {
+      "name": "Home",
+      "width": 200,
+      "height": 200,
+      "children": [
+        {
+          "type": "shape",
+          "name": "HouseBody",
+          "x": 100,
+          "y": 130,
+          "children": [
+            {
+              "type": "rectangle",
+              "name": "HouseRect",
+              "width": 100,
+              "height": 80,
+              "origin_x": 0.5,
+              "origin_y": 0.5
+            },
+            {
+              "type": "fill",
+              "name": "HouseFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "HouseColor",
+                  "color": "#4A90D9"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "shape",
+          "name": "Roof",
+          "x": 100,
+          "y": 70,
+          "children": [
+            {
+              "type": "triangle",
+              "name": "RoofTri",
+              "width": 120,
+              "height": 50,
+              "origin_x": 0.5,
+              "origin_y": 0.5
+            },
+            {
+              "type": "fill",
+              "name": "RoofFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "RoofColor",
+                  "color": "#E74C3C"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "width": 200,
+      "height": 200,
+      "children": [
+        {
+          "type": "shape",
+          "name": "GearOuter",
+          "x": 100,
+          "y": 100,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "GearCircle",
+              "width": 120,
+              "height": 120,
+              "origin_x": 0.5,
+              "origin_y": 0.5
+            },
+            {
+              "type": "fill",
+              "name": "GearFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "GearColor",
+                  "color": "#7F8C8D"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "shape",
+          "name": "GearInner",
+          "x": 100,
+          "y": 100,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "GearHole",
+              "width": 40,
+              "height": 40,
+              "origin_x": 0.5,
+              "origin_y": 0.5
+            },
+            {
+              "type": "fill",
+              "name": "GearHoleFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "GearHoleColor",
+                  "color": "#2C3E50"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "width": 200,
+      "height": 200,
+      "children": [
+        {
+          "type": "shape",
+          "name": "Head",
+          "x": 100,
+          "y": 70,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "HeadCircle",
+              "width": 60,
+              "height": 60,
+              "origin_x": 0.5,
+              "origin_y": 0.5
+            },
+            {
+              "type": "fill",
+              "name": "HeadFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "HeadColor",
+                  "color": "#3498DB"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "shape",
+          "name": "Body",
+          "x": 100,
+          "y": 140,
+          "children": [
+            {
+              "type": "rectangle",
+              "name": "BodyRect",
+              "width": 80,
+              "height": 70,
+              "corner_radius": 10,
+              "origin_x": 0.5,
+              "origin_y": 0.5
+            },
+            {
+              "type": "fill",
+              "name": "BodyFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "BodyColor",
+                  "color": "#3498DB"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

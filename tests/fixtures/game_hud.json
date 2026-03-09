@@ -1,0 +1,198 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "GameHUD",
+    "width": 800,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "HealthBarBg",
+        "x": 150,
+        "y": 50,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "HealthBarBgRect",
+            "width": 200,
+            "height": 30,
+            "corner_radius": 5,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "HealthBarBgFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "HealthBarBgColor",
+                "color": "#333333"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "HealthBar",
+        "x": 150,
+        "y": 50,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "HealthBarRect",
+            "width": 196,
+            "height": 26,
+            "corner_radius": 4,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "HealthGradientFill",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "HealthGradient",
+                "start_x": 0,
+                "start_y": 0,
+                "end_x": 196,
+                "end_y": 0,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "color": "#FF0000",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "color": "#FFAA00",
+                    "position": 0.5
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "color": "#00FF00",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "name": "ScoreText",
+        "align_value": 1,
+        "sizing_value": 2,
+        "overflow_value": 1,
+        "width": 200.0,
+        "height": 40.0,
+        "origin_x": 0.5,
+        "origin_y": 0.5,
+        "children": [
+          {
+            "type": "text_style",
+            "name": "ScoreStyle",
+            "font_size": 28.0,
+            "line_height": 1.2,
+            "letter_spacing": 1.0,
+            "font_asset_id": 1
+          },
+          {
+            "type": "text_value_run",
+            "name": "ScoreRun",
+            "text": "SCORE: 0",
+            "style_id": 0
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "MiniMapFrame",
+        "x": 700,
+        "y": 320,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "MiniMapRect",
+            "width": 150,
+            "height": 120,
+            "corner_radius": 3,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "MiniMapFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "MiniMapColor",
+                "color": "#1A1A2E"
+              }
+            ]
+          },
+          {
+            "type": "stroke",
+            "name": "MiniMapBorder",
+            "thickness": 2,
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "MiniMapBorderColor",
+                "color": "#00FF88"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "PlayerDot",
+        "x": 700,
+        "y": 320,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "DotCircle",
+            "width": 10,
+            "height": 10,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "DotFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "DotColor",
+                "color": "#FF4444"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "drain_health",
+        "fps": 60,
+        "duration": 180,
+        "keyframes": [
+          {
+            "object": "HealthBarRect",
+            "property": "width",
+            "frames": [
+              { "frame": 0, "value": 196.0 },
+              { "frame": 90, "value": 98.0 },
+              { "frame": 179, "value": 20.0 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
