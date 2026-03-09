@@ -113,7 +113,7 @@ You MUST consult these before implementing any object type or format detail:
 - **Every object type must match the Rive runtime's generated definitions exactly** — type keys, property IDs, and backing types. Cross-reference with `core_registry.hpp` and the `*_base.hpp` files.
 - **No guessing property IDs** — always look them up from the generated source. Wrong IDs produce files that load but render incorrectly or crash.
 - **Build incrementally** — each step must produce valid, loadable `.riv` output before moving on: binary encoder → shapes → animations → state machines → bones → text → assets → data binding → layout → nested artboards.
-- **When adding a new object type**: add its type key to `core::type_keys`, property keys to `core::property_keys`, backing types to `property_backing_type()`, bool flags to `is_bool_property()`, update name mappings in `generated_registry.rs`, struct in the appropriate `objects/` file, JSON variant in `scene.rs`, and test fixtures.
+- **When adding a new object type**: add its type key to `core::type_keys`, property keys to `core::property_keys`, backing types to `property_backing_type()`, bool flags to `is_bool_property()`, update name mappings in `generated_registry.rs` (sourced from rive-runtime defs), struct in the appropriate `objects/` file, JSON variant in `scene.rs`, and test fixtures.
 - **Test every layer by loading the output** — generate a .riv, read it back with the validator, and ideally load it in a Rive runtime.
 - **Preserve format version compatibility** — target major version 7 (current).
 
