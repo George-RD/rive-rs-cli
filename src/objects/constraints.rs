@@ -700,6 +700,96 @@ impl RiveObject for RotationConstraint {
     }
 }
 
+pub struct FollowPathConstraint {
+    pub name: String,
+    pub parent_id: u64,
+    pub strength: f32,
+    pub target_id: u64,
+    pub source_space_value: u64,
+    pub dest_space_value: u64,
+    pub distance: f32,
+    pub orient: bool,
+    pub offset: bool,
+}
+
+impl FollowPathConstraint {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            strength: 1.0,
+            target_id: u32::MAX as u64,
+            source_space_value: 0,
+            dest_space_value: 0,
+            distance: 0.0,
+            orient: false,
+            offset: false,
+        }
+    }
+}
+
+impl RiveObject for FollowPathConstraint {
+    fn type_key(&self) -> u16 {
+        type_keys::FOLLOW_PATH_CONSTRAINT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.strength != 1.0 {
+            props.push(Property {
+                key: property_keys::CONSTRAINT_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.target_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::TARGETED_CONSTRAINT_TARGET_ID,
+                value: PropertyValue::UInt(self.target_id),
+            });
+        }
+        if self.source_space_value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SPACE_SOURCE_SPACE_VALUE,
+                value: PropertyValue::UInt(self.source_space_value),
+            });
+        }
+        if self.dest_space_value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SPACE_DEST_SPACE_VALUE,
+                value: PropertyValue::UInt(self.dest_space_value),
+            });
+        }
+        if self.distance != 0.0 {
+            props.push(Property {
+                key: property_keys::FOLLOW_PATH_CONSTRAINT_DISTANCE,
+                value: PropertyValue::Float(self.distance),
+            });
+        }
+        if self.orient {
+            props.push(Property {
+                key: property_keys::FOLLOW_PATH_CONSTRAINT_ORIENT,
+                value: PropertyValue::UInt(1),
+            });
+        }
+        if self.offset {
+            props.push(Property {
+                key: property_keys::FOLLOW_PATH_CONSTRAINT_OFFSET,
+                value: PropertyValue::UInt(1),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

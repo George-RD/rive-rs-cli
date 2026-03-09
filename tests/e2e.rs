@@ -2992,3 +2992,33 @@ fn test_generate_validate_inspect_game_hud() {
 fn test_generate_validate_inspect_mascot() {
     assert_generate_validate_inspect("mascot", &["Spine", "Torso", "Neck"]);
 }
+
+#[test]
+fn test_generate_validate_inspect_polygon_star() {
+    assert_generate_validate_inspect("polygon_star", &["Polygon", "Star"]);
+}
+
+#[test]
+fn test_generate_validate_inspect_clipping_shape() {
+    assert_generate_validate_inspect("clipping_shape", &["ClippingShape"]);
+}
+
+#[test]
+fn test_generate_validate_inspect_follow_path_constraint() {
+    assert_generate_validate_inspect("follow_path_constraint", &["FollowPathConstraint"]);
+}
+
+#[test]
+fn test_generate_validate_inspect_cubic_asymmetric() {
+    assert_generate_validate_inspect("cubic_asymmetric", &["CubicAsymmetricVertex"]);
+}
+
+#[test]
+fn test_generate_validate_inspect_draw_rules() {
+    assert_generate_validate_inspect("draw_rules", &["DrawTarget", "DrawRules"]);
+}
+
+#[test]
+fn test_generate_validate_inspect_joystick() {
+    assert_generate_validate_inspect("joystick", &["Joystick"]);
+}

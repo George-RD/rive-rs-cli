@@ -1,0 +1,61 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "FollowPathArtboard",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "PathShape",
+        "children": [
+          {
+            "type": "points_path",
+            "name": "GuidePath",
+            "is_closed": false,
+            "children": [
+              { "type": "straight_vertex", "name": "V1", "x": 50, "y": 250 },
+              { "type": "straight_vertex", "name": "V2", "x": 250, "y": 50 },
+              { "type": "straight_vertex", "name": "V3", "x": 450, "y": 250 }
+            ]
+          },
+          {
+            "type": "stroke",
+            "name": "PathStroke",
+            "thickness": 2,
+            "children": [
+              { "type": "solid_color", "name": "PathColor", "color": "#888888FF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Follower",
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "FollowerDot",
+            "width": 30,
+            "height": 30
+          },
+          {
+            "type": "fill",
+            "name": "FollowerFill",
+            "children": [
+              { "type": "solid_color", "name": "FollowerColor", "color": "#FF3300FF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "follow_path_constraint",
+        "name": "FollowPath1",
+        "target": "PathShape",
+        "distance": 0.5,
+        "orient": true,
+        "offset": false
+      }
+    ]
+  }
+}
