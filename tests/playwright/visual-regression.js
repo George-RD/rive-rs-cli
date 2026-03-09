@@ -10,7 +10,7 @@ const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const CURRENT_DIR = path.join(ROOT, "target", "playwright-visual");
 const BASELINE_DIR = path.join(ROOT, "tests", "playwright", "baselines");
-const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard", "nested_artboard", "artboard_preset", "gradients", "color_animation", "loop_animation", "stroke_styles", "empty_artboard"];
+const FIXTURES = ["minimal", "shapes", "animation", "state_machine", "path", "cubic_easing", "trim_path", "multi_artboard", "nested_artboard", "artboard_preset", "gradients", "color_animation", "loop_animation", "stroke_styles", "empty_artboard", "icon_set", "game_hud", "mascot"];
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8766);
 const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "1.0");
 
@@ -218,43 +218,18 @@ function printSummary(rows) {
   }
 }
 
+const SHOT_FRAMES = {
+  animation: [0, 30, 60],
+  cubic_easing: [0, 15, 30, 45, 60],
+  multi_artboard: [0, 30],
+  color_animation: [0, 30, 60],
+  loop_animation: [0, 30],
+  game_hud: [0, 60, 120],
+  mascot: [0, 30, 60],
+};
+
 function shotPlanForFixture(fixture) {
-  if (fixture === "animation") {
-    return [
-      { frame: 0, waitFrames: 0 },
-      { frame: 30, waitFrames: 30 },
-      { frame: 60, waitFrames: 60 },
-    ];
-  }
-  if (fixture === "cubic_easing") {
-    return [
-      { frame: 0, waitFrames: 0 },
-      { frame: 15, waitFrames: 15 },
-      { frame: 30, waitFrames: 30 },
-      { frame: 45, waitFrames: 45 },
-      { frame: 60, waitFrames: 60 },
-    ];
-  }
-  if (fixture === "multi_artboard") {
-    return [
-      { frame: 0, waitFrames: 0 },
-      { frame: 30, waitFrames: 30 },
-    ];
-  }
-  if (fixture === "color_animation") {
-    return [
-      { frame: 0, waitFrames: 0 },
-      { frame: 30, waitFrames: 30 },
-      { frame: 60, waitFrames: 60 },
-    ];
-  }
-  if (fixture === "loop_animation") {
-    return [
-      { frame: 0, waitFrames: 0 },
-      { frame: 30, waitFrames: 30 },
-    ];
-  }
-  return [{ frame: 0, waitFrames: 0 }];
+  return (SHOT_FRAMES[fixture] || [0]).map((f) => ({ frame: f, waitFrames: f }));
 }
 
 function thresholdForShot(fixture, shot) {

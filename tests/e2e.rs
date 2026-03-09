@@ -30,6 +30,51 @@ fn cleanup(path: &PathBuf) {
     let _ = std::fs::remove_file(path);
 }
 
+struct CleanupOnDrop(PathBuf);
+
+impl Drop for CleanupOnDrop {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
+    let input = fixture_path(&format!("{}.json", fixture));
+    let output = temp_output(fixture);
+    cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&inspect.stdout);
+    assert!(
+        inspect.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+    for s in expected {
+        assert!(stdout.contains(s), "expected '{}' in inspect output", s);
+    }
+}
+
 #[test]
 fn test_generate_minimal() {
     let input = fixture_path("minimal.json");
@@ -2915,145 +2960,35 @@ fn test_inspect_loader() {
 
 #[test]
 fn test_generate_validate_inspect_elastic_interpolator() {
-    let input = fixture_path("elastic_interpolator.json");
-    let output = temp_output("elastic_interpolator");
-    cleanup(&output);
-
-    let generate = cargo_run(&[
-        "generate",
-        input.to_str().unwrap(),
-        "-o",
-        output.to_str().unwrap(),
-    ]);
-    assert!(
-        generate.status.success(),
-        "generate failed: {}",
-        String::from_utf8_lossy(&generate.stderr)
-    );
-
-    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
-    assert!(
-        validate.status.success(),
-        "validate failed: {}",
-        String::from_utf8_lossy(&validate.stderr)
-    );
-
-    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
-    let stdout = String::from_utf8_lossy(&inspect.stdout);
-    assert!(
-        inspect.status.success(),
-        "inspect failed: {}",
-        String::from_utf8_lossy(&inspect.stderr)
-    );
-    assert!(stdout.contains("ElasticInterpolator"));
-    cleanup(&output);
+    assert_generate_validate_inspect("elastic_interpolator", &["ElasticInterpolator"]);
 }
 
 #[test]
 fn test_generate_validate_inspect_triangle() {
-    let input = fixture_path("triangle.json");
-    let output = temp_output("triangle");
-    cleanup(&output);
-
-    let generate = cargo_run(&[
-        "generate",
-        input.to_str().unwrap(),
-        "-o",
-        output.to_str().unwrap(),
-    ]);
-    assert!(
-        generate.status.success(),
-        "generate failed: {}",
-        String::from_utf8_lossy(&generate.stderr)
-    );
-
-    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
-    assert!(
-        validate.status.success(),
-        "validate failed: {}",
-        String::from_utf8_lossy(&validate.stderr)
-    );
-
-    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
-    let stdout = String::from_utf8_lossy(&inspect.stdout);
-    assert!(
-        inspect.status.success(),
-        "inspect failed: {}",
-        String::from_utf8_lossy(&inspect.stderr)
-    );
-    assert!(stdout.contains("Triangle"));
-    cleanup(&output);
+    assert_generate_validate_inspect("triangle", &["Triangle"]);
 }
 
 #[test]
 fn test_generate_validate_inspect_event_test() {
-    let input = fixture_path("event_test.json");
-    let output = temp_output("event_test");
-    cleanup(&output);
-
-    let generate = cargo_run(&[
-        "generate",
-        input.to_str().unwrap(),
-        "-o",
-        output.to_str().unwrap(),
-    ]);
-    assert!(
-        generate.status.success(),
-        "generate failed: {}",
-        String::from_utf8_lossy(&generate.stderr)
-    );
-
-    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
-    assert!(
-        validate.status.success(),
-        "validate failed: {}",
-        String::from_utf8_lossy(&validate.stderr)
-    );
-
-    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
-    let stdout = String::from_utf8_lossy(&inspect.stdout);
-    assert!(
-        inspect.status.success(),
-        "inspect failed: {}",
-        String::from_utf8_lossy(&inspect.stderr)
-    );
-    assert!(stdout.contains("Event"));
-    assert!(stdout.contains("KeyFrameCallback"));
-    cleanup(&output);
+    assert_generate_validate_inspect("event_test", &["Event", "KeyFrameCallback"]);
 }
 
 #[test]
 fn test_generate_validate_inspect_nested_simple_animation() {
-    let input = fixture_path("nested_simple_animation.json");
-    let output = temp_output("nested_simple_animation");
-    cleanup(&output);
+    assert_generate_validate_inspect("nested_simple_animation", &["NestedSimpleAnimation"]);
+}
 
-    let generate = cargo_run(&[
-        "generate",
-        input.to_str().unwrap(),
-        "-o",
-        output.to_str().unwrap(),
-    ]);
-    assert!(
-        generate.status.success(),
-        "generate failed: {}",
-        String::from_utf8_lossy(&generate.stderr)
-    );
+#[test]
+fn test_generate_validate_inspect_icon_set() {
+    assert_generate_validate_inspect("icon_set", &["Home", "Settings", "Profile"]);
+}
 
-    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
-    assert!(
-        validate.status.success(),
-        "validate failed: {}",
-        String::from_utf8_lossy(&validate.stderr)
-    );
+#[test]
+fn test_generate_validate_inspect_game_hud() {
+    assert_generate_validate_inspect("game_hud", &["HealthBar", "ScoreText", "MiniMapFrame"]);
+}
 
-    let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
-    let stdout = String::from_utf8_lossy(&inspect.stdout);
-    assert!(
-        inspect.status.success(),
-        "inspect failed: {}",
-        String::from_utf8_lossy(&inspect.stderr)
-    );
-    assert!(stdout.contains("NestedSimpleAnimation"));
-    cleanup(&output);
+#[test]
+fn test_generate_validate_inspect_mascot() {
+    assert_generate_validate_inspect("mascot", &["Spine", "Torso", "Neck"]);
 }
