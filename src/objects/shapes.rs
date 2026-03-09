@@ -2387,7 +2387,11 @@ mod tests {
         let p = Polygon::new("Hex".to_string(), 1, 100.0, 100.0);
         assert_eq!(p.type_key(), type_keys::POLYGON);
         let props = p.properties();
-        assert_eq!(props.len(), 4); // name, parent_id, width, height (origin defaults to 0.5, points to 5)
+        assert_eq!(
+            props.len(),
+            4,
+            "defaults should emit only name, parent_id, width, height"
+        );
     }
 
     #[test]
@@ -2412,8 +2416,11 @@ mod tests {
         let s = Star::new("S".to_string(), 1, 100.0, 100.0);
         assert_eq!(s.type_key(), type_keys::STAR);
         let props = s.properties();
-        // Star delegates to Polygon, so base props are the same
-        assert_eq!(props.len(), 4); // inner_radius default 0.5 is omitted
+        assert_eq!(
+            props.len(),
+            4,
+            "star delegates to polygon; inner_radius default 0.5 is omitted"
+        );
     }
 
     #[test]
@@ -2434,7 +2441,11 @@ mod tests {
         let cs = ClippingShape::new("Clip".to_string(), 1);
         assert_eq!(cs.type_key(), type_keys::CLIPPING_SHAPE);
         let props = cs.properties();
-        assert_eq!(props.len(), 2); // source_id=MAX, fill_rule=0, is_visible=true all omitted
+        assert_eq!(
+            props.len(),
+            2,
+            "defaults should emit only name and parent_id"
+        );
     }
 
     #[test]
@@ -2487,7 +2498,11 @@ mod tests {
         let dt = DrawTarget::new("DT".to_string(), 1);
         assert_eq!(dt.type_key(), type_keys::DRAW_TARGET);
         let props = dt.properties();
-        assert_eq!(props.len(), 2); // drawable_id=MAX and placement_value=0 omitted
+        assert_eq!(
+            props.len(),
+            2,
+            "defaults should emit only name and parent_id"
+        );
     }
 
     #[test]
@@ -2515,7 +2530,11 @@ mod tests {
         let dr = DrawRules::new("DR".to_string(), 1);
         assert_eq!(dr.type_key(), type_keys::DRAW_RULES);
         let props = dr.properties();
-        assert_eq!(props.len(), 2); // draw_target_id=MAX omitted
+        assert_eq!(
+            props.len(),
+            2,
+            "defaults should emit only name and parent_id"
+        );
     }
 
     #[test]
@@ -2523,7 +2542,11 @@ mod tests {
         let js = Joystick::new("JS".to_string(), 1);
         assert_eq!(js.type_key(), type_keys::JOYSTICK);
         let props = js.properties();
-        assert_eq!(props.len(), 2); // all defaults omitted
+        assert_eq!(
+            props.len(),
+            2,
+            "defaults should emit only name and parent_id"
+        );
     }
 
     #[test]
