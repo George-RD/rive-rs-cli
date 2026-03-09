@@ -1185,6 +1185,455 @@ impl RiveObject for TrimPath {
     }
 }
 
+pub struct Polygon {
+    pub name: String,
+    pub parent_id: u64,
+    pub width: f32,
+    pub height: f32,
+    pub origin_x: f32,
+    pub origin_y: f32,
+    pub points: u64,
+    pub corner_radius: f32,
+}
+
+impl Polygon {
+    pub fn new(name: String, parent_id: u64, width: f32, height: f32) -> Self {
+        Polygon {
+            name,
+            parent_id,
+            width,
+            height,
+            origin_x: 0.5,
+            origin_y: 0.5,
+            points: 5,
+            corner_radius: 0.0,
+        }
+    }
+}
+
+impl RiveObject for Polygon {
+    fn type_key(&self) -> u16 {
+        type_keys::POLYGON
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_WIDTH,
+                value: PropertyValue::Float(self.width),
+            },
+            Property {
+                key: property_keys::PARAMETRIC_PATH_HEIGHT,
+                value: PropertyValue::Float(self.height),
+            },
+        ];
+        if self.origin_x != 0.5 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
+                value: PropertyValue::Float(self.origin_x),
+            });
+        }
+        if self.origin_y != 0.5 {
+            props.push(Property {
+                key: property_keys::PARAMETRIC_PATH_ORIGIN_Y,
+                value: PropertyValue::Float(self.origin_y),
+            });
+        }
+        if self.points != 5 {
+            props.push(Property {
+                key: property_keys::POLYGON_POINTS,
+                value: PropertyValue::UInt(self.points),
+            });
+        }
+        if self.corner_radius != 0.0 {
+            props.push(Property {
+                key: property_keys::POLYGON_CORNER_RADIUS,
+                value: PropertyValue::Float(self.corner_radius),
+            });
+        }
+        props
+    }
+}
+
+pub struct Star {
+    pub polygon: Polygon,
+    pub inner_radius: f32,
+}
+
+impl Star {
+    pub fn new(name: String, parent_id: u64, width: f32, height: f32) -> Self {
+        Star {
+            polygon: Polygon::new(name, parent_id, width, height),
+            inner_radius: 0.5,
+        }
+    }
+}
+
+impl RiveObject for Star {
+    fn type_key(&self) -> u16 {
+        type_keys::STAR
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = self.polygon.properties();
+        if self.inner_radius != 0.5 {
+            props.push(Property {
+                key: property_keys::STAR_INNER_RADIUS,
+                value: PropertyValue::Float(self.inner_radius),
+            });
+        }
+        props
+    }
+}
+
+pub struct ClippingShape {
+    pub name: String,
+    pub parent_id: u64,
+    pub source_id: u64,
+    pub fill_rule: u64,
+    pub is_visible: bool,
+}
+
+impl ClippingShape {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        ClippingShape {
+            name,
+            parent_id,
+            source_id: u32::MAX as u64,
+            fill_rule: 0,
+            is_visible: true,
+        }
+    }
+}
+
+impl RiveObject for ClippingShape {
+    fn type_key(&self) -> u16 {
+        type_keys::CLIPPING_SHAPE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.source_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::CLIPPING_SHAPE_SOURCE_ID,
+                value: PropertyValue::UInt(self.source_id),
+            });
+        }
+        if self.fill_rule != 0 {
+            props.push(Property {
+                key: property_keys::CLIPPING_SHAPE_FILL_RULE,
+                value: PropertyValue::UInt(self.fill_rule),
+            });
+        }
+        if !self.is_visible {
+            props.push(Property {
+                key: property_keys::CLIPPING_SHAPE_IS_VISIBLE,
+                value: PropertyValue::UInt(0),
+            });
+        }
+        props
+    }
+}
+
+pub struct CubicAsymmetricVertexObject {
+    pub name: String,
+    pub parent_id: Option<u32>,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub in_distance: f32,
+    pub out_distance: f32,
+}
+
+impl RiveObject for CubicAsymmetricVertexObject {
+    fn type_key(&self) -> u16 {
+        type_keys::CUBIC_ASYMMETRIC_VERTEX
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if let Some(parent_id) = self.parent_id {
+            props.push(Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(parent_id as u64),
+            });
+        }
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::VERTEX_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_ASYMMETRIC_VERTEX_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.in_distance != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_ASYMMETRIC_VERTEX_IN_DISTANCE,
+                value: PropertyValue::Float(self.in_distance),
+            });
+        }
+        if self.out_distance != 0.0 {
+            props.push(Property {
+                key: property_keys::CUBIC_ASYMMETRIC_VERTEX_OUT_DISTANCE,
+                value: PropertyValue::Float(self.out_distance),
+            });
+        }
+        props
+    }
+}
+
+pub struct DrawTarget {
+    pub name: String,
+    pub parent_id: u64,
+    pub drawable_id: u64,
+    pub placement_value: u64,
+}
+
+impl DrawTarget {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        DrawTarget {
+            name,
+            parent_id,
+            drawable_id: u32::MAX as u64,
+            placement_value: 0,
+        }
+    }
+}
+
+impl RiveObject for DrawTarget {
+    fn type_key(&self) -> u16 {
+        type_keys::DRAW_TARGET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.drawable_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::DRAW_TARGET_DRAWABLE_ID,
+                value: PropertyValue::UInt(self.drawable_id),
+            });
+        }
+        if self.placement_value != 0 {
+            props.push(Property {
+                key: property_keys::DRAW_TARGET_PLACEMENT_VALUE,
+                value: PropertyValue::UInt(self.placement_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct DrawRules {
+    pub name: String,
+    pub parent_id: u64,
+    pub draw_target_id: u64,
+}
+
+impl DrawRules {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        DrawRules {
+            name,
+            parent_id,
+            draw_target_id: u32::MAX as u64,
+        }
+    }
+}
+
+impl RiveObject for DrawRules {
+    fn type_key(&self) -> u16 {
+        type_keys::DRAW_RULES
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.draw_target_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::DRAW_RULES_DRAW_TARGET_ID,
+                value: PropertyValue::UInt(self.draw_target_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct Joystick {
+    pub name: String,
+    pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
+    pub x_id: u64,
+    pub y_id: u64,
+    pub pos_x: f32,
+    pub pos_y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub origin_x: f32,
+    pub origin_y: f32,
+    pub flags: u64,
+    pub handle_source_id: u64,
+}
+
+impl Joystick {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Joystick {
+            name,
+            parent_id,
+            x: 0.0,
+            y: 0.0,
+            x_id: 0,
+            y_id: 0,
+            pos_x: 0.0,
+            pos_y: 0.0,
+            width: 100.0,
+            height: 100.0,
+            origin_x: 0.5,
+            origin_y: 0.5,
+            flags: 0,
+            handle_source_id: 0,
+        }
+    }
+}
+
+impl RiveObject for Joystick {
+    fn type_key(&self) -> u16 {
+        type_keys::JOYSTICK
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.x_id != 0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_X_ID,
+                value: PropertyValue::UInt(self.x_id),
+            });
+        }
+        if self.y_id != 0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_Y_ID,
+                value: PropertyValue::UInt(self.y_id),
+            });
+        }
+        if self.pos_x != 0.0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_POS_X,
+                value: PropertyValue::Float(self.pos_x),
+            });
+        }
+        if self.pos_y != 0.0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_POS_Y,
+                value: PropertyValue::Float(self.pos_y),
+            });
+        }
+        if self.width != 100.0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_WIDTH,
+                value: PropertyValue::Float(self.width),
+            });
+        }
+        if self.height != 100.0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_HEIGHT,
+                value: PropertyValue::Float(self.height),
+            });
+        }
+        if self.origin_x != 0.5 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_ORIGIN_X,
+                value: PropertyValue::Float(self.origin_x),
+            });
+        }
+        if self.origin_y != 0.5 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_ORIGIN_Y,
+                value: PropertyValue::Float(self.origin_y),
+            });
+        }
+        if self.flags != 0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_FLAGS,
+                value: PropertyValue::UInt(self.flags),
+            });
+        }
+        if self.handle_source_id != 0 {
+            props.push(Property {
+                key: property_keys::JOYSTICK_HANDLE_SOURCE_ID,
+                value: PropertyValue::UInt(self.handle_source_id),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

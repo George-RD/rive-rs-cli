@@ -10,16 +10,17 @@ use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
 use crate::objects::assets::{AudioAsset, FontAsset, ImageAsset};
 use crate::objects::bones::{Bone, CubicWeight, RootBone, Skin, Tendon, Weight};
 use crate::objects::constraints::{
-    DistanceConstraint, IKConstraint, RotationConstraint, ScaleConstraint, TransformConstraint,
-    TranslationConstraint,
+    DistanceConstraint, FollowPathConstraint, IKConstraint, RotationConstraint, ScaleConstraint,
+    TransformConstraint, TranslationConstraint,
 };
 use crate::objects::core::{BackingType, RiveObject, property_backing_type, property_keys};
 use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
 use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
-    CubicDetachedVertexObject, CubicMirroredVertexObject, Ellipse, Fill, GradientStop, Image,
-    LinearGradient, Node, PathObject, PointsPathObject, RadialGradient, Rectangle, Shape,
-    SolidColor, Solo, StraightVertexObject, Stroke, Triangle, TrimPath,
+    ClippingShape, CubicAsymmetricVertexObject, CubicDetachedVertexObject,
+    CubicMirroredVertexObject, DrawRules, DrawTarget, Ellipse, Fill, GradientStop, Image,
+    Joystick, LinearGradient, Node, PathObject, PointsPathObject, Polygon, RadialGradient,
+    Rectangle, Shape, SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, EntryState, Event, ExitState, ListenerBoolChange,
@@ -195,6 +196,25 @@ pub enum ObjectSpec {
         origin_x: Option<f32>,
         origin_y: Option<f32>,
     },
+    Polygon {
+        name: String,
+        width: f32,
+        height: f32,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+        points: Option<u64>,
+        corner_radius: Option<f32>,
+    },
+    Star {
+        name: String,
+        width: f32,
+        height: f32,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+        points: Option<u64>,
+        corner_radius: Option<f32>,
+        inner_radius: Option<f32>,
+    },
     Fill {
         name: String,
         fill_rule: Option<serde_json::Value>,
@@ -298,6 +318,20 @@ pub enum ObjectSpec {
         in_distance: Option<f32>,
         #[serde(default)]
         out_rotation: Option<f32>,
+        #[serde(default)]
+        out_distance: Option<f32>,
+    },
+    #[serde(rename = "cubic_asymmetric_vertex")]
+    CubicAsymmetricVertex {
+        name: String,
+        #[serde(default)]
+        x: Option<f32>,
+        #[serde(default)]
+        y: Option<f32>,
+        #[serde(default)]
+        rotation: Option<f32>,
+        #[serde(default)]
+        in_distance: Option<f32>,
         #[serde(default)]
         out_distance: Option<f32>,
     },
@@ -452,6 +486,51 @@ pub enum ObjectSpec {
         min: Option<bool>,
         max: Option<bool>,
         min_max_space_value: Option<u64>,
+    },
+    #[serde(rename = "follow_path_constraint")]
+    FollowPathConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
+        source_space_value: Option<u64>,
+        dest_space_value: Option<u64>,
+        distance: Option<f32>,
+        orient: Option<bool>,
+        offset: Option<bool>,
+    },
+    #[serde(rename = "clipping_shape")]
+    ClippingShape {
+        name: String,
+        source: Option<String>,
+        fill_rule: Option<u64>,
+        is_visible: Option<bool>,
+    },
+    #[serde(rename = "draw_rules")]
+    DrawRules {
+        name: String,
+        draw_target: Option<String>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "draw_target")]
+    DrawTarget {
+        name: String,
+        drawable: Option<String>,
+        placement_value: Option<u64>,
+    },
+    Joystick {
+        name: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        x_id: Option<u64>,
+        y_id: Option<u64>,
+        pos_x: Option<f32>,
+        pos_y: Option<f32>,
+        width: Option<f32>,
+        height: Option<f32>,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+        flags: Option<u64>,
+        handle_source_id: Option<u64>,
     },
     Text {
         name: String,
@@ -1340,6 +1419,60 @@ fn append_object(
             objects.push(Box::new(triangle));
             name_to_index.insert(name.clone(), object_index);
         }
+        ObjectSpec::Polygon {
+            name,
+            width,
+            height,
+            origin_x,
+            origin_y,
+            points,
+            corner_radius,
+        } => {
+            let mut polygon = Polygon::new(name.clone(), parent_id, *width, *height);
+            if let Some(origin_x) = origin_x {
+                polygon.origin_x = *origin_x;
+            }
+            if let Some(origin_y) = origin_y {
+                polygon.origin_y = *origin_y;
+            }
+            if let Some(points) = points {
+                polygon.points = *points;
+            }
+            if let Some(corner_radius) = corner_radius {
+                polygon.corner_radius = *corner_radius;
+            }
+            objects.push(Box::new(polygon));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::Star {
+            name,
+            width,
+            height,
+            origin_x,
+            origin_y,
+            points,
+            corner_radius,
+            inner_radius,
+        } => {
+            let mut star = Star::new(name.clone(), parent_id, *width, *height);
+            if let Some(origin_x) = origin_x {
+                star.polygon.origin_x = *origin_x;
+            }
+            if let Some(origin_y) = origin_y {
+                star.polygon.origin_y = *origin_y;
+            }
+            if let Some(points) = points {
+                star.polygon.points = *points;
+            }
+            if let Some(corner_radius) = corner_radius {
+                star.polygon.corner_radius = *corner_radius;
+            }
+            if let Some(inner_radius) = inner_radius {
+                star.inner_radius = *inner_radius;
+            }
+            objects.push(Box::new(star));
+            name_to_index.insert(name.clone(), object_index);
+        }
         ObjectSpec::Fill {
             name,
             fill_rule,
@@ -1605,6 +1738,25 @@ fn append_object(
                 in_rotation: in_rotation.unwrap_or(0.0),
                 in_distance: in_distance.unwrap_or(0.0),
                 out_rotation: out_rotation.unwrap_or(0.0),
+                out_distance: out_distance.unwrap_or(0.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CubicAsymmetricVertex {
+            name,
+            x,
+            y,
+            rotation,
+            in_distance,
+            out_distance,
+        } => {
+            objects.push(Box::new(CubicAsymmetricVertexObject {
+                name: name.clone(),
+                parent_id: Some(parent_id as u32),
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+                rotation: rotation.unwrap_or(0.0),
+                in_distance: in_distance.unwrap_or(0.0),
                 out_distance: out_distance.unwrap_or(0.0),
             }));
             name_to_index.insert(name.clone(), object_index);
@@ -2227,6 +2379,180 @@ fn append_object(
                 rc.min_max_space_value = *v;
             }
             objects.push(Box::new(rc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::FollowPathConstraint {
+            name,
+            target,
+            strength,
+            source_space_value,
+            dest_space_value,
+            distance,
+            orient,
+            offset,
+        } => {
+            let mut fpc = FollowPathConstraint::new(name.clone(), parent_id);
+            if let Some(target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "follow_path_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                fpc.target_id = (target_global - artboard_start) as u64;
+            }
+            if let Some(s) = strength {
+                fpc.strength = *s;
+            }
+            if let Some(v) = source_space_value {
+                fpc.source_space_value = *v;
+            }
+            if let Some(v) = dest_space_value {
+                fpc.dest_space_value = *v;
+            }
+            if let Some(d) = distance {
+                fpc.distance = *d;
+            }
+            if let Some(o) = orient {
+                fpc.orient = *o;
+            }
+            if let Some(o) = offset {
+                fpc.offset = *o;
+            }
+            objects.push(Box::new(fpc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ClippingShape {
+            name,
+            source,
+            fill_rule,
+            is_visible,
+        } => {
+            let mut cs = ClippingShape::new(name.clone(), parent_id);
+            if let Some(source_name) = source {
+                let source_global = *name_to_index.get(source_name).ok_or_else(|| {
+                    format!(
+                        "clipping_shape '{}' references unknown source '{}'",
+                        name, source_name
+                    )
+                })?;
+                cs.source_id = (source_global - artboard_start) as u64;
+            }
+            if let Some(fr) = fill_rule {
+                cs.fill_rule = *fr;
+            }
+            if let Some(v) = is_visible {
+                cs.is_visible = *v;
+            }
+            objects.push(Box::new(cs));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DrawRules {
+            name,
+            draw_target,
+            children,
+        } => {
+            let mut dr = DrawRules::new(name.clone(), parent_id);
+            if let Some(target_name) = draw_target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "draw_rules '{}' references unknown draw_target '{}'",
+                        name, target_name
+                    )
+                })?;
+                dr.draw_target_id = (target_global - artboard_start) as u64;
+            }
+            objects.push(Box::new(dr));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::DrawTarget {
+            name,
+            drawable,
+            placement_value,
+        } => {
+            let mut dt = DrawTarget::new(name.clone(), parent_id);
+            if let Some(drawable_name) = drawable {
+                let drawable_global = *name_to_index.get(drawable_name).ok_or_else(|| {
+                    format!(
+                        "draw_target '{}' references unknown drawable '{}'",
+                        name, drawable_name
+                    )
+                })?;
+                dt.drawable_id = (drawable_global - artboard_start) as u64;
+            }
+            if let Some(pv) = placement_value {
+                dt.placement_value = *pv;
+            }
+            objects.push(Box::new(dt));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::Joystick {
+            name,
+            x,
+            y,
+            x_id,
+            y_id,
+            pos_x,
+            pos_y,
+            width,
+            height,
+            origin_x,
+            origin_y,
+            flags,
+            handle_source_id,
+        } => {
+            let mut js = Joystick::new(name.clone(), parent_id);
+            if let Some(v) = x {
+                js.x = *v;
+            }
+            if let Some(v) = y {
+                js.y = *v;
+            }
+            if let Some(v) = x_id {
+                js.x_id = *v;
+            }
+            if let Some(v) = y_id {
+                js.y_id = *v;
+            }
+            if let Some(v) = pos_x {
+                js.pos_x = *v;
+            }
+            if let Some(v) = pos_y {
+                js.pos_y = *v;
+            }
+            if let Some(v) = width {
+                js.width = *v;
+            }
+            if let Some(v) = height {
+                js.height = *v;
+            }
+            if let Some(v) = origin_x {
+                js.origin_x = *v;
+            }
+            if let Some(v) = origin_y {
+                js.origin_y = *v;
+            }
+            if let Some(v) = flags {
+                js.flags = *v;
+            }
+            if let Some(v) = handle_source_id {
+                js.handle_source_id = *v;
+            }
+            objects.push(Box::new(js));
             name_to_index.insert(name.clone(), object_index);
         }
         ObjectSpec::Text {
@@ -2867,7 +3193,8 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             | ObjectSpec::Skin { children, .. }
             | ObjectSpec::Text { children, .. }
             | ObjectSpec::LayoutComponent { children, .. }
-            | ObjectSpec::ViewModel { children, .. } => {
+            | ObjectSpec::ViewModel { children, .. }
+            | ObjectSpec::DrawRules { children, .. } => {
                 if let Some(kids) = children {
                     refs.extend(collect_nested_artboard_refs(kids));
                 }
@@ -3251,6 +3578,8 @@ fn validate_object_spec(
                         | ObjectSpec::Ellipse { name, .. }
                         | ObjectSpec::Rectangle { name, .. }
                         | ObjectSpec::Triangle { name, .. }
+                        | ObjectSpec::Polygon { name, .. }
+                        | ObjectSpec::Star { name, .. }
                         | ObjectSpec::Fill { name, .. }
                         | ObjectSpec::Stroke { name, .. }
                         | ObjectSpec::SolidColor { name, .. }
@@ -3263,6 +3592,7 @@ fn validate_object_spec(
                         | ObjectSpec::StraightVertex { name, .. }
                         | ObjectSpec::CubicMirroredVertex { name, .. }
                         | ObjectSpec::CubicDetachedVertex { name, .. }
+                        | ObjectSpec::CubicAsymmetricVertex { name, .. }
                         | ObjectSpec::TrimPath { name, .. }
                         | ObjectSpec::NestedArtboard { name, .. }
                         | ObjectSpec::NestedStateMachine { name, .. }
@@ -3280,6 +3610,11 @@ fn validate_object_spec(
                         | ObjectSpec::TranslationConstraint { name, .. }
                         | ObjectSpec::ScaleConstraint { name, .. }
                         | ObjectSpec::RotationConstraint { name, .. }
+                        | ObjectSpec::FollowPathConstraint { name, .. }
+                        | ObjectSpec::ClippingShape { name, .. }
+                        | ObjectSpec::DrawRules { name, .. }
+                        | ObjectSpec::DrawTarget { name, .. }
+                        | ObjectSpec::Joystick { name, .. }
                         | ObjectSpec::Text { name, .. }
                         | ObjectSpec::TextStyle { name, .. }
                         | ObjectSpec::TextValueRun { name, .. }
@@ -3353,13 +3688,25 @@ fn validate_object_spec(
             width,
             height,
             ..
+        }
+        | ObjectSpec::Polygon {
+            name,
+            width,
+            height,
+            ..
+        }
+        | ObjectSpec::Star {
+            name,
+            width,
+            height,
+            ..
         } => {
             ensure_unique_name(name, object_names)?;
             if *width < 0.0 {
-                return Err(format!("triangle '{}' width must be non-negative", name));
+                return Err(format!("'{}' width must be non-negative", name));
             }
             if *height < 0.0 {
-                return Err(format!("triangle '{}' height must be non-negative", name));
+                return Err(format!("'{}' height must be non-negative", name));
             }
         }
         ObjectSpec::Fill {
@@ -3500,11 +3847,17 @@ fn validate_object_spec(
             in_distance,
             out_distance,
             ..
+        }
+        | ObjectSpec::CubicAsymmetricVertex {
+            name,
+            in_distance,
+            out_distance,
+            ..
         } => {
             ensure_unique_name(name, object_names)?;
             if !matches!(parent_kind, ParentKind::PointsPath) {
                 return Err(format!(
-                    "cubic_detached_vertex '{}' must be a child of points_path",
+                    "cubic vertex '{}' must be a child of points_path",
                     name
                 ));
             }
@@ -3512,7 +3865,7 @@ fn validate_object_spec(
                 && *distance < 0.0
             {
                 return Err(format!(
-                    "cubic_detached_vertex '{}' in_distance must be non-negative",
+                    "cubic vertex '{}' in_distance must be non-negative",
                     name
                 ));
             }
@@ -3520,7 +3873,7 @@ fn validate_object_spec(
                 && *distance < 0.0
             {
                 return Err(format!(
-                    "cubic_detached_vertex '{}' out_distance must be non-negative",
+                    "cubic vertex '{}' out_distance must be non-negative",
                     name
                 ));
             }
@@ -3608,10 +3961,24 @@ fn validate_object_spec(
         | ObjectSpec::TransformConstraint { name, target, .. }
         | ObjectSpec::TranslationConstraint { name, target, .. }
         | ObjectSpec::ScaleConstraint { name, target, .. }
-        | ObjectSpec::RotationConstraint { name, target, .. } => {
+        | ObjectSpec::RotationConstraint { name, target, .. }
+        | ObjectSpec::FollowPathConstraint { name, target, .. } => {
             ensure_unique_name(name, object_names)?;
             if target.is_none() {
                 return Err(format!("constraint '{}' must specify a target", name));
+            }
+        }
+        ObjectSpec::ClippingShape { name, .. }
+        | ObjectSpec::DrawTarget { name, .. }
+        | ObjectSpec::Joystick { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::DrawRules { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
             }
         }
         ObjectSpec::Text { name, children, .. } => {

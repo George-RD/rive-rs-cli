@@ -1,0 +1,61 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "DrawRulesArtboard",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "BackShape",
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "BackRect",
+            "width": 200,
+            "height": 200
+          },
+          {
+            "type": "fill",
+            "name": "BackFill",
+            "children": [
+              { "type": "solid_color", "name": "BackColor", "color": "#0000FFFF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "FrontShape",
+        "x": 50,
+        "y": 50,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "FrontRect",
+            "width": 200,
+            "height": 200
+          },
+          {
+            "type": "fill",
+            "name": "FrontFill",
+            "children": [
+              { "type": "solid_color", "name": "FrontColor", "color": "#FF0000FF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "draw_target",
+        "name": "Target1",
+        "drawable": "BackShape",
+        "placement_value": 1
+      },
+      {
+        "type": "draw_rules",
+        "name": "Rules1",
+        "draw_target": "Target1"
+      }
+    ]
+  }
+}

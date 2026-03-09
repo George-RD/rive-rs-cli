@@ -1,0 +1,74 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "PolygonStarArtboard",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "HexagonShape",
+        "children": [
+          {
+            "type": "polygon",
+            "name": "Hexagon",
+            "width": 120,
+            "height": 120,
+            "points": 6
+          },
+          {
+            "type": "fill",
+            "name": "HexFill",
+            "children": [
+              { "type": "solid_color", "name": "HexColor", "color": "#FF6633FF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "PentagonShape",
+        "x": 200,
+        "children": [
+          {
+            "type": "polygon",
+            "name": "Pentagon",
+            "width": 100,
+            "height": 100,
+            "points": 5,
+            "corner_radius": 5.0
+          },
+          {
+            "type": "fill",
+            "name": "PentFill",
+            "children": [
+              { "type": "solid_color", "name": "PentColor", "color": "#3366FFFF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "StarShape",
+        "x": 400,
+        "children": [
+          {
+            "type": "star",
+            "name": "FiveStar",
+            "width": 120,
+            "height": 120,
+            "points": 5,
+            "inner_radius": 0.4
+          },
+          {
+            "type": "fill",
+            "name": "StarFill",
+            "children": [
+              { "type": "solid_color", "name": "StarColor", "color": "#FFD700FF" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

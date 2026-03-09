@@ -1,0 +1,37 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "JoystickArtboard",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "JoystickBg",
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "BgCircle",
+            "width": 200,
+            "height": 200
+          },
+          {
+            "type": "fill",
+            "name": "BgFill",
+            "children": [
+              { "type": "solid_color", "name": "BgColor", "color": "#CCCCCCFF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "joystick",
+        "name": "Joystick1",
+        "pos_x": 200,
+        "pos_y": 200,
+        "width": 200,
+        "height": 200
+      }
+    ]
+  }
+}

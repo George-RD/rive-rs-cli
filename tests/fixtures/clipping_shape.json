@@ -1,0 +1,55 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ClippingArtboard",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "CircleMask",
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "MaskEllipse",
+            "width": 200,
+            "height": 200
+          },
+          {
+            "type": "fill",
+            "name": "MaskFill",
+            "children": [
+              { "type": "solid_color", "name": "MaskColor", "color": "#FFFFFFFF" }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "ClippedRect",
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "BigRect",
+            "width": 300,
+            "height": 300
+          },
+          {
+            "type": "fill",
+            "name": "RectFill",
+            "children": [
+              { "type": "solid_color", "name": "RectColor", "color": "#FF0000FF" }
+            ]
+          },
+          {
+            "type": "clipping_shape",
+            "name": "Clip1",
+            "source": "CircleMask",
+            "fill_rule": 0,
+            "is_visible": true
+          }
+        ]
+      }
+    ]
+  }
+}

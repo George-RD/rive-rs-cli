@@ -1,0 +1,57 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "AsymmetricArtboard",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "AsymCurveShape",
+        "children": [
+          {
+            "type": "points_path",
+            "name": "AsymPath",
+            "is_closed": false,
+            "children": [
+              {
+                "type": "cubic_asymmetric_vertex",
+                "name": "AV1",
+                "x": 50,
+                "y": 200,
+                "rotation": 0.0,
+                "in_distance": 0,
+                "out_distance": 80
+              },
+              {
+                "type": "cubic_asymmetric_vertex",
+                "name": "AV2",
+                "x": 200,
+                "y": 100,
+                "rotation": 0.0,
+                "in_distance": 60,
+                "out_distance": 40
+              },
+              {
+                "type": "cubic_asymmetric_vertex",
+                "name": "AV3",
+                "x": 350,
+                "y": 200,
+                "rotation": 0.5,
+                "in_distance": 50,
+                "out_distance": 0
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "AsymFill",
+            "children": [
+              { "type": "solid_color", "name": "AsymColor", "color": "#9933CCFF" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

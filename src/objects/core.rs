@@ -68,11 +68,16 @@ pub mod type_keys {
     pub const KEY_FRAME: u16 = 29;
     pub const KEY_FRAME_DOUBLE: u16 = 30;
     pub const LINEAR_ANIMATION: u16 = 31;
+    pub const CUBIC_ASYMMETRIC_VERTEX: u16 = 34;
     pub const CUBIC_MIRRORED_VERTEX: u16 = 35;
     pub const KEY_FRAME_COLOR: u16 = 37;
     pub const TRANSFORM_COMPONENT: u16 = 38;
     pub const TRIM_PATH: u16 = 47;
+    pub const DRAW_TARGET: u16 = 48;
+    pub const DRAW_RULES: u16 = 49;
     pub const KEY_FRAME_ID: u16 = 50;
+    pub const POLYGON: u16 = 51;
+    pub const STAR: u16 = 52;
     pub const STATE_MACHINE: u16 = 53;
     pub const STATE_MACHINE_COMPONENT: u16 = 54;
     pub const STATE_MACHINE_INPUT: u16 = 55;
@@ -94,6 +99,7 @@ pub mod type_keys {
     pub const SKELETAL_COMPONENT: u16 = 39;
     pub const BONE: u16 = 40;
     pub const ROOT_BONE: u16 = 41;
+    pub const CLIPPING_SHAPE: u16 = 42;
     pub const SKIN: u16 = 43;
     pub const TENDON: u16 = 44;
     pub const WEIGHT: u16 = 45;
@@ -123,8 +129,10 @@ pub mod type_keys {
     pub const CUBIC_VALUE_INTERPOLATOR: u16 = 138;
     pub const CUBIC_INTERPOLATOR: u16 = 139;
     pub const SOLO: u16 = 147;
+    pub const JOYSTICK: u16 = 148;
     pub const INTERPOLATING_KEY_FRAME: u16 = 170;
     pub const KEY_FRAME_CALLBACK: u16 = 171;
+    pub const FOLLOW_PATH_CONSTRAINT: u16 = 165;
     pub const ELASTIC_INTERPOLATOR: u16 = 174;
     pub const KEYFRAME_INTERPOLATOR: u16 = 175;
     pub const LAYOUT_COMPONENT: u16 = 409;
@@ -203,6 +211,9 @@ pub mod property_keys {
     pub const KEY_FRAME_COLOR_VALUE: u16 = 88;
     pub const CUBIC_MIRRORED_VERTEX_ROTATION: u16 = 82;
     pub const CUBIC_MIRRORED_VERTEX_DISTANCE: u16 = 83;
+    pub const CUBIC_ASYMMETRIC_VERTEX_ROTATION: u16 = 79;
+    pub const CUBIC_ASYMMETRIC_VERTEX_IN_DISTANCE: u16 = 80;
+    pub const CUBIC_ASYMMETRIC_VERTEX_OUT_DISTANCE: u16 = 81;
     pub const CUBIC_DETACHED_VERTEX_IN_ROTATION: u16 = 84;
     pub const CUBIC_DETACHED_VERTEX_IN_DISTANCE: u16 = 85;
     pub const CUBIC_DETACHED_VERTEX_OUT_ROTATION: u16 = 86;
@@ -211,9 +222,15 @@ pub mod property_keys {
     pub const TRIM_PATH_END: u16 = 115;
     pub const TRIM_PATH_OFFSET: u16 = 116;
     pub const TRIM_PATH_MODE_VALUE: u16 = 117;
+    pub const DRAW_TARGET_DRAWABLE_ID: u16 = 119;
+    pub const DRAW_TARGET_PLACEMENT_VALUE: u16 = 120;
+    pub const DRAW_RULES_DRAW_TARGET_ID: u16 = 121;
     pub const KEY_FRAME_ID_VALUE: u16 = 122;
     pub const PARAMETRIC_PATH_ORIGIN_X: u16 = 123;
     pub const PARAMETRIC_PATH_ORIGIN_Y: u16 = 124;
+    pub const POLYGON_POINTS: u16 = 125;
+    pub const POLYGON_CORNER_RADIUS: u16 = 126;
+    pub const STAR_INNER_RADIUS: u16 = 127;
     pub const PATH_FLAGS: u16 = 128;
     pub const DRAWABLE_FLAGS: u16 = 129;
     pub const STATE_MACHINE_COMPONENT_NAME: u16 = 138;
@@ -251,6 +268,9 @@ pub mod property_keys {
     pub const BONE_LENGTH: u16 = 89;
     pub const ROOT_BONE_X: u16 = 90;
     pub const ROOT_BONE_Y: u16 = 91;
+    pub const CLIPPING_SHAPE_SOURCE_ID: u16 = 92;
+    pub const CLIPPING_SHAPE_FILL_RULE: u16 = 93;
+    pub const CLIPPING_SHAPE_IS_VISIBLE: u16 = 94;
     pub const TENDON_BONE_ID: u16 = 95;
     pub const TENDON_XX: u16 = 96;
     pub const TENDON_YX: u16 = 97;
@@ -293,6 +313,9 @@ pub mod property_keys {
     pub const TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y: u16 = 194;
     pub const TRANSFORM_COMPONENT_CONSTRAINT_MIN_MAX_SPACE_VALUE: u16 = 195;
     pub const TRANSFORM_CONSTRAINT_ORIGIN_X: u16 = 372;
+    pub const FOLLOW_PATH_CONSTRAINT_DISTANCE: u16 = 363;
+    pub const FOLLOW_PATH_CONSTRAINT_ORIENT: u16 = 364;
+    pub const FOLLOW_PATH_CONSTRAINT_OFFSET: u16 = 365;
     pub const TRANSFORM_CONSTRAINT_ORIGIN_Y: u16 = 373;
     pub const ASSET_NAME: u16 = 203;
     pub const FILE_ASSET_ASSET_ID: u16 = 204;
@@ -311,6 +334,18 @@ pub mod property_keys {
     pub const TEXT_HEIGHT: u16 = 286;
     pub const TEXT_OVERFLOW_VALUE: u16 = 287;
     pub const SOLO_ACTIVE_COMPONENT_ID: u16 = 296;
+    pub const JOYSTICK_X: u16 = 299;
+    pub const JOYSTICK_Y: u16 = 300;
+    pub const JOYSTICK_X_ID: u16 = 301;
+    pub const JOYSTICK_Y_ID: u16 = 302;
+    pub const JOYSTICK_POS_X: u16 = 303;
+    pub const JOYSTICK_POS_Y: u16 = 304;
+    pub const JOYSTICK_WIDTH: u16 = 305;
+    pub const JOYSTICK_HEIGHT: u16 = 306;
+    pub const JOYSTICK_ORIGIN_X: u16 = 307;
+    pub const JOYSTICK_ORIGIN_Y: u16 = 308;
+    pub const JOYSTICK_FLAGS: u16 = 312;
+    pub const JOYSTICK_HANDLE_SOURCE_ID: u16 = 313;
     pub const TEXT_ORIGIN_X: u16 = 366;
     pub const TEXT_ORIGIN_Y: u16 = 367;
     pub const TEXT_PARAGRAPH_SPACING: u16 = 371;
@@ -389,6 +424,9 @@ pub fn is_bool_property(key: u16) -> bool {
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MIN_Y
             | property_keys::TRANSFORM_COMPONENT_CONSTRAINT_Y_MAX_Y
             | property_keys::NESTED_IS_PLAYING
+            | property_keys::CLIPPING_SHAPE_IS_VISIBLE
+            | property_keys::FOLLOW_PATH_CONSTRAINT_ORIENT
+            | property_keys::FOLLOW_PATH_CONSTRAINT_OFFSET
     )
 }
 
@@ -440,6 +478,9 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::CUBIC_INTERPOLATOR_Y2
         | property_keys::CUBIC_MIRRORED_VERTEX_ROTATION
         | property_keys::CUBIC_MIRRORED_VERTEX_DISTANCE
+        | property_keys::CUBIC_ASYMMETRIC_VERTEX_ROTATION
+        | property_keys::CUBIC_ASYMMETRIC_VERTEX_IN_DISTANCE
+        | property_keys::CUBIC_ASYMMETRIC_VERTEX_OUT_DISTANCE
         | property_keys::CUBIC_DETACHED_VERTEX_IN_ROTATION
         | property_keys::CUBIC_DETACHED_VERTEX_IN_DISTANCE
         | property_keys::CUBIC_DETACHED_VERTEX_OUT_ROTATION
@@ -513,7 +554,18 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::ELASTIC_PERIOD
         | property_keys::NESTED_SPEED
         | property_keys::NESTED_MIX
-        | property_keys::LISTENER_NUMBER_VALUE => Some(BackingType::Float),
+        | property_keys::LISTENER_NUMBER_VALUE
+        | property_keys::POLYGON_CORNER_RADIUS
+        | property_keys::STAR_INNER_RADIUS
+        | property_keys::FOLLOW_PATH_CONSTRAINT_DISTANCE
+        | property_keys::JOYSTICK_X
+        | property_keys::JOYSTICK_Y
+        | property_keys::JOYSTICK_POS_X
+        | property_keys::JOYSTICK_POS_Y
+        | property_keys::JOYSTICK_WIDTH
+        | property_keys::JOYSTICK_HEIGHT
+        | property_keys::JOYSTICK_ORIGIN_X
+        | property_keys::JOYSTICK_ORIGIN_Y => Some(BackingType::Float),
 
         property_keys::COMPONENT_PARENT_ID
         | property_keys::DRAWABLE_BLEND_MODE
@@ -611,7 +663,20 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::NESTED_INPUT_ID
         | property_keys::ELASTIC_EASING_VALUE
         | property_keys::NESTED_IS_PLAYING
-        | property_keys::SOLO_ACTIVE_COMPONENT_ID => Some(BackingType::UInt),
+        | property_keys::SOLO_ACTIVE_COMPONENT_ID
+        | property_keys::CLIPPING_SHAPE_SOURCE_ID
+        | property_keys::CLIPPING_SHAPE_FILL_RULE
+        | property_keys::CLIPPING_SHAPE_IS_VISIBLE
+        | property_keys::DRAW_TARGET_DRAWABLE_ID
+        | property_keys::DRAW_TARGET_PLACEMENT_VALUE
+        | property_keys::DRAW_RULES_DRAW_TARGET_ID
+        | property_keys::POLYGON_POINTS
+        | property_keys::FOLLOW_PATH_CONSTRAINT_ORIENT
+        | property_keys::FOLLOW_PATH_CONSTRAINT_OFFSET
+        | property_keys::JOYSTICK_X_ID
+        | property_keys::JOYSTICK_Y_ID
+        | property_keys::JOYSTICK_FLAGS
+        | property_keys::JOYSTICK_HANDLE_SOURCE_ID => Some(BackingType::UInt),
 
         property_keys::SOLID_COLOR_VALUE
         | property_keys::GRADIENT_STOP_COLOR
