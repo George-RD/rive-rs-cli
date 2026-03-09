@@ -30,10 +30,19 @@ fn cleanup(path: &PathBuf) {
     let _ = std::fs::remove_file(path);
 }
 
+struct CleanupOnDrop(PathBuf);
+
+impl Drop for CleanupOnDrop {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
 fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
     let input = fixture_path(&format!("{}.json", fixture));
     let output = temp_output(fixture);
     cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
 
     let generate = cargo_run(&[
         "generate",
@@ -64,7 +73,6 @@ fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
     for s in expected {
         assert!(stdout.contains(s), "expected '{}' in inspect output", s);
     }
-    cleanup(&output);
 }
 
 #[test]
