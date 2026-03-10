@@ -146,6 +146,7 @@ echo ""
 ATTEMPTED_MODELS=0
 SUCCESSFUL_MODELS=0
 BEST_MODEL=""
+BEST_JSON_OUT=""
 BEST_OBJECTS=0
 ATTEMPTED_MODEL_NAMES=""
 
@@ -191,7 +192,7 @@ $USER_PROMPT"
     fi
 
     if [ "$CALL_OK" -eq 0 ]; then
-        echo "  FAIL: API call failed for $MODEL_NAME"
+        echo "  FAIL: CLI call failed for $MODEL_NAME"
         continue
     fi
 
@@ -232,6 +233,7 @@ $USER_PROMPT"
         if [ "$OBJ_COUNT" -gt "$BEST_OBJECTS" ]; then
             BEST_OBJECTS=$OBJ_COUNT
             BEST_MODEL="$MODEL_NAME-$CATEGORY"
+            BEST_JSON_OUT="$JSON_OUT"
         fi
     fi
 
@@ -258,8 +260,8 @@ echo "Models: $ATTEMPTED_MODELS attempted, $SUCCESSFUL_MODELS successful"
 if [ -n "$BEST_MODEL" ]; then
     echo "Best: $BEST_MODEL ($BEST_OBJECTS objects)"
     echo ""
-    echo "Winner JSON: $RESULTS_DIR/$(echo "$BEST_MODEL" | cut -d- -f1).json"
-    echo "To commit as fixture: cp $RESULTS_DIR/$(echo "$BEST_MODEL" | cut -d- -f1).json tests/fixtures/${TARGET_NAME}.json"
+    echo "Winner JSON: $BEST_JSON_OUT"
+    echo "To commit as fixture: cp $BEST_JSON_OUT tests/fixtures/${TARGET_NAME}.json"
 else
     echo "No successful outputs. Check CLI tool output and skill content."
 fi
