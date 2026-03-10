@@ -8,6 +8,7 @@
 # Prerequisites:
 #   - At least one CLI tool installed: claude, codex
 #   - jq, sqlite3, python3 installed
+#   - timeout or gtimeout installed
 #   - cargo build passes
 #
 # Models are dispatched via local CLI tools:
@@ -30,6 +31,15 @@ for cmd in jq sqlite3 python3; do
         exit 1
     fi
 done
+
+if command -v timeout &>/dev/null; then
+    TIMEOUT_BIN="timeout"
+elif command -v gtimeout &>/dev/null; then
+    TIMEOUT_BIN="gtimeout"
+else
+    echo "ERROR: Required tool 'timeout' not found. Install GNU coreutils ('timeout' or 'gtimeout')."
+    exit 1
+fi
 
 # Warn about optional CLI tools
 for cmd in claude codex; do
@@ -65,6 +75,7 @@ if [ ! -f "$DB" ]; then
 fi
 
 mkdir -p "$RESULTS_DIR"
+cd "$PROJECT_ROOT"
 
 # Build skills context from .opencode/skills/
 SKILLS_CONTEXT=""
@@ -163,13 +174,13 @@ for model_spec in "${MODELS[@]}"; do
         FULL_PROMPT="$SYSTEM_PROMPT
 
 $USER_PROMPT"
-        timeout 300 codex exec \
+        "$TIMEOUT_BIN" 300 codex exec \
             -m "$MODEL_ID" \
             --full-auto \
             -o "$JSON_OUT" \
             "$FULL_PROMPT" 2>/dev/null && CALL_OK=1
     elif [ "$CLI_NAME" = "claude" ]; then
-        timeout 300 claude -p \
+        "$TIMEOUT_BIN" 300 claude -p \
             --model "$MODEL_ID" \
             --system-prompt "$SYSTEM_PROMPT" \
             --output-format text \
