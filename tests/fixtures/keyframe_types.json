@@ -1,0 +1,79 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "KeyframeTypesDemo",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Box",
+        "x": 200,
+        "y": 200,
+        "children": [
+          { "type": "rectangle", "name": "Rect", "width": 100, "height": 100, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "BoxFill", "is_visible": true, "children": [
+            { "type": "solid_color", "name": "Red", "color": "#FF0000" }
+          ]}
+        ]
+      },
+      {
+        "type": "text",
+        "name": "Label",
+        "align_value": 1,
+        "sizing_value": 0,
+        "overflow_value": 0,
+        "width": 200.0,
+        "height": 50.0,
+        "children": [
+          {
+            "type": "text_style",
+            "name": "LabelStyle",
+            "font_size": 16.0,
+            "font_asset_id": 1
+          },
+          {
+            "type": "text_value_run",
+            "name": "LabelRun",
+            "text": "Hello",
+            "style_id": 0
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "toggle_visibility",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "BoxFill",
+            "property": "is_visible",
+            "frames": [
+              { "frame": 0, "value": true },
+              { "frame": 30, "value": false },
+              { "frame": 59, "value": true }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "change_text",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "LabelRun",
+            "property": "text",
+            "frames": [
+              { "frame": 0, "value": "Hello" },
+              { "frame": 30, "value": "World" },
+              { "frame": 59, "value": "Done" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

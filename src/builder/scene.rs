@@ -3,8 +3,9 @@ use std::collections::{HashMap, HashSet};
 use serde::Deserialize;
 
 use crate::objects::animation::{
-    CubicEaseInterpolator, ElasticInterpolator, KeyFrameCallback, KeyFrameColor, KeyFrameDouble,
-    KeyFrameId, KeyedObject, KeyedProperty, LinearAnimation,
+    CubicEaseInterpolator, ElasticInterpolator, KeyFrameBool, KeyFrameCallback, KeyFrameColor,
+    KeyFrameDouble, KeyFrameId, KeyFrameString, KeyedObject, KeyedProperty,
+    LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
 use crate::objects::assets::{AudioAsset, FontAsset, ImageAsset};
@@ -13,8 +14,15 @@ use crate::objects::constraints::{
     DistanceConstraint, FollowPathConstraint, IKConstraint, RotationConstraint, ScaleConstraint,
     TransformConstraint, TranslationConstraint,
 };
-use crate::objects::core::{BackingType, RiveObject, property_backing_type, property_keys};
-use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
+use crate::objects::core::{
+    BackingType, RiveObject, is_bool_property, property_backing_type, property_keys,
+};
+use crate::objects::data_binding::{
+    DataBind, ViewModel, ViewModelInstance, ViewModelInstanceBoolean, ViewModelInstanceColor,
+    ViewModelInstanceEnum, ViewModelInstanceList, ViewModelInstanceListItem,
+    ViewModelInstanceNumber, ViewModelInstanceString, ViewModelInstanceValue,
+    ViewModelInstanceViewModel, ViewModelProperty,
+};
 use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
     ClippingShape, CubicAsymmetricVertexObject, CubicDetachedVertexObject,
@@ -23,13 +31,21 @@ use crate::objects::shapes::{
     SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
 };
 use crate::objects::state_machine::{
-    AnimationState, AnyState, EntryState, Event, ExitState, ListenerBoolChange,
-    ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation, NestedStateMachine,
-    StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener, StateMachineNumber,
-    StateMachineTrigger, StateTransition, TransitionBoolCondition, TransitionInputCondition,
-    TransitionNumberCondition, TransitionTriggerCondition, TransitionValueCondition,
+    AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect,
+    BlendState, BlendState1D, BlendStateDirect, BlendStateTransition, EntryState, Event,
+    ExitState, ListenerBoolChange, ListenerNumberChange, ListenerTriggerChange,
+    NestedSimpleAnimation, NestedStateMachine, StateMachine, StateMachineBool, StateMachineLayer,
+    StateMachineListener, StateMachineNumber, StateMachineTrigger, StateTransition,
+    TransitionBoolCondition, TransitionInputCondition, TransitionNumberCondition,
+    TransitionPropertyComparator, TransitionTriggerCondition, TransitionValueBooleanComparator,
+    TransitionValueColorComparator, TransitionValueCondition, TransitionValueEnumComparator,
+    TransitionValueNumberComparator, TransitionValueStringComparator,
+    TransitionValueTriggerComparator, TransitionViewModelCondition,
 };
-use crate::objects::text::{Text, TextStyle, TextValueRun};
+use crate::objects::text::{
+    Text, TextModifierGroup, TextModifierRange, TextStyle, TextStyleFeature, TextValueRun,
+    TextVariationModifier,
+};
 
 const SCENE_FORMAT_VERSION: u32 = 1;
 
@@ -551,6 +567,7 @@ pub enum ObjectSpec {
         line_height: Option<f32>,
         letter_spacing: Option<f32>,
         font_asset_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
     },
     TextValueRun {
         name: String,
@@ -634,6 +651,126 @@ pub enum ObjectSpec {
         property_key: u64,
         flags: u64,
         converter_id: Option<u64>,
+    },
+    // Unit 3: Blend animation types
+    BlendState,
+    BlendStateDirect,
+    BlendAnimation {
+        animation_id: u64,
+    },
+    #[serde(alias = "blend_animation_1d")]
+    BlendAnimation1D {
+        animation_id: u64,
+        value: Option<f32>,
+    },
+    BlendAnimationDirect {
+        animation_id: u64,
+        input_id: Option<u64>,
+        mix_value: Option<f32>,
+        blend_source: Option<u64>,
+    },
+    BlendStateTransition {
+        state_to_id: u64,
+        flags: Option<u64>,
+        duration: Option<u64>,
+        exit_time: Option<u64>,
+        exit_blend_animation_id: Option<u64>,
+    },
+    #[serde(alias = "blend_state_1d")]
+    BlendState1D {
+        input_id: Option<u64>,
+    },
+    // Unit 4: Transition comparators
+    TransitionPropertyComparator,
+    TransitionViewModelCondition {
+        op_value: Option<u64>,
+    },
+    TransitionValueBooleanComparator {
+        value: bool,
+    },
+    TransitionValueColorComparator {
+        value: String,
+    },
+    TransitionValueNumberComparator {
+        value: f32,
+    },
+    TransitionValueEnumComparator,
+    TransitionValueStringComparator {
+        value: String,
+    },
+    TransitionValueTriggerComparator {
+        value: Option<u64>,
+    },
+    // Unit 5: ViewModel instance types
+    ViewModelInstance {
+        view_model_id: Option<u64>,
+    },
+    ViewModelInstanceValue {
+        view_model_property_id: Option<u64>,
+    },
+    ViewModelInstanceColor {
+        view_model_property_id: Option<u64>,
+        value: String,
+    },
+    ViewModelInstanceString {
+        view_model_property_id: Option<u64>,
+        value: String,
+    },
+    ViewModelInstanceNumber {
+        view_model_property_id: Option<u64>,
+        value: f32,
+    },
+    ViewModelInstanceBoolean {
+        view_model_property_id: Option<u64>,
+        value: bool,
+    },
+    ViewModelInstanceEnum {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    ViewModelInstanceList,
+    ViewModelInstanceListItem {
+        view_model_id: Option<u64>,
+        view_model_instance_id: Option<u64>,
+    },
+    ViewModelInstanceViewModel {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    // Unit 7: Text modifier types
+    TextModifierRange {
+        units_value: Option<u64>,
+        type_value: Option<u64>,
+        mode_value: Option<u64>,
+        modify_from: Option<f32>,
+        modify_to: Option<f32>,
+        strength: Option<f32>,
+        clamp: Option<bool>,
+        falloff_from: Option<f32>,
+        falloff_to: Option<f32>,
+        offset: Option<f32>,
+        run_id: Option<u64>,
+    },
+    TextModifierGroup {
+        name: String,
+        modifier_flags: Option<u64>,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+        opacity: Option<f32>,
+        x: Option<f32>,
+        y: Option<f32>,
+        rotation: Option<f32>,
+        scale_x: Option<f32>,
+        scale_y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextVariationModifier {
+        axis_tag: Option<u64>,
+        axis_value: Option<f32>,
+    },
+    TextStyleFeature {
+        tag: Option<u64>,
+        feature_value: Option<u64>,
     },
 }
 
@@ -744,7 +881,20 @@ pub enum StateSpec {
     Entry,
     Exit,
     Any,
-    Animation { animation: String },
+    Animation {
+        animation: String,
+    },
+    BlendState {
+        children: Option<Vec<ObjectSpec>>,
+    },
+    BlendStateDirect {
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(alias = "blend_state_1d")]
+    BlendState1d {
+        input_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -753,6 +903,7 @@ pub struct TransitionSpec {
     pub to: usize,
     pub duration: Option<u64>,
     pub conditions: Option<Vec<ConditionSpec>>,
+    pub children: Option<Vec<ObjectSpec>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -955,6 +1106,18 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 kf.interpolator_id = interp_id;
                                 objects.push(Box::new(kf));
                             }
+                            Some(BackingType::String) => {
+                                let value = json_value_to_string(&frame.value).ok_or_else(|| {
+                                    format!(
+                                        "invalid string keyframe value for object '{}' property '{}' at frame {}",
+                                        group.object, group.property, frame.frame
+                                    )
+                                })?;
+                                objects.push(Box::new(KeyFrameString {
+                                    frame: frame.frame,
+                                    value,
+                                }));
+                            }
                             Some(BackingType::UInt) => {
                                 if property_key == property_keys::EVENT_TRIGGER {
                                     objects.push(Box::new(KeyFrameCallback { frame: frame.frame }));
@@ -966,10 +1129,17 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                         group.object, group.property, frame.frame
                                     )
                                 })?;
-                                let mut kf = KeyFrameId::new(frame.frame, value);
-                                kf.interpolation_type = interp_type;
-                                kf.interpolator_id = interp_id;
-                                objects.push(Box::new(kf));
+                                if is_bool_property(property_key) {
+                                    objects.push(Box::new(KeyFrameBool {
+                                        frame: frame.frame,
+                                        value: value != 0,
+                                    }));
+                                } else {
+                                    let mut kf = KeyFrameId::new(frame.frame, value);
+                                    kf.interpolation_type = interp_type;
+                                    kf.interpolator_id = interp_id;
+                                    objects.push(Box::new(kf));
+                                }
                             }
                             _ => {
                                 let value = json_value_to_f32(&frame.value).ok_or_else(|| {
@@ -1149,6 +1319,32 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                     })? as u64;
                                 objects.push(Box::new(AnimationState::new(animation_id)));
                             }
+                            StateSpec::BlendState { children } => {
+                                objects.push(Box::new(BlendState));
+                                if let Some(children) = children {
+                                    for child in children {
+                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
+                                    }
+                                }
+                            }
+                            StateSpec::BlendStateDirect { children } => {
+                                objects.push(Box::new(BlendStateDirect));
+                                if let Some(children) = children {
+                                    for child in children {
+                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
+                                    }
+                                }
+                            }
+                            StateSpec::BlendState1d { input_id, children } => {
+                                objects.push(Box::new(BlendState1D {
+                                    input_id: input_id.unwrap_or(0),
+                                }));
+                                if let Some(children) = children {
+                                    for child in children {
+                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
+                                    }
+                                }
+                            }
                         }
 
                         if let Some(transitions) = &layer.transitions {
@@ -1246,6 +1442,12 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                                 }
                                             }
                                         }
+                                    }
+                                }
+
+                                if let Some(children) = &transition.children {
+                                    for child in children {
+                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
                                     }
                                 }
                             }
@@ -2620,6 +2822,7 @@ fn append_object(
             line_height,
             letter_spacing,
             font_asset_id,
+            children,
         } => {
             let mut style = TextStyle::new(name.clone(), parent_id);
             if let Some(v) = font_size {
@@ -2636,6 +2839,20 @@ fn append_object(
             }
             objects.push(Box::new(style));
             name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
         }
         ObjectSpec::TextValueRun {
             name,
@@ -2934,6 +3151,261 @@ fn append_object(
             }
             objects.push(Box::new(db));
         }
+        ObjectSpec::BlendState => {
+            objects.push(Box::new(BlendState));
+        }
+        ObjectSpec::BlendStateDirect => {
+            objects.push(Box::new(BlendStateDirect));
+        }
+        ObjectSpec::BlendAnimation { animation_id } => {
+            objects.push(Box::new(BlendAnimation {
+                animation_id: *animation_id,
+            }));
+        }
+        ObjectSpec::BlendAnimation1D {
+            animation_id,
+            value,
+        } => {
+            objects.push(Box::new(BlendAnimation1D {
+                animation_id: *animation_id,
+                value: value.unwrap_or(0.0),
+            }));
+        }
+        ObjectSpec::BlendAnimationDirect {
+            animation_id,
+            input_id,
+            mix_value,
+            blend_source,
+        } => {
+            objects.push(Box::new(BlendAnimationDirect {
+                animation_id: *animation_id,
+                input_id: input_id.unwrap_or(0),
+                mix_value: mix_value.unwrap_or(1.0),
+                blend_source: blend_source.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::BlendStateTransition {
+            state_to_id,
+            flags,
+            duration,
+            exit_time,
+            exit_blend_animation_id,
+        } => {
+            let mut t = BlendStateTransition::new(*state_to_id);
+            if let Some(f) = flags {
+                t.flags = *f;
+            }
+            if let Some(d) = duration {
+                t.duration = *d;
+            }
+            if let Some(e) = exit_time {
+                t.exit_time = *e;
+            }
+            if let Some(e) = exit_blend_animation_id {
+                t.exit_blend_animation_id = *e;
+            }
+            objects.push(Box::new(t));
+        }
+        ObjectSpec::BlendState1D { input_id } => {
+            objects.push(Box::new(BlendState1D {
+                input_id: input_id.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::TransitionPropertyComparator => {
+            objects.push(Box::new(TransitionPropertyComparator));
+        }
+        ObjectSpec::TransitionViewModelCondition { op_value } => {
+            objects.push(Box::new(TransitionViewModelCondition {
+                op_value: op_value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::TransitionValueBooleanComparator { value } => {
+            objects.push(Box::new(TransitionValueBooleanComparator { value: *value }));
+        }
+        ObjectSpec::TransitionValueColorComparator { value } => {
+            let color = parse_color(value)?;
+            objects.push(Box::new(TransitionValueColorComparator { value: color }));
+        }
+        ObjectSpec::TransitionValueNumberComparator { value } => {
+            objects.push(Box::new(TransitionValueNumberComparator { value: *value }));
+        }
+        ObjectSpec::TransitionValueEnumComparator => {
+            objects.push(Box::new(TransitionValueEnumComparator));
+        }
+        ObjectSpec::TransitionValueStringComparator { value } => {
+            objects.push(Box::new(TransitionValueStringComparator {
+                value: value.clone(),
+            }));
+        }
+        ObjectSpec::TransitionValueTriggerComparator { value } => {
+            objects.push(Box::new(TransitionValueTriggerComparator {
+                value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstance { view_model_id } => {
+            objects.push(Box::new(ViewModelInstance {
+                view_model_id: view_model_id.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceValue {
+            view_model_property_id,
+        } => {
+            objects.push(Box::new(ViewModelInstanceValue {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceColor {
+            view_model_property_id,
+            value,
+        } => {
+            let color = parse_color(value)?;
+            objects.push(Box::new(ViewModelInstanceColor {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: color,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceString {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceString {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.clone(),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceNumber {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceNumber {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: *value,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceBoolean {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceBoolean {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: *value,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceEnum {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceEnum {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceList => {
+            objects.push(Box::new(ViewModelInstanceList));
+        }
+        ObjectSpec::ViewModelInstanceListItem {
+            view_model_id,
+            view_model_instance_id,
+        } => {
+            objects.push(Box::new(ViewModelInstanceListItem {
+                view_model_id: view_model_id.unwrap_or(0),
+                view_model_instance_id: view_model_instance_id.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceViewModel {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceViewModel {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::TextModifierRange {
+            units_value,
+            type_value,
+            mode_value,
+            modify_from,
+            modify_to,
+            strength,
+            clamp,
+            falloff_from,
+            falloff_to,
+            offset,
+            run_id,
+        } => {
+            let mut r = TextModifierRange::new();
+            if let Some(v) = units_value { r.units_value = *v; }
+            if let Some(v) = type_value { r.type_value = *v; }
+            if let Some(v) = mode_value { r.mode_value = *v; }
+            if let Some(v) = modify_from { r.modify_from = *v; }
+            if let Some(v) = modify_to { r.modify_to = *v; }
+            if let Some(v) = strength { r.strength = *v; }
+            if let Some(v) = clamp { r.clamp = *v; }
+            if let Some(v) = falloff_from { r.falloff_from = *v; }
+            if let Some(v) = falloff_to { r.falloff_to = *v; }
+            if let Some(v) = offset { r.offset = *v; }
+            if let Some(v) = run_id { r.run_id = *v; }
+            objects.push(Box::new(r));
+        }
+        ObjectSpec::TextModifierGroup {
+            name,
+            modifier_flags,
+            origin_x,
+            origin_y,
+            opacity,
+            x,
+            y,
+            rotation,
+            scale_x,
+            scale_y,
+            children,
+        } => {
+            let mut g = TextModifierGroup::new(name.clone(), parent_id);
+            if let Some(v) = modifier_flags { g.modifier_flags = *v; }
+            if let Some(v) = origin_x { g.origin_x = *v; }
+            if let Some(v) = origin_y { g.origin_y = *v; }
+            if let Some(v) = opacity { g.opacity = *v; }
+            if let Some(v) = x { g.x = *v; }
+            if let Some(v) = y { g.y = *v; }
+            if let Some(v) = rotation { g.rotation = *v; }
+            if let Some(v) = scale_x { g.scale_x = *v; }
+            if let Some(v) = scale_y { g.scale_y = *v; }
+            objects.push(Box::new(g));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextVariationModifier {
+            axis_tag,
+            axis_value,
+        } => {
+            objects.push(Box::new(TextVariationModifier {
+                axis_tag: axis_tag.unwrap_or(0),
+                axis_value: axis_value.unwrap_or(0.0),
+            }));
+        }
+        ObjectSpec::TextStyleFeature {
+            tag,
+            feature_value,
+        } => {
+            objects.push(Box::new(TextStyleFeature {
+                tag: tag.unwrap_or(0),
+                feature_value: feature_value.unwrap_or(0),
+            }));
+        }
     }
     Ok(())
 }
@@ -2954,6 +3426,8 @@ fn property_key_from_name(name: &str) -> Option<u16> {
         "trim_offset" => Some(property_keys::TRIM_PATH_OFFSET),
         "trigger" => Some(property_keys::EVENT_TRIGGER),
         "active_component_id" => Some(property_keys::SOLO_ACTIVE_COMPONENT_ID),
+        "text" => Some(property_keys::TEXT_VALUE_RUN_TEXT),
+        "is_visible" => Some(property_keys::SHAPE_PAINT_IS_VISIBLE),
         _ => None,
     }
 }
@@ -3155,6 +3629,13 @@ fn json_value_to_f32(value: &serde_json::Value) -> Option<f32> {
     }
 }
 
+fn json_value_to_string(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::String(s) => Some(s.clone()),
+        _ => None,
+    }
+}
+
 fn json_value_to_u64(value: &serde_json::Value) -> Option<u64> {
     match value {
         serde_json::Value::Number(number) => number.as_u64(),
@@ -3195,7 +3676,9 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             | ObjectSpec::Text { children, .. }
             | ObjectSpec::LayoutComponent { children, .. }
             | ObjectSpec::ViewModel { children, .. }
-            | ObjectSpec::DrawRules { children, .. } => {
+            | ObjectSpec::DrawRules { children, .. }
+            | ObjectSpec::TextModifierGroup { children, .. }
+            | ObjectSpec::TextStyle { children, .. } => {
                 if let Some(kids) = children {
                     refs.extend(collect_nested_artboard_refs(kids));
                 }
@@ -3347,6 +3830,14 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                             if json_value_to_color(&frame.value).is_none() {
                                 return Err(format!(
                                     "invalid color keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                ));
+                            }
+                        }
+                        Some(BackingType::String) => {
+                            if json_value_to_string(&frame.value).is_none() {
+                                return Err(format!(
+                                    "invalid string keyframe value for object '{}' property '{}' at frame {}",
                                     group.object, group.property, frame.frame
                                 ));
                             }
@@ -3625,7 +4116,8 @@ fn validate_object_spec(
                         | ObjectSpec::LayoutComponent { name, .. }
                         | ObjectSpec::LayoutComponentStyle { name, .. }
                         | ObjectSpec::ViewModel { name, .. }
-                        | ObjectSpec::ViewModelProperty { name, .. } => {
+                        | ObjectSpec::ViewModelProperty { name, .. }
+                        | ObjectSpec::TextModifierGroup { name, .. } => {
                             child_names.insert(name.clone());
                         }
                         ObjectSpec::GradientStop { name, .. } => {
@@ -3633,7 +4125,35 @@ fn validate_object_spec(
                                 child_names.insert(name.clone());
                             }
                         }
-                        ObjectSpec::DataBind { .. } => {}
+                        ObjectSpec::DataBind { .. }
+                        | ObjectSpec::BlendState
+                        | ObjectSpec::BlendStateDirect
+                        | ObjectSpec::BlendAnimation { .. }
+                        | ObjectSpec::BlendAnimation1D { .. }
+                        | ObjectSpec::BlendAnimationDirect { .. }
+                        | ObjectSpec::BlendStateTransition { .. }
+                        | ObjectSpec::BlendState1D { .. }
+                        | ObjectSpec::TransitionPropertyComparator
+                        | ObjectSpec::TransitionViewModelCondition { .. }
+                        | ObjectSpec::TransitionValueBooleanComparator { .. }
+                        | ObjectSpec::TransitionValueColorComparator { .. }
+                        | ObjectSpec::TransitionValueNumberComparator { .. }
+                        | ObjectSpec::TransitionValueEnumComparator
+                        | ObjectSpec::TransitionValueStringComparator { .. }
+                        | ObjectSpec::TransitionValueTriggerComparator { .. }
+                        | ObjectSpec::ViewModelInstance { .. }
+                        | ObjectSpec::ViewModelInstanceValue { .. }
+                        | ObjectSpec::ViewModelInstanceColor { .. }
+                        | ObjectSpec::ViewModelInstanceString { .. }
+                        | ObjectSpec::ViewModelInstanceNumber { .. }
+                        | ObjectSpec::ViewModelInstanceBoolean { .. }
+                        | ObjectSpec::ViewModelInstanceEnum { .. }
+                        | ObjectSpec::ViewModelInstanceList
+                        | ObjectSpec::ViewModelInstanceListItem { .. }
+                        | ObjectSpec::ViewModelInstanceViewModel { .. }
+                        | ObjectSpec::TextModifierRange { .. }
+                        | ObjectSpec::TextVariationModifier { .. }
+                        | ObjectSpec::TextStyleFeature { .. } => {}
                     }
                     validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
@@ -4060,7 +4580,17 @@ fn validate_object_spec(
                 }
             }
         }
-        ObjectSpec::TextStyle { name, .. } | ObjectSpec::TextValueRun { name, .. } => {
+        ObjectSpec::TextStyle {
+            name, children, ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Text)?;
+                }
+            }
+        }
+        ObjectSpec::TextValueRun { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::ImageAsset { name, .. }
@@ -4091,6 +4621,44 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::DataBind { .. } => {}
+        ObjectSpec::BlendState
+        | ObjectSpec::BlendStateDirect
+        | ObjectSpec::BlendAnimation { .. }
+        | ObjectSpec::BlendAnimation1D { .. }
+        | ObjectSpec::BlendAnimationDirect { .. }
+        | ObjectSpec::BlendStateTransition { .. }
+        | ObjectSpec::BlendState1D { .. }
+        | ObjectSpec::TransitionPropertyComparator
+        | ObjectSpec::TransitionViewModelCondition { .. }
+        | ObjectSpec::TransitionValueBooleanComparator { .. }
+        | ObjectSpec::TransitionValueColorComparator { .. }
+        | ObjectSpec::TransitionValueNumberComparator { .. }
+        | ObjectSpec::TransitionValueEnumComparator
+        | ObjectSpec::TransitionValueStringComparator { .. }
+        | ObjectSpec::TransitionValueTriggerComparator { .. }
+        | ObjectSpec::ViewModelInstance { .. }
+        | ObjectSpec::ViewModelInstanceValue { .. }
+        | ObjectSpec::ViewModelInstanceColor { .. }
+        | ObjectSpec::ViewModelInstanceString { .. }
+        | ObjectSpec::ViewModelInstanceNumber { .. }
+        | ObjectSpec::ViewModelInstanceBoolean { .. }
+        | ObjectSpec::ViewModelInstanceEnum { .. }
+        | ObjectSpec::ViewModelInstanceList
+        | ObjectSpec::ViewModelInstanceListItem { .. }
+        | ObjectSpec::ViewModelInstanceViewModel { .. }
+        | ObjectSpec::TextModifierRange { .. }
+        | ObjectSpec::TextVariationModifier { .. }
+        | ObjectSpec::TextStyleFeature { .. } => {}
+        ObjectSpec::TextModifierGroup {
+            name, children, ..
+        } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Text)?;
+                }
+            }
+        }
     }
 
     Ok(())
@@ -4761,6 +5329,7 @@ mod tests {
                             to: 3,
                             duration: None,
                             conditions: None,
+                            children: None,
                         }]),
                     }],
                 }]),

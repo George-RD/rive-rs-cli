@@ -3022,3 +3022,64 @@ fn test_generate_validate_inspect_draw_rules() {
 fn test_generate_validate_inspect_joystick() {
     assert_generate_validate_inspect("joystick", &["Joystick"]);
 }
+
+#[test]
+fn test_generate_validate_inspect_blend_animation() {
+    assert_generate_validate_inspect(
+        "blend_animation",
+        &["BlendState1D", "BlendAnimation1D"],
+    );
+}
+
+#[test]
+fn test_generate_validate_inspect_transition_comparators() {
+    assert_generate_validate_inspect(
+        "transition_comparators",
+        &[
+            "TransitionValueBooleanComparator",
+            "TransitionValueNumberComparator",
+            "TransitionValueStringComparator",
+            "TransitionValueColorComparator",
+        ],
+    );
+}
+
+#[test]
+fn test_generate_validate_inspect_view_model_instances() {
+    assert_generate_validate_inspect(
+        "view_model_instances",
+        &[
+            "ViewModelInstance",
+            "ViewModelInstanceString",
+            "ViewModelInstanceNumber",
+            "ViewModelInstanceBoolean",
+            "ViewModelInstanceColor",
+            "ViewModelInstanceEnum",
+            "ViewModelInstanceValue",
+            "ViewModelInstanceList",
+            "ViewModelInstanceListItem",
+            "ViewModelInstanceViewModel",
+        ],
+    );
+}
+
+#[test]
+fn test_generate_validate_inspect_keyframe_types() {
+    assert_generate_validate_inspect(
+        "keyframe_types",
+        &["KeyFrameBool", "KeyFrameString"],
+    );
+}
+
+#[test]
+fn test_generate_validate_inspect_text_modifiers() {
+    assert_generate_validate_inspect(
+        "text_modifiers",
+        &[
+            "TextModifierGroup",
+            "TextModifierRange",
+            "TextVariationModifier",
+            "TextStyleFeature",
+        ],
+    );
+}

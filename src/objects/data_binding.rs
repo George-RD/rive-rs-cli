@@ -114,6 +114,240 @@ impl RiveObject for DataBind {
     }
 }
 
+// ViewModel instance types (Unit 5)
+
+pub struct ViewModelInstance {
+    pub view_model_id: u64,
+}
+
+impl RiveObject for ViewModelInstance {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VIEW_MODEL_ID,
+                value: PropertyValue::UInt(self.view_model_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceValue {
+    pub view_model_property_id: u64,
+}
+
+impl RiveObject for ViewModelInstanceValue {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_VALUE
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceColor {
+    pub view_model_property_id: u64,
+    pub property_value: u32,
+}
+
+impl RiveObject for ViewModelInstanceColor {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_COLOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        props.push(Property {
+            key: property_keys::VIEW_MODEL_INSTANCE_COLOR_PROPERTY_VALUE,
+            value: PropertyValue::Color(self.property_value),
+        });
+        props
+    }
+}
+
+pub struct ViewModelInstanceString {
+    pub view_model_property_id: u64,
+    pub property_value: String,
+}
+
+impl RiveObject for ViewModelInstanceString {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_STRING
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        props.push(Property {
+            key: property_keys::VIEW_MODEL_INSTANCE_STRING_PROPERTY_VALUE,
+            value: PropertyValue::String(self.property_value.clone()),
+        });
+        props
+    }
+}
+
+pub struct ViewModelInstanceNumber {
+    pub view_model_property_id: u64,
+    pub property_value: f32,
+}
+
+impl RiveObject for ViewModelInstanceNumber {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_NUMBER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        props.push(Property {
+            key: property_keys::VIEW_MODEL_INSTANCE_NUMBER_PROPERTY_VALUE,
+            value: PropertyValue::Float(self.property_value),
+        });
+        props
+    }
+}
+
+pub struct ViewModelInstanceBoolean {
+    pub view_model_property_id: u64,
+    pub property_value: bool,
+}
+
+impl RiveObject for ViewModelInstanceBoolean {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_BOOLEAN
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        props.push(Property {
+            key: property_keys::VIEW_MODEL_INSTANCE_BOOLEAN_PROPERTY_VALUE,
+            value: PropertyValue::Bool(self.property_value),
+        });
+        props
+    }
+}
+
+pub struct ViewModelInstanceEnum {
+    pub view_model_property_id: u64,
+    pub property_value: u64,
+}
+
+impl RiveObject for ViewModelInstanceEnum {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_ENUM
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_ENUM_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceList;
+
+impl RiveObject for ViewModelInstanceList {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_LIST
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct ViewModelInstanceListItem {
+    pub view_model_id: u64,
+    pub view_model_instance_id: u64,
+}
+
+impl RiveObject for ViewModelInstanceListItem {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_LIST_ITEM
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_ID,
+                value: PropertyValue::UInt(self.view_model_id),
+            });
+        }
+        if self.view_model_instance_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_INSTANCE_ID,
+                value: PropertyValue::UInt(self.view_model_instance_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceViewModel {
+    pub view_model_property_id: u64,
+    pub property_value: u64,
+}
+
+impl RiveObject for ViewModelInstanceViewModel {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_VIEW_MODEL
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VIEW_MODEL_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
