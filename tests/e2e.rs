@@ -3025,10 +3025,7 @@ fn test_generate_validate_inspect_joystick() {
 
 #[test]
 fn test_generate_validate_inspect_blend_animation() {
-    assert_generate_validate_inspect(
-        "blend_animation",
-        &["BlendState1D", "BlendAnimation1D"],
-    );
+    assert_generate_validate_inspect("blend_animation", &["BlendState1D", "BlendAnimation1D"]);
 }
 
 #[test]
@@ -3065,10 +3062,7 @@ fn test_generate_validate_inspect_view_model_instances() {
 
 #[test]
 fn test_generate_validate_inspect_keyframe_types() {
-    assert_generate_validate_inspect(
-        "keyframe_types",
-        &["KeyFrameBool", "KeyFrameString"],
-    );
+    assert_generate_validate_inspect("keyframe_types", &["KeyFrameBool", "KeyFrameString"]);
 }
 
 #[test]

@@ -704,7 +704,7 @@ impl RiveObject for BlendAnimationDirect {
             key: property_keys::BLEND_ANIMATION_ANIMATION_ID,
             value: PropertyValue::UInt(self.animation_id),
         }];
-        if self.input_id != 0 {
+        if self.input_id != u32::MAX as u64 {
             props.push(Property {
                 key: property_keys::BLEND_ANIMATION_DIRECT_INPUT_ID,
                 value: PropertyValue::UInt(self.input_id),
@@ -793,7 +793,7 @@ impl RiveObject for BlendState1D {
     }
     fn properties(&self) -> Vec<Property> {
         let mut props = Vec::new();
-        if self.input_id != 0 {
+        if self.input_id != u32::MAX as u64 {
             props.push(Property {
                 key: property_keys::BLEND_STATE_1D_INPUT_ID,
                 value: PropertyValue::UInt(self.input_id),
@@ -1288,6 +1288,38 @@ mod tests {
         assert_eq!(props[0].value, PropertyValue::UInt(1));
         assert_eq!(props[1].key, property_keys::TRANSITION_VALUE_CONDITION_OP);
         assert_eq!(props[1].value, PropertyValue::UInt(0));
+    }
+
+    #[test]
+    fn test_blend_animation_direct_preserves_zero_input_id() {
+        let animation = BlendAnimationDirect {
+            animation_id: 3,
+            input_id: 0,
+            mix_value: 1.0,
+            blend_source: 0,
+        };
+        let props = animation.properties();
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::BLEND_ANIMATION_DIRECT_INPUT_ID
+                && property.value == PropertyValue::UInt(0)
+        }));
+    }
+
+    #[test]
+    fn test_blend_state_1d_preserves_zero_input_id() {
+        let state = BlendState1D { input_id: 0 };
+        let props = state.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::BLEND_STATE_1D_INPUT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(0));
+    }
+
+    #[test]
+    fn test_blend_state_1d_omits_unset_input_id() {
+        let state = BlendState1D {
+            input_id: u32::MAX as u64,
+        };
+        assert!(state.properties().is_empty());
     }
 
     #[test]

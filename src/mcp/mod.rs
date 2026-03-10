@@ -126,7 +126,7 @@ impl RiveMcpServer {
 
     #[tool(
         name = "decompile",
-        description = "Decompile a .riv file into full SceneSpec JSON for round-trip editing."
+        description = "Return the parsed object tree for a .riv file as inspect-format JSON."
     )]
     async fn decompile(
         &self,
@@ -147,7 +147,7 @@ impl RiveMcpServer {
                 Ok(CallToolResult::success(vec![Content::text(json)]))
             }
             Err(e) => Ok(CallToolResult::success(vec![Content::text(format!(
-                "decompile error: {}",
+                "parse error: {}",
                 e
             ))])),
         }
@@ -182,7 +182,7 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
                 icons: None,
                 website_url: None,
             },
-            instructions: Some("Rive CLI MCP server. Use 'generate' to create .riv files from SceneSpec JSON, 'validate' to check .riv files, 'inspect' to dump object trees, 'decompile' for full JSON round-trip, and 'list_templates' for animation templates.".into()),
+            instructions: Some("Rive CLI MCP server. Use 'generate' to create .riv files from SceneSpec JSON, 'validate' to check .riv files, 'inspect' to dump object trees, 'decompile' to return inspect-format JSON for a .riv file, and 'list_templates' for animation templates.".into()),
         }
     }
 

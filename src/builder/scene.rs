@@ -4,8 +4,7 @@ use serde::Deserialize;
 
 use crate::objects::animation::{
     CubicEaseInterpolator, ElasticInterpolator, KeyFrameBool, KeyFrameCallback, KeyFrameColor,
-    KeyFrameDouble, KeyFrameId, KeyFrameString, KeyedObject, KeyedProperty,
-    LinearAnimation,
+    KeyFrameDouble, KeyFrameId, KeyFrameString, KeyedObject, KeyedProperty, LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
 use crate::objects::assets::{AudioAsset, FontAsset, ImageAsset};
@@ -15,7 +14,7 @@ use crate::objects::constraints::{
     TransformConstraint, TranslationConstraint,
 };
 use crate::objects::core::{
-    BackingType, RiveObject, is_bool_property, property_backing_type, property_keys,
+    BackingType, RiveObject, is_bool_property, property_backing_type, property_keys, type_keys,
 };
 use crate::objects::data_binding::{
     DataBind, ViewModel, ViewModelInstance, ViewModelInstanceBoolean, ViewModelInstanceColor,
@@ -31,16 +30,16 @@ use crate::objects::shapes::{
     SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
 };
 use crate::objects::state_machine::{
-    AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect,
-    BlendState, BlendState1D, BlendStateDirect, BlendStateTransition, EntryState, Event,
-    ExitState, ListenerBoolChange, ListenerNumberChange, ListenerTriggerChange,
-    NestedSimpleAnimation, NestedStateMachine, StateMachine, StateMachineBool, StateMachineLayer,
-    StateMachineListener, StateMachineNumber, StateMachineTrigger, StateTransition,
-    TransitionBoolCondition, TransitionInputCondition, TransitionNumberCondition,
-    TransitionPropertyComparator, TransitionTriggerCondition, TransitionValueBooleanComparator,
-    TransitionValueColorComparator, TransitionValueCondition, TransitionValueEnumComparator,
-    TransitionValueNumberComparator, TransitionValueStringComparator,
-    TransitionValueTriggerComparator, TransitionViewModelCondition,
+    AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
+    BlendState1D, BlendStateDirect, BlendStateTransition, EntryState, Event, ExitState,
+    ListenerBoolChange, ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation,
+    NestedStateMachine, StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener,
+    StateMachineNumber, StateMachineTrigger, StateTransition, TransitionBoolCondition,
+    TransitionInputCondition, TransitionNumberCondition, TransitionPropertyComparator,
+    TransitionTriggerCondition, TransitionValueBooleanComparator, TransitionValueColorComparator,
+    TransitionValueCondition, TransitionValueEnumComparator, TransitionValueNumberComparator,
+    TransitionValueStringComparator, TransitionValueTriggerComparator,
+    TransitionViewModelCondition,
 };
 use crate::objects::text::{
     Text, TextModifierGroup, TextModifierRange, TextStyle, TextStyleFeature, TextValueRun,
@@ -1067,12 +1066,13 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                     }));
 
                     let property_key =
-                        property_key_from_name(&group.property).ok_or_else(|| {
-                            format!(
-                                "unknown property referenced in keyframes: '{}'",
-                                group.property
-                            )
-                        })?;
+                        property_key_for_object(&group.property, objects[object_index].type_key())
+                            .ok_or_else(|| {
+                                format!(
+                                    "unknown property referenced in keyframes: '{}'",
+                                    group.property
+                                )
+                            })?;
                     objects.push(Box::new(KeyedProperty {
                         property_key: property_key as u64,
                     }));
@@ -1323,7 +1323,16 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 objects.push(Box::new(BlendState));
                                 if let Some(children) = children {
                                     for child in children {
-                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
+                                        append_object(
+                                            child,
+                                            artboard_start,
+                                            artboard_start,
+                                            &mut objects,
+                                            &mut object_name_to_index,
+                                            &artboard_name_to_index,
+                                            &artboard_spec.name,
+                                            &animation_name_to_index,
+                                        )?;
                                     }
                                 }
                             }
@@ -1331,17 +1340,35 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 objects.push(Box::new(BlendStateDirect));
                                 if let Some(children) = children {
                                     for child in children {
-                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
+                                        append_object(
+                                            child,
+                                            artboard_start,
+                                            artboard_start,
+                                            &mut objects,
+                                            &mut object_name_to_index,
+                                            &artboard_name_to_index,
+                                            &artboard_spec.name,
+                                            &animation_name_to_index,
+                                        )?;
                                     }
                                 }
                             }
                             StateSpec::BlendState1d { input_id, children } => {
                                 objects.push(Box::new(BlendState1D {
-                                    input_id: input_id.unwrap_or(0),
+                                    input_id: input_id.unwrap_or(u32::MAX as u64),
                                 }));
                                 if let Some(children) = children {
                                     for child in children {
-                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
+                                        append_object(
+                                            child,
+                                            artboard_start,
+                                            artboard_start,
+                                            &mut objects,
+                                            &mut object_name_to_index,
+                                            &artboard_name_to_index,
+                                            &artboard_spec.name,
+                                            &animation_name_to_index,
+                                        )?;
                                     }
                                 }
                             }
@@ -1447,7 +1474,16 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
 
                                 if let Some(children) = &transition.children {
                                     for child in children {
-                                        append_object(child, artboard_start, artboard_start, &mut objects, &mut object_name_to_index, &artboard_name_to_index, &artboard_spec.name, &animation_name_to_index)?;
+                                        append_object(
+                                            child,
+                                            artboard_start,
+                                            artboard_start,
+                                            &mut objects,
+                                            &mut object_name_to_index,
+                                            &artboard_name_to_index,
+                                            &artboard_spec.name,
+                                            &animation_name_to_index,
+                                        )?;
                                     }
                                 }
                             }
@@ -3179,7 +3215,7 @@ fn append_object(
         } => {
             objects.push(Box::new(BlendAnimationDirect {
                 animation_id: *animation_id,
-                input_id: input_id.unwrap_or(0),
+                input_id: input_id.unwrap_or(u32::MAX as u64),
                 mix_value: mix_value.unwrap_or(1.0),
                 blend_source: blend_source.unwrap_or(0),
             }));
@@ -3208,7 +3244,7 @@ fn append_object(
         }
         ObjectSpec::BlendState1D { input_id } => {
             objects.push(Box::new(BlendState1D {
-                input_id: input_id.unwrap_or(0),
+                input_id: input_id.unwrap_or(u32::MAX as u64),
             }));
         }
         ObjectSpec::TransitionPropertyComparator => {
@@ -3335,17 +3371,39 @@ fn append_object(
             run_id,
         } => {
             let mut r = TextModifierRange::new();
-            if let Some(v) = units_value { r.units_value = *v; }
-            if let Some(v) = type_value { r.type_value = *v; }
-            if let Some(v) = mode_value { r.mode_value = *v; }
-            if let Some(v) = modify_from { r.modify_from = *v; }
-            if let Some(v) = modify_to { r.modify_to = *v; }
-            if let Some(v) = strength { r.strength = *v; }
-            if let Some(v) = clamp { r.clamp = *v; }
-            if let Some(v) = falloff_from { r.falloff_from = *v; }
-            if let Some(v) = falloff_to { r.falloff_to = *v; }
-            if let Some(v) = offset { r.offset = *v; }
-            if let Some(v) = run_id { r.run_id = *v; }
+            if let Some(v) = units_value {
+                r.units_value = *v;
+            }
+            if let Some(v) = type_value {
+                r.type_value = *v;
+            }
+            if let Some(v) = mode_value {
+                r.mode_value = *v;
+            }
+            if let Some(v) = modify_from {
+                r.modify_from = *v;
+            }
+            if let Some(v) = modify_to {
+                r.modify_to = *v;
+            }
+            if let Some(v) = strength {
+                r.strength = *v;
+            }
+            if let Some(v) = clamp {
+                r.clamp = *v;
+            }
+            if let Some(v) = falloff_from {
+                r.falloff_from = *v;
+            }
+            if let Some(v) = falloff_to {
+                r.falloff_to = *v;
+            }
+            if let Some(v) = offset {
+                r.offset = *v;
+            }
+            if let Some(v) = run_id {
+                r.run_id = *v;
+            }
             objects.push(Box::new(r));
         }
         ObjectSpec::TextModifierGroup {
@@ -3362,15 +3420,33 @@ fn append_object(
             children,
         } => {
             let mut g = TextModifierGroup::new(name.clone(), parent_id);
-            if let Some(v) = modifier_flags { g.modifier_flags = *v; }
-            if let Some(v) = origin_x { g.origin_x = *v; }
-            if let Some(v) = origin_y { g.origin_y = *v; }
-            if let Some(v) = opacity { g.opacity = *v; }
-            if let Some(v) = x { g.x = *v; }
-            if let Some(v) = y { g.y = *v; }
-            if let Some(v) = rotation { g.rotation = *v; }
-            if let Some(v) = scale_x { g.scale_x = *v; }
-            if let Some(v) = scale_y { g.scale_y = *v; }
+            if let Some(v) = modifier_flags {
+                g.modifier_flags = *v;
+            }
+            if let Some(v) = origin_x {
+                g.origin_x = *v;
+            }
+            if let Some(v) = origin_y {
+                g.origin_y = *v;
+            }
+            if let Some(v) = opacity {
+                g.opacity = *v;
+            }
+            if let Some(v) = x {
+                g.x = *v;
+            }
+            if let Some(v) = y {
+                g.y = *v;
+            }
+            if let Some(v) = rotation {
+                g.rotation = *v;
+            }
+            if let Some(v) = scale_x {
+                g.scale_x = *v;
+            }
+            if let Some(v) = scale_y {
+                g.scale_y = *v;
+            }
             objects.push(Box::new(g));
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
@@ -3397,10 +3473,7 @@ fn append_object(
                 axis_value: axis_value.unwrap_or(0.0),
             }));
         }
-        ObjectSpec::TextStyleFeature {
-            tag,
-            feature_value,
-        } => {
+        ObjectSpec::TextStyleFeature { tag, feature_value } => {
             objects.push(Box::new(TextStyleFeature {
                 tag: tag.unwrap_or(0),
                 feature_value: feature_value.unwrap_or(0),
@@ -3430,6 +3503,13 @@ fn property_key_from_name(name: &str) -> Option<u16> {
         "is_visible" => Some(property_keys::SHAPE_PAINT_IS_VISIBLE),
         _ => None,
     }
+}
+
+fn property_key_for_object(name: &str, object_type_key: u16) -> Option<u16> {
+    if name == "is_visible" && object_type_key == type_keys::CLIPPING_SHAPE {
+        return Some(property_keys::CLIPPING_SHAPE_IS_VISIBLE);
+    }
+    property_key_from_name(name)
 }
 
 fn interpolator_def_equals(left: InterpolatorDef, right: InterpolatorDef) -> bool {
@@ -4580,9 +4660,7 @@ fn validate_object_spec(
                 }
             }
         }
-        ObjectSpec::TextStyle {
-            name, children, ..
-        } => {
+        ObjectSpec::TextStyle { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
@@ -4649,9 +4727,7 @@ fn validate_object_spec(
         | ObjectSpec::TextModifierRange { .. }
         | ObjectSpec::TextVariationModifier { .. }
         | ObjectSpec::TextStyleFeature { .. } => {}
-        ObjectSpec::TextModifierGroup {
-            name, children, ..
-        } => {
+        ObjectSpec::TextModifierGroup { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
@@ -6506,5 +6582,56 @@ mod tests {
 
         let objects = build_scene(&spec).unwrap();
         assert_eq!(objects.len(), 5);
+    }
+
+    #[test]
+    fn test_clipping_shape_visibility_keyframes_use_clipping_property() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::ClippingShape {
+                    name: "Clip".to_string(),
+                    source: None,
+                    fill_rule: None,
+                    is_visible: Some(true),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "toggle".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![KeyframeGroupSpec {
+                        object: "Clip".to_string(),
+                        property: "is_visible".to_string(),
+                        frames: vec![KeyframeSpec {
+                            frame: 0,
+                            value: serde_json::json!(true),
+                            interpolation: None,
+                            interpolator: None,
+                        }],
+                    }],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        let keyed_property = objects
+            .iter()
+            .find(|object| object.type_key() == type_keys::KEYED_PROPERTY)
+            .unwrap()
+            .properties();
+        assert_eq!(keyed_property.len(), 1);
+        assert_eq!(
+            keyed_property[0].value,
+            PropertyValue::UInt(property_keys::CLIPPING_SHAPE_IS_VISIBLE as u64)
+        );
     }
 }
