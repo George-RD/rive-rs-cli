@@ -171,15 +171,18 @@ for model_spec in "${MODELS[@]}"; do
 
     # Call the model via local CLI
     CALL_OK=0
+    ERR_OUT="$RESULTS_DIR/${MODEL_NAME}.stderr.log"
+    rm -f "$ERR_OUT"
     if [ "$CLI_NAME" = "codex" ]; then
         FULL_PROMPT="$SYSTEM_PROMPT
 
 $USER_PROMPT"
         "$TIMEOUT_BIN" 300 codex exec \
             -m "$MODEL_ID" \
-            --full-auto \
+            --sandbox read-only \
+            -C "$PROJECT_ROOT" \
             -o "$JSON_OUT" \
-            "$FULL_PROMPT" 2>/dev/null && CALL_OK=1
+            "$FULL_PROMPT" 2>"$ERR_OUT" && CALL_OK=1
     elif [ "$CLI_NAME" = "claude" ]; then
         "$TIMEOUT_BIN" 300 claude -p \
             --model "$MODEL_ID" \
@@ -188,13 +191,15 @@ $USER_PROMPT"
             --no-session-persistence \
             --allowedTools "" \
             --max-budget-usd 5 \
-            "$USER_PROMPT" > "$JSON_OUT" 2>/dev/null && CALL_OK=1
+            "$USER_PROMPT" > "$JSON_OUT" 2>"$ERR_OUT" && CALL_OK=1
     fi
 
     if [ "$CALL_OK" -eq 0 ]; then
-        echo "  FAIL: CLI call failed for $MODEL_NAME"
+        echo "  FAIL: CLI call failed for $MODEL_NAME (see $ERR_OUT)"
         continue
     fi
+
+    rm -f "$ERR_OUT"
 
     # Strip markdown fences if present (only first/last lines)
     if head -1 "$JSON_OUT" | grep -q '^```'; then
