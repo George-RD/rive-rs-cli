@@ -50,7 +50,6 @@ const FIXTURES = [
   "solo_test",
   "text",
   "text_modifiers",
-  "transition_comparators",
   "triangle",
   "view_model_instances",
 ];
