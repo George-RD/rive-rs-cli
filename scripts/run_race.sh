@@ -212,13 +212,13 @@ $USER_PROMPT"
 
     # Validate JSON syntax
     if ! jq empty "$JSON_OUT" 2>/dev/null; then
-        echo "  FAIL: Invalid JSON output (see $ERR_OUT)"
+        echo "  FAIL: Invalid JSON output (check $JSON_OUT)"
         continue
     fi
 
     # Validate scene_format_version
     if ! jq -e '(.scene_format_version | type == "number") and (.scene_format_version == 1)' "$JSON_OUT" >/dev/null 2>&1; then
-        echo "  FAIL: Missing or invalid scene_format_version (must be 1; see $ERR_OUT)"
+        echo "  FAIL: Missing or invalid scene_format_version (must be 1)"
         continue
     fi
 
