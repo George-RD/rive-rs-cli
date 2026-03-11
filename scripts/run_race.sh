@@ -179,6 +179,7 @@ for model_spec in "${MODELS[@]}"; do
 $USER_PROMPT"
         "$TIMEOUT_BIN" 300 codex exec \
             -m "$MODEL_ID" \
+            --ask-for-approval never \
             --sandbox read-only \
             -C "$PROJECT_ROOT" \
             -o "$JSON_OUT" \
@@ -189,6 +190,7 @@ $USER_PROMPT"
             --system-prompt "$SYSTEM_PROMPT" \
             --output-format text \
             --no-session-persistence \
+            --tools "" \
             --max-budget-usd 5 \
             "$USER_PROMPT" > "$JSON_OUT" 2>"$ERR_OUT" && CALL_OK=1
     fi
@@ -197,8 +199,6 @@ $USER_PROMPT"
         echo "  FAIL: CLI call failed for $MODEL_NAME (see $ERR_OUT)"
         continue
     fi
-
-    rm -f "$ERR_OUT"
 
     # Strip markdown fences if present (only first/last lines)
     if head -1 "$JSON_OUT" | grep -q '^```'; then
@@ -212,13 +212,13 @@ $USER_PROMPT"
 
     # Validate JSON syntax
     if ! jq empty "$JSON_OUT" 2>/dev/null; then
-        echo "  FAIL: Invalid JSON output"
+        echo "  FAIL: Invalid JSON output (see $ERR_OUT)"
         continue
     fi
 
     # Validate scene_format_version
     if ! jq -e '(.scene_format_version | type == "number") and (.scene_format_version == 1)' "$JSON_OUT" >/dev/null 2>&1; then
-        echo "  FAIL: Missing or invalid scene_format_version (must be 1)"
+        echo "  FAIL: Missing or invalid scene_format_version (must be 1; see $ERR_OUT)"
         continue
     fi
 
@@ -231,6 +231,7 @@ $USER_PROMPT"
 
     # Track best model by object count
     if echo "$ATTEMPT_RESULT" | grep -q "^OK"; then
+        rm -f "$ERR_OUT"
         SUCCESSFUL_MODELS=$((SUCCESSFUL_MODELS + 1))
         OBJ_COUNT=$(echo "$ATTEMPT_RESULT" | sed -n 's/.*objects=\([0-9]*\).*/\1/p')
         OBJ_COUNT="${OBJ_COUNT:-0}"
