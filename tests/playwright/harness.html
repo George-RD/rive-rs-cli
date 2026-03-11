@@ -24,6 +24,7 @@
     <script>
       window.__RIVE_OK = false;
       window.__RIVE_ERROR = "";
+      rive.RuntimeLoader.setWasmUrl("rive.wasm");
 
       const params = new URLSearchParams(window.location.search);
       const file = params.get("file");

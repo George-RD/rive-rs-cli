@@ -566,7 +566,7 @@ pub enum ObjectSpec {
         line_height: Option<f32>,
         letter_spacing: Option<f32>,
         font_asset_id: Option<u64>,
-        children: Option<Vec<ObjectSpec>>,
+        children: Option<Vec<TextStyleChildSpec>>,
     },
     TextValueRun {
         name: String,
@@ -710,7 +710,7 @@ pub enum ObjectSpec {
         rotation: Option<f32>,
         scale_x: Option<f32>,
         scale_y: Option<f32>,
-        children: Option<Vec<ObjectSpec>>,
+        children: Option<Vec<TextModifierGroupChildSpec>>,
     },
     TextVariationModifier {
         axis_tag: Option<u64>,
@@ -869,6 +869,37 @@ pub enum BlendState1DChildSpec {
     BlendAnimation1D {
         animation_id: u64,
         value: Option<f32>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TextStyleChildSpec {
+    TextStyleFeature {
+        tag: Option<u64>,
+        feature_value: Option<u64>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TextModifierGroupChildSpec {
+    TextModifierRange {
+        units_value: Option<u64>,
+        type_value: Option<u64>,
+        mode_value: Option<u64>,
+        modify_from: Option<f32>,
+        modify_to: Option<f32>,
+        strength: Option<f32>,
+        clamp: Option<bool>,
+        falloff_from: Option<f32>,
+        falloff_to: Option<f32>,
+        offset: Option<f32>,
+        run_id: Option<u64>,
+    },
+    TextVariationModifier {
+        axis_tag: Option<u64>,
+        axis_value: Option<f32>,
     },
 }
 
@@ -2850,18 +2881,13 @@ fn append_object(
             }
             objects.push(Box::new(style));
             name_to_index.insert(name.clone(), object_index);
+            let child_parent_id = object_index
+                .checked_sub(artboard_start)
+                .ok_or("internal error: parent index precedes artboard start".to_string())?
+                as u64;
             if let Some(children) = children {
                 for child in children {
-                    append_object(
-                        child,
-                        object_index,
-                        artboard_start,
-                        objects,
-                        name_to_index,
-                        artboard_name_to_index,
-                        current_artboard_name,
-                        animation_name_to_index,
-                    )?;
+                    append_text_style_child(child, child_parent_id, objects);
                 }
             }
         }
@@ -3333,18 +3359,13 @@ fn append_object(
             }
             objects.push(Box::new(g));
             name_to_index.insert(name.clone(), object_index);
+            let child_parent_id = object_index
+                .checked_sub(artboard_start)
+                .ok_or("internal error: parent index precedes artboard start".to_string())?
+                as u64;
             if let Some(children) = children {
                 for child in children {
-                    append_object(
-                        child,
-                        object_index,
-                        artboard_start,
-                        objects,
-                        name_to_index,
-                        artboard_name_to_index,
-                        current_artboard_name,
-                        animation_name_to_index,
-                    )?;
+                    append_text_modifier_group_child(child, child_parent_id, objects);
                 }
             }
         }
@@ -3649,9 +3670,7 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
             | ObjectSpec::Text { children, .. }
             | ObjectSpec::LayoutComponent { children, .. }
             | ObjectSpec::ViewModel { children, .. }
-            | ObjectSpec::DrawRules { children, .. }
-            | ObjectSpec::TextModifierGroup { children, .. }
-            | ObjectSpec::TextStyle { children, .. } => {
+            | ObjectSpec::DrawRules { children, .. } => {
                 if let Some(kids) = children {
                     refs.extend(collect_nested_artboard_refs(kids));
                 }
@@ -3863,13 +3882,8 @@ fn collect_object_type_key(spec: &ObjectSpec, object_type_keys: &mut HashMap<Str
                 }
             }
         }
-        ObjectSpec::TextStyle { name, children, .. } => {
+        ObjectSpec::TextStyle { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE);
-            if let Some(children) = children {
-                for child in children {
-                    collect_object_type_key(child, object_type_keys);
-                }
-            }
         }
         ObjectSpec::TextValueRun { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::TEXT_VALUE_RUN);
@@ -3919,13 +3933,8 @@ fn collect_object_type_key(spec: &ObjectSpec, object_type_keys: &mut HashMap<Str
         | ObjectSpec::TextModifierRange { .. }
         | ObjectSpec::TextVariationModifier { .. }
         | ObjectSpec::TextStyleFeature { .. } => {}
-        ObjectSpec::TextModifierGroup { name, children, .. } => {
+        ObjectSpec::TextModifierGroup { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::TEXT_MODIFIER_GROUP);
-            if let Some(children) = children {
-                for child in children {
-                    collect_object_type_key(child, object_type_keys);
-                }
-            }
         }
     }
 }
@@ -4065,6 +4074,15 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                     if let Some(interp_type) = &frame.interpolation {
                         interpolation_type_from_name(interp_type)?;
                     }
+                    let interp_type = match &frame.interpolation {
+                        Some(name) => interpolation_type_from_name(name)?,
+                        None => 1,
+                    };
+                    let interp_id = if frame.interpolator.is_some() {
+                        0
+                    } else {
+                        u32::MAX as u64
+                    };
 
                     match property_backing_type(property_key) {
                         Some(BackingType::Color) => {
@@ -4076,6 +4094,15 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                             }
                         }
                         Some(BackingType::String) => {
+                            validate_discrete_keyframe_interpolation(
+                                &group.object,
+                                &group.property,
+                                frame.frame,
+                                frame.interpolation.as_deref(),
+                                frame.interpolator.as_deref(),
+                                interp_type,
+                                interp_id,
+                            )?;
                             if json_value_to_string(&frame.value).is_none() {
                                 return Err(format!(
                                     "invalid string keyframe value for object '{}' property '{}' at frame {}",
@@ -4089,6 +4116,17 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                     "invalid integer keyframe value for object '{}' property '{}' at frame {}",
                                     group.object, group.property, frame.frame
                                 ));
+                            }
+                            if is_bool_property(property_key) {
+                                validate_discrete_keyframe_interpolation(
+                                    &group.object,
+                                    &group.property,
+                                    frame.frame,
+                                    frame.interpolation.as_deref(),
+                                    frame.interpolator.as_deref(),
+                                    interp_type,
+                                    interp_id,
+                                )?;
                             }
                         }
                         _ => {
@@ -4523,6 +4561,90 @@ fn append_transition_child(
     Ok(())
 }
 
+fn append_text_style_child(
+    spec: &TextStyleChildSpec,
+    parent_id: u64,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    match spec {
+        TextStyleChildSpec::TextStyleFeature { tag, feature_value } => {
+            objects.push(Box::new(TextStyleFeature {
+                parent_id,
+                tag: tag.unwrap_or(0),
+                feature_value: feature_value.unwrap_or(0),
+            }));
+        }
+    }
+}
+
+fn append_text_modifier_group_child(
+    spec: &TextModifierGroupChildSpec,
+    parent_id: u64,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    match spec {
+        TextModifierGroupChildSpec::TextModifierRange {
+            units_value,
+            type_value,
+            mode_value,
+            modify_from,
+            modify_to,
+            strength,
+            clamp,
+            falloff_from,
+            falloff_to,
+            offset,
+            run_id,
+        } => {
+            let mut range = TextModifierRange::new(parent_id);
+            if let Some(v) = units_value {
+                range.units_value = *v;
+            }
+            if let Some(v) = type_value {
+                range.type_value = *v;
+            }
+            if let Some(v) = mode_value {
+                range.mode_value = *v;
+            }
+            if let Some(v) = modify_from {
+                range.modify_from = *v;
+            }
+            if let Some(v) = modify_to {
+                range.modify_to = *v;
+            }
+            if let Some(v) = strength {
+                range.strength = *v;
+            }
+            if let Some(v) = clamp {
+                range.clamp = *v;
+            }
+            if let Some(v) = falloff_from {
+                range.falloff_from = *v;
+            }
+            if let Some(v) = falloff_to {
+                range.falloff_to = *v;
+            }
+            if let Some(v) = offset {
+                range.offset = *v;
+            }
+            if let Some(v) = run_id {
+                range.run_id = *v;
+            }
+            objects.push(Box::new(range));
+        }
+        TextModifierGroupChildSpec::TextVariationModifier {
+            axis_tag,
+            axis_value,
+        } => {
+            objects.push(Box::new(TextVariationModifier {
+                parent_id,
+                axis_tag: axis_tag.unwrap_or(0),
+                axis_value: axis_value.unwrap_or(0.0),
+            }));
+        }
+    }
+}
+
 fn validate_discrete_keyframe_interpolation(
     object_name: &str,
     property_name: &str,
@@ -4555,6 +4677,19 @@ enum ParentKind {
     Text,
     LayoutComponent,
     ViewModel,
+}
+
+fn validate_text_style_child_spec(spec: &TextStyleChildSpec) {
+    match spec {
+        TextStyleChildSpec::TextStyleFeature { .. } => {}
+    }
+}
+
+fn validate_text_modifier_group_child_spec(spec: &TextModifierGroupChildSpec) {
+    match spec {
+        TextModifierGroupChildSpec::TextModifierRange { .. }
+        | TextModifierGroupChildSpec::TextVariationModifier { .. } => {}
+    }
 }
 
 fn validate_object_spec(
@@ -5086,7 +5221,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Text)?;
+                    validate_text_style_child_spec(child);
                 }
             }
         }
@@ -5138,7 +5273,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Text)?;
+                    validate_text_modifier_group_child_spec(child);
                 }
             }
         }
@@ -5180,8 +5315,6 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
             | ObjectSpec::Bone { children, .. }
             | ObjectSpec::RootBone { children, .. }
             | ObjectSpec::Text { children, .. }
-            | ObjectSpec::TextStyle { children, .. }
-            | ObjectSpec::TextModifierGroup { children, .. }
             | ObjectSpec::LayoutComponent { children, .. }
             | ObjectSpec::ViewModel { children, .. }
             | ObjectSpec::DrawRules { children, .. } => {
@@ -5793,50 +5926,31 @@ mod tests {
     }
 
     #[test]
-    fn test_image_reference_requires_preceding_asset_inside_text_style_children() {
-        let spec = SceneSpec {
-            scene_format_version: 1,
-            artboard: Some(ArtboardSpec {
-                name: "Main".to_string(),
-                preset: None,
-                width: 100.0,
-                height: 100.0,
-                children: vec![ObjectSpec::Text {
-                    name: "Label".to_string(),
-                    align_value: None,
-                    sizing_value: None,
-                    overflow_value: None,
-                    width: None,
-                    height: None,
-                    origin_x: None,
-                    origin_y: None,
-                    paragraph_spacing: None,
-                    origin_value: None,
-                    children: Some(vec![ObjectSpec::TextStyle {
-                        name: "Style".to_string(),
-                        font_size: None,
-                        line_height: None,
-                        letter_spacing: None,
-                        font_asset_id: None,
-                        children: Some(vec![ObjectSpec::Image {
-                            name: "Icon".to_string(),
-                            asset_id: 0,
-                            x: None,
-                            y: None,
-                        }]),
-                    }]),
-                }],
-                animations: None,
-                state_machines: None,
-            }),
-            artboards: None,
-        };
+    fn test_text_style_children_reject_invalid_variant_during_deserialization() {
+        let spec = serde_json::json!({
+            "scene_format_version": 1,
+            "artboard": {
+                "name": "Main",
+                "width": 100.0,
+                "height": 100.0,
+                "children": [{
+                    "type": "text",
+                    "name": "Label",
+                    "children": [{
+                        "type": "text_style",
+                        "name": "Style",
+                        "children": [{
+                            "type": "image",
+                            "name": "Icon",
+                            "asset_id": 0
+                        }]
+                    }]
+                }]
+            }
+        });
 
-        let err = match build_scene(&spec) {
-            Ok(_) => panic!("expected nested text style image asset order error"),
-            Err(err) => err,
-        };
-        assert!(err.contains("references image asset index 0"));
+        let err = serde_json::from_value::<SceneSpec>(spec).expect_err("expected parse failure");
+        assert!(err.to_string().contains("unknown variant `image`"));
     }
 
     #[test]
