@@ -189,7 +189,6 @@ $USER_PROMPT"
             --system-prompt "$SYSTEM_PROMPT" \
             --output-format text \
             --no-session-persistence \
-            --allowedTools "" \
             --max-budget-usd 5 \
             "$USER_PROMPT" > "$JSON_OUT" 2>"$ERR_OUT" && CALL_OK=1
     fi
