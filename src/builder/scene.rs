@@ -1097,6 +1097,15 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 objects.push(Box::new(kf));
                             }
                             Some(BackingType::String) => {
+                                validate_discrete_keyframe_interpolation(
+                                    &group.object,
+                                    &group.property,
+                                    frame.frame,
+                                    frame.interpolation.as_deref(),
+                                    frame.interpolator.as_deref(),
+                                    interp_type,
+                                    interp_id,
+                                )?;
                                 let value = json_value_to_string(&frame.value).ok_or_else(|| {
                                     format!(
                                         "invalid string keyframe value for object '{}' property '{}' at frame {}",
@@ -1120,6 +1129,15 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                     )
                                 })?;
                                 if is_bool_property(property_key) {
+                                    validate_discrete_keyframe_interpolation(
+                                        &group.object,
+                                        &group.property,
+                                        frame.frame,
+                                        frame.interpolation.as_deref(),
+                                        frame.interpolator.as_deref(),
+                                        interp_type,
+                                        interp_id,
+                                    )?;
                                     objects.push(Box::new(KeyFrameBool {
                                         frame: frame.frame,
                                         value: value != 0,
@@ -4221,15 +4239,15 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                             validate_blend_state_direct_children(
                                 children,
                                 animation_names.len(),
-                                input_names.len(),
+                                state_machine.inputs.as_deref(),
                                 state_machine.name.as_str(),
                             )?;
                         }
                         StateSpec::BlendState1d { input_id, children } => {
                             if let Some(input_id) = input_id {
-                                validate_index(
+                                validate_number_input(
                                     *input_id,
-                                    input_names.len(),
+                                    state_machine.inputs.as_deref(),
                                     "blend_state_1d input_id",
                                     state_machine.name.as_str(),
                                 )?;
@@ -4297,13 +4315,41 @@ fn validate_index(
     label: &str,
     state_machine_name: &str,
 ) -> Result<(), String> {
-    if index as usize >= len {
+    if index >= len as u64 {
         return Err(format!(
             "{} {} out of bounds in state machine '{}' (len {})",
             label, index, state_machine_name, len
         ));
     }
     Ok(())
+}
+
+fn validate_number_input(
+    index: u64,
+    inputs: Option<&[InputSpec]>,
+    label: &str,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    let inputs = inputs.unwrap_or(&[]);
+    validate_index(index, inputs.len(), label, state_machine_name)?;
+    match inputs.get(index as usize) {
+        Some(InputSpec::Number { .. }) => Ok(()),
+        Some(InputSpec::Bool { .. }) => Err(format!(
+            "{} {} in state machine '{}' must reference a number input, found bool",
+            label, index, state_machine_name
+        )),
+        Some(InputSpec::Trigger { .. }) => Err(format!(
+            "{} {} in state machine '{}' must reference a number input, found trigger",
+            label, index, state_machine_name
+        )),
+        None => Err(format!(
+            "{} {} out of bounds in state machine '{}' (len {})",
+            label,
+            index,
+            state_machine_name,
+            inputs.len()
+        )),
+    }
 }
 
 fn validate_blend_state_children(
@@ -4326,7 +4372,7 @@ fn validate_blend_state_children(
 fn validate_blend_state_direct_children(
     children: &[BlendStateDirectChildSpec],
     animation_count: usize,
-    input_count: usize,
+    inputs: Option<&[InputSpec]>,
     state_machine_name: &str,
 ) -> Result<(), String> {
     for child in children {
@@ -4342,9 +4388,9 @@ fn validate_blend_state_direct_children(
             state_machine_name,
         )?;
         if let Some(input_id) = input_id {
-            validate_index(
+            validate_number_input(
                 *input_id,
-                input_count,
+                inputs,
                 "blend_animation_direct input_id",
                 state_machine_name,
             )?;
@@ -4375,6 +4421,15 @@ fn validate_transition_children(
     state_machine_name: &str,
 ) -> Result<(), String> {
     for child in children {
+        if let TransitionChildSpec::TransitionViewModelCondition { op_value } = child
+            && let Some(op_value) = op_value
+            && *op_value > 5
+        {
+            return Err(format!(
+                "transition_view_model_condition op_value {} out of range in state machine '{}'",
+                op_value, state_machine_name
+            ));
+        }
         if let TransitionChildSpec::TransitionValueColorComparator { value } = child {
             parse_color(value).map_err(|e| {
                 format!(
@@ -4462,6 +4517,27 @@ fn append_transition_child(
                 value: value.unwrap_or(0),
             }));
         }
+    }
+    Ok(())
+}
+
+fn validate_discrete_keyframe_interpolation(
+    object_name: &str,
+    property_name: &str,
+    frame: u64,
+    interpolation_name: Option<&str>,
+    interpolator_name: Option<&str>,
+    interpolation_type: u64,
+    interpolator_id: u64,
+) -> Result<(), String> {
+    if interpolation_name.is_none() && interpolator_name.is_none() {
+        return Ok(());
+    }
+    if interpolation_type != 0 || interpolator_id != u32::MAX as u64 {
+        return Err(format!(
+            "unsupported interpolation for object '{}' property '{}' at frame {}",
+            object_name, property_name, frame
+        ));
     }
     Ok(())
 }
@@ -5747,6 +5823,200 @@ mod tests {
             Err(err) => err,
         };
         assert!(err.contains("transition target index 3 out of bounds"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_non_number_blend_input() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: Some(vec![AnimationSpec {
+                    name: "anim".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![],
+                }]),
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "sm".to_string(),
+                    inputs: Some(vec![InputSpec::Bool {
+                        name: "enabled".to_string(),
+                        value: false,
+                    }]),
+                    listeners: None,
+                    layers: vec![LayerSpec {
+                        states: vec![
+                            StateSpec::Entry,
+                            StateSpec::BlendState1d {
+                                input_id: Some(0),
+                                children: Some(vec![BlendState1DChildSpec::BlendAnimation1D {
+                                    animation_id: 0,
+                                    value: Some(0.0),
+                                }]),
+                            },
+                            StateSpec::Exit,
+                        ],
+                        transitions: None,
+                    }],
+                }]),
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected non-number blend input error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("must reference a number input, found bool"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_invalid_transition_view_model_condition_op_value() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: None,
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "sm".to_string(),
+                    inputs: None,
+                    listeners: None,
+                    layers: vec![LayerSpec {
+                        states: vec![StateSpec::Entry, StateSpec::Exit],
+                        transitions: Some(vec![TransitionSpec {
+                            from: 0,
+                            to: 1,
+                            duration: None,
+                            conditions: None,
+                            children: Some(vec![
+                                TransitionChildSpec::TransitionViewModelCondition {
+                                    op_value: Some(6),
+                                },
+                            ]),
+                        }]),
+                    }],
+                }]),
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected invalid transition view model condition error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("transition_view_model_condition op_value 6 out of range"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_bool_keyframe_interpolation() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::ClippingShape {
+                    name: "Clip".to_string(),
+                    source: None,
+                    fill_rule: None,
+                    is_visible: Some(true),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "toggle".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![KeyframeGroupSpec {
+                        object: "Clip".to_string(),
+                        property: "is_visible".to_string(),
+                        frames: vec![KeyframeSpec {
+                            frame: 0,
+                            value: serde_json::json!(true),
+                            interpolation: Some("linear".to_string()),
+                            interpolator: None,
+                        }],
+                    }],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected bool interpolation error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unsupported interpolation"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_string_keyframe_interpolation() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Text {
+                    name: "Label".to_string(),
+                    align_value: None,
+                    sizing_value: None,
+                    overflow_value: None,
+                    width: None,
+                    height: None,
+                    origin_x: None,
+                    origin_y: None,
+                    paragraph_spacing: None,
+                    origin_value: None,
+                    children: Some(vec![ObjectSpec::TextValueRun {
+                        name: "Run".to_string(),
+                        text: "Hello".to_string(),
+                        style_id: None,
+                    }]),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "rewrite".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![KeyframeGroupSpec {
+                        object: "Run".to_string(),
+                        property: "text".to_string(),
+                        frames: vec![KeyframeSpec {
+                            frame: 0,
+                            value: serde_json::json!("World"),
+                            interpolation: Some("cubic".to_string()),
+                            interpolator: None,
+                        }],
+                    }],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected string interpolation error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unsupported interpolation"));
     }
 
     #[test]

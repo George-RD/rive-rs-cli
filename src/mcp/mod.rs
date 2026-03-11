@@ -106,7 +106,7 @@ impl RiveMcpServer {
         &self,
         params: Parameters<FilePathParams>,
     ) -> Result<CallToolResult, McpError> {
-        let bytes = std::fs::read(&params.0.file).map_err(|e| {
+        let bytes = tokio::fs::read(&params.0.file).await.map_err(|e| {
             McpError::new(
                 ErrorCode::INVALID_PARAMS,
                 format!("read error: {}", e),
@@ -120,10 +120,11 @@ impl RiveMcpServer {
                     .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
                 Ok(CallToolResult::success(vec![Content::text(json)]))
             }
-            Err(e) => Ok(CallToolResult::success(vec![Content::text(format!(
-                "parse error: {}",
-                e
-            ))])),
+            Err(e) => Err(McpError::new(
+                ErrorCode::INVALID_PARAMS,
+                format!("parse error: {}", e),
+                None,
+            )),
         }
     }
 
@@ -135,7 +136,7 @@ impl RiveMcpServer {
         &self,
         params: Parameters<FilePathParams>,
     ) -> Result<CallToolResult, McpError> {
-        let bytes = std::fs::read(&params.0.file).map_err(|e| {
+        let bytes = tokio::fs::read(&params.0.file).await.map_err(|e| {
             McpError::new(
                 ErrorCode::INVALID_PARAMS,
                 format!("read error: {}", e),
@@ -149,10 +150,11 @@ impl RiveMcpServer {
                     .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
                 Ok(CallToolResult::success(vec![Content::text(json)]))
             }
-            Err(e) => Ok(CallToolResult::success(vec![Content::text(format!(
-                "parse error: {}",
-                e
-            ))])),
+            Err(e) => Err(McpError::new(
+                ErrorCode::INVALID_PARAMS,
+                format!("parse error: {}", e),
+                None,
+            )),
         }
     }
 
@@ -254,7 +256,7 @@ pub struct ValidateParams {
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
 pub struct FilePathParams {
-    #[schemars(description = "Path to .riv file to inspect")]
+    #[schemars(description = "Path to the .riv file")]
     pub file: String,
 }
 

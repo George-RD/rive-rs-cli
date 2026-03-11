@@ -38,11 +38,11 @@ impl Drop for CleanupOnDrop {
     }
 }
 
-fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
+fn generate_and_validate_output(fixture: &str, suffix: &str) -> (PathBuf, CleanupOnDrop) {
     let input = fixture_path(&format!("{}.json", fixture));
-    let output = temp_output(fixture);
+    let output = temp_output(&format!("{}_{}", fixture, suffix));
     cleanup(&output);
-    let _guard = CleanupOnDrop(output.clone());
+    let guard = CleanupOnDrop(output.clone());
 
     let generate = cargo_run(&[
         "generate",
@@ -62,6 +62,12 @@ fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
         "validate failed: {}",
         String::from_utf8_lossy(&validate.stderr)
     );
+
+    (output, guard)
+}
+
+fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
+    let (output, _guard) = generate_and_validate_output(fixture, "inspect");
 
     let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
     let stdout = String::from_utf8_lossy(&inspect.stdout);
@@ -76,29 +82,7 @@ fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
 }
 
 fn generate_and_inspect_json(fixture: &str) -> serde_json::Value {
-    let input = fixture_path(&format!("{}.json", fixture));
-    let output = temp_output(&format!("{}_json", fixture));
-    cleanup(&output);
-    let _guard = CleanupOnDrop(output.clone());
-
-    let generate = cargo_run(&[
-        "generate",
-        input.to_str().unwrap(),
-        "-o",
-        output.to_str().unwrap(),
-    ]);
-    assert!(
-        generate.status.success(),
-        "generate failed: {}",
-        String::from_utf8_lossy(&generate.stderr)
-    );
-
-    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
-    assert!(
-        validate.status.success(),
-        "validate failed: {}",
-        String::from_utf8_lossy(&validate.stderr)
-    );
+    let (output, _guard) = generate_and_validate_output(fixture, "json");
 
     let inspect = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
     assert!(

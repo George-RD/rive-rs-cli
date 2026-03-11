@@ -606,4 +606,102 @@ mod tests {
             .unwrap();
         assert_eq!(style_prop.value, PropertyValue::UInt(2));
     }
+
+    #[test]
+    fn test_text_modifier_range_default_properties() {
+        let range = TextModifierRange::new();
+        assert!(range.properties().is_empty());
+    }
+
+    #[test]
+    fn test_text_modifier_range_custom_properties() {
+        let mut range = TextModifierRange::new();
+        range.modify_to = 0.5;
+        range.strength = 0.25;
+        range.clamp = true;
+        range.run_id = 3;
+        let props = range.properties();
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_MODIFY_TO
+                && property.value == PropertyValue::Float(0.5)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_STRENGTH
+                && property.value == PropertyValue::Float(0.25)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_CLAMP
+                && property.value == PropertyValue::Bool(true)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_RUN_ID
+                && property.value == PropertyValue::UInt(3)
+        }));
+    }
+
+    #[test]
+    fn test_text_modifier_group_default_properties() {
+        let group = TextModifierGroup::new("modifier".to_string(), 7);
+        let props = group.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+    }
+
+    #[test]
+    fn test_text_modifier_group_custom_properties() {
+        let mut group = TextModifierGroup::new("modifier".to_string(), 7);
+        group.opacity = 0.5;
+        group.scale_x = 1.5;
+        group.scale_y = 0.75;
+        let props = group.properties();
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_GROUP_OPACITY
+                && property.value == PropertyValue::Float(0.5)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_GROUP_SCALE_X
+                && property.value == PropertyValue::Float(1.5)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_GROUP_SCALE_Y
+                && property.value == PropertyValue::Float(0.75)
+        }));
+    }
+
+    #[test]
+    fn test_text_variation_modifier_properties() {
+        let modifier = TextVariationModifier {
+            axis_tag: 0x77676874,
+            axis_value: 700.0,
+        };
+        let props = modifier.properties();
+        assert_eq!(props.len(), 2);
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_VARIATION_MODIFIER_AXIS_TAG
+                && property.value == PropertyValue::UInt(0x77676874)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_VARIATION_MODIFIER_AXIS_VALUE
+                && property.value == PropertyValue::Float(700.0)
+        }));
+    }
+
+    #[test]
+    fn test_text_style_feature_properties() {
+        let feature = TextStyleFeature {
+            tag: 0x6C696761,
+            feature_value: 1,
+        };
+        let props = feature.properties();
+        assert_eq!(props.len(), 2);
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_STYLE_FEATURE_TAG
+                && property.value == PropertyValue::UInt(0x6C696761)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_STYLE_FEATURE_FEATURE_VALUE
+                && property.value == PropertyValue::UInt(1)
+        }));
+    }
 }

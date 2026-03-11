@@ -64,15 +64,22 @@
                 { "type": "blend_animation_1d", "animation_id": 0, "value": 0.0 },
                 { "type": "blend_animation_1d", "animation_id": 1, "value": 1.0 }
               ]},
+              { "type": "exit" }
+            ],
+            "transitions": [
+              { "from": 0, "to": 1 }
+            ]
+          },
+          {
+            "states": [
+              { "type": "entry" },
               { "type": "blend_state_direct", "children": [
                 { "type": "blend_animation_direct", "animation_id": 1, "input_id": 0, "mix_value": 0.5, "blend_source": 1 }
               ]},
               { "type": "exit" }
             ],
             "transitions": [
-              { "from": 0, "to": 1 },
-              { "from": 1, "to": 2 },
-              { "from": 2, "to": 3 }
+              { "from": 0, "to": 1 }
             ]
           }
         ]
