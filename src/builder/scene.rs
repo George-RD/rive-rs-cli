@@ -3411,6 +3411,21 @@ fn property_key_from_name(name: &str) -> Option<u16> {
 }
 
 fn property_key_for_object(name: &str, object_type_key: u16) -> Option<u16> {
+    if object_type_key == type_keys::TEXT_MODIFIER_GROUP {
+        return match name {
+            "modifier_flags" => Some(property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS),
+            "origin_x" => Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X),
+            "origin_y" => Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y),
+            "opacity" => Some(property_keys::TEXT_MODIFIER_GROUP_OPACITY),
+            "x" => Some(property_keys::TEXT_MODIFIER_GROUP_X),
+            "y" => Some(property_keys::TEXT_MODIFIER_GROUP_Y),
+            "rotation" => Some(property_keys::TEXT_MODIFIER_GROUP_ROTATION),
+            "scale_x" => Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_X),
+            "scale_y" => Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_Y),
+            _ => None,
+        };
+    }
+
     match name {
         "text" if object_type_key == type_keys::TEXT_VALUE_RUN => {
             Some(property_keys::TEXT_VALUE_RUN_TEXT)
@@ -6182,6 +6197,42 @@ mod tests {
             Err(err) => err,
         };
         assert!(err.contains("unsupported interpolation"));
+    }
+
+    #[test]
+    fn test_text_modifier_group_keyframe_properties_use_text_modifier_keys() {
+        assert_eq!(
+            property_key_for_object("origin_x", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X)
+        );
+        assert_eq!(
+            property_key_for_object("origin_y", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y)
+        );
+        assert_eq!(
+            property_key_for_object("opacity", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_OPACITY)
+        );
+        assert_eq!(
+            property_key_for_object("x", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_X)
+        );
+        assert_eq!(
+            property_key_for_object("y", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_Y)
+        );
+        assert_eq!(
+            property_key_for_object("rotation", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_ROTATION)
+        );
+        assert_eq!(
+            property_key_for_object("scale_x", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_X)
+        );
+        assert_eq!(
+            property_key_for_object("scale_y", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_Y)
+        );
     }
 
     #[test]

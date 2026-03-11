@@ -624,6 +624,7 @@ mod tests {
     #[test]
     fn test_text_modifier_range_default_properties() {
         let range = TextModifierRange::new(7);
+        assert_eq!(range.type_key(), type_keys::TEXT_MODIFIER_RANGE);
         let props = range.properties();
         assert_eq!(props.len(), 1);
         assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
@@ -659,6 +660,7 @@ mod tests {
     #[test]
     fn test_text_modifier_group_default_properties() {
         let group = TextModifierGroup::new("modifier".to_string(), 7);
+        assert_eq!(group.type_key(), type_keys::TEXT_MODIFIER_GROUP);
         let props = group.properties();
         assert_eq!(props.len(), 2);
         assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
@@ -693,6 +695,7 @@ mod tests {
             axis_tag: 0x77676874,
             axis_value: 700.0,
         };
+        assert_eq!(modifier.type_key(), type_keys::TEXT_VARIATION_MODIFIER);
         let props = modifier.properties();
         assert_eq!(props.len(), 3);
         assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
@@ -714,6 +717,7 @@ mod tests {
             tag: 0x6C696761,
             feature_value: 1,
         };
+        assert_eq!(feature.type_key(), type_keys::TEXT_STYLE_FEATURE);
         let props = feature.properties();
         assert_eq!(props.len(), 3);
         assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
