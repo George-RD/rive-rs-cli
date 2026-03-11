@@ -3190,14 +3190,22 @@ fn append_object(
         }
         ObjectSpec::ViewModelInstance { view_model_id } => {
             objects.push(Box::new(ViewModelInstance {
-                view_model_id: view_model_id.unwrap_or(0),
+                view_model_id: required_u64_field(
+                    *view_model_id,
+                    "view_model_instance",
+                    "view_model_id",
+                )?,
             }));
         }
         ObjectSpec::ViewModelInstanceValue {
             view_model_property_id,
         } => {
             objects.push(Box::new(ViewModelInstanceValue {
-                view_model_property_id: view_model_property_id.unwrap_or(0),
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_value",
+                    "view_model_property_id",
+                )?,
             }));
         }
         ObjectSpec::ViewModelInstanceColor {
@@ -3206,7 +3214,11 @@ fn append_object(
         } => {
             let color = parse_color(value)?;
             objects.push(Box::new(ViewModelInstanceColor {
-                view_model_property_id: view_model_property_id.unwrap_or(0),
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_color",
+                    "view_model_property_id",
+                )?,
                 property_value: color,
             }));
         }
@@ -3215,7 +3227,11 @@ fn append_object(
             value,
         } => {
             objects.push(Box::new(ViewModelInstanceString {
-                view_model_property_id: view_model_property_id.unwrap_or(0),
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_string",
+                    "view_model_property_id",
+                )?,
                 property_value: value.clone(),
             }));
         }
@@ -3224,7 +3240,11 @@ fn append_object(
             value,
         } => {
             objects.push(Box::new(ViewModelInstanceNumber {
-                view_model_property_id: view_model_property_id.unwrap_or(0),
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_number",
+                    "view_model_property_id",
+                )?,
                 property_value: *value,
             }));
         }
@@ -3233,7 +3253,11 @@ fn append_object(
             value,
         } => {
             objects.push(Box::new(ViewModelInstanceBoolean {
-                view_model_property_id: view_model_property_id.unwrap_or(0),
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_boolean",
+                    "view_model_property_id",
+                )?,
                 property_value: *value,
             }));
         }
@@ -3242,8 +3266,12 @@ fn append_object(
             value,
         } => {
             objects.push(Box::new(ViewModelInstanceEnum {
-                view_model_property_id: view_model_property_id.unwrap_or(0),
-                property_value: value.unwrap_or(0),
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_enum",
+                    "view_model_property_id",
+                )?,
+                property_value: required_u64_field(*value, "view_model_instance_enum", "value")?,
             }));
         }
         ObjectSpec::ViewModelInstanceList => {
@@ -3254,8 +3282,16 @@ fn append_object(
             view_model_instance_id,
         } => {
             objects.push(Box::new(ViewModelInstanceListItem {
-                view_model_id: view_model_id.unwrap_or(0),
-                view_model_instance_id: view_model_instance_id.unwrap_or(0),
+                view_model_id: required_u64_field(
+                    *view_model_id,
+                    "view_model_instance_list_item",
+                    "view_model_id",
+                )?,
+                view_model_instance_id: required_u64_field(
+                    *view_model_instance_id,
+                    "view_model_instance_list_item",
+                    "view_model_instance_id",
+                )?,
             }));
         }
         ObjectSpec::ViewModelInstanceViewModel {
@@ -3263,8 +3299,16 @@ fn append_object(
             value,
         } => {
             objects.push(Box::new(ViewModelInstanceViewModel {
-                view_model_property_id: view_model_property_id.unwrap_or(0),
-                property_value: value.unwrap_or(0),
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_view_model",
+                    "view_model_property_id",
+                )?,
+                property_value: required_u64_field(
+                    *value,
+                    "view_model_instance_view_model",
+                    "value",
+                )?,
             }));
         }
         ObjectSpec::TextModifierRange {
@@ -4707,6 +4751,14 @@ fn validate_text_modifier_group_child_spec(spec: &TextModifierGroupChildSpec) {
     }
 }
 
+fn required_u64_field(
+    value: Option<u64>,
+    object_type: &str,
+    field_name: &str,
+) -> Result<u64, String> {
+    value.ok_or_else(|| format!("{} must specify {}", object_type, field_name))
+}
+
 fn validate_object_spec(
     spec: &ObjectSpec,
     object_names: &mut HashSet<String>,
@@ -5271,17 +5323,73 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::DataBind { .. } => {}
-        ObjectSpec::ViewModelInstance { .. }
-        | ObjectSpec::ViewModelInstanceValue { .. }
-        | ObjectSpec::ViewModelInstanceColor { .. }
-        | ObjectSpec::ViewModelInstanceString { .. }
-        | ObjectSpec::ViewModelInstanceNumber { .. }
-        | ObjectSpec::ViewModelInstanceBoolean { .. }
-        | ObjectSpec::ViewModelInstanceEnum { .. }
-        | ObjectSpec::ViewModelInstanceList
-        | ObjectSpec::ViewModelInstanceListItem { .. }
-        | ObjectSpec::ViewModelInstanceViewModel { .. }
-        | ObjectSpec::TextModifierRange { .. }
+        ObjectSpec::ViewModelInstance { view_model_id } => {
+            required_u64_field(*view_model_id, "view_model_instance", "view_model_id")?;
+        }
+        ObjectSpec::ViewModelInstanceValue {
+            view_model_property_id,
+        }
+        | ObjectSpec::ViewModelInstanceColor {
+            view_model_property_id,
+            ..
+        }
+        | ObjectSpec::ViewModelInstanceString {
+            view_model_property_id,
+            ..
+        }
+        | ObjectSpec::ViewModelInstanceNumber {
+            view_model_property_id,
+            ..
+        }
+        | ObjectSpec::ViewModelInstanceBoolean {
+            view_model_property_id,
+            ..
+        } => {
+            required_u64_field(
+                *view_model_property_id,
+                "view_model_instance_value",
+                "view_model_property_id",
+            )?;
+        }
+        ObjectSpec::ViewModelInstanceEnum {
+            view_model_property_id,
+            value,
+        } => {
+            required_u64_field(
+                *view_model_property_id,
+                "view_model_instance_enum",
+                "view_model_property_id",
+            )?;
+            required_u64_field(*value, "view_model_instance_enum", "value")?;
+        }
+        ObjectSpec::ViewModelInstanceList => {}
+        ObjectSpec::ViewModelInstanceListItem {
+            view_model_id,
+            view_model_instance_id,
+        } => {
+            required_u64_field(
+                *view_model_id,
+                "view_model_instance_list_item",
+                "view_model_id",
+            )?;
+            required_u64_field(
+                *view_model_instance_id,
+                "view_model_instance_list_item",
+                "view_model_instance_id",
+            )?;
+        }
+        ObjectSpec::ViewModelInstanceViewModel {
+            view_model_property_id,
+            value,
+        } => {
+            required_u64_field(
+                *view_model_property_id,
+                "view_model_instance_view_model",
+                "view_model_property_id",
+            )?;
+            required_u64_field(*value, "view_model_instance_view_model", "value")?;
+        }
+        ObjectSpec::TextModifierRange { .. }
         | ObjectSpec::TextVariationModifier { .. }
         | ObjectSpec::TextStyleFeature { .. } => {}
         ObjectSpec::TextModifierGroup { name, children, .. } => {
@@ -6096,6 +6204,31 @@ mod tests {
             Err(err) => err,
         };
         assert!(err.contains("transition_view_model_condition op_value 6 out of range"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_missing_view_model_instance_reference() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::ViewModelInstance {
+                    view_model_id: None,
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected missing view model reference error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("view_model_instance must specify view_model_id"));
     }
 
     #[test]
