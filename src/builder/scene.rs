@@ -31,13 +31,13 @@ use crate::objects::shapes::{
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
-    BlendState1D, BlendStateDirect, EntryState, Event, ExitState, ListenerBoolChange,
-    ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation, NestedStateMachine,
-    StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener, StateMachineNumber,
-    StateMachineTrigger, StateTransition, TransitionBoolCondition, TransitionInputCondition,
-    TransitionNumberCondition, TransitionPropertyComparator, TransitionTriggerCondition,
-    TransitionValueBooleanComparator, TransitionValueColorComparator, TransitionValueCondition,
-    TransitionValueEnumComparator, TransitionValueNumberComparator,
+    BlendState1D, BlendState1DInput, BlendStateDirect, EntryState, Event, ExitState,
+    ListenerBoolChange, ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation,
+    NestedStateMachine, StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener,
+    StateMachineNumber, StateMachineTrigger, StateTransition, TransitionBoolCondition,
+    TransitionInputCondition, TransitionNumberCondition, TransitionPropertyComparator,
+    TransitionTriggerCondition, TransitionValueBooleanComparator, TransitionValueColorComparator,
+    TransitionValueCondition, TransitionValueEnumComparator, TransitionValueNumberComparator,
     TransitionValueStringComparator, TransitionValueTriggerComparator,
     TransitionViewModelCondition,
 };
@@ -1326,9 +1326,12 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 }
                             }
                             StateSpec::BlendState1d { input_id, children } => {
-                                objects.push(Box::new(BlendState1D {
-                                    input_id: input_id.unwrap_or(u32::MAX as u64),
-                                }));
+                                objects.push(Box::new(BlendState1D));
+                                if let Some(input_id) = input_id {
+                                    objects.push(Box::new(BlendState1DInput {
+                                        input_id: *input_id,
+                                    }));
+                                }
                                 if let Some(children) = children {
                                     for child in children {
                                         append_blend_state_1d_child(child, &mut objects);
@@ -4404,7 +4407,7 @@ fn append_blend_state_direct_child(
     objects.push(Box::new(BlendAnimationDirect {
         animation_id: *animation_id,
         input_id: input_id.unwrap_or(u32::MAX as u64),
-        mix_value: mix_value.unwrap_or(1.0),
+        mix_value: mix_value.unwrap_or(100.0),
         blend_source: blend_source.unwrap_or(0),
     }));
 }

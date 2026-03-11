@@ -708,7 +708,7 @@ impl RiveObject for BlendAnimationDirect {
                 value: PropertyValue::UInt(self.input_id),
             });
         }
-        if self.mix_value != 1.0 {
+        if self.mix_value != 100.0 {
             props.push(Property {
                 key: property_keys::BLEND_ANIMATION_DIRECT_MIX_VALUE,
                 value: PropertyValue::Float(self.mix_value),
@@ -781,13 +781,24 @@ impl RiveObject for BlendStateTransition {
     }
 }
 
-pub struct BlendState1D {
-    pub input_id: u64,
-}
+pub struct BlendState1D;
 
 impl RiveObject for BlendState1D {
     fn type_key(&self) -> u16 {
         type_keys::BLEND_STATE_1D
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct BlendState1DInput {
+    pub input_id: u64,
+}
+
+impl RiveObject for BlendState1DInput {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_STATE_1D_INPUT
     }
     fn properties(&self) -> Vec<Property> {
         let mut props = Vec::new();
@@ -1291,7 +1302,7 @@ mod tests {
         let animation = BlendAnimationDirect {
             animation_id: 3,
             input_id: 0,
-            mix_value: 1.0,
+            mix_value: 100.0,
             blend_source: 0,
         };
         let props = animation.properties();
@@ -1302,8 +1313,14 @@ mod tests {
     }
 
     #[test]
-    fn test_blend_state_1d_preserves_zero_input_id() {
-        let state = BlendState1D { input_id: 0 };
+    fn test_blend_state_1d_has_no_properties() {
+        let state = BlendState1D;
+        assert!(state.properties().is_empty());
+    }
+
+    #[test]
+    fn test_blend_state_1d_input_preserves_zero_input_id() {
+        let state = BlendState1DInput { input_id: 0 };
         let props = state.properties();
         assert_eq!(props.len(), 1);
         assert_eq!(props[0].key, property_keys::BLEND_STATE_1D_INPUT_ID);
@@ -1311,8 +1328,8 @@ mod tests {
     }
 
     #[test]
-    fn test_blend_state_1d_omits_unset_input_id() {
-        let state = BlendState1D {
+    fn test_blend_state_1d_input_omits_unset_input_id() {
+        let state = BlendState1DInput {
             input_id: u32::MAX as u64,
         };
         assert!(state.properties().is_empty());

@@ -155,6 +155,7 @@ pub mod type_keys {
     pub const BLEND_STATE_DIRECT: u16 = 73;
     pub const BLEND_ANIMATION: u16 = 74;
     pub const BLEND_ANIMATION_1D: u16 = 75;
+    pub const BLEND_STATE_1D_INPUT: u16 = 76;
     pub const BLEND_ANIMATION_DIRECT: u16 = 77;
     pub const BLEND_STATE_TRANSITION: u16 = 78;
     pub const BLEND_STATE_1D: u16 = 527;

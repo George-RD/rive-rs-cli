@@ -3070,6 +3070,7 @@ fn test_generate_validate_inspect_blend_animation() {
         .collect();
 
     assert!(type_names.contains(&"BlendState1D"));
+    assert!(type_names.contains(&"BlendState1DInput"));
     assert!(type_names.contains(&"BlendAnimation1D"));
     assert!(type_names.contains(&"BlendStateDirect"));
     assert!(type_names.contains(&"BlendAnimationDirect"));
