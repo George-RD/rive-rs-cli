@@ -3254,7 +3254,7 @@ fn append_object(
             offset,
             run_id,
         } => {
-            let mut r = TextModifierRange::new();
+            let mut r = TextModifierRange::new(parent_id);
             if let Some(v) = units_value {
                 r.units_value = *v;
             }
@@ -3353,12 +3353,14 @@ fn append_object(
             axis_value,
         } => {
             objects.push(Box::new(TextVariationModifier {
+                parent_id,
                 axis_tag: axis_tag.unwrap_or(0),
                 axis_value: axis_value.unwrap_or(0.0),
             }));
         }
         ObjectSpec::TextStyleFeature { tag, feature_value } => {
             objects.push(Box::new(TextStyleFeature {
+                parent_id,
                 tag: tag.unwrap_or(0),
                 feature_value: feature_value.unwrap_or(0),
             }));

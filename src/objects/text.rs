@@ -221,6 +221,7 @@ impl RiveObject for TextValueRun {
 }
 
 pub struct TextModifierRange {
+    pub parent_id: u64,
     pub units_value: u64,
     pub type_value: u64,
     pub mode_value: u64,
@@ -235,8 +236,9 @@ pub struct TextModifierRange {
 }
 
 impl TextModifierRange {
-    pub fn new() -> Self {
+    pub fn new(parent_id: u64) -> Self {
         Self {
+            parent_id,
             units_value: 0,
             type_value: 0,
             mode_value: 0,
@@ -257,7 +259,11 @@ impl RiveObject for TextModifierRange {
         type_keys::TEXT_MODIFIER_RANGE
     }
     fn properties(&self) -> Vec<Property> {
-        let mut props = Vec::with_capacity(11);
+        let mut props = Vec::with_capacity(12);
+        props.push(Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        });
         if self.units_value != 0 {
             props.push(Property {
                 key: property_keys::TEXT_MODIFIER_RANGE_UNITS_VALUE,
@@ -433,6 +439,7 @@ impl RiveObject for TextModifierGroup {
 }
 
 pub struct TextVariationModifier {
+    pub parent_id: u64,
     pub axis_tag: u64,
     pub axis_value: f32,
 }
@@ -442,7 +449,10 @@ impl RiveObject for TextVariationModifier {
         type_keys::TEXT_VARIATION_MODIFIER
     }
     fn properties(&self) -> Vec<Property> {
-        let mut props = Vec::new();
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        }];
         if self.axis_tag != 0 {
             props.push(Property {
                 key: property_keys::TEXT_VARIATION_MODIFIER_AXIS_TAG,
@@ -460,6 +470,7 @@ impl RiveObject for TextVariationModifier {
 }
 
 pub struct TextStyleFeature {
+    pub parent_id: u64,
     pub tag: u64,
     pub feature_value: u64,
 }
@@ -469,7 +480,10 @@ impl RiveObject for TextStyleFeature {
         type_keys::TEXT_STYLE_FEATURE
     }
     fn properties(&self) -> Vec<Property> {
-        let mut props = Vec::new();
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        }];
         if self.tag != 0 {
             props.push(Property {
                 key: property_keys::TEXT_STYLE_FEATURE_TAG,
@@ -609,13 +623,16 @@ mod tests {
 
     #[test]
     fn test_text_modifier_range_default_properties() {
-        let range = TextModifierRange::new();
-        assert!(range.properties().is_empty());
+        let range = TextModifierRange::new(7);
+        let props = range.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(7));
     }
 
     #[test]
     fn test_text_modifier_range_custom_properties() {
-        let mut range = TextModifierRange::new();
+        let mut range = TextModifierRange::new(7);
         range.modify_to = 0.5;
         range.strength = 0.25;
         range.clamp = true;
@@ -672,11 +689,14 @@ mod tests {
     #[test]
     fn test_text_variation_modifier_properties() {
         let modifier = TextVariationModifier {
+            parent_id: 9,
             axis_tag: 0x77676874,
             axis_value: 700.0,
         };
         let props = modifier.properties();
-        assert_eq!(props.len(), 2);
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(9));
         assert!(props.iter().any(|property| {
             property.key == property_keys::TEXT_VARIATION_MODIFIER_AXIS_TAG
                 && property.value == PropertyValue::UInt(0x77676874)
@@ -690,11 +710,14 @@ mod tests {
     #[test]
     fn test_text_style_feature_properties() {
         let feature = TextStyleFeature {
+            parent_id: 5,
             tag: 0x6C696761,
             feature_value: 1,
         };
         let props = feature.properties();
-        assert_eq!(props.len(), 2);
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(5));
         assert!(props.iter().any(|property| {
             property.key == property_keys::TEXT_STYLE_FEATURE_TAG
                 && property.value == PropertyValue::UInt(0x6C696761)
