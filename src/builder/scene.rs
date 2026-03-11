@@ -5178,6 +5178,8 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
             | ObjectSpec::Bone { children, .. }
             | ObjectSpec::RootBone { children, .. }
             | ObjectSpec::Text { children, .. }
+            | ObjectSpec::TextStyle { children, .. }
+            | ObjectSpec::TextModifierGroup { children, .. }
             | ObjectSpec::LayoutComponent { children, .. }
             | ObjectSpec::ViewModel { children, .. }
             | ObjectSpec::DrawRules { children, .. } => {
@@ -5786,6 +5788,53 @@ mod tests {
             Err(err) => err,
         };
         assert!(err.contains("invalid color literal"));
+    }
+
+    #[test]
+    fn test_image_reference_requires_preceding_asset_inside_text_style_children() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Text {
+                    name: "Label".to_string(),
+                    align_value: None,
+                    sizing_value: None,
+                    overflow_value: None,
+                    width: None,
+                    height: None,
+                    origin_x: None,
+                    origin_y: None,
+                    paragraph_spacing: None,
+                    origin_value: None,
+                    children: Some(vec![ObjectSpec::TextStyle {
+                        name: "Style".to_string(),
+                        font_size: None,
+                        line_height: None,
+                        letter_spacing: None,
+                        font_asset_id: None,
+                        children: Some(vec![ObjectSpec::Image {
+                            name: "Icon".to_string(),
+                            asset_id: 0,
+                            x: None,
+                            y: None,
+                        }]),
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected nested text style image asset order error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("references image asset index 0"));
     }
 
     #[test]
