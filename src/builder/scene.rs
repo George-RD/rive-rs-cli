@@ -4388,6 +4388,14 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                         condition.input
                                     ));
                                 }
+                                if let Some(op) = condition.op.as_deref()
+                                    && !condition_op_is_valid(op)
+                                {
+                                    return Err(format!(
+                                        "unknown condition operator '{}' in state machine '{}'",
+                                        op, state_machine.name
+                                    ));
+                                }
                                 if let Some(serde_json::Value::String(color)) =
                                     condition.value.as_ref()
                                 {
@@ -5471,6 +5479,13 @@ fn parse_condition_op(op: &str) -> u64 {
     }
 }
 
+fn condition_op_is_valid(op: &str) -> bool {
+    matches!(
+        op,
+        "==" | "eq" | "!=" | "ne" | ">" | "gt" | ">=" | "gte" | "<" | "lt" | "<=" | "lte"
+    )
+}
+
 fn input_is_trigger(input_name: &str, inputs: Option<&Vec<InputSpec>>) -> bool {
     if let Some(inputs) = inputs {
         for input in inputs {
@@ -6204,6 +6219,50 @@ mod tests {
             Err(err) => err,
         };
         assert!(err.contains("transition_view_model_condition op_value 6 out of range"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_invalid_condition_operator() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: None,
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "sm".to_string(),
+                    inputs: Some(vec![InputSpec::Bool {
+                        name: "enabled".to_string(),
+                        value: false,
+                    }]),
+                    listeners: None,
+                    layers: vec![LayerSpec {
+                        states: vec![StateSpec::Entry, StateSpec::Exit],
+                        transitions: Some(vec![TransitionSpec {
+                            from: 0,
+                            to: 1,
+                            duration: None,
+                            conditions: Some(vec![ConditionSpec {
+                                input: "enabled".to_string(),
+                                op: Some("gtee".to_string()),
+                                value: Some(serde_json::json!(true)),
+                            }]),
+                            children: None,
+                        }]),
+                    }],
+                }]),
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected invalid condition operator error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unknown condition operator 'gtee'"));
     }
 
     #[test]
