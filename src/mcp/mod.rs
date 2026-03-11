@@ -102,7 +102,10 @@ impl RiveMcpServer {
         name = "inspect",
         description = "Inspect a .riv file and return its object tree as JSON."
     )]
-    async fn inspect(&self, params: Parameters<InspectParams>) -> Result<CallToolResult, McpError> {
+    async fn inspect(
+        &self,
+        params: Parameters<FilePathParams>,
+    ) -> Result<CallToolResult, McpError> {
         let bytes = std::fs::read(&params.0.file).map_err(|e| {
             McpError::new(
                 ErrorCode::INVALID_PARAMS,
@@ -130,7 +133,7 @@ impl RiveMcpServer {
     )]
     async fn decompile(
         &self,
-        params: Parameters<DecompileParams>,
+        params: Parameters<FilePathParams>,
     ) -> Result<CallToolResult, McpError> {
         let bytes = std::fs::read(&params.0.file).map_err(|e| {
             McpError::new(
@@ -250,14 +253,8 @@ pub struct ValidateParams {
 }
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
-pub struct InspectParams {
+pub struct FilePathParams {
     #[schemars(description = "Path to .riv file to inspect")]
-    pub file: String,
-}
-
-#[derive(serde::Deserialize, schemars::JsonSchema)]
-pub struct DecompileParams {
-    #[schemars(description = "Path to .riv file to decompile")]
     pub file: String,
 }
 

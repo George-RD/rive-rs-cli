@@ -430,8 +430,6 @@ impl RiveObject for ElasticInterpolator {
     }
 }
 
-// Additional keyframe types (Unit 6)
-
 pub struct KeyFrameBool {
     pub frame: u64,
     pub value: bool,

@@ -31,13 +31,13 @@ use crate::objects::shapes::{
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
-    BlendState1D, BlendStateDirect, BlendStateTransition, EntryState, Event, ExitState,
-    ListenerBoolChange, ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation,
-    NestedStateMachine, StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener,
-    StateMachineNumber, StateMachineTrigger, StateTransition, TransitionBoolCondition,
-    TransitionInputCondition, TransitionNumberCondition, TransitionPropertyComparator,
-    TransitionTriggerCondition, TransitionValueBooleanComparator, TransitionValueColorComparator,
-    TransitionValueCondition, TransitionValueEnumComparator, TransitionValueNumberComparator,
+    BlendState1D, BlendStateDirect, EntryState, Event, ExitState, ListenerBoolChange,
+    ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation, NestedStateMachine,
+    StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener, StateMachineNumber,
+    StateMachineTrigger, StateTransition, TransitionBoolCondition, TransitionInputCondition,
+    TransitionNumberCondition, TransitionPropertyComparator, TransitionTriggerCondition,
+    TransitionValueBooleanComparator, TransitionValueColorComparator, TransitionValueCondition,
+    TransitionValueEnumComparator, TransitionValueNumberComparator,
     TransitionValueStringComparator, TransitionValueTriggerComparator,
     TransitionViewModelCondition,
 };
@@ -651,56 +651,6 @@ pub enum ObjectSpec {
         flags: u64,
         converter_id: Option<u64>,
     },
-    // Unit 3: Blend animation types
-    BlendState,
-    BlendStateDirect,
-    BlendAnimation {
-        animation_id: u64,
-    },
-    #[serde(alias = "blend_animation_1d")]
-    BlendAnimation1D {
-        animation_id: u64,
-        value: Option<f32>,
-    },
-    BlendAnimationDirect {
-        animation_id: u64,
-        input_id: Option<u64>,
-        mix_value: Option<f32>,
-        blend_source: Option<u64>,
-    },
-    BlendStateTransition {
-        state_to_id: u64,
-        flags: Option<u64>,
-        duration: Option<u64>,
-        exit_time: Option<u64>,
-        exit_blend_animation_id: Option<u64>,
-    },
-    #[serde(alias = "blend_state_1d")]
-    BlendState1D {
-        input_id: Option<u64>,
-    },
-    // Unit 4: Transition comparators
-    TransitionPropertyComparator,
-    TransitionViewModelCondition {
-        op_value: Option<u64>,
-    },
-    TransitionValueBooleanComparator {
-        value: bool,
-    },
-    TransitionValueColorComparator {
-        value: String,
-    },
-    TransitionValueNumberComparator {
-        value: f32,
-    },
-    TransitionValueEnumComparator,
-    TransitionValueStringComparator {
-        value: String,
-    },
-    TransitionValueTriggerComparator {
-        value: Option<u64>,
-    },
-    // Unit 5: ViewModel instance types
     ViewModelInstance {
         view_model_id: Option<u64>,
     },
@@ -736,7 +686,6 @@ pub enum ObjectSpec {
         view_model_property_id: Option<u64>,
         value: Option<u64>,
     },
-    // Unit 7: Text modifier types
     TextModifierRange {
         units_value: Option<u64>,
         type_value: Option<u64>,
@@ -884,15 +833,42 @@ pub enum StateSpec {
         animation: String,
     },
     BlendState {
-        children: Option<Vec<ObjectSpec>>,
+        children: Option<Vec<BlendStateChildSpec>>,
     },
     BlendStateDirect {
-        children: Option<Vec<ObjectSpec>>,
+        children: Option<Vec<BlendStateDirectChildSpec>>,
     },
     #[serde(alias = "blend_state_1d")]
     BlendState1d {
         input_id: Option<u64>,
-        children: Option<Vec<ObjectSpec>>,
+        children: Option<Vec<BlendState1DChildSpec>>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum BlendStateChildSpec {
+    BlendAnimation { animation_id: u64 },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum BlendStateDirectChildSpec {
+    BlendAnimationDirect {
+        animation_id: u64,
+        input_id: Option<u64>,
+        mix_value: Option<f32>,
+        blend_source: Option<u64>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum BlendState1DChildSpec {
+    #[serde(alias = "blend_animation_1d")]
+    BlendAnimation1D {
+        animation_id: u64,
+        value: Option<f32>,
     },
 }
 
@@ -902,7 +878,7 @@ pub struct TransitionSpec {
     pub to: usize,
     pub duration: Option<u64>,
     pub conditions: Option<Vec<ConditionSpec>>,
-    pub children: Option<Vec<ObjectSpec>>,
+    pub children: Option<Vec<TransitionChildSpec>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -910,6 +886,20 @@ pub struct ConditionSpec {
     pub input: String,
     pub op: Option<String>,
     pub value: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::enum_variant_names)]
+pub enum TransitionChildSpec {
+    TransitionPropertyComparator,
+    TransitionViewModelCondition { op_value: Option<u64> },
+    TransitionValueBooleanComparator { value: bool },
+    TransitionValueColorComparator { value: String },
+    TransitionValueNumberComparator { value: f32 },
+    TransitionValueEnumComparator,
+    TransitionValueStringComparator { value: String },
+    TransitionValueTriggerComparator { value: Option<u64> },
 }
 
 fn resolve_artboards(spec: &SceneSpec) -> Result<Vec<&ArtboardSpec>, String> {
@@ -1323,16 +1313,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 objects.push(Box::new(BlendState));
                                 if let Some(children) = children {
                                     for child in children {
-                                        append_object(
-                                            child,
-                                            artboard_start,
-                                            artboard_start,
-                                            &mut objects,
-                                            &mut object_name_to_index,
-                                            &artboard_name_to_index,
-                                            &artboard_spec.name,
-                                            &animation_name_to_index,
-                                        )?;
+                                        append_blend_state_child(child, &mut objects);
                                     }
                                 }
                             }
@@ -1340,16 +1321,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 objects.push(Box::new(BlendStateDirect));
                                 if let Some(children) = children {
                                     for child in children {
-                                        append_object(
-                                            child,
-                                            artboard_start,
-                                            artboard_start,
-                                            &mut objects,
-                                            &mut object_name_to_index,
-                                            &artboard_name_to_index,
-                                            &artboard_spec.name,
-                                            &animation_name_to_index,
-                                        )?;
+                                        append_blend_state_direct_child(child, &mut objects);
                                     }
                                 }
                             }
@@ -1359,16 +1331,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 }));
                                 if let Some(children) = children {
                                     for child in children {
-                                        append_object(
-                                            child,
-                                            artboard_start,
-                                            artboard_start,
-                                            &mut objects,
-                                            &mut object_name_to_index,
-                                            &artboard_name_to_index,
-                                            &artboard_spec.name,
-                                            &animation_name_to_index,
-                                        )?;
+                                        append_blend_state_1d_child(child, &mut objects);
                                     }
                                 }
                             }
@@ -1474,16 +1437,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
 
                                 if let Some(children) = &transition.children {
                                     for child in children {
-                                        append_object(
-                                            child,
-                                            artboard_start,
-                                            artboard_start,
-                                            &mut objects,
-                                            &mut object_name_to_index,
-                                            &artboard_name_to_index,
-                                            &artboard_spec.name,
-                                            &animation_name_to_index,
-                                        )?;
+                                        append_transition_child(child, &mut objects)?;
                                     }
                                 }
                             }
@@ -3187,97 +3141,6 @@ fn append_object(
             }
             objects.push(Box::new(db));
         }
-        ObjectSpec::BlendState => {
-            objects.push(Box::new(BlendState));
-        }
-        ObjectSpec::BlendStateDirect => {
-            objects.push(Box::new(BlendStateDirect));
-        }
-        ObjectSpec::BlendAnimation { animation_id } => {
-            objects.push(Box::new(BlendAnimation {
-                animation_id: *animation_id,
-            }));
-        }
-        ObjectSpec::BlendAnimation1D {
-            animation_id,
-            value,
-        } => {
-            objects.push(Box::new(BlendAnimation1D {
-                animation_id: *animation_id,
-                value: value.unwrap_or(0.0),
-            }));
-        }
-        ObjectSpec::BlendAnimationDirect {
-            animation_id,
-            input_id,
-            mix_value,
-            blend_source,
-        } => {
-            objects.push(Box::new(BlendAnimationDirect {
-                animation_id: *animation_id,
-                input_id: input_id.unwrap_or(u32::MAX as u64),
-                mix_value: mix_value.unwrap_or(1.0),
-                blend_source: blend_source.unwrap_or(0),
-            }));
-        }
-        ObjectSpec::BlendStateTransition {
-            state_to_id,
-            flags,
-            duration,
-            exit_time,
-            exit_blend_animation_id,
-        } => {
-            let mut t = BlendStateTransition::new(*state_to_id);
-            if let Some(f) = flags {
-                t.flags = *f;
-            }
-            if let Some(d) = duration {
-                t.duration = *d;
-            }
-            if let Some(e) = exit_time {
-                t.exit_time = *e;
-            }
-            if let Some(e) = exit_blend_animation_id {
-                t.exit_blend_animation_id = *e;
-            }
-            objects.push(Box::new(t));
-        }
-        ObjectSpec::BlendState1D { input_id } => {
-            objects.push(Box::new(BlendState1D {
-                input_id: input_id.unwrap_or(u32::MAX as u64),
-            }));
-        }
-        ObjectSpec::TransitionPropertyComparator => {
-            objects.push(Box::new(TransitionPropertyComparator));
-        }
-        ObjectSpec::TransitionViewModelCondition { op_value } => {
-            objects.push(Box::new(TransitionViewModelCondition {
-                op_value: op_value.unwrap_or(0),
-            }));
-        }
-        ObjectSpec::TransitionValueBooleanComparator { value } => {
-            objects.push(Box::new(TransitionValueBooleanComparator { value: *value }));
-        }
-        ObjectSpec::TransitionValueColorComparator { value } => {
-            let color = parse_color(value)?;
-            objects.push(Box::new(TransitionValueColorComparator { value: color }));
-        }
-        ObjectSpec::TransitionValueNumberComparator { value } => {
-            objects.push(Box::new(TransitionValueNumberComparator { value: *value }));
-        }
-        ObjectSpec::TransitionValueEnumComparator => {
-            objects.push(Box::new(TransitionValueEnumComparator));
-        }
-        ObjectSpec::TransitionValueStringComparator { value } => {
-            objects.push(Box::new(TransitionValueStringComparator {
-                value: value.clone(),
-            }));
-        }
-        ObjectSpec::TransitionValueTriggerComparator { value } => {
-            objects.push(Box::new(TransitionValueTriggerComparator {
-                value: value.unwrap_or(0),
-            }));
-        }
         ObjectSpec::ViewModelInstance { view_model_id } => {
             objects.push(Box::new(ViewModelInstance {
                 view_model_id: view_model_id.unwrap_or(0),
@@ -3499,17 +3362,24 @@ fn property_key_from_name(name: &str) -> Option<u16> {
         "trim_offset" => Some(property_keys::TRIM_PATH_OFFSET),
         "trigger" => Some(property_keys::EVENT_TRIGGER),
         "active_component_id" => Some(property_keys::SOLO_ACTIVE_COMPONENT_ID),
-        "text" => Some(property_keys::TEXT_VALUE_RUN_TEXT),
-        "is_visible" => Some(property_keys::SHAPE_PAINT_IS_VISIBLE),
         _ => None,
     }
 }
 
 fn property_key_for_object(name: &str, object_type_key: u16) -> Option<u16> {
-    if name == "is_visible" && object_type_key == type_keys::CLIPPING_SHAPE {
-        return Some(property_keys::CLIPPING_SHAPE_IS_VISIBLE);
+    match name {
+        "text" if object_type_key == type_keys::TEXT_VALUE_RUN => {
+            Some(property_keys::TEXT_VALUE_RUN_TEXT)
+        }
+        "is_visible" if object_type_key == type_keys::CLIPPING_SHAPE => {
+            Some(property_keys::CLIPPING_SHAPE_IS_VISIBLE)
+        }
+        "is_visible" if matches!(object_type_key, type_keys::FILL | type_keys::STROKE) => {
+            Some(property_keys::SHAPE_PAINT_IS_VISIBLE)
+        }
+        "text" | "is_visible" => None,
+        _ => property_key_from_name(name),
     }
-    property_key_from_name(name)
 }
 
 fn interpolator_def_equals(left: InterpolatorDef, right: InterpolatorDef) -> bool {
@@ -3769,6 +3639,274 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
     refs
 }
 
+fn collect_object_type_key(spec: &ObjectSpec, object_type_keys: &mut HashMap<String, u16>) {
+    match spec {
+        ObjectSpec::Shape { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SHAPE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Solo { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SOLO);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Ellipse { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ELLIPSE);
+        }
+        ObjectSpec::Rectangle { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::RECTANGLE);
+        }
+        ObjectSpec::Triangle { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRIANGLE);
+        }
+        ObjectSpec::Polygon { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::POLYGON);
+        }
+        ObjectSpec::Star { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::STAR);
+        }
+        ObjectSpec::Fill { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FILL);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Stroke { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::STROKE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::SolidColor { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SOLID_COLOR);
+        }
+        ObjectSpec::LinearGradient { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LINEAR_GRADIENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::RadialGradient { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::RADIAL_GRADIENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::GradientStop { name, .. } => {
+            if let Some(name) = name {
+                object_type_keys.insert(name.clone(), type_keys::GRADIENT_STOP);
+            }
+        }
+        ObjectSpec::Node { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NODE);
+        }
+        ObjectSpec::Image { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::IMAGE);
+        }
+        ObjectSpec::Path { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::PATH);
+        }
+        ObjectSpec::PointsPath { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::POINTS_PATH);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::StraightVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::STRAIGHT_VERTEX);
+        }
+        ObjectSpec::CubicMirroredVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_MIRRORED_VERTEX);
+        }
+        ObjectSpec::CubicDetachedVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_DETACHED_VERTEX);
+        }
+        ObjectSpec::CubicAsymmetricVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_ASYMMETRIC_VERTEX);
+        }
+        ObjectSpec::TrimPath { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRIM_PATH);
+        }
+        ObjectSpec::NestedArtboard { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_ARTBOARD);
+        }
+        ObjectSpec::NestedStateMachine { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_STATE_MACHINE);
+        }
+        ObjectSpec::NestedSimpleAnimation { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_SIMPLE_ANIMATION);
+        }
+        ObjectSpec::Event { name, children } => {
+            object_type_keys.insert(name.clone(), type_keys::EVENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Bone { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::BONE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::RootBone { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ROOT_BONE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Skin { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SKIN);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Tendon { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TENDON);
+        }
+        ObjectSpec::Weight { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::WEIGHT);
+        }
+        ObjectSpec::CubicWeight { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_WEIGHT);
+        }
+        ObjectSpec::IkConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::IK_CONSTRAINT);
+        }
+        ObjectSpec::DistanceConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DISTANCE_CONSTRAINT);
+        }
+        ObjectSpec::TransformConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRANSFORM_CONSTRAINT);
+        }
+        ObjectSpec::TranslationConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRANSLATION_CONSTRAINT);
+        }
+        ObjectSpec::ScaleConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCALE_CONSTRAINT);
+        }
+        ObjectSpec::RotationConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ROTATION_CONSTRAINT);
+        }
+        ObjectSpec::FollowPathConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FOLLOW_PATH_CONSTRAINT);
+        }
+        ObjectSpec::ClippingShape { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CLIPPING_SHAPE);
+        }
+        ObjectSpec::DrawRules { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DRAW_RULES);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::DrawTarget { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DRAW_TARGET);
+        }
+        ObjectSpec::Joystick { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::JOYSTICK);
+        }
+        ObjectSpec::Text { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::TextStyle { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::TextValueRun { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_VALUE_RUN);
+        }
+        ObjectSpec::ImageAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::IMAGE_ASSET);
+        }
+        ObjectSpec::FontAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FONT_ASSET);
+        }
+        ObjectSpec::AudioAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::AUDIO_ASSET);
+        }
+        ObjectSpec::LayoutComponent { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LAYOUT_COMPONENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::LayoutComponentStyle { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LAYOUT_COMPONENT_STYLE);
+        }
+        ObjectSpec::ViewModel { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ViewModelProperty { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL_PROPERTY);
+        }
+        ObjectSpec::DataBind { .. } => {}
+        ObjectSpec::ViewModelInstance { .. }
+        | ObjectSpec::ViewModelInstanceValue { .. }
+        | ObjectSpec::ViewModelInstanceColor { .. }
+        | ObjectSpec::ViewModelInstanceString { .. }
+        | ObjectSpec::ViewModelInstanceNumber { .. }
+        | ObjectSpec::ViewModelInstanceBoolean { .. }
+        | ObjectSpec::ViewModelInstanceEnum { .. }
+        | ObjectSpec::ViewModelInstanceList
+        | ObjectSpec::ViewModelInstanceListItem { .. }
+        | ObjectSpec::ViewModelInstanceViewModel { .. }
+        | ObjectSpec::TextModifierRange { .. }
+        | ObjectSpec::TextVariationModifier { .. }
+        | ObjectSpec::TextStyleFeature { .. } => {}
+        ObjectSpec::TextModifierGroup { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_MODIFIER_GROUP);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+    }
+}
+
 fn detect_artboard_cycles(artboard_deps: &HashMap<String, Vec<String>>) -> Result<(), String> {
     for start in artboard_deps.keys() {
         let mut visited: HashSet<&str> = HashSet::new();
@@ -3842,8 +3980,10 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
     resolve_artboard_dimensions(artboard_spec)?;
 
     let mut object_names: HashSet<String> = HashSet::new();
+    let mut object_type_keys: HashMap<String, u16> = HashMap::new();
     for child in &artboard_spec.children {
         validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
+        collect_object_type_key(child, &mut object_type_keys);
     }
     validate_image_asset_references(&artboard_spec.children)?;
 
@@ -3879,18 +4019,16 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
             }
 
             for group in &animation.keyframes {
-                if !object_names.contains(&group.object) {
-                    return Err(format!(
-                        "unknown object referenced in keyframes: '{}'",
-                        group.object
-                    ));
-                }
-                let property_key = property_key_from_name(&group.property).ok_or_else(|| {
-                    format!(
-                        "unknown property referenced in keyframes: '{}'",
-                        group.property
-                    )
+                let object_type_key = *object_type_keys.get(&group.object).ok_or_else(|| {
+                    format!("unknown object referenced in keyframes: '{}'", group.object)
                 })?;
+                let property_key = property_key_for_object(&group.property, object_type_key)
+                    .ok_or_else(|| {
+                        format!(
+                            "unknown property referenced in keyframes: '{}'",
+                            group.property
+                        )
+                    })?;
 
                 for frame in &group.frames {
                     if let Some(interp_name) = &frame.interpolator
@@ -4056,13 +4194,52 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
 
             for layer in &state_machine.layers {
                 for state in &layer.states {
-                    if let StateSpec::Animation { animation } = state
-                        && !animation_names.contains(animation)
-                    {
-                        return Err(format!(
-                            "unknown animation referenced in state machine '{}': '{}'",
-                            state_machine.name, animation
-                        ));
+                    match state {
+                        StateSpec::Animation { animation }
+                            if !animation_names.contains(animation) =>
+                        {
+                            return Err(format!(
+                                "unknown animation referenced in state machine '{}': '{}'",
+                                state_machine.name, animation
+                            ));
+                        }
+                        StateSpec::BlendState {
+                            children: Some(children),
+                        } => {
+                            validate_blend_state_children(
+                                children,
+                                animation_names.len(),
+                                state_machine.name.as_str(),
+                            )?;
+                        }
+                        StateSpec::BlendStateDirect {
+                            children: Some(children),
+                        } => {
+                            validate_blend_state_direct_children(
+                                children,
+                                animation_names.len(),
+                                input_names.len(),
+                                state_machine.name.as_str(),
+                            )?;
+                        }
+                        StateSpec::BlendState1d { input_id, children } => {
+                            if let Some(input_id) = input_id {
+                                validate_index(
+                                    *input_id,
+                                    input_names.len(),
+                                    "blend_state_1d input_id",
+                                    state_machine.name.as_str(),
+                                )?;
+                            }
+                            if let Some(children) = children {
+                                validate_blend_state_1d_children(
+                                    children,
+                                    animation_names.len(),
+                                    state_machine.name.as_str(),
+                                )?;
+                            }
+                        }
+                        _ => {}
                     }
                 }
 
@@ -4098,12 +4275,191 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                 }
                             }
                         }
+
+                        if let Some(children) = &transition.children {
+                            validate_transition_children(children, state_machine.name.as_str())?;
+                        }
                     }
                 }
             }
         }
     }
 
+    Ok(())
+}
+
+fn validate_index(
+    index: u64,
+    len: usize,
+    label: &str,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    if index as usize >= len {
+        return Err(format!(
+            "{} {} out of bounds in state machine '{}' (len {})",
+            label, index, state_machine_name, len
+        ));
+    }
+    Ok(())
+}
+
+fn validate_blend_state_children(
+    children: &[BlendStateChildSpec],
+    animation_count: usize,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        let BlendStateChildSpec::BlendAnimation { animation_id } = child;
+        validate_index(
+            *animation_id,
+            animation_count,
+            "blend_animation animation_id",
+            state_machine_name,
+        )?;
+    }
+    Ok(())
+}
+
+fn validate_blend_state_direct_children(
+    children: &[BlendStateDirectChildSpec],
+    animation_count: usize,
+    input_count: usize,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        let BlendStateDirectChildSpec::BlendAnimationDirect {
+            animation_id,
+            input_id,
+            ..
+        } = child;
+        validate_index(
+            *animation_id,
+            animation_count,
+            "blend_animation_direct animation_id",
+            state_machine_name,
+        )?;
+        if let Some(input_id) = input_id {
+            validate_index(
+                *input_id,
+                input_count,
+                "blend_animation_direct input_id",
+                state_machine_name,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_blend_state_1d_children(
+    children: &[BlendState1DChildSpec],
+    animation_count: usize,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        let BlendState1DChildSpec::BlendAnimation1D { animation_id, .. } = child;
+        validate_index(
+            *animation_id,
+            animation_count,
+            "blend_animation_1d animation_id",
+            state_machine_name,
+        )?;
+    }
+    Ok(())
+}
+
+fn validate_transition_children(
+    children: &[TransitionChildSpec],
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        if let TransitionChildSpec::TransitionValueColorComparator { value } = child {
+            parse_color(value).map_err(|e| {
+                format!(
+                    "invalid transition_value_color_comparator in state machine '{}': {}",
+                    state_machine_name, e
+                )
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn append_blend_state_child(spec: &BlendStateChildSpec, objects: &mut Vec<Box<dyn RiveObject>>) {
+    let BlendStateChildSpec::BlendAnimation { animation_id } = spec;
+    objects.push(Box::new(BlendAnimation {
+        animation_id: *animation_id,
+    }));
+}
+
+fn append_blend_state_direct_child(
+    spec: &BlendStateDirectChildSpec,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    let BlendStateDirectChildSpec::BlendAnimationDirect {
+        animation_id,
+        input_id,
+        mix_value,
+        blend_source,
+    } = spec;
+    objects.push(Box::new(BlendAnimationDirect {
+        animation_id: *animation_id,
+        input_id: input_id.unwrap_or(u32::MAX as u64),
+        mix_value: mix_value.unwrap_or(1.0),
+        blend_source: blend_source.unwrap_or(0),
+    }));
+}
+
+fn append_blend_state_1d_child(
+    spec: &BlendState1DChildSpec,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    let BlendState1DChildSpec::BlendAnimation1D {
+        animation_id,
+        value,
+    } = spec;
+    objects.push(Box::new(BlendAnimation1D {
+        animation_id: *animation_id,
+        value: value.unwrap_or(0.0),
+    }));
+}
+
+fn append_transition_child(
+    spec: &TransitionChildSpec,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) -> Result<(), String> {
+    match spec {
+        TransitionChildSpec::TransitionPropertyComparator => {
+            objects.push(Box::new(TransitionPropertyComparator));
+        }
+        TransitionChildSpec::TransitionViewModelCondition { op_value } => {
+            objects.push(Box::new(TransitionViewModelCondition {
+                op_value: op_value.unwrap_or(0),
+            }));
+        }
+        TransitionChildSpec::TransitionValueBooleanComparator { value } => {
+            objects.push(Box::new(TransitionValueBooleanComparator { value: *value }));
+        }
+        TransitionChildSpec::TransitionValueColorComparator { value } => {
+            let color = parse_color(value)?;
+            objects.push(Box::new(TransitionValueColorComparator { value: color }));
+        }
+        TransitionChildSpec::TransitionValueNumberComparator { value } => {
+            objects.push(Box::new(TransitionValueNumberComparator { value: *value }));
+        }
+        TransitionChildSpec::TransitionValueEnumComparator => {
+            objects.push(Box::new(TransitionValueEnumComparator));
+        }
+        TransitionChildSpec::TransitionValueStringComparator { value } => {
+            objects.push(Box::new(TransitionValueStringComparator {
+                value: value.clone(),
+            }));
+        }
+        TransitionChildSpec::TransitionValueTriggerComparator { value } => {
+            objects.push(Box::new(TransitionValueTriggerComparator {
+                value: value.unwrap_or(0),
+            }));
+        }
+    }
     Ok(())
 }
 
@@ -4206,21 +4562,6 @@ fn validate_object_spec(
                             }
                         }
                         ObjectSpec::DataBind { .. }
-                        | ObjectSpec::BlendState
-                        | ObjectSpec::BlendStateDirect
-                        | ObjectSpec::BlendAnimation { .. }
-                        | ObjectSpec::BlendAnimation1D { .. }
-                        | ObjectSpec::BlendAnimationDirect { .. }
-                        | ObjectSpec::BlendStateTransition { .. }
-                        | ObjectSpec::BlendState1D { .. }
-                        | ObjectSpec::TransitionPropertyComparator
-                        | ObjectSpec::TransitionViewModelCondition { .. }
-                        | ObjectSpec::TransitionValueBooleanComparator { .. }
-                        | ObjectSpec::TransitionValueColorComparator { .. }
-                        | ObjectSpec::TransitionValueNumberComparator { .. }
-                        | ObjectSpec::TransitionValueEnumComparator
-                        | ObjectSpec::TransitionValueStringComparator { .. }
-                        | ObjectSpec::TransitionValueTriggerComparator { .. }
                         | ObjectSpec::ViewModelInstance { .. }
                         | ObjectSpec::ViewModelInstanceValue { .. }
                         | ObjectSpec::ViewModelInstanceColor { .. }
@@ -4699,22 +5040,7 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::DataBind { .. } => {}
-        ObjectSpec::BlendState
-        | ObjectSpec::BlendStateDirect
-        | ObjectSpec::BlendAnimation { .. }
-        | ObjectSpec::BlendAnimation1D { .. }
-        | ObjectSpec::BlendAnimationDirect { .. }
-        | ObjectSpec::BlendStateTransition { .. }
-        | ObjectSpec::BlendState1D { .. }
-        | ObjectSpec::TransitionPropertyComparator
-        | ObjectSpec::TransitionViewModelCondition { .. }
-        | ObjectSpec::TransitionValueBooleanComparator { .. }
-        | ObjectSpec::TransitionValueColorComparator { .. }
-        | ObjectSpec::TransitionValueNumberComparator { .. }
-        | ObjectSpec::TransitionValueEnumComparator
-        | ObjectSpec::TransitionValueStringComparator { .. }
-        | ObjectSpec::TransitionValueTriggerComparator { .. }
-        | ObjectSpec::ViewModelInstance { .. }
+        ObjectSpec::ViewModelInstance { .. }
         | ObjectSpec::ViewModelInstanceValue { .. }
         | ObjectSpec::ViewModelInstanceColor { .. }
         | ObjectSpec::ViewModelInstanceString { .. }

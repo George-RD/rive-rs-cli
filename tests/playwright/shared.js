@@ -29,6 +29,7 @@ const FIXTURES = [
   "assets",
   "bones",
   "button_states",
+  "blend_animation",
   "clipping_shape",
   "comparison_quantize_test",
   "comparison_trim",
@@ -39,6 +40,7 @@ const FIXTURES = [
   "event_test",
   "image_node",
   "joystick",
+  "keyframe_types",
   "layout",
   "listener_test",
   "loader",
@@ -47,7 +49,10 @@ const FIXTURES = [
   "polygon_star",
   "solo_test",
   "text",
+  "text_modifiers",
+  "transition_comparators",
   "triangle",
+  "view_model_instances",
 ];
 
 function run(command, args, cwd = ROOT) {

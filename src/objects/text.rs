@@ -220,8 +220,6 @@ impl RiveObject for TextValueRun {
     }
 }
 
-// Text modifier types (Unit 7)
-
 pub struct TextModifierRange {
     pub units_value: u64,
     pub type_value: u64,

@@ -151,7 +151,6 @@ pub mod type_keys {
     pub const FILE_ASSET_CONTENTS: u16 = 106;
     pub const ASSET: u16 = 99;
     pub const FILE_ASSET: u16 = 103;
-    // Blend animation types
     pub const BLEND_STATE: u16 = 72;
     pub const BLEND_STATE_DIRECT: u16 = 73;
     pub const BLEND_ANIMATION: u16 = 74;
@@ -159,7 +158,6 @@ pub mod type_keys {
     pub const BLEND_ANIMATION_DIRECT: u16 = 77;
     pub const BLEND_STATE_TRANSITION: u16 = 78;
     pub const BLEND_STATE_1D: u16 = 527;
-    // Transition comparators
     pub const TRANSITION_PROPERTY_COMPARATOR: u16 = 478;
     pub const TRANSITION_VALUE_BOOLEAN_COMPARATOR: u16 = 481;
     pub const TRANSITION_VIEW_MODEL_CONDITION: u16 = 482;
@@ -168,7 +166,6 @@ pub mod type_keys {
     pub const TRANSITION_VALUE_ENUM_COMPARATOR: u16 = 485;
     pub const TRANSITION_VALUE_STRING_COMPARATOR: u16 = 486;
     pub const TRANSITION_VALUE_TRIGGER_COMPARATOR: u16 = 505;
-    // ViewModel instance types
     pub const VIEW_MODEL_INSTANCE: u16 = 437;
     pub const VIEW_MODEL_INSTANCE_COLOR: u16 = 426;
     pub const VIEW_MODEL_INSTANCE_LIST_ITEM: u16 = 427;
@@ -179,11 +176,9 @@ pub mod type_keys {
     pub const VIEW_MODEL_INSTANCE_NUMBER: u16 = 442;
     pub const VIEW_MODEL_INSTANCE_VIEW_MODEL: u16 = 444;
     pub const VIEW_MODEL_INSTANCE_BOOLEAN: u16 = 449;
-    // Additional keyframe types
     pub const KEY_FRAME_BOOL: u16 = 84;
     pub const KEY_FRAME_STRING: u16 = 142;
     pub const KEY_FRAME_UINT: u16 = 450;
-    // Text modifier types
     pub const TEXT_MODIFIER_RANGE: u16 = 158;
     pub const TEXT_MODIFIER_GROUP: u16 = 159;
     pub const TEXT_VARIATION_MODIFIER: u16 = 162;
@@ -439,7 +434,6 @@ pub mod property_keys {
     pub const DATA_BIND_PROPERTY_KEY: u16 = 586;
     pub const DATA_BIND_FLAGS: u16 = 587;
     pub const DATA_BIND_CONVERTER_ID: u16 = 660;
-    // Blend animation properties
     pub const BLEND_ANIMATION_ANIMATION_ID: u16 = 165;
     pub const BLEND_ANIMATION_1D_VALUE: u16 = 166;
     pub const BLEND_STATE_1D_INPUT_ID: u16 = 167;
@@ -447,14 +441,12 @@ pub mod property_keys {
     pub const BLEND_STATE_TRANSITION_EXIT_BLEND_ANIMATION_ID: u16 = 171;
     pub const BLEND_ANIMATION_DIRECT_MIX_VALUE: u16 = 297;
     pub const BLEND_ANIMATION_DIRECT_BLEND_SOURCE: u16 = 298;
-    // Transition comparator properties
     pub const TRANSITION_VIEW_MODEL_CONDITION_OP_VALUE: u16 = 650;
     pub const TRANSITION_VALUE_BOOLEAN_COMPARATOR_VALUE: u16 = 647;
     pub const TRANSITION_VALUE_COLOR_COMPARATOR_VALUE: u16 = 651;
     pub const TRANSITION_VALUE_NUMBER_COMPARATOR_VALUE: u16 = 652;
     pub const TRANSITION_VALUE_STRING_COMPARATOR_VALUE: u16 = 654;
     pub const TRANSITION_VALUE_TRIGGER_COMPARATOR_VALUE: u16 = 689;
-    // ViewModel instance properties
     pub const VIEW_MODEL_INSTANCE_VIEW_MODEL_ID: u16 = 566;
     pub const VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID: u16 = 554;
     pub const VIEW_MODEL_INSTANCE_COLOR_PROPERTY_VALUE: u16 = 555;
@@ -465,11 +457,9 @@ pub mod property_keys {
     pub const VIEW_MODEL_INSTANCE_BOOLEAN_PROPERTY_VALUE: u16 = 593;
     pub const VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_ID: u16 = 549;
     pub const VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_INSTANCE_ID: u16 = 550;
-    // KeyFrame type properties
     pub const KEY_FRAME_BOOL_VALUE: u16 = 181;
     pub const KEY_FRAME_STRING_VALUE: u16 = 280;
     pub const KEY_FRAME_UINT_VALUE: u16 = 631;
-    // Text modifier properties
     pub const TEXT_MODIFIER_RANGE_UNITS_VALUE: u16 = 316;
     pub const TEXT_MODIFIER_RANGE_FALLOFF_FROM: u16 = 317;
     pub const TEXT_MODIFIER_RANGE_FALLOFF_TO: u16 = 318;

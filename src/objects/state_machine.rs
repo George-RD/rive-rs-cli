@@ -624,8 +624,6 @@ impl RiveObject for TransitionBoolCondition {
     }
 }
 
-// Blend animation types (Unit 3)
-
 pub struct BlendState;
 
 impl RiveObject for BlendState {
@@ -802,8 +800,6 @@ impl RiveObject for BlendState1D {
         props
     }
 }
-
-// Transition comparator types (Unit 4)
 
 pub struct TransitionPropertyComparator;
 

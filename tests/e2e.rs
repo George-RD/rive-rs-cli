@@ -75,6 +75,41 @@ fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
     }
 }
 
+fn generate_and_inspect_json(fixture: &str) -> serde_json::Value {
+    let input = fixture_path(&format!("{}.json", fixture));
+    let output = temp_output(&format!("{}_json", fixture));
+    cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
+
+    let generate = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        generate.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&generate.stderr)
+    );
+
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+
+    let inspect = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    assert!(
+        inspect.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+
+    serde_json::from_slice(&inspect.stdout).expect("inspect --json output is not valid JSON")
+}
+
 #[test]
 fn test_generate_minimal() {
     let input = fixture_path("minimal.json");
@@ -3025,20 +3060,72 @@ fn test_generate_validate_inspect_joystick() {
 
 #[test]
 fn test_generate_validate_inspect_blend_animation() {
-    assert_generate_validate_inspect("blend_animation", &["BlendState1D", "BlendAnimation1D"]);
+    let parsed = generate_and_inspect_json("blend_animation");
+    let objects = parsed["objects"]
+        .as_array()
+        .expect("objects should be an array");
+    let type_names: Vec<&str> = objects
+        .iter()
+        .filter_map(|object| object["type_name"].as_str())
+        .collect();
+
+    assert!(type_names.contains(&"BlendState1D"));
+    assert!(type_names.contains(&"BlendAnimation1D"));
+    assert!(type_names.contains(&"BlendStateDirect"));
+    assert!(type_names.contains(&"BlendAnimationDirect"));
 }
 
 #[test]
 fn test_generate_validate_inspect_transition_comparators() {
-    assert_generate_validate_inspect(
-        "transition_comparators",
-        &[
-            "TransitionValueBooleanComparator",
-            "TransitionValueNumberComparator",
-            "TransitionValueStringComparator",
-            "TransitionValueColorComparator",
-        ],
-    );
+    let parsed = generate_and_inspect_json("transition_comparators");
+    let objects = parsed["objects"]
+        .as_array()
+        .expect("objects should be an array");
+
+    let bool_value = objects
+        .iter()
+        .find(|object| object["type_name"] == "TransitionValueBooleanComparator")
+        .and_then(|object| object["properties"].as_array())
+        .and_then(|properties| properties.first())
+        .and_then(|property| property["value"]["UInt"].as_u64());
+    assert_eq!(bool_value, Some(1));
+
+    let number_value = objects
+        .iter()
+        .find(|object| object["type_name"] == "TransitionValueNumberComparator")
+        .and_then(|object| object["properties"].as_array())
+        .and_then(|properties| properties.first())
+        .and_then(|property| property["value"]["Float"].as_f64());
+    assert_eq!(number_value, Some(1.0));
+
+    let string_value = objects
+        .iter()
+        .find(|object| object["type_name"] == "TransitionValueStringComparator")
+        .and_then(|object| object["properties"].as_array())
+        .and_then(|properties| properties.first())
+        .and_then(|property| property["value"]["String"].as_str());
+    assert_eq!(string_value, Some("on"));
+
+    let color_value = objects
+        .iter()
+        .find(|object| object["type_name"] == "TransitionValueColorComparator")
+        .and_then(|object| object["properties"].as_array())
+        .and_then(|properties| properties.first())
+        .and_then(|property| property["value"]["Color"].as_u64());
+    assert_eq!(color_value, Some(0xFFFF0000));
+
+    let condition_ops: Vec<u64> = objects
+        .iter()
+        .filter(|object| object["type_name"] == "TransitionBoolCondition")
+        .filter_map(|object| object["properties"].as_array())
+        .filter_map(|properties| {
+            properties
+                .iter()
+                .find(|property| property["name"] == "opValue")
+                .and_then(|property| property["value"]["UInt"].as_u64())
+        })
+        .collect();
+    assert_eq!(condition_ops, vec![0, 1]);
 }
 
 #[test]

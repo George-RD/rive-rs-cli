@@ -114,8 +114,6 @@ impl RiveObject for DataBind {
     }
 }
 
-// ViewModel instance types (Unit 5)
-
 pub struct ViewModelInstance {
     pub view_model_id: u64,
 }
