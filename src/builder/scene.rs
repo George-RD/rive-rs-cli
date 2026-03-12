@@ -3455,6 +3455,34 @@ fn property_key_from_name(name: &str) -> Option<u16> {
 }
 
 fn property_key_for_object(name: &str, object_type_key: u16) -> Option<u16> {
+    if object_type_key == type_keys::TEXT {
+        return match name {
+            "width" => Some(property_keys::TEXT_WIDTH),
+            "height" => Some(property_keys::TEXT_HEIGHT),
+            "origin_x" => Some(property_keys::TEXT_ORIGIN_X),
+            "origin_y" => Some(property_keys::TEXT_ORIGIN_Y),
+            "paragraph_spacing" => Some(property_keys::TEXT_PARAGRAPH_SPACING),
+            _ => property_key_from_name(name),
+        };
+    }
+
+    if object_type_key == type_keys::LAYOUT_COMPONENT {
+        return match name {
+            "width" => Some(property_keys::LAYOUT_COMPONENT_WIDTH),
+            "height" => Some(property_keys::LAYOUT_COMPONENT_HEIGHT),
+            _ => property_key_from_name(name),
+        };
+    }
+
+    if object_type_key == type_keys::TEXT_STYLE {
+        return match name {
+            "font_size" => Some(property_keys::TEXT_STYLE_FONT_SIZE),
+            "line_height" => Some(property_keys::TEXT_STYLE_LINE_HEIGHT),
+            "letter_spacing" => Some(property_keys::TEXT_STYLE_LETTER_SPACING),
+            _ => None,
+        };
+    }
+
     if object_type_key == type_keys::TEXT_MODIFIER_GROUP {
         return match name {
             "modifier_flags" => Some(property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS),
@@ -6393,6 +6421,46 @@ mod tests {
 
     #[test]
     fn test_text_modifier_group_keyframe_properties_use_text_modifier_keys() {
+        assert_eq!(
+            property_key_for_object("width", type_keys::TEXT),
+            Some(property_keys::TEXT_WIDTH)
+        );
+        assert_eq!(
+            property_key_for_object("height", type_keys::TEXT),
+            Some(property_keys::TEXT_HEIGHT)
+        );
+        assert_eq!(
+            property_key_for_object("origin_x", type_keys::TEXT),
+            Some(property_keys::TEXT_ORIGIN_X)
+        );
+        assert_eq!(
+            property_key_for_object("origin_y", type_keys::TEXT),
+            Some(property_keys::TEXT_ORIGIN_Y)
+        );
+        assert_eq!(
+            property_key_for_object("paragraph_spacing", type_keys::TEXT),
+            Some(property_keys::TEXT_PARAGRAPH_SPACING)
+        );
+        assert_eq!(
+            property_key_for_object("width", type_keys::LAYOUT_COMPONENT),
+            Some(property_keys::LAYOUT_COMPONENT_WIDTH)
+        );
+        assert_eq!(
+            property_key_for_object("height", type_keys::LAYOUT_COMPONENT),
+            Some(property_keys::LAYOUT_COMPONENT_HEIGHT)
+        );
+        assert_eq!(
+            property_key_for_object("font_size", type_keys::TEXT_STYLE),
+            Some(property_keys::TEXT_STYLE_FONT_SIZE)
+        );
+        assert_eq!(
+            property_key_for_object("line_height", type_keys::TEXT_STYLE),
+            Some(property_keys::TEXT_STYLE_LINE_HEIGHT)
+        );
+        assert_eq!(
+            property_key_for_object("letter_spacing", type_keys::TEXT_STYLE),
+            Some(property_keys::TEXT_STYLE_LETTER_SPACING)
+        );
         assert_eq!(
             property_key_for_object("origin_x", type_keys::TEXT_MODIFIER_GROUP),
             Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X)
