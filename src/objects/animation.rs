@@ -430,6 +430,64 @@ impl RiveObject for ElasticInterpolator {
     }
 }
 
+pub struct KeyFrameBool {
+    pub frame: u64,
+    pub value: bool,
+}
+
+impl KeyFrameBool {
+    pub fn new(frame: u64, value: bool) -> Self {
+        Self { frame, value }
+    }
+}
+
+impl RiveObject for KeyFrameBool {
+    fn type_key(&self) -> u16 {
+        type_keys::KEY_FRAME_BOOL
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::KEY_FRAME_FRAME,
+                value: PropertyValue::UInt(self.frame),
+            },
+            Property {
+                key: property_keys::KEY_FRAME_BOOL_VALUE,
+                value: PropertyValue::Bool(self.value),
+            },
+        ]
+    }
+}
+
+pub struct KeyFrameString {
+    pub frame: u64,
+    pub value: String,
+}
+
+impl KeyFrameString {
+    pub fn new(frame: u64, value: String) -> Self {
+        Self { frame, value }
+    }
+}
+
+impl RiveObject for KeyFrameString {
+    fn type_key(&self) -> u16 {
+        type_keys::KEY_FRAME_STRING
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::KEY_FRAME_FRAME,
+                value: PropertyValue::UInt(self.frame),
+            },
+            Property {
+                key: property_keys::KEY_FRAME_STRING_VALUE,
+                value: PropertyValue::String(self.value.clone()),
+            },
+        ]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

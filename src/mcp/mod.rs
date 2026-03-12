@@ -102,8 +102,11 @@ impl RiveMcpServer {
         name = "inspect",
         description = "Inspect a .riv file and return its object tree as JSON."
     )]
-    async fn inspect(&self, params: Parameters<InspectParams>) -> Result<CallToolResult, McpError> {
-        let bytes = std::fs::read(&params.0.file).map_err(|e| {
+    async fn inspect(
+        &self,
+        params: Parameters<FilePathParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let bytes = tokio::fs::read(&params.0.file).await.map_err(|e| {
             McpError::new(
                 ErrorCode::INVALID_PARAMS,
                 format!("read error: {}", e),
@@ -117,10 +120,41 @@ impl RiveMcpServer {
                     .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
                 Ok(CallToolResult::success(vec![Content::text(json)]))
             }
-            Err(e) => Ok(CallToolResult::success(vec![Content::text(format!(
-                "parse error: {}",
-                e
-            ))])),
+            Err(e) => Err(McpError::new(
+                ErrorCode::INVALID_PARAMS,
+                format!("parse error: {}", e),
+                None,
+            )),
+        }
+    }
+
+    #[tool(
+        name = "decompile",
+        description = "Return the parsed object tree for a .riv file as inspect-format JSON."
+    )]
+    async fn decompile(
+        &self,
+        params: Parameters<FilePathParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let bytes = tokio::fs::read(&params.0.file).await.map_err(|e| {
+            McpError::new(
+                ErrorCode::INVALID_PARAMS,
+                format!("read error: {}", e),
+                None,
+            )
+        })?;
+        let filter = crate::validator::InspectFilter::default();
+        match crate::validator::parse_riv(&bytes, &filter) {
+            Ok(parsed) => {
+                let json = serde_json::to_string_pretty(&parsed)
+                    .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
+                Ok(CallToolResult::success(vec![Content::text(json)]))
+            }
+            Err(e) => Err(McpError::new(
+                ErrorCode::INVALID_PARAMS,
+                format!("parse error: {}", e),
+                None,
+            )),
         }
     }
 
@@ -153,7 +187,7 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
                 icons: None,
                 website_url: None,
             },
-            instructions: Some("Rive CLI MCP server. Use 'generate' to create .riv files from SceneSpec JSON, 'validate' to check .riv files, 'inspect' to dump object trees, and 'list_templates' for animation templates.".into()),
+            instructions: Some("Rive CLI MCP server. Use 'generate' to create .riv files from SceneSpec JSON, 'validate' to check .riv files, 'inspect' to dump object trees, 'decompile' to return inspect-format JSON for a .riv file, and 'list_templates' for animation templates.".into()),
         }
     }
 
@@ -221,8 +255,8 @@ pub struct ValidateParams {
 }
 
 #[derive(serde::Deserialize, schemars::JsonSchema)]
-pub struct InspectParams {
-    #[schemars(description = "Path to .riv file to inspect")]
+pub struct FilePathParams {
+    #[schemars(description = "Path to the .riv file")]
     pub file: String,
 }
 
