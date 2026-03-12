@@ -5425,9 +5425,20 @@ fn validate_object_spec(
             )?;
             required_u64_field(*value, "view_model_instance_view_model", "value")?;
         }
-        ObjectSpec::TextModifierRange { .. }
-        | ObjectSpec::TextVariationModifier { .. }
-        | ObjectSpec::TextStyleFeature { .. } => {}
+        ObjectSpec::TextModifierRange { .. } => {
+            return Err(
+                "text_modifier_range must be nested under text_modifier_group.children".to_string(),
+            );
+        }
+        ObjectSpec::TextVariationModifier { .. } => {
+            return Err(
+                "text_variation_modifier must be nested under text_modifier_group.children"
+                    .to_string(),
+            );
+        }
+        ObjectSpec::TextStyleFeature { .. } => {
+            return Err("text_style_feature must be nested under text_style.children".to_string());
+        }
         ObjectSpec::TextModifierGroup { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
@@ -6493,6 +6504,84 @@ mod tests {
             property_key_for_object("scale_y", type_keys::TEXT_MODIFIER_GROUP),
             Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_Y)
         );
+    }
+
+    #[test]
+    fn test_build_scene_rejects_standalone_text_leaf_variants() {
+        let text_modifier_range = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::TextModifierRange {
+                    units_value: None,
+                    type_value: None,
+                    mode_value: None,
+                    modify_from: None,
+                    modify_to: None,
+                    strength: None,
+                    clamp: None,
+                    falloff_from: None,
+                    falloff_to: None,
+                    offset: None,
+                    run_id: None,
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+        let err = match build_scene(&text_modifier_range) {
+            Ok(_) => panic!("expected standalone text_modifier_range error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("text_modifier_range must be nested"));
+
+        let text_variation_modifier = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::TextVariationModifier {
+                    axis_tag: Some(0),
+                    axis_value: Some(0.0),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+        let err = match build_scene(&text_variation_modifier) {
+            Ok(_) => panic!("expected standalone text_variation_modifier error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("text_variation_modifier must be nested"));
+
+        let text_style_feature = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::TextStyleFeature {
+                    tag: Some(0),
+                    feature_value: Some(0),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+        let err = match build_scene(&text_style_feature) {
+            Ok(_) => panic!("expected standalone text_style_feature error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("text_style_feature must be nested"));
     }
 
     #[test]
