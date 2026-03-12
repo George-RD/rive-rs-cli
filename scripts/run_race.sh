@@ -6,29 +6,45 @@
 # is validated, logged to the SQLite ledger, and persisted to docs/race-results/.
 #
 # Prerequisites:
-#   - At least one model API key set (see Model Configuration below)
-#   - jq, curl, sqlite3, python3 installed
+#   - At least one CLI tool installed: claude, codex
+#   - jq, sqlite3, python3 installed
+#   - timeout or gtimeout installed
 #   - cargo build passes
 #
-# Model Configuration (via environment variables):
-#   OPENAI_API_KEY     — enables Codex model (gpt-4.1)
-#   GEMINI_API_KEY     — enables Gemini model (gemini-2.5-pro)
-#   ANTHROPIC_API_KEY  — enables Opus model (claude-opus-4-6)
+# Models are dispatched via local CLI tools:
+#   codex  — Codex model (gpt-5.4)
+#   claude — Opus model (claude opus)
 #
-# Models without API keys are skipped with a warning.
+# CLIs not found on PATH are skipped with a warning.
 #
 # Examples:
 #   ./scripts/run_race.sh loader "spinning loading indicator with smooth rotation"
 #   ./scripts/run_race.sh icon_set "3 simple icons: home, settings, profile" static
-#   OPENAI_API_KEY=sk-... ./scripts/run_race.sh game_hud "health bar and score counter" animated
+#   ./scripts/run_race.sh game_hud "health bar and score counter" animated
 
 set -euo pipefail
 
 # Check required tools
-for cmd in jq curl sqlite3 python3; do
+for cmd in jq sqlite3 python3; do
     if ! command -v "$cmd" &>/dev/null; then
         echo "ERROR: Required tool '$cmd' not found. Please install it."
         exit 1
+    fi
+done
+
+if command -v timeout &>/dev/null; then
+    TIMEOUT_BIN="timeout"
+elif command -v gtimeout &>/dev/null; then
+    TIMEOUT_BIN="gtimeout"
+else
+    echo "ERROR: Required tool 'timeout' not found. Install GNU coreutils ('timeout' or 'gtimeout')."
+    exit 1
+fi
+
+# Warn about optional CLI tools
+for cmd in claude codex; do
+    if ! command -v "$cmd" &>/dev/null; then
+        echo "WARNING: Optional CLI tool '$cmd' not found — its model will be skipped."
     fi
 done
 
@@ -59,6 +75,7 @@ if [ ! -f "$DB" ]; then
 fi
 
 mkdir -p "$RESULTS_DIR"
+cd "$PROJECT_ROOT"
 
 # Build skills context from .opencode/skills/
 SKILLS_CONTEXT=""
@@ -114,11 +131,10 @@ USER_PROMPT="Create a Rive scene: $PROMPT
 Target name: $TARGET_NAME
 Complexity tier: $COMPLEXITY"
 
-# Model definitions: name|api_key_env|endpoint|model_id|category
+# Model definitions: name|cli_name|model_id|category
 declare -a MODELS=(
-    "codex|OPENAI_API_KEY|https://api.openai.com/v1/chat/completions|gpt-4.1|deep"
-    "gemini|GEMINI_API_KEY|https://generativelanguage.googleapis.com/v1beta/openai/chat/completions|gemini-2.5-pro|artistry"
-    "opus|ANTHROPIC_API_KEY|https://api.anthropic.com/v1/messages|claude-opus-4-6|unspecified-high"
+    "codex|codex|gpt-5.4|deep"
+    "opus|claude|opus|artistry"
 )
 
 echo "=== Race: $TARGET_NAME ==="
@@ -130,15 +146,15 @@ echo ""
 ATTEMPTED_MODELS=0
 SUCCESSFUL_MODELS=0
 BEST_MODEL=""
+BEST_JSON_OUT=""
 BEST_OBJECTS=0
 ATTEMPTED_MODEL_NAMES=""
 
 for model_spec in "${MODELS[@]}"; do
-    IFS='|' read -r MODEL_NAME API_KEY_ENV ENDPOINT MODEL_ID CATEGORY <<< "$model_spec"
-    API_KEY="${!API_KEY_ENV:-}"
+    IFS='|' read -r MODEL_NAME CLI_NAME MODEL_ID CATEGORY <<< "$model_spec"
 
-    if [ -z "$API_KEY" ]; then
-        echo "SKIP $MODEL_NAME — $API_KEY_ENV not set"
+    if ! command -v "$CLI_NAME" &>/dev/null; then
+        echo "SKIP $MODEL_NAME — '$CLI_NAME' CLI not found"
         continue
     fi
 
@@ -153,56 +169,34 @@ for model_spec in "${MODELS[@]}"; do
 
     echo "--- $MODEL_NAME ($MODEL_ID) ---"
 
-    # Call the model API
+    # Call the model via local CLI
     CALL_OK=0
-    if [ "$MODEL_NAME" = "opus" ]; then
-        # Anthropic uses a different API format
-        RESPONSE=$(curl -s --connect-timeout 30 --max-time 300 -w "\n%{http_code}" "$ENDPOINT" \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: $API_KEY" \
-            -H "anthropic-version: 2023-06-01" \
-            -d "$(jq -n \
-                --arg model "$MODEL_ID" \
-                --arg system "$SYSTEM_PROMPT" \
-                --arg user "$USER_PROMPT" \
-                '{model: $model, max_tokens: 8192, system: $system, messages: [{role: "user", content: $user}]}')" \
-            2>/dev/null) || true
+    ERR_OUT="$RESULTS_DIR/${MODEL_NAME}.stderr.log"
+    rm -f "$ERR_OUT"
+    if [ "$CLI_NAME" = "codex" ]; then
+        FULL_PROMPT="$SYSTEM_PROMPT
 
-        HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-        BODY=$(echo "$RESPONSE" | sed '$d')
-
-        if [ "$HTTP_CODE" = "200" ]; then
-            # Extract text from Anthropic response
-            echo "$BODY" | jq -r '.content[0].text' > "$JSON_OUT" 2>/dev/null && CALL_OK=1
-        else
-            echo "  API error (HTTP $HTTP_CODE)"
-            echo "$BODY" | head -3
-        fi
-    else
-        # OpenAI-compatible API (Codex, Gemini)
-        RESPONSE=$(curl -s --connect-timeout 30 --max-time 300 -w "\n%{http_code}" "$ENDPOINT" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $API_KEY" \
-            -d "$(jq -n \
-                --arg model "$MODEL_ID" \
-                --arg system "$SYSTEM_PROMPT" \
-                --arg user "$USER_PROMPT" \
-                '{model: $model, max_tokens: 8192, messages: [{role: "system", content: $system}, {role: "user", content: $user}]}')" \
-            2>/dev/null) || true
-
-        HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-        BODY=$(echo "$RESPONSE" | sed '$d')
-
-        if [ "$HTTP_CODE" = "200" ]; then
-            echo "$BODY" | jq -r '.choices[0].message.content' > "$JSON_OUT" 2>/dev/null && CALL_OK=1
-        else
-            echo "  API error (HTTP $HTTP_CODE)"
-            echo "$BODY" | head -3
-        fi
+$USER_PROMPT"
+        "$TIMEOUT_BIN" 300 codex exec \
+            -m "$MODEL_ID" \
+            --ask-for-approval never \
+            --sandbox read-only \
+            -C "$PROJECT_ROOT" \
+            -o "$JSON_OUT" \
+            "$FULL_PROMPT" 2>"$ERR_OUT" && CALL_OK=1
+    elif [ "$CLI_NAME" = "claude" ]; then
+        "$TIMEOUT_BIN" 300 claude -p \
+            --model "$MODEL_ID" \
+            --system-prompt "$SYSTEM_PROMPT" \
+            --output-format text \
+            --no-session-persistence \
+            --tools "" \
+            --max-budget-usd 5 \
+            "$USER_PROMPT" > "$JSON_OUT" 2>"$ERR_OUT" && CALL_OK=1
     fi
 
     if [ "$CALL_OK" -eq 0 ]; then
-        echo "  FAIL: API call failed for $MODEL_NAME"
+        echo "  FAIL: CLI call failed for $MODEL_NAME (see $ERR_OUT)"
         continue
     fi
 
@@ -218,7 +212,7 @@ for model_spec in "${MODELS[@]}"; do
 
     # Validate JSON syntax
     if ! jq empty "$JSON_OUT" 2>/dev/null; then
-        echo "  FAIL: Invalid JSON output"
+        echo "  FAIL: Invalid JSON output (check $JSON_OUT)"
         continue
     fi
 
@@ -237,12 +231,14 @@ for model_spec in "${MODELS[@]}"; do
 
     # Track best model by object count
     if echo "$ATTEMPT_RESULT" | grep -q "^OK"; then
+        rm -f "$ERR_OUT"
         SUCCESSFUL_MODELS=$((SUCCESSFUL_MODELS + 1))
         OBJ_COUNT=$(echo "$ATTEMPT_RESULT" | sed -n 's/.*objects=\([0-9]*\).*/\1/p')
         OBJ_COUNT="${OBJ_COUNT:-0}"
         if [ "$OBJ_COUNT" -gt "$BEST_OBJECTS" ]; then
             BEST_OBJECTS=$OBJ_COUNT
             BEST_MODEL="$MODEL_NAME-$CATEGORY"
+            BEST_JSON_OUT="$JSON_OUT"
         fi
     fi
 
@@ -250,8 +246,7 @@ for model_spec in "${MODELS[@]}"; do
 done
 
 if [ "$ATTEMPTED_MODELS" -eq 0 ]; then
-    echo "ERROR: No models produced valid output. Check API keys and responses."
-    echo "Set at least one of: OPENAI_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY"
+    echo "ERROR: No models were available. Install 'claude' and/or 'codex' CLI tools."
     exit 1
 fi
 
@@ -270,10 +265,10 @@ echo "Models: $ATTEMPTED_MODELS attempted, $SUCCESSFUL_MODELS successful"
 if [ -n "$BEST_MODEL" ]; then
     echo "Best: $BEST_MODEL ($BEST_OBJECTS objects)"
     echo ""
-    echo "Winner JSON: $RESULTS_DIR/$(echo "$BEST_MODEL" | cut -d- -f1).json"
-    echo "To commit as fixture: cp $RESULTS_DIR/$(echo "$BEST_MODEL" | cut -d- -f1).json tests/fixtures/${TARGET_NAME}.json"
+    echo "Winner JSON: $BEST_JSON_OUT"
+    echo "To commit as fixture: cp $BEST_JSON_OUT tests/fixtures/${TARGET_NAME}.json"
 else
-    echo "No successful outputs. Check API responses and skill content."
+    echo "No successful outputs. Check CLI tool output and skill content."
 fi
 echo ""
 echo "Ledger: sqlite3 $DB \"SELECT * FROM attempts WHERE run_id='$RUN_ID';\""
