@@ -53,7 +53,7 @@ pub enum Command {
         #[arg(
             long = "local-index",
             value_name = "N",
-            help = "Filter by artboard-local object index"
+            help = "Filter by artboard-local object index (0 is the artboard itself)"
         )]
         local_index: Vec<usize>,
         #[arg(
