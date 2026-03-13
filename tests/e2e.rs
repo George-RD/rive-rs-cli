@@ -3482,8 +3482,8 @@ fn test_validate_warns_on_version_mismatch() {
     assert!(result.status.success(), "validate should succeed for v8");
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(
-        stderr.contains("warning"),
-        "should output version warning: stderr={}",
+        stderr.contains("major version"),
+        "should output major version warning: stderr={}",
         stderr
     );
 }
