@@ -4,6 +4,7 @@ use std::path::PathBuf;
 #[derive(Parser)]
 #[command(
     name = "rive-cli",
+    version,
     about = "Generate Rive .riv files programmatically",
     arg_required_else_help = true
 )]
@@ -24,6 +25,10 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
+    #[command(
+        about = "Generate a .riv file from a JSON scene spec",
+        long_about = "Generate a .riv file from a JSON scene spec.\n\nExamples:\n  rive-cli generate scene.json\n  rive-cli generate scene.json -o my_animation.riv\n  rive-cli generate scene.json --file-id 42"
+    )]
     Generate {
         #[arg(help = "Path to the JSON scene input")]
         input: PathBuf,
@@ -34,12 +39,17 @@ pub enum Command {
         #[arg(long, help = "Output as JSON")]
         json: bool,
     },
+    #[command(about = "Validate a .riv file for structural correctness")]
     Validate {
         #[arg(help = "Path to .riv file to validate")]
         file: PathBuf,
         #[arg(long, help = "Output as JSON")]
         json: bool,
     },
+    #[command(
+        about = "Inspect objects and properties in a .riv file",
+        long_about = "Inspect objects and properties in a .riv file.\n\nExamples:\n  rive-cli inspect output.riv\n  rive-cli inspect output.riv --json\n  rive-cli inspect output.riv --type-name Shape\n  rive-cli inspect output.riv --artboard-name Main --local-index 1"
+    )]
     Inspect {
         #[arg(help = "Path to .riv file to inspect")]
         file: PathBuf,
@@ -88,10 +98,12 @@ pub enum Command {
         )]
         property_key: Vec<u16>,
     },
+    #[command(about = "Decompile a .riv file to structured JSON")]
     Decompile {
         #[arg(help = "Path to .riv file to decompile")]
         file: PathBuf,
     },
+    #[command(about = "AI-assisted .riv generation and evaluation")]
     Ai {
         #[command(subcommand)]
         command: AiCommand,
@@ -100,10 +112,22 @@ pub enum Command {
 
 #[derive(Subcommand)]
 pub enum AiCommand {
+    #[command(
+        about = "Generate a .riv file from a natural language prompt or template",
+        long_about = "Generate a .riv file from a natural language prompt or template.\n\nExamples:\n  rive-cli ai generate --template bounce\n  rive-cli ai generate --prompt \"a spinning logo\" -o logo.riv\n  rive-cli ai generate --prompt \"pulsing button\" --max-retries 5"
+    )]
     Generate {
-        #[arg(long, help = "Natural language prompt describing the animation")]
+        #[arg(
+            long,
+            group = "input",
+            help = "Natural language prompt describing the animation"
+        )]
         prompt: Option<String>,
-        #[arg(long, help = "Use a built-in template (bounce, spinner, pulse, fade)")]
+        #[arg(
+            long,
+            group = "input",
+            help = "Use a built-in template (bounce, spinner, pulse, fade)"
+        )]
         template: Option<String>,
         #[arg(short, long, default_value = "output.riv", help = "Output .riv path")]
         output: std::path::PathBuf,
@@ -122,6 +146,7 @@ pub enum AiCommand {
         )]
         max_retries: u8,
     },
+    #[command(about = "Run evaluation suites for AI-generated animations")]
     Lab {
         #[arg(long, help = "Path to eval suite JSON file")]
         suite: PathBuf,
