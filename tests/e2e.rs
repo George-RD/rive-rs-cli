@@ -3462,6 +3462,32 @@ fn test_version_flag() {
 }
 
 #[test]
+fn test_validate_warns_on_version_mismatch() {
+    let v8_riv = std::env::temp_dir().join("rive_e2e_v8.riv");
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"RIVE");
+    bytes.push(8);
+    bytes.push(0);
+    bytes.push(0);
+    bytes.push(0);
+    bytes.push(23);
+    bytes.push(0);
+    bytes.push(1);
+    bytes.push(0);
+    std::fs::write(&v8_riv, &bytes).unwrap();
+    let _guard = CleanupOnDrop(v8_riv.clone());
+
+    let result = cargo_run(&["validate", v8_riv.to_str().unwrap()]);
+    assert!(result.status.success(), "validate should succeed for v8");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("warning"),
+        "should output version warning: stderr={}",
+        stderr
+    );
+}
+
+#[test]
 fn test_help_output() {
     let output = cargo_run(&["--help"]);
     assert!(output.status.success(), "--help failed");
@@ -3555,4 +3581,24 @@ fn test_ai_generate_help() {
         stdout.contains("Examples:"),
         "ai generate help should include examples"
     );
+}
+
+#[test]
+fn test_decompile_roundtrip_verify_objects() {
+    let (output, _guard) = generate_and_validate_output("minimal", "decompile_rt");
+    let dec = cargo_run(&["decompile", output.to_str().unwrap()]);
+    assert!(
+        dec.status.success(),
+        "decompile failed: {}",
+        String::from_utf8_lossy(&dec.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&dec.stdout).expect("should be valid JSON");
+    let objects = json["objects"].as_array().expect("should have objects");
+    assert!(
+        objects.len() >= 2,
+        "should have at least 2 objects (Backboard + Artboard)"
+    );
+    assert_eq!(objects[0]["type_key"].as_u64().unwrap(), 23);
+    assert_eq!(objects[1]["type_key"].as_u64().unwrap(), 1);
 }

@@ -19,6 +19,8 @@ pub struct ValidationReport {
     pub object_count: usize,
     pub type_counts: HashMap<u16, usize>,
     pub errors: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
     pub valid: bool,
 }
 
@@ -28,6 +30,15 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
     let mut type_counts: HashMap<u16, usize> = HashMap::new();
     for obj in &parsed.objects {
         *type_counts.entry(obj.type_key).or_insert(0) += 1;
+    }
+
+    let mut warnings: Vec<String> = Vec::new();
+
+    if parsed.header.major_version != 7 {
+        warnings.push(format!(
+            "unexpected major version {} (expected 7)",
+            parsed.header.major_version
+        ));
     }
 
     let mut errors: Vec<String> = Vec::new();
@@ -78,6 +89,22 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
         }
     }
 
+    // Parent-ID range check
+    for (idx, obj) in parsed.objects.iter().enumerate() {
+        for prop in &obj.properties {
+            if prop.key == property_keys::COMPONENT_PARENT_ID {
+                if let PropertyValueRead::UInt(parent_idx) = &prop.value {
+                    if *parent_idx as usize >= parsed.objects.len() {
+                        errors.push(format!(
+                            "object {} has parentId {} which exceeds object count {}",
+                            idx, parent_idx, parsed.objects.len()
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
     let valid = errors.is_empty();
 
     Ok(ValidationReport {
@@ -85,6 +112,7 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
         object_count: parsed.objects.len(),
         type_counts,
         errors,
+        warnings,
         valid,
     })
 }
@@ -140,5 +168,92 @@ mod tests {
         let report = validate_riv(&data).unwrap();
 
         assert!(report.valid, "unexpected errors: {:?}", report.errors);
+    }
+
+    #[test]
+    fn test_validate_riv_version_warning() {
+        // Manually construct a .riv with major version 8
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"RIVE"); // fingerprint
+        bytes.push(8); // major version = 8 (LEB128)
+        bytes.push(0); // minor version = 0
+        bytes.push(0); // file_id = 0
+        bytes.push(0); // empty ToC (0-terminator)
+        // Backboard object: type key 23
+        bytes.push(23); // type_key
+        bytes.push(0); // no properties (terminator)
+        // Artboard object: type key 1
+        bytes.push(1); // type_key
+        bytes.push(0); // no properties (terminator)
+
+        let report = validate_riv(&bytes).unwrap();
+        assert!(
+            report.warnings.iter().any(|w| w.contains("major version")),
+            "should warn about non-7 major version, got warnings: {:?}",
+            report.warnings
+        );
+    }
+
+    #[test]
+    fn test_validate_riv_no_version_warning_for_v7() {
+        let backboard = Backboard;
+        let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
+        let data = encode_riv(&[&backboard, &artboard], 0);
+        let report = validate_riv(&data).unwrap();
+        assert!(
+            report.warnings.is_empty(),
+            "should have no warnings for v7, got: {:?}",
+            report.warnings
+        );
+    }
+
+    #[test]
+    fn test_validate_riv_parent_id_out_of_range() {
+        use crate::objects::core::{Property, PropertyValue, RiveObject};
+
+        // Create an object with an out-of-range parentId
+        struct BadParent;
+        impl RiveObject for BadParent {
+            fn type_key(&self) -> u16 {
+                3
+            } // Node type
+            fn properties(&self) -> Vec<Property> {
+                vec![Property {
+                    key: 5, // parentId
+                    value: PropertyValue::UInt(999), // out of range
+                }]
+            }
+        }
+
+        let backboard = Backboard;
+        let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
+        let bad = BadParent;
+        let data = encode_riv(&[&backboard, &artboard, &bad], 0);
+        let report = validate_riv(&data).unwrap();
+        assert!(
+            !report.valid,
+            "should be invalid due to out-of-range parentId"
+        );
+        assert!(
+            report.errors.iter().any(|e| e.contains("parentId")),
+            "should have parentId error, got: {:?}",
+            report.errors
+        );
+    }
+
+    #[test]
+    fn test_validate_riv_valid_parent_id() {
+        let backboard = Backboard;
+        let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
+        // Shape with parentId=0 (Backboard) is technically valid index-wise
+        use crate::objects::shapes::Shape;
+        let shape = Shape::new("TestShape".to_string(), 0);
+        let data = encode_riv(&[&backboard, &artboard, &shape], 0);
+        let report = validate_riv(&data).unwrap();
+        assert!(
+            !report.errors.iter().any(|e| e.contains("parentId")),
+            "should not have parentId errors for valid references, got: {:?}",
+            report.errors
+        );
     }
 }

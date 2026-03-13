@@ -117,6 +117,9 @@ fn main() {
                             std::process::exit(1);
                         }
                     }
+                    for warning in &report.warnings {
+                        eprintln!("warning: {}", warning);
+                    }
                 }
                 Err(e) => {
                     eprintln!("invalid: {}", e);
