@@ -45,7 +45,7 @@ pub struct RepairAttempt {
 
 #[derive(Debug, Serialize)]
 pub struct RepairResult {
-    #[allow(dead_code)] // read in tests and available for callers
+    #[allow(dead_code)]
     #[serde(skip)]
     pub scene_json: Value,
     #[serde(skip)]
