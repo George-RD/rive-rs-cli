@@ -3475,7 +3475,7 @@ fn test_generate_missing_input_file() {
 
 #[test]
 fn test_generate_malformed_json() {
-    let bad_json = std::env::temp_dir().join("rive_e2e_malformed.json");
+    let bad_json = temp_output("malformed").with_extension("json");
     std::fs::write(&bad_json, "{ this is not valid json }").unwrap();
     let _guard = CleanupOnDrop(bad_json.clone());
     let result = cargo_run(&["generate", bad_json.to_str().unwrap()]);
@@ -3486,7 +3486,7 @@ fn test_generate_malformed_json() {
 
 #[test]
 fn test_generate_invalid_scene_spec() {
-    let bad_spec = std::env::temp_dir().join("rive_e2e_invalid_spec.json");
+    let bad_spec = temp_output("invalid_spec").with_extension("json");
     std::fs::write(&bad_spec, r#"{"valid": "json", "but": "not a scene spec"}"#).unwrap();
     let _guard = CleanupOnDrop(bad_spec.clone());
     let result = cargo_run(&["generate", bad_spec.to_str().unwrap()]);
@@ -3505,7 +3505,7 @@ fn test_validate_missing_file() {
 
 #[test]
 fn test_validate_truncated_file() {
-    let truncated = std::env::temp_dir().join("rive_e2e_truncated.riv");
+    let truncated = temp_output("truncated");
     // Write just the RIVE header bytes but nothing else — truncated file
     std::fs::write(&truncated, b"RIVE").unwrap();
     let _guard = CleanupOnDrop(truncated.clone());
@@ -3533,7 +3533,7 @@ fn test_decompile_missing_file() {
 
 #[test]
 fn test_decompile_corrupt_file() {
-    let corrupt = std::env::temp_dir().join("rive_e2e_corrupt.riv");
+    let corrupt = temp_output("corrupt");
     std::fs::write(&corrupt, b"not a riv file at all").unwrap();
     let _guard = CleanupOnDrop(corrupt.clone());
     let result = cargo_run(&["decompile", corrupt.to_str().unwrap()]);
