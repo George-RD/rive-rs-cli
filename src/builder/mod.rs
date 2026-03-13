@@ -1,2 +1,10 @@
+mod animations;
+mod objects;
+mod parsers;
 pub mod scene;
-pub use scene::{SceneSpec, artboard_presets, build_scene};
+pub(crate) mod spec;
+mod state_machines;
+mod validation;
+
+pub use scene::{ArtboardPreset, artboard_presets, build_scene};
+pub use spec::SceneSpec;
