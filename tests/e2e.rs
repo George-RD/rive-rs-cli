@@ -3853,3 +3853,75 @@ fn test_multiple_fixtures_validate() {
         );
     }
 }
+
+#[test]
+fn test_ai_generate_json_flag_in_help() {
+    let result = cargo_run(&["ai", "generate", "--help"]);
+    assert!(result.status.success());
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        stdout.contains("--json"),
+        "ai generate --help should show --json flag"
+    );
+}
+
+#[test]
+fn test_ai_lab_json_flag_in_help() {
+    let result = cargo_run(&["ai", "lab", "--help"]);
+    assert!(result.status.success());
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        stdout.contains("--json"),
+        "ai lab --help should show --json flag"
+    );
+}
+
+#[test]
+fn test_ai_generate_json_output() {
+    let output = temp_output("ai_generate_json_output");
+    cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "bounce",
+        "--json",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate --json failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&result.stdout).expect("--json output should be valid JSON");
+    assert!(
+        json["output_path"].as_str().is_some(),
+        "should have output_path"
+    );
+    let bytes_written = json["bytes_written"]
+        .as_u64()
+        .expect("bytes_written should be a u64");
+    assert!(bytes_written > 0, "should have bytes_written");
+    let file_len = std::fs::metadata(&output)
+        .expect("output file should exist")
+        .len();
+    assert_eq!(
+        bytes_written, file_len,
+        "bytes_written should match file size"
+    );
+    assert!(json["retries"].as_u64().is_some(), "should have retries");
+    assert!(
+        json["attempts"].as_array().is_some(),
+        "should have attempts"
+    );
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
+    );
+}
