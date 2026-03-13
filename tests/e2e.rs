@@ -3461,6 +3461,7 @@ fn test_version_flag() {
     );
 }
 
+
 #[test]
 fn test_generate_missing_input_file() {
     let result = cargo_run(&["generate", "/tmp/nonexistent_rive_test_file.json"]);
@@ -3514,7 +3515,6 @@ fn test_validate_missing_file() {
 #[test]
 fn test_validate_truncated_file() {
     let truncated = temp_output("truncated");
-    // Write just the RIVE header bytes but nothing else — truncated file
     std::fs::write(&truncated, b"RIVE").unwrap();
     let _guard = CleanupOnDrop(truncated.clone());
     let result = cargo_run(&["validate", truncated.to_str().unwrap()]);
@@ -3588,7 +3588,6 @@ fn test_generate_then_validate_then_inspect() {
     cleanup(&output);
     let _guard = CleanupOnDrop(output.clone());
 
-    // Step 1: Generate
     let gen_out = cargo_run(&[
         "generate",
         input.to_str().unwrap(),
@@ -3602,7 +3601,6 @@ fn test_generate_then_validate_then_inspect() {
     );
     assert!(output.exists(), "output file should exist");
 
-    // Step 2: Validate
     let val = cargo_run(&["validate", output.to_str().unwrap()]);
     assert!(
         val.status.success(),
@@ -3612,7 +3610,6 @@ fn test_generate_then_validate_then_inspect() {
     let val_stdout = String::from_utf8_lossy(&val.stdout);
     assert!(val_stdout.contains("valid"), "validate should report valid");
 
-    // Step 3: Inspect
     let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
     assert!(
         insp.status.success(),
@@ -3650,7 +3647,6 @@ fn test_generate_then_decompile_roundtrip() {
         String::from_utf8_lossy(&gen_out.stderr)
     );
 
-    // Decompile
     let dec = cargo_run(&["decompile", output.to_str().unwrap()]);
     assert!(
         dec.status.success(),
@@ -3660,7 +3656,6 @@ fn test_generate_then_decompile_roundtrip() {
     let json: serde_json::Value =
         serde_json::from_slice(&dec.stdout).expect("decompile output should be valid JSON");
 
-    // Verify structure
     assert!(json["header"].is_object(), "should have header");
     assert!(json["objects"].is_array(), "should have objects array");
     let objects = json["objects"].as_array().unwrap();
@@ -3669,13 +3664,11 @@ fn test_generate_then_decompile_roundtrip() {
         "should have at least Backboard + Artboard"
     );
 
-    // First object should be Backboard (type_key 23)
     assert_eq!(
         objects[0]["type_key"].as_u64().unwrap(),
         23,
         "first object should be Backboard"
     );
-    // Second object should be Artboard (type_key 1)
     assert_eq!(
         objects[1]["type_key"].as_u64().unwrap(),
         1,
