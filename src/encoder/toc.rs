@@ -10,7 +10,7 @@ fn backing_bits(backing_type: BackingType) -> u32 {
     }
 }
 
-pub fn encode_toc(property_keys: &[u16]) -> Vec<u8> {
+pub(crate) fn encode_toc(property_keys: &[u16]) -> Vec<u8> {
     let mut writer = BinaryWriter::new();
 
     for &key in property_keys {
@@ -26,7 +26,10 @@ pub fn encode_toc(property_keys: &[u16]) -> Vec<u8> {
                 let idx = chunk * 16 + i;
                 if idx < property_keys.len() {
                     let backing = property_backing_type(property_keys[idx])
-                        .unwrap_or_else(|| panic!("unknown property key: {}", property_keys[idx]));
+                        .unwrap_or_else(|| panic!(
+                            "property key {} has no known backing type — register it in core::property_backing_type()",
+                            property_keys[idx]
+                        ));
                     val |= backing_bits(backing) << (i * 2);
                 }
             }

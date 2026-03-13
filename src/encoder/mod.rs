@@ -5,7 +5,7 @@ pub mod toc;
 use crate::objects::core::{PropertyValue, RiveObject, is_bool_property};
 use binary_writer::BinaryWriter;
 
-pub fn encode_object(object: &dyn RiveObject) -> Vec<u8> {
+pub(crate) fn encode_object(object: &dyn RiveObject) -> Vec<u8> {
     let mut writer = BinaryWriter::new();
     writer.write_varuint(object.type_key() as u64);
     for prop in object.properties() {

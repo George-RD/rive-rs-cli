@@ -1,9 +1,12 @@
 use super::binary_writer::BinaryWriter;
 
-pub fn encode_header(file_id: u64) -> Vec<u8> {
+pub(crate) const RIVE_FINGERPRINT: &[u8; 4] = b"RIVE";
+pub(crate) const RIVE_MAJOR_VERSION: u64 = 7;
+
+pub(crate) fn encode_header(file_id: u64) -> Vec<u8> {
     let mut writer = BinaryWriter::new();
-    writer.write_bytes(&[0x52, 0x49, 0x56, 0x45]);
-    writer.write_varuint(7);
+    writer.write_bytes(RIVE_FINGERPRINT);
+    writer.write_varuint(RIVE_MAJOR_VERSION);
     writer.write_varuint(0);
     writer.write_varuint(file_id);
     writer.finish()

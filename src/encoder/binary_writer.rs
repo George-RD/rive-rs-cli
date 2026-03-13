@@ -45,10 +45,6 @@ impl BinaryWriter {
         self.buffer.extend_from_slice(&bytes);
     }
 
-    pub fn write_uint(&mut self, value: u64) {
-        self.write_varuint(value);
-    }
-
     pub fn write_bool(&mut self, value: bool) {
         self.buffer.push(if value { 1 } else { 0 });
     }
@@ -146,13 +142,6 @@ mod tests {
         let mut writer = BinaryWriter::new();
         writer.write_bool(false);
         assert_eq!(writer.finish(), vec![0x00]);
-    }
-
-    #[test]
-    fn test_write_uint() {
-        let mut writer = BinaryWriter::new();
-        writer.write_uint(300);
-        assert_eq!(writer.finish(), vec![0xAC, 0x02]);
     }
 
     #[test]
