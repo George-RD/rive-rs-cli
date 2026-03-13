@@ -85,6 +85,7 @@ impl RiveObject for Solo {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct TransformComponent {
     pub name: String,
     pub parent_id: u64,
@@ -983,6 +984,7 @@ impl RiveObject for PathObject {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct Drawable {
     pub name: String,
     pub parent_id: u64,
@@ -1078,6 +1080,7 @@ impl RiveObject for Image {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct ShapePaint {
     pub name: String,
     pub parent_id: u64,

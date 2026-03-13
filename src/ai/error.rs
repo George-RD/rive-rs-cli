@@ -10,6 +10,7 @@ pub enum AiError {
     RequestFailed(String),
     #[error("invalid API response: {0}")]
     InvalidResponse(String),
+    #[allow(dead_code)] // reserved for future schema validation errors
     #[error("schema validation failed:\n{0}")]
     SchemaValidation(String),
     #[error("unknown template '{name}'; available: {available}")]

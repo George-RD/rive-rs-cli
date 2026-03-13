@@ -97,6 +97,7 @@ impl<'a> BinaryReader<'a> {
         self.data.len() - self.pos
     }
 
+    #[allow(dead_code)] // diagnostic utility
     pub fn position(&self) -> usize {
         self.pos
     }
@@ -145,6 +146,7 @@ pub struct ParsedRiv {
     pub header: RivHeader,
     pub toc_property_keys: Vec<u16>,
     #[serde(skip)]
+    #[allow(dead_code)] // used in tests; available for callers inspecting ToC details
     pub toc_backing_types: Vec<BackingType>,
     pub objects: Vec<RivObject>,
 }

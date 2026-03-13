@@ -14,6 +14,7 @@ impl RiveObject for Backboard {
 
 pub struct Artboard {
     pub name: String,
+    #[allow(dead_code)] // artboards are implicitly children of the backboard
     pub parent_id: u64,
     pub width: f32,
     pub height: f32,

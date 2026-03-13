@@ -126,11 +126,13 @@ impl RiveObject for AudioAsset {
     }
 }
 
+#[allow(dead_code)] // rive-runtime type for embedded asset content
 pub struct FileAssetContents {
     pub bytes: u64,
 }
 
 impl FileAssetContents {
+    #[allow(dead_code)]
     pub fn new(bytes: u64) -> Self {
         Self { bytes }
     }
