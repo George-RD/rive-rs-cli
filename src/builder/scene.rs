@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use crate::objects::artboard::{Artboard, Backboard};
 use crate::objects::core::RiveObject;
 
@@ -42,7 +44,7 @@ const ARTBOARD_PRESET_BANNER_HEIGHT: f32 = 90.0;
 const ARTBOARD_PRESET_STORY_WIDTH: f32 = 1080.0;
 const ARTBOARD_PRESET_STORY_HEIGHT: f32 = 1920.0;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize)]
 pub struct ArtboardPreset {
     pub name: &'static str,
     pub width: f32,

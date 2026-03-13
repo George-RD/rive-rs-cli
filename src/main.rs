@@ -13,8 +13,17 @@ fn main() {
     let cli = cli::Cli::parse();
 
     if cli.list_presets {
-        for preset in builder::artboard_presets() {
-            println!("{}: {}x{}", preset.name, preset.width, preset.height);
+        if cli.json {
+            let json = serde_json::to_string_pretty(&builder::artboard_presets())
+                .unwrap_or_else(|e| {
+                    eprintln!("JSON serialization failed: {}", e);
+                    std::process::exit(1);
+                });
+            println!("{}", json);
+        } else {
+            for preset in builder::artboard_presets() {
+                println!("{}: {}x{}", preset.name, preset.width, preset.height);
+            }
         }
         return;
     }
@@ -35,6 +44,7 @@ fn main() {
             input,
             output,
             file_id,
+            json,
         } => {
             let json_str = std::fs::read_to_string(&input).unwrap_or_else(|e| {
                 eprintln!("error reading {:?}: {}", input, e);
@@ -54,30 +64,50 @@ fn main() {
                 eprintln!("error writing {:?}: {}", output, e);
                 std::process::exit(1);
             });
-            eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
+            if json {
+                let result = serde_json::json!({
+                    "bytes_written": bytes.len(),
+                    "output_path": output.display().to_string()
+                });
+                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+            } else {
+                eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
+            }
         }
-        cli::Command::Validate { file } => {
+        cli::Command::Validate { file, json } => {
             let bytes = std::fs::read(&file).unwrap_or_else(|e| {
                 eprintln!("error reading {:?}: {}", file, e);
                 std::process::exit(1);
             });
             match validator::validate_riv(&bytes) {
                 Ok(report) => {
-                    println!(
-                        "RIVE v{}.{} file_id={}",
-                        report.header.major_version,
-                        report.header.minor_version,
-                        report.header.file_id
-                    );
-                    println!("{} objects", report.object_count);
-                    if report.valid {
-                        println!("valid");
-                    } else {
-                        for err in &report.errors {
-                            eprintln!("error: {}", err);
+                    if json {
+                        let json_str =
+                            serde_json::to_string_pretty(&report).unwrap_or_else(|e| {
+                                eprintln!("JSON serialization failed: {}", e);
+                                std::process::exit(1);
+                            });
+                        println!("{}", json_str);
+                        if !report.valid {
+                            std::process::exit(1);
                         }
-                        eprintln!("invalid ({} errors)", report.errors.len());
-                        std::process::exit(1);
+                    } else {
+                        println!(
+                            "RIVE v{}.{} file_id={}",
+                            report.header.major_version,
+                            report.header.minor_version,
+                            report.header.file_id
+                        );
+                        println!("{} objects", report.object_count);
+                        if report.valid {
+                            println!("valid");
+                        } else {
+                            for err in &report.errors {
+                                eprintln!("error: {}", err);
+                            }
+                            eprintln!("invalid ({} errors)", report.errors.len());
+                            std::process::exit(1);
+                        }
                     }
                 }
                 Err(e) => {

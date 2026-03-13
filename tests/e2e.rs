@@ -3371,3 +3371,81 @@ fn test_generate_validate_inspect_text_modifiers() {
     assert_eq!(uint_property(variation, "axisTag"), 2003265652);
     assert_eq!(float_property(variation, "axisValue"), 700.0);
 }
+
+#[test]
+fn test_validate_json_output() {
+    let (output, _guard) = generate_and_validate_output("minimal", "validate_json");
+    let result = cargo_run(&["validate", "--json", output.to_str().unwrap()]);
+    assert!(
+        result.status.success(),
+        "validate --json failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&result.stdout).expect("validate --json should output valid JSON");
+    assert!(json["valid"].as_bool().unwrap(), "report should be valid");
+    assert!(
+        json["object_count"].as_u64().unwrap() > 0,
+        "should have objects"
+    );
+    assert!(
+        json["header"]["major_version"].as_u64().is_some(),
+        "should have header version"
+    );
+}
+
+#[test]
+fn test_generate_json_output() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("generate_json");
+    cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+        "--json",
+    ]);
+    assert!(
+        result.status.success(),
+        "generate --json failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&result.stdout).expect("generate --json should output valid JSON");
+    assert!(
+        json["bytes_written"].as_u64().unwrap() > 0,
+        "should have bytes_written"
+    );
+    assert!(
+        json["output_path"].as_str().is_some(),
+        "should have output_path"
+    );
+}
+
+#[test]
+fn test_list_presets_json() {
+    let result = cargo_run(&["--list-presets", "--json"]);
+    assert!(
+        result.status.success(),
+        "--list-presets --json failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let json: serde_json::Value = serde_json::from_slice(&result.stdout)
+        .expect("--list-presets --json should output valid JSON");
+    let presets = json.as_array().expect("should be an array");
+    assert!(!presets.is_empty(), "should have presets");
+    assert!(
+        presets[0]["name"].as_str().is_some(),
+        "preset should have name"
+    );
+    assert!(
+        presets[0]["width"].as_f64().is_some(),
+        "preset should have width"
+    );
+    assert!(
+        presets[0]["height"].as_f64().is_some(),
+        "preset should have height"
+    );
+}

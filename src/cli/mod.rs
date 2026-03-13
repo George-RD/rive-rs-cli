@@ -11,6 +11,9 @@ pub struct Cli {
     #[arg(long, help = "List available artboard size presets")]
     pub list_presets: bool,
 
+    #[arg(long, help = "Output as JSON")]
+    pub json: bool,
+
     #[cfg(feature = "mcp")]
     #[arg(long, help = "Run as MCP server over stdio")]
     pub mcp: bool,
@@ -28,10 +31,14 @@ pub enum Command {
         output: PathBuf,
         #[arg(long, default_value = "0", help = "Rive file id written in header")]
         file_id: u64,
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
     Validate {
         #[arg(help = "Path to .riv file to validate")]
         file: PathBuf,
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
     Inspect {
         #[arg(help = "Path to .riv file to inspect")]
