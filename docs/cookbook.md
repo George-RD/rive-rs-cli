@@ -13,6 +13,9 @@ cargo run -- validate out.riv
 
 # Inspect decoded object tree
 cargo run -- inspect out.riv
+
+# Narrow inspection to a specific multi-artboard slice
+cargo run -- inspect out.riv --artboard-name "Screen B" --local-index 2
 ```
 
 ## 1) Static Icon Card

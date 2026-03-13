@@ -8,11 +8,10 @@ const ARTBOARD_WIDTH_KEY: u64 = 7;
 const ARTBOARD_HEIGHT_KEY: u64 = 8;
 
 fn cargo_run(args: &[&str]) -> std::process::Output {
-    Command::new("cargo")
-        .args(["run", "--quiet", "--"])
+    Command::new(env!("CARGO_BIN_EXE_rive-cli"))
         .args(args)
         .output()
-        .expect("failed to run cargo")
+        .expect("failed to run rive-cli binary")
 }
 
 fn fixture_path(name: &str) -> PathBuf {
@@ -938,6 +937,119 @@ fn test_inspect_json_multi_artboard() {
         .filter(|o| o.get("type_key").unwrap().as_u64().unwrap() == ARTBOARD_TYPE_KEY)
         .count();
     assert_eq!(artboard_count, 2);
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_artboard_name_and_local_index_json() {
+    let input = fixture_path("multi_artboard.json");
+    let output = temp_output("inspect_filter_artboard_name_local_index");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--json",
+        "--artboard-name",
+        "screen b",
+        "--local-index",
+        "2",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        insp.status.success(),
+        "inspect --json artboard filters failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&insp.stdout).expect("inspect output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|value| value.as_array())
+        .expect("objects array missing");
+    assert_eq!(objects.len(), 1);
+    assert_eq!(
+        objects[0]
+            .get("object_index")
+            .and_then(|value| value.as_u64()),
+        Some(13)
+    );
+    assert_eq!(
+        objects[0]
+            .get("artboard_index")
+            .and_then(|value| value.as_u64()),
+        Some(1)
+    );
+    assert_eq!(
+        objects[0]
+            .get("artboard_name")
+            .and_then(|value| value.as_str()),
+        Some("Screen B")
+    );
+    assert_eq!(
+        objects[0]
+            .get("local_index")
+            .and_then(|value| value.as_u64()),
+        Some(2)
+    );
+    assert_eq!(
+        objects[0].get("type_key").and_then(|value| value.as_u64()),
+        Some(7)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_filter_artboard_index_human_output() {
+    let input = fixture_path("multi_artboard.json");
+    let output = temp_output("inspect_filter_artboard_index_human");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--artboard-index",
+        "1",
+        "--local-index",
+        "2",
+        output.to_str().unwrap(),
+    ]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect artboard filters failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboard: Screen B"),
+        "expected Screen B context in output, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("[13:2] type=7 (Rectangle)"),
+        "expected filtered rectangle in output, got: {}",
+        stdout
+    );
+    assert!(
+        !stdout.contains("Screen A"),
+        "did not expect Screen A in filtered output, got: {}",
+        stdout
+    );
     cleanup(&output);
 }
 
