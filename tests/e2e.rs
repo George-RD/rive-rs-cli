@@ -1037,17 +1037,8 @@ fn test_inspect_json_multi_artboard() {
 
 #[test]
 fn test_inspect_filter_artboard_name_and_local_index_json() {
-    let input = fixture_path("multi_artboard.json");
-    let output = temp_output("inspect_filter_artboard_name_local_index");
-    cleanup(&output);
-
-    let g = cargo_run(&[
-        "generate",
-        input.to_str().unwrap(),
-        "-o",
-        output.to_str().unwrap(),
-    ]);
-    assert!(g.status.success());
+    let (output, _guard) =
+        generate_and_validate_output("multi_artboard", "inspect_filter_artboard_name_local_index");
 
     let insp = cargo_run(&[
         "inspect",
@@ -1099,22 +1090,12 @@ fn test_inspect_filter_artboard_name_and_local_index_json() {
         objects[0].get("type_key").and_then(|value| value.as_u64()),
         Some(7)
     );
-    cleanup(&output);
 }
 
 #[test]
 fn test_inspect_filter_artboard_index_human_output() {
-    let input = fixture_path("multi_artboard.json");
-    let output = temp_output("inspect_filter_artboard_index_human");
-    cleanup(&output);
-
-    let g = cargo_run(&[
-        "generate",
-        input.to_str().unwrap(),
-        "-o",
-        output.to_str().unwrap(),
-    ]);
-    assert!(g.status.success());
+    let (output, _guard) =
+        generate_and_validate_output("multi_artboard", "inspect_filter_artboard_index_human");
 
     let insp = cargo_run(&[
         "inspect",
@@ -1131,7 +1112,7 @@ fn test_inspect_filter_artboard_index_human_output() {
         String::from_utf8_lossy(&insp.stderr)
     );
     assert!(
-        stdout.contains("Artboard: Screen B"),
+        stdout.contains("Artboard 1 (Screen B)"),
         "expected Screen B context in output, got: {}",
         stdout
     );
@@ -1145,7 +1126,6 @@ fn test_inspect_filter_artboard_index_human_output() {
         "did not expect Screen A in filtered output, got: {}",
         stdout
     );
-    cleanup(&output);
 }
 
 #[test]

@@ -525,21 +525,18 @@ pub fn inspect_riv(data: &[u8], filter: &InspectFilter) -> Result<String, String
     }
     if artboard_count > 1 {
         out.push_str(&format!("Artboards: {}\n", artboard_count));
-    } else if artboard_count == 1 && filter.is_active() {
-        let artboard = parsed
-            .objects
-            .iter()
-            .find(|object| object.artboard_index.is_some());
-        if let Some(object) = artboard
-            && let Some(name) = object.artboard_name.as_deref()
-        {
-            out.push_str(&format!("Artboard: {}\n", name));
-        }
     }
 
+    let show_artboard_sections = artboard_count > 1
+        || (filter.is_active()
+            && artboard_count == 1
+            && parsed
+                .objects
+                .iter()
+                .all(|object| object.artboard_index.is_some()));
     let mut current_artboard = None;
     for obj in &parsed.objects {
-        if artboard_count > 1 && obj.artboard_index != current_artboard {
+        if show_artboard_sections && obj.artboard_index != current_artboard {
             if let Some(artboard_index) = obj.artboard_index {
                 out.push_str(&format!(
                     "--- Artboard {} ({}) ---\n",
