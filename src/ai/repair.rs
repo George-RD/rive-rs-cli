@@ -1,3 +1,4 @@
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::ai::AiError;
@@ -8,7 +9,7 @@ use crate::validator::validate_riv;
 
 const DEFAULT_MAX_RETRIES: u8 = 3;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum ErrorCategory {
     Schema,
     Build,
@@ -27,14 +28,14 @@ impl std::fmt::Display for ErrorCategory {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RepairDiagnostic {
     pub category: ErrorCategory,
     pub message: String,
     pub auto_fixable: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RepairAttempt {
     pub attempt: u8,
     pub diagnostics: Vec<RepairDiagnostic>,
@@ -42,10 +43,12 @@ pub struct RepairAttempt {
     pub succeeded: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct RepairResult {
     #[allow(dead_code)] // read in tests and available for callers
+    #[serde(skip)]
     pub scene_json: Value,
+    #[serde(skip)]
     pub riv_bytes: Vec<u8>,
     pub attempts: Vec<RepairAttempt>,
     pub total_retries: u8,

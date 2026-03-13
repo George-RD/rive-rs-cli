@@ -3853,3 +3853,25 @@ fn test_multiple_fixtures_validate() {
         );
     }
 }
+
+#[test]
+fn test_ai_generate_json_flag_in_help() {
+    let result = cargo_run(&["ai", "generate", "--help"]);
+    assert!(result.status.success());
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        stdout.contains("--json"),
+        "ai generate --help should show --json flag"
+    );
+}
+
+#[test]
+fn test_ai_lab_json_flag_in_help() {
+    let result = cargo_run(&["ai", "lab", "--help"]);
+    assert!(result.status.success());
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        stdout.contains("--json"),
+        "ai lab --help should show --json flag"
+    );
+}

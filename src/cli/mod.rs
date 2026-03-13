@@ -150,6 +150,8 @@ pub enum AiCommand {
             help = "Max auto-repair retries (0 = no repair)"
         )]
         max_retries: u8,
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
     #[command(about = "Run evaluation suites for AI-generated animations")]
     Lab {
@@ -173,5 +175,7 @@ pub enum AiCommand {
         baseline: Option<PathBuf>,
         #[arg(long, help = "Write baseline JSON from this run")]
         write_baseline: Option<PathBuf>,
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
 }

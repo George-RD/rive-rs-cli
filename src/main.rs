@@ -206,6 +206,7 @@ fn main() {
                 model,
                 provider: provider_name,
                 max_retries,
+                json,
             } => {
                 let config = ai::AiConfig::resolve(model, provider_name).unwrap_or_else(|e| {
                     eprintln!("AI config error: {}", e);
@@ -237,17 +238,30 @@ fn main() {
                 let engine = ai::RepairEngine::new(max_retries);
                 match engine.repair(scene_json, file_id) {
                     Ok(result) => {
-                        if result.total_retries > 0 {
-                            eprintln!("repair succeeded after {} retry(ies)", result.total_retries);
-                            let summary = ai::format_repair_summary(&result.attempts);
+                        let bytes = result.riv_bytes;
+                        let attempts = result.attempts;
+                        let total_retries = result.total_retries;
+
+                        if total_retries > 0 && !json {
+                            eprintln!("repair succeeded after {} retry(ies)", total_retries);
+                            let summary = ai::format_repair_summary(&attempts);
                             eprint!("{}", summary);
                         }
-                        let bytes = result.riv_bytes;
                         std::fs::write(&output, &bytes).unwrap_or_else(|e| {
                             eprintln!("error writing {:?}: {}", output, e);
                             std::process::exit(1);
                         });
-                        eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
+                        if json {
+                            let json_result = serde_json::json!({
+                                "output_path": output.display().to_string(),
+                                "bytes_written": bytes.len(),
+                                "retries": total_retries,
+                                "attempts": attempts
+                            });
+                            println!("{}", serde_json::to_string_pretty(&json_result).unwrap());
+                        } else {
+                            eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
+                        }
                     }
                     Err(e) => {
                         if let ai::AiError::RepairFailed { ref attempts, .. } = e {
@@ -273,6 +287,7 @@ fn main() {
                 max_retries,
                 baseline,
                 write_baseline,
+                json,
             } => {
                 match ai::run_eval_suite(
                     &suite,
@@ -283,22 +298,34 @@ fn main() {
                     write_baseline.as_deref(),
                 ) {
                     Ok(report) => {
-                        println!("run_id={}", report.run_id);
-                        println!("output_dir={}", report.output_dir);
-                        println!(
-                            "validity_rate={:.3} ({}/{})",
-                            report.validity_rate, report.valid_count, report.case_count
-                        );
-                        println!("average_retries={:.3}", report.average_retries);
-                        println!("style_adherence_rate={:.3}", report.style_adherence_rate);
-                        println!("reproducibility_rate={:.3}", report.reproducibility_rate);
-                        println!("drift_count={}", report.drift_count);
-                        if report.drift_count > 0 {
-                            eprintln!(
-                                "regression drift detected in {} case(s)",
-                                report.drift_count
+                        if json {
+                            let json_str =
+                                serde_json::to_string_pretty(&report).unwrap_or_else(|e| {
+                                    eprintln!("JSON serialization failed: {}", e);
+                                    std::process::exit(1);
+                                });
+                            println!("{}", json_str);
+                            if report.drift_count > 0 {
+                                std::process::exit(1);
+                            }
+                        } else {
+                            println!("run_id={}", report.run_id);
+                            println!("output_dir={}", report.output_dir);
+                            println!(
+                                "validity_rate={:.3} ({}/{})",
+                                report.validity_rate, report.valid_count, report.case_count
                             );
-                            std::process::exit(1);
+                            println!("average_retries={:.3}", report.average_retries);
+                            println!("style_adherence_rate={:.3}", report.style_adherence_rate);
+                            println!("reproducibility_rate={:.3}", report.reproducibility_rate);
+                            println!("drift_count={}", report.drift_count);
+                            if report.drift_count > 0 {
+                                eprintln!(
+                                    "regression drift detected in {} case(s)",
+                                    report.drift_count
+                                );
+                                std::process::exit(1);
+                            }
                         }
                     }
                     Err(e) => {
