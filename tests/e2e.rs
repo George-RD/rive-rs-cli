@@ -3461,16 +3461,15 @@ fn test_version_flag() {
     );
 }
 
-// =====================
-// Error-path tests
-// =====================
-
 #[test]
 fn test_generate_missing_input_file() {
     let result = cargo_run(&["generate", "/tmp/nonexistent_rive_test_file.json"]);
     assert!(!result.status.success(), "should fail on missing input");
     let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(stderr.contains("error"), "stderr should contain error message");
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
 }
 
 #[test]
@@ -3481,7 +3480,10 @@ fn test_generate_malformed_json() {
     let result = cargo_run(&["generate", bad_json.to_str().unwrap()]);
     assert!(!result.status.success(), "should fail on malformed JSON");
     let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(stderr.contains("error"), "stderr should contain error message");
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
 }
 
 #[test]
@@ -3490,7 +3492,10 @@ fn test_generate_invalid_scene_spec() {
     std::fs::write(&bad_spec, r#"{"valid": "json", "but": "not a scene spec"}"#).unwrap();
     let _guard = CleanupOnDrop(bad_spec.clone());
     let result = cargo_run(&["generate", bad_spec.to_str().unwrap()]);
-    assert!(!result.status.success(), "should fail on invalid scene spec");
+    assert!(
+        !result.status.success(),
+        "should fail on invalid scene spec"
+    );
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!stderr.is_empty(), "stderr should have error output");
 }
@@ -3500,7 +3505,10 @@ fn test_validate_missing_file() {
     let result = cargo_run(&["validate", "/tmp/nonexistent_rive_test.riv"]);
     assert!(!result.status.success(), "should fail on missing file");
     let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(stderr.contains("error"), "stderr should contain error message");
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
 }
 
 #[test]
@@ -3520,7 +3528,10 @@ fn test_inspect_missing_file() {
     let result = cargo_run(&["inspect", "/tmp/nonexistent_rive_test.riv"]);
     assert!(!result.status.success(), "should fail on missing file");
     let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(stderr.contains("error"), "stderr should contain error message");
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
 }
 
 #[test]
@@ -3528,7 +3539,10 @@ fn test_decompile_missing_file() {
     let result = cargo_run(&["decompile", "/tmp/nonexistent_rive_test.riv"]);
     assert!(!result.status.success(), "should fail on missing file");
     let stderr = String::from_utf8_lossy(&result.stderr);
-    assert!(stderr.contains("error"), "stderr should contain error message");
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
 }
 
 #[test]
@@ -3554,17 +3568,18 @@ fn test_generate_no_args() {
 fn test_inspect_nonexistent_type_key_graceful() {
     let (output, _guard) = generate_and_validate_output("minimal", "inspect_nokey");
     let result = cargo_run(&["inspect", "--type-key", "65535", output.to_str().unwrap()]);
-    // Should succeed but with empty or minimal output (no matching objects)
+    let stdout = String::from_utf8_lossy(&result.stdout);
     assert!(
         result.status.success(),
         "should succeed even with no matching type key: {}",
         String::from_utf8_lossy(&result.stderr)
     );
+    assert!(
+        stdout.contains("No objects matched the provided filters."),
+        "output should report no matches when type key 65535 matches nothing, got: {}",
+        stdout
+    );
 }
-
-// =====================
-// Multi-step workflow tests
-// =====================
 
 #[test]
 fn test_generate_then_validate_then_inspect() {
@@ -3816,9 +3831,11 @@ fn test_multiple_fixtures_validate() {
     let fixtures = ["minimal", "shapes", "animation"];
     for fixture in &fixtures {
         let input = fixture_path(&format!("{}.json", fixture));
-        if !input.exists() {
-            continue;
-        }
+        assert!(
+            input.exists(),
+            "missing required fixture for this test: {}",
+            input.display()
+        );
         let output = temp_output(&format!("multi_{}", fixture));
         cleanup(&output);
         let _guard = CleanupOnDrop(output.clone());
