@@ -18,11 +18,12 @@ pub fn create_provider(
             "no API key set; use --template for built-in templates, or set OPENAI_API_KEY for prompt mode".to_string(),
         )),
         ProviderKind::OpenAi => {
-            if config.api_key.is_none() {
-                return Err(AiError::ApiKeyMissing("OPENAI_API_KEY".to_string()));
-            }
+            let api_key = match config.api_key.clone() {
+                Some(key) => key,
+                None => return Err(AiError::ApiKeyMissing("OPENAI_API_KEY".to_string())),
+            };
             Ok(Box::new(crate::ai::openai::OpenAiProvider::new(
-                config.api_key.clone().unwrap(),
+                api_key,
                 config.base_url.clone(),
             )))
         }
