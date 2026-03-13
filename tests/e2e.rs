@@ -3463,7 +3463,8 @@ fn test_version_flag() {
 
 #[test]
 fn test_validate_warns_on_version_mismatch() {
-    let v8_riv = std::env::temp_dir().join("rive_e2e_v8.riv");
+    let v8_riv = temp_output("v8_version_warning");
+    cleanup(&v8_riv);
     let mut bytes = Vec::new();
     bytes.extend_from_slice(b"RIVE");
     bytes.push(8);

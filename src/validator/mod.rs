@@ -87,16 +87,19 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
             }
         }
 
-        // Parent-ID range check
         for prop in &obj.properties {
-            if prop.key == property_keys::COMPONENT_PARENT_ID {
-                if let PropertyValueRead::UInt(parent_idx) = &prop.value {
-                    if *parent_idx as usize >= parsed.objects.len() {
-                        errors.push(format!(
-                            "object {} has parentId {} which exceeds object count {}",
-                            idx, parent_idx, parsed.objects.len()
-                        ));
-                    }
+            if prop.key == property_keys::COMPONENT_PARENT_ID
+                && let PropertyValueRead::UInt(parent_idx) = &prop.value
+            {
+                let out_of_range =
+                    usize::try_from(*parent_idx).map_or(true, |p| p >= parsed.objects.len());
+                if out_of_range {
+                    errors.push(format!(
+                        "object {} has parentId {} which exceeds object count {}",
+                        idx,
+                        parent_idx,
+                        parsed.objects.len()
+                    ));
                 }
             }
         }
@@ -169,19 +172,16 @@ mod tests {
 
     #[test]
     fn test_validate_riv_version_warning() {
-        // Manually construct a .riv with major version 8
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"RIVE"); // fingerprint
-        bytes.push(8); // major version = 8 (LEB128)
-        bytes.push(0); // minor version = 0
-        bytes.push(0); // file_id = 0
-        bytes.push(0); // empty ToC (0-terminator)
-        // Backboard object: type key 23
-        bytes.push(23); // type_key
-        bytes.push(0); // no properties (terminator)
-        // Artboard object: type key 1
-        bytes.push(1); // type_key
-        bytes.push(0); // no properties (terminator)
+        bytes.extend_from_slice(b"RIVE");
+        bytes.push(8);
+        bytes.push(0);
+        bytes.push(0);
+        bytes.push(0);
+        bytes.push(23);
+        bytes.push(0);
+        bytes.push(1);
+        bytes.push(0);
 
         let report = validate_riv(&bytes).unwrap();
         assert!(
@@ -213,11 +213,11 @@ mod tests {
         impl RiveObject for BadParent {
             fn type_key(&self) -> u16 {
                 3
-            } // Node type
+            }
             fn properties(&self) -> Vec<Property> {
                 vec![Property {
-                    key: 5, // parentId
-                    value: PropertyValue::UInt(999), // out of range
+                    key: 5,
+                    value: PropertyValue::UInt(999),
                 }]
             }
         }
@@ -242,7 +242,6 @@ mod tests {
     fn test_validate_riv_valid_parent_id() {
         let backboard = Backboard;
         let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
-        // Shape with parentId=0 (Backboard) is technically valid index-wise
         use crate::objects::shapes::Shape;
         let shape = Shape::new("TestShape".to_string(), 0);
         let data = encode_riv(&[&backboard, &artboard, &shape], 0);
