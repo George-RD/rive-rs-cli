@@ -11,6 +11,31 @@ use rmcp::{
 };
 use std::future::Future;
 
+/// Shared helper for inspect and decompile: reads a .riv file, parses its
+/// object tree, and returns the result as pretty-printed JSON.
+async fn parse_and_serialize_riv(file_path: &str) -> Result<CallToolResult, McpError> {
+    let bytes = tokio::fs::read(file_path).await.map_err(|e| {
+        McpError::new(
+            ErrorCode::INVALID_PARAMS,
+            format!("read error: {}", e),
+            None,
+        )
+    })?;
+    let filter = crate::validator::InspectFilter::default();
+    match crate::validator::parse_riv(&bytes, &filter) {
+        Ok(parsed) => {
+            let json = serde_json::to_string_pretty(&parsed)
+                .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
+            Ok(CallToolResult::success(vec![Content::text(json)]))
+        }
+        Err(e) => Err(McpError::new(
+            ErrorCode::INVALID_PARAMS,
+            format!("parse error: {}", e),
+            None,
+        )),
+    }
+}
+
 #[derive(Clone)]
 pub struct RiveMcpServer {
     tool_router: ToolRouter<Self>,
@@ -78,7 +103,7 @@ impl RiveMcpServer {
         &self,
         params: Parameters<ValidateParams>,
     ) -> Result<CallToolResult, McpError> {
-        let bytes = std::fs::read(&params.0.file).map_err(|e| {
+        let bytes = tokio::fs::read(&params.0.file).await.map_err(|e| {
             McpError::new(
                 ErrorCode::INVALID_PARAMS,
                 format!("read error: {}", e),
@@ -106,26 +131,7 @@ impl RiveMcpServer {
         &self,
         params: Parameters<FilePathParams>,
     ) -> Result<CallToolResult, McpError> {
-        let bytes = tokio::fs::read(&params.0.file).await.map_err(|e| {
-            McpError::new(
-                ErrorCode::INVALID_PARAMS,
-                format!("read error: {}", e),
-                None,
-            )
-        })?;
-        let filter = crate::validator::InspectFilter::default();
-        match crate::validator::parse_riv(&bytes, &filter) {
-            Ok(parsed) => {
-                let json = serde_json::to_string_pretty(&parsed)
-                    .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
-                Ok(CallToolResult::success(vec![Content::text(json)]))
-            }
-            Err(e) => Err(McpError::new(
-                ErrorCode::INVALID_PARAMS,
-                format!("parse error: {}", e),
-                None,
-            )),
-        }
+        parse_and_serialize_riv(&params.0.file).await
     }
 
     #[tool(
@@ -136,26 +142,7 @@ impl RiveMcpServer {
         &self,
         params: Parameters<FilePathParams>,
     ) -> Result<CallToolResult, McpError> {
-        let bytes = tokio::fs::read(&params.0.file).await.map_err(|e| {
-            McpError::new(
-                ErrorCode::INVALID_PARAMS,
-                format!("read error: {}", e),
-                None,
-            )
-        })?;
-        let filter = crate::validator::InspectFilter::default();
-        match crate::validator::parse_riv(&bytes, &filter) {
-            Ok(parsed) => {
-                let json = serde_json::to_string_pretty(&parsed)
-                    .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
-                Ok(CallToolResult::success(vec![Content::text(json)]))
-            }
-            Err(e) => Err(McpError::new(
-                ErrorCode::INVALID_PARAMS,
-                format!("parse error: {}", e),
-                None,
-            )),
-        }
+        parse_and_serialize_riv(&params.0.file).await
     }
 
     #[tool(
