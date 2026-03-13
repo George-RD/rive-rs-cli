@@ -39,6 +39,24 @@ pub enum Command {
         #[arg(long, help = "Output parsed result as JSON")]
         json: bool,
         #[arg(
+            long = "artboard-index",
+            value_name = "N",
+            help = "Filter by artboard index"
+        )]
+        artboard_index: Vec<usize>,
+        #[arg(
+            long = "artboard-name",
+            value_name = "NAME",
+            help = "Filter by artboard name (case-insensitive)"
+        )]
+        artboard_name: Vec<String>,
+        #[arg(
+            long = "local-index",
+            value_name = "N",
+            help = "Filter by artboard-local object index (0 is the artboard itself)"
+        )]
+        local_index: Vec<usize>,
+        #[arg(
             long = "type-key",
             value_name = "N",
             help = "Filter by object type key"

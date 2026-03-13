@@ -91,6 +91,9 @@ fn main() {
         cli::Command::Inspect {
             file,
             json,
+            artboard_index,
+            artboard_name,
+            local_index,
             type_key,
             type_name,
             object_index,
@@ -101,6 +104,9 @@ fn main() {
                 std::process::exit(1);
             });
             let filter = validator::InspectFilter {
+                artboard_indices: artboard_index,
+                artboard_names: artboard_name,
+                local_indices: local_index,
                 type_keys: type_key,
                 type_names: type_name,
                 object_indices: object_index,

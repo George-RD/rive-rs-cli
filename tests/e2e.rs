@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Mutex, OnceLock};
 
 const ARTBOARD_TYPE_KEY: u64 = 1;
 const BACKBOARD_TYPE_KEY: u64 = 23;
@@ -9,19 +8,17 @@ const COMPONENT_NAME_KEY: u64 = 4;
 const ARTBOARD_WIDTH_KEY: u64 = 7;
 const ARTBOARD_HEIGHT_KEY: u64 = 8;
 
-static CARGO_RUN_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 static TEMP_OUTPUT_COUNTER: AtomicU64 = AtomicU64::new(0);
 
+fn rive_cli() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_rive-cli"))
+}
+
 fn cargo_run(args: &[&str]) -> std::process::Output {
-    let _guard = CARGO_RUN_LOCK
-        .get_or_init(|| Mutex::new(()))
-        .lock()
-        .expect("cargo run lock poisoned");
-    Command::new("cargo")
-        .args(["run", "--quiet", "--"])
+    rive_cli()
         .args(args)
         .output()
-        .expect("failed to run cargo")
+        .expect("failed to run rive-cli binary")
 }
 
 fn fixture_path(name: &str) -> PathBuf {
@@ -1039,6 +1036,99 @@ fn test_inspect_json_multi_artboard() {
 }
 
 #[test]
+fn test_inspect_filter_artboard_name_and_local_index_json() {
+    let (output, _guard) =
+        generate_and_validate_output("multi_artboard", "inspect_filter_artboard_name_local_index");
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--json",
+        "--artboard-name",
+        "screen b",
+        "--local-index",
+        "2",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        insp.status.success(),
+        "inspect --json artboard filters failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&insp.stdout).expect("inspect output is not valid JSON");
+    let objects = parsed
+        .get("objects")
+        .and_then(|value| value.as_array())
+        .expect("objects array missing");
+    assert_eq!(objects.len(), 1);
+    assert_eq!(
+        objects[0]
+            .get("object_index")
+            .and_then(|value| value.as_u64()),
+        Some(13)
+    );
+    assert_eq!(
+        objects[0]
+            .get("artboard_index")
+            .and_then(|value| value.as_u64()),
+        Some(1)
+    );
+    assert_eq!(
+        objects[0]
+            .get("artboard_name")
+            .and_then(|value| value.as_str()),
+        Some("Screen B")
+    );
+    assert_eq!(
+        objects[0]
+            .get("local_index")
+            .and_then(|value| value.as_u64()),
+        Some(2)
+    );
+    assert_eq!(
+        objects[0].get("type_key").and_then(|value| value.as_u64()),
+        Some(7)
+    );
+}
+
+#[test]
+fn test_inspect_filter_artboard_index_human_output() {
+    let (output, _guard) =
+        generate_and_validate_output("multi_artboard", "inspect_filter_artboard_index_human");
+
+    let insp = cargo_run(&[
+        "inspect",
+        "--artboard-index",
+        "1",
+        "--local-index",
+        "2",
+        output.to_str().unwrap(),
+    ]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp.status.success(),
+        "inspect artboard filters failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    assert!(
+        stdout.contains("Artboard 1 (Screen B)"),
+        "expected Screen B context in output, got: {}",
+        stdout
+    );
+    assert!(
+        stdout.contains("[13:2] type=7 (Rectangle)"),
+        "expected filtered rectangle in output, got: {}",
+        stdout
+    );
+    assert!(
+        !stdout.contains("Screen A"),
+        "did not expect Screen A in filtered output, got: {}",
+        stdout
+    );
+}
+
+#[test]
 fn test_generate_nested_artboard() {
     let input = fixture_path("nested_artboard.json");
     let output = temp_output("nested_artboard");
@@ -1787,19 +1877,11 @@ fn test_ai_no_prompt_or_template() {
 
 #[test]
 fn test_ai_generate_prompt_without_api_key() {
-    let result = Command::new("cargo")
-        .args([
-            "run",
-            "--quiet",
-            "--",
-            "ai",
-            "generate",
-            "--prompt",
-            "make a bounce",
-        ])
+    let result = rive_cli()
+        .args(["ai", "generate", "--prompt", "make a bounce"])
         .env_remove("OPENAI_API_KEY")
         .output()
-        .expect("failed to run cargo");
+        .expect("failed to run rive-cli binary");
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!result.status.success());
     assert!(
@@ -1813,11 +1895,8 @@ fn test_ai_generate_prompt_without_api_key() {
 
 #[test]
 fn test_ai_rejects_both_template_and_prompt() {
-    let result = Command::new("cargo")
+    let result = rive_cli()
         .args([
-            "run",
-            "--quiet",
-            "--",
             "ai",
             "generate",
             "--template",
@@ -1827,7 +1906,7 @@ fn test_ai_rejects_both_template_and_prompt() {
         ])
         .env_remove("OPENAI_API_KEY")
         .output()
-        .expect("failed to run cargo");
+        .expect("failed to run rive-cli binary");
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!result.status.success());
     assert!(

@@ -13,6 +13,9 @@ cargo run -- validate out.riv
 
 # Inspect decoded object tree
 cargo run -- inspect out.riv
+
+# Narrow inspection to a specific multi-artboard slice
+cargo run -- inspect out.riv --artboard-name "Screen B" --local-index 2
 ```
 
 ## 1) Static Icon Card
@@ -96,4 +99,5 @@ cargo run -- validate assets.riv
 - Keep `scene_format_version` at `1`.
 - Use `cargo run -- validate` after every generation.
 - Use `cargo run -- inspect --json` when debugging object keys and properties.
+- In multi-artboard files, combine `--artboard-name` or `--artboard-index` with `--local-index` to isolate one artboard slice quickly.
 - Start from an existing fixture and evolve incrementally.
