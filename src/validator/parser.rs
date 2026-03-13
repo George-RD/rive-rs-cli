@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::objects::core::{
-    BackingType, is_bool_property, property_backing_type,
-};
+use crate::objects::core::{BackingType, is_bool_property, property_backing_type};
 use crate::objects::generated_registry;
 
 use super::binary_reader::BinaryReader;

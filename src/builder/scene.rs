@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use crate::objects::artboard::{Artboard, Backboard};
 use crate::objects::core::RiveObject;
 
@@ -12,11 +14,11 @@ use super::validation::validate_scene_spec;
 // Re-export spec types for public API and test visibility via `use super::*`.
 #[allow(unused_imports)]
 pub use super::spec::{
-    ArtboardSpec, AnimationSpec, BlendState1DChildSpec, BlendStateChildSpec,
+    AnimationSpec, ArtboardSpec, BlendState1DChildSpec, BlendStateChildSpec,
     BlendStateDirectChildSpec, ConditionSpec, InputSpec, InterpolatorSpec, KeyframeGroupSpec,
     KeyframeSpec, LayerSpec, ListenerActionSpec, ObjectSpec, StateMachineListenerSpec,
-    StateMachineSpec, StateSpec, TextModifierGroupChildSpec, TextStyleChildSpec, TransitionChildSpec,
-    TransitionSpec,
+    StateMachineSpec, StateSpec, TextModifierGroupChildSpec, TextStyleChildSpec,
+    TransitionChildSpec, TransitionSpec,
 };
 
 // Re-export parser functions for test visibility via `use super::*`.
@@ -42,7 +44,7 @@ const ARTBOARD_PRESET_BANNER_HEIGHT: f32 = 90.0;
 const ARTBOARD_PRESET_STORY_WIDTH: f32 = 1080.0;
 const ARTBOARD_PRESET_STORY_HEIGHT: f32 = 1920.0;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize)]
 pub struct ArtboardPreset {
     pub name: &'static str,
     pub width: f32,

@@ -4,7 +4,9 @@ use crate::objects::animation::{
     CubicEaseInterpolator, ElasticInterpolator, KeyFrameBool, KeyFrameCallback, KeyFrameColor,
     KeyFrameDouble, KeyFrameId, KeyFrameString, KeyedObject, KeyedProperty, LinearAnimation,
 };
-use crate::objects::core::{BackingType, RiveObject, is_bool_property, property_backing_type, property_keys};
+use crate::objects::core::{
+    BackingType, RiveObject, is_bool_property, property_backing_type, property_keys,
+};
 
 use super::parsers::{
     interpolation_type_from_name, interpolator_def_equals, json_value_to_color, json_value_to_f32,
@@ -108,9 +110,9 @@ pub(crate) fn build_animations(
             let object_index = *object_name_to_index.get(&group.object).ok_or_else(|| {
                 format!("unknown object referenced in keyframes: '{}'", group.object)
             })?;
-            let keyed_object_id = object_index.checked_sub(artboard_start).ok_or(
-                "internal error: keyed object index precedes artboard start".to_string(),
-            )?;
+            let keyed_object_id = object_index
+                .checked_sub(artboard_start)
+                .ok_or("internal error: keyed object index precedes artboard start".to_string())?;
             objects.push(Box::new(KeyedObject {
                 object_id: keyed_object_id as u64,
             }));
