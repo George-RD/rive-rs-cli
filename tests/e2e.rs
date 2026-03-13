@@ -3909,7 +3909,10 @@ fn test_ai_generate_json_output() {
     let file_len = std::fs::metadata(&output)
         .expect("output file should exist")
         .len();
-    assert_eq!(bytes_written, file_len, "bytes_written should match file size");
+    assert_eq!(
+        bytes_written, file_len,
+        "bytes_written should match file size"
+    );
     assert!(json["retries"].as_u64().is_some(), "should have retries");
     assert!(
         json["attempts"].as_array().is_some(),
