@@ -3461,7 +3461,6 @@ fn test_version_flag() {
     );
 }
 
-
 #[test]
 fn test_generate_missing_input_file() {
     let result = cargo_run(&["generate", "/tmp/nonexistent_rive_test_file.json"]);
