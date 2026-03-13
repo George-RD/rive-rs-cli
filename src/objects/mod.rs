@@ -1,12 +1,14 @@
 pub mod animation;
 pub mod artboard;
 pub mod assets;
+pub mod base;
 pub mod bones;
 pub mod constraints;
 pub mod core;
 pub mod data_binding;
 pub mod generated_registry;
 pub mod layout;
+pub mod paint;
 pub mod shapes;
 pub mod state_machine;
 pub mod text;
