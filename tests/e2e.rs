@@ -3462,6 +3462,219 @@ fn test_version_flag() {
 }
 
 #[test]
+fn test_generate_missing_input_file() {
+    let result = cargo_run(&["generate", "/tmp/nonexistent_rive_test_file.json"]);
+    assert!(!result.status.success(), "should fail on missing input");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
+}
+
+#[test]
+fn test_generate_malformed_json() {
+    let bad_json = temp_output("malformed").with_extension("json");
+    std::fs::write(&bad_json, "{ this is not valid json }").unwrap();
+    let _guard = CleanupOnDrop(bad_json.clone());
+    let result = cargo_run(&["generate", bad_json.to_str().unwrap()]);
+    assert!(!result.status.success(), "should fail on malformed JSON");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
+}
+
+#[test]
+fn test_generate_invalid_scene_spec() {
+    let bad_spec = temp_output("invalid_spec").with_extension("json");
+    std::fs::write(&bad_spec, r#"{"valid": "json", "but": "not a scene spec"}"#).unwrap();
+    let _guard = CleanupOnDrop(bad_spec.clone());
+    let result = cargo_run(&["generate", bad_spec.to_str().unwrap()]);
+    assert!(
+        !result.status.success(),
+        "should fail on invalid scene spec"
+    );
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!stderr.is_empty(), "stderr should have error output");
+}
+
+#[test]
+fn test_validate_missing_file() {
+    let result = cargo_run(&["validate", "/tmp/nonexistent_rive_test.riv"]);
+    assert!(!result.status.success(), "should fail on missing file");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
+}
+
+#[test]
+fn test_validate_truncated_file() {
+    let truncated = temp_output("truncated");
+    std::fs::write(&truncated, b"RIVE").unwrap();
+    let _guard = CleanupOnDrop(truncated.clone());
+    let result = cargo_run(&["validate", truncated.to_str().unwrap()]);
+    assert!(!result.status.success(), "should fail on truncated file");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!stderr.is_empty(), "stderr should have error output");
+}
+
+#[test]
+fn test_inspect_missing_file() {
+    let result = cargo_run(&["inspect", "/tmp/nonexistent_rive_test.riv"]);
+    assert!(!result.status.success(), "should fail on missing file");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
+}
+
+#[test]
+fn test_decompile_missing_file() {
+    let result = cargo_run(&["decompile", "/tmp/nonexistent_rive_test.riv"]);
+    assert!(!result.status.success(), "should fail on missing file");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("error"),
+        "stderr should contain error message"
+    );
+}
+
+#[test]
+fn test_decompile_corrupt_file() {
+    let corrupt = temp_output("corrupt");
+    std::fs::write(&corrupt, b"not a riv file at all").unwrap();
+    let _guard = CleanupOnDrop(corrupt.clone());
+    let result = cargo_run(&["decompile", corrupt.to_str().unwrap()]);
+    assert!(!result.status.success(), "should fail on corrupt file");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!stderr.is_empty(), "stderr should have error output");
+}
+
+#[test]
+fn test_generate_no_args() {
+    let result = cargo_run(&["generate"]);
+    assert!(!result.status.success(), "should fail with no input file");
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(!stderr.is_empty(), "stderr should have usage/error output");
+}
+
+#[test]
+fn test_inspect_nonexistent_type_key_graceful() {
+    let (output, _guard) = generate_and_validate_output("minimal", "inspect_nokey");
+    let result = cargo_run(&["inspect", "--type-key", "65535", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        result.status.success(),
+        "should succeed even with no matching type key: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(
+        stdout.contains("No objects matched the provided filters."),
+        "output should report no matches when type key 65535 matches nothing, got: {}",
+        stdout
+    );
+}
+
+#[test]
+fn test_generate_then_validate_then_inspect() {
+    let input = fixture_path("minimal.json");
+    let output = temp_output("full_pipeline");
+    cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
+
+    let gen_out = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        gen_out.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&gen_out.stderr)
+    );
+    assert!(output.exists(), "output file should exist");
+
+    let val = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        val.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&val.stderr)
+    );
+    let val_stdout = String::from_utf8_lossy(&val.stdout);
+    assert!(val_stdout.contains("valid"), "validate should report valid");
+
+    let insp = cargo_run(&["inspect", output.to_str().unwrap()]);
+    assert!(
+        insp.status.success(),
+        "inspect failed: {}",
+        String::from_utf8_lossy(&insp.stderr)
+    );
+    let insp_stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(
+        insp_stdout.contains("Backboard"),
+        "inspect should show Backboard"
+    );
+    assert!(
+        insp_stdout.contains("Artboard"),
+        "inspect should show Artboard"
+    );
+}
+
+#[test]
+fn test_generate_then_decompile_roundtrip() {
+    let input = fixture_path("shapes.json");
+    let output = temp_output("decompile_roundtrip");
+    cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
+
+    let gen_out = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        gen_out.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&gen_out.stderr)
+    );
+
+    let dec = cargo_run(&["decompile", output.to_str().unwrap()]);
+    assert!(
+        dec.status.success(),
+        "decompile failed: {}",
+        String::from_utf8_lossy(&dec.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&dec.stdout).expect("decompile output should be valid JSON");
+
+    assert!(json["header"].is_object(), "should have header");
+    assert!(json["objects"].is_array(), "should have objects array");
+    let objects = json["objects"].as_array().unwrap();
+    assert!(
+        objects.len() >= 2,
+        "should have at least Backboard + Artboard"
+    );
+
+    assert_eq!(
+        objects[0]["type_key"].as_u64().unwrap(),
+        23,
+        "first object should be Backboard"
+    );
+    assert_eq!(
+        objects[1]["type_key"].as_u64().unwrap(),
+        1,
+        "second object should be Artboard"
+    );
+}
+
+#[test]
 fn test_validate_warns_on_version_mismatch() {
     let v8_riv = temp_output("v8_version_warning");
     cleanup(&v8_riv);
@@ -3602,4 +3815,41 @@ fn test_decompile_roundtrip_verify_objects() {
     );
     assert_eq!(objects[0]["type_key"].as_u64().unwrap(), 23);
     assert_eq!(objects[1]["type_key"].as_u64().unwrap(), 1);
+}
+
+#[test]
+fn test_multiple_fixtures_validate() {
+    let fixtures = ["minimal", "shapes", "animation"];
+    for fixture in &fixtures {
+        let input = fixture_path(&format!("{}.json", fixture));
+        assert!(
+            input.exists(),
+            "missing required fixture for this test: {}",
+            input.display()
+        );
+        let output = temp_output(&format!("multi_{}", fixture));
+        cleanup(&output);
+        let _guard = CleanupOnDrop(output.clone());
+
+        let gen_out = cargo_run(&[
+            "generate",
+            input.to_str().unwrap(),
+            "-o",
+            output.to_str().unwrap(),
+        ]);
+        assert!(
+            gen_out.status.success(),
+            "generate {} failed: {}",
+            fixture,
+            String::from_utf8_lossy(&gen_out.stderr)
+        );
+
+        let val = cargo_run(&["validate", output.to_str().unwrap()]);
+        assert!(
+            val.status.success(),
+            "validate {} failed: {}",
+            fixture,
+            String::from_utf8_lossy(&val.stderr)
+        );
+    }
 }
