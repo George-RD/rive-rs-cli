@@ -252,12 +252,19 @@ fn main() {
                             std::process::exit(1);
                         });
                         if json {
-                            let json_result = serde_json::json!({
-                                "output_path": output.display().to_string(),
-                                "bytes_written": bytes.len(),
-                                "retries": total_retries,
-                                "attempts": attempts
-                            });
+                            #[derive(serde::Serialize)]
+                            struct AiGenerateOutput<'a> {
+                                output_path: String,
+                                bytes_written: usize,
+                                retries: u8,
+                                attempts: &'a [ai::RepairAttempt],
+                            }
+                            let json_result = AiGenerateOutput {
+                                output_path: output.display().to_string(),
+                                bytes_written: bytes.len(),
+                                retries: total_retries,
+                                attempts: &attempts,
+                            };
                             println!("{}", serde_json::to_string_pretty(&json_result).unwrap());
                         } else {
                             eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
