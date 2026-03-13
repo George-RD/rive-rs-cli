@@ -265,7 +265,12 @@ fn main() {
                                 retries: total_retries,
                                 attempts: &attempts,
                             };
-                            println!("{}", serde_json::to_string_pretty(&json_result).unwrap());
+                            let json_str = serde_json::to_string_pretty(&json_result)
+                                .unwrap_or_else(|e| {
+                                    eprintln!("JSON serialization failed: {}", e);
+                                    std::process::exit(1);
+                                });
+                            println!("{}", json_str);
                         } else {
                             eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
                         }
@@ -313,6 +318,10 @@ fn main() {
                                 });
                             println!("{}", json_str);
                             if report.drift_count > 0 {
+                                eprintln!(
+                                    "regression drift detected in {} case(s)",
+                                    report.drift_count
+                                );
                                 std::process::exit(1);
                             }
                         } else {

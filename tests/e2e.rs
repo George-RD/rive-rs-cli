@@ -3875,3 +3875,40 @@ fn test_ai_lab_json_flag_in_help() {
         "ai lab --help should show --json flag"
     );
 }
+
+#[test]
+fn test_ai_generate_json_output() {
+    let output = temp_output("ai_generate_json_output");
+    cleanup(&output);
+    let _guard = CleanupOnDrop(output.clone());
+
+    let result = cargo_run(&[
+        "ai",
+        "generate",
+        "--template",
+        "bounce",
+        "--json",
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "ai generate --json failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let json: serde_json::Value =
+        serde_json::from_slice(&result.stdout).expect("--json output should be valid JSON");
+    assert!(
+        json["output_path"].as_str().is_some(),
+        "should have output_path"
+    );
+    assert!(
+        json["bytes_written"].as_u64().unwrap() > 0,
+        "should have bytes_written"
+    );
+    assert!(json["retries"].as_u64().is_some(), "should have retries");
+    assert!(
+        json["attempts"].as_array().is_some(),
+        "should have attempts"
+    );
+}
