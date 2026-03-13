@@ -3634,7 +3634,6 @@ fn test_generate_then_decompile_roundtrip() {
     cleanup(&output);
     let _guard = CleanupOnDrop(output.clone());
 
-    // Generate
     let gen_out = cargo_run(&[
         "generate",
         input.to_str().unwrap(),
