@@ -3902,13 +3902,23 @@ fn test_ai_generate_json_output() {
         json["output_path"].as_str().is_some(),
         "should have output_path"
     );
-    assert!(
-        json["bytes_written"].as_u64().unwrap() > 0,
-        "should have bytes_written"
-    );
+    let bytes_written = json["bytes_written"]
+        .as_u64()
+        .expect("bytes_written should be a u64");
+    assert!(bytes_written > 0, "should have bytes_written");
+    let file_len = std::fs::metadata(&output)
+        .expect("output file should exist")
+        .len();
+    assert_eq!(bytes_written, file_len, "bytes_written should match file size");
     assert!(json["retries"].as_u64().is_some(), "should have retries");
     assert!(
         json["attempts"].as_array().is_some(),
         "should have attempts"
+    );
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        validate.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&validate.stderr)
     );
 }
