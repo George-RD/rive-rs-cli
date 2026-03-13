@@ -6,5 +6,5 @@ pub(crate) mod spec;
 mod state_machines;
 mod validation;
 
-pub use scene::{ArtboardPreset, artboard_presets, build_scene};
+pub use scene::{artboard_presets, build_scene};
 pub use spec::SceneSpec;

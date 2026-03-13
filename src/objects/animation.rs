@@ -441,6 +441,7 @@ pub struct KeyFrameBool {
 }
 
 impl KeyFrameBool {
+    #[allow(dead_code)] // rive-runtime type, used for bool keyframe animations
     pub fn new(frame: u64, value: bool) -> Self {
         Self { frame, value }
     }
@@ -470,6 +471,7 @@ pub struct KeyFrameString {
 }
 
 impl KeyFrameString {
+    #[allow(dead_code)] // rive-runtime type, used for string keyframe animations
     pub fn new(frame: u64, value: String) -> Self {
         Self { frame, value }
     }

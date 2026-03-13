@@ -2,6 +2,7 @@ mod binary_reader;
 mod inspect;
 mod parser;
 
+#[allow(unused_imports)] // used by encoder tests
 pub use binary_reader::BinaryReader;
 pub use inspect::*;
 pub use parser::*;

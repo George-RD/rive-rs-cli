@@ -728,6 +728,7 @@ impl RiveObject for BlendAnimationDirect {
     }
 }
 
+#[allow(dead_code)] // rive-runtime type for blend state transitions
 pub struct BlendStateTransition {
     pub state_to_id: u64,
     pub flags: u64,
@@ -737,6 +738,7 @@ pub struct BlendStateTransition {
 }
 
 impl BlendStateTransition {
+    #[allow(dead_code)]
     pub fn new(state_to_id: u64) -> Self {
         Self {
             state_to_id,

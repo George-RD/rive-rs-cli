@@ -53,6 +53,7 @@ pub struct ParsedRiv {
     pub header: RivHeader,
     pub toc_property_keys: Vec<u16>,
     #[serde(skip)]
+    #[allow(dead_code)] // available for callers inspecting ToC details
     pub toc_backing_types: Vec<BackingType>,
     pub objects: Vec<RivObject>,
 }
