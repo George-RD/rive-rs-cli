@@ -624,6 +624,320 @@ impl RiveObject for TransitionBoolCondition {
     }
 }
 
+pub struct BlendState;
+
+impl RiveObject for BlendState {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_STATE
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct BlendStateDirect;
+
+impl RiveObject for BlendStateDirect {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_STATE_DIRECT
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct BlendAnimation {
+    pub animation_id: u64,
+}
+
+impl RiveObject for BlendAnimation {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_ANIMATION
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::BLEND_ANIMATION_ANIMATION_ID,
+            value: PropertyValue::UInt(self.animation_id),
+        }]
+    }
+}
+
+pub struct BlendAnimation1D {
+    pub animation_id: u64,
+    pub value: f32,
+}
+
+impl RiveObject for BlendAnimation1D {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_ANIMATION_1D
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::BLEND_ANIMATION_ANIMATION_ID,
+            value: PropertyValue::UInt(self.animation_id),
+        }];
+        if self.value != 0.0 {
+            props.push(Property {
+                key: property_keys::BLEND_ANIMATION_1D_VALUE,
+                value: PropertyValue::Float(self.value),
+            });
+        }
+        props
+    }
+}
+
+pub struct BlendAnimationDirect {
+    pub animation_id: u64,
+    pub input_id: u64,
+    pub mix_value: f32,
+    pub blend_source: u64,
+}
+
+impl RiveObject for BlendAnimationDirect {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_ANIMATION_DIRECT
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::BLEND_ANIMATION_ANIMATION_ID,
+            value: PropertyValue::UInt(self.animation_id),
+        }];
+        if self.input_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::BLEND_ANIMATION_DIRECT_INPUT_ID,
+                value: PropertyValue::UInt(self.input_id),
+            });
+        }
+        if self.mix_value != 100.0 {
+            props.push(Property {
+                key: property_keys::BLEND_ANIMATION_DIRECT_MIX_VALUE,
+                value: PropertyValue::Float(self.mix_value),
+            });
+        }
+        if self.blend_source != 0 {
+            props.push(Property {
+                key: property_keys::BLEND_ANIMATION_DIRECT_BLEND_SOURCE,
+                value: PropertyValue::UInt(self.blend_source),
+            });
+        }
+        props
+    }
+}
+
+pub struct BlendStateTransition {
+    pub state_to_id: u64,
+    pub flags: u64,
+    pub duration: u64,
+    pub exit_time: u64,
+    pub exit_blend_animation_id: u64,
+}
+
+impl BlendStateTransition {
+    pub fn new(state_to_id: u64) -> Self {
+        Self {
+            state_to_id,
+            flags: 0,
+            duration: 0,
+            exit_time: 0,
+            exit_blend_animation_id: 0,
+        }
+    }
+}
+
+impl RiveObject for BlendStateTransition {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_STATE_TRANSITION
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::STATE_TRANSITION_STATE_TO_ID,
+            value: PropertyValue::UInt(self.state_to_id),
+        }];
+        if self.flags != 0 {
+            props.push(Property {
+                key: property_keys::STATE_TRANSITION_FLAGS,
+                value: PropertyValue::UInt(self.flags),
+            });
+        }
+        if self.duration != 0 {
+            props.push(Property {
+                key: property_keys::STATE_TRANSITION_DURATION,
+                value: PropertyValue::UInt(self.duration),
+            });
+        }
+        if self.exit_time != 0 {
+            props.push(Property {
+                key: property_keys::STATE_TRANSITION_EXIT_TIME,
+                value: PropertyValue::UInt(self.exit_time),
+            });
+        }
+        if self.exit_blend_animation_id != 0 {
+            props.push(Property {
+                key: property_keys::BLEND_STATE_TRANSITION_EXIT_BLEND_ANIMATION_ID,
+                value: PropertyValue::UInt(self.exit_blend_animation_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct BlendState1D;
+
+impl RiveObject for BlendState1D {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_STATE_1D
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct BlendState1DInput {
+    pub input_id: u64,
+}
+
+impl RiveObject for BlendState1DInput {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_STATE_1D_INPUT
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.input_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::BLEND_STATE_1D_INPUT_ID,
+                value: PropertyValue::UInt(self.input_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct TransitionPropertyComparator;
+
+impl RiveObject for TransitionPropertyComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_PROPERTY_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct TransitionViewModelCondition {
+    pub op_value: u64,
+}
+
+impl RiveObject for TransitionViewModelCondition {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VIEW_MODEL_CONDITION
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.op_value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSITION_VIEW_MODEL_CONDITION_OP_VALUE,
+                value: PropertyValue::UInt(self.op_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct TransitionValueBooleanComparator {
+    pub value: bool,
+}
+
+impl RiveObject for TransitionValueBooleanComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_BOOLEAN_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::TRANSITION_VALUE_BOOLEAN_COMPARATOR_VALUE,
+            value: PropertyValue::Bool(self.value),
+        }]
+    }
+}
+
+pub struct TransitionValueColorComparator {
+    pub value: u32,
+}
+
+impl RiveObject for TransitionValueColorComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_COLOR_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::TRANSITION_VALUE_COLOR_COMPARATOR_VALUE,
+            value: PropertyValue::Color(self.value),
+        }]
+    }
+}
+
+pub struct TransitionValueNumberComparator {
+    pub value: f32,
+}
+
+impl RiveObject for TransitionValueNumberComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_NUMBER_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::TRANSITION_VALUE_NUMBER_COMPARATOR_VALUE,
+            value: PropertyValue::Float(self.value),
+        }]
+    }
+}
+
+pub struct TransitionValueEnumComparator;
+
+impl RiveObject for TransitionValueEnumComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_ENUM_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct TransitionValueStringComparator {
+    pub value: String,
+}
+
+impl RiveObject for TransitionValueStringComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_STRING_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::TRANSITION_VALUE_STRING_COMPARATOR_VALUE,
+            value: PropertyValue::String(self.value.clone()),
+        }]
+    }
+}
+
+pub struct TransitionValueTriggerComparator {
+    pub value: u64,
+}
+
+impl RiveObject for TransitionValueTriggerComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_TRIGGER_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSITION_VALUE_TRIGGER_COMPARATOR_VALUE,
+                value: PropertyValue::UInt(self.value),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -981,6 +1295,44 @@ mod tests {
         assert_eq!(props[0].value, PropertyValue::UInt(1));
         assert_eq!(props[1].key, property_keys::TRANSITION_VALUE_CONDITION_OP);
         assert_eq!(props[1].value, PropertyValue::UInt(0));
+    }
+
+    #[test]
+    fn test_blend_animation_direct_preserves_zero_input_id() {
+        let animation = BlendAnimationDirect {
+            animation_id: 3,
+            input_id: 0,
+            mix_value: 100.0,
+            blend_source: 0,
+        };
+        let props = animation.properties();
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::BLEND_ANIMATION_DIRECT_INPUT_ID
+                && property.value == PropertyValue::UInt(0)
+        }));
+    }
+
+    #[test]
+    fn test_blend_state_1d_has_no_properties() {
+        let state = BlendState1D;
+        assert!(state.properties().is_empty());
+    }
+
+    #[test]
+    fn test_blend_state_1d_input_preserves_zero_input_id() {
+        let state = BlendState1DInput { input_id: 0 };
+        let props = state.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::BLEND_STATE_1D_INPUT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(0));
+    }
+
+    #[test]
+    fn test_blend_state_1d_input_omits_unset_input_id() {
+        let state = BlendState1DInput {
+            input_id: u32::MAX as u64,
+        };
+        assert!(state.properties().is_empty());
     }
 
     #[test]

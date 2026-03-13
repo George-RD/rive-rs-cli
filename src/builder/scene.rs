@@ -3,8 +3,8 @@ use std::collections::{HashMap, HashSet};
 use serde::Deserialize;
 
 use crate::objects::animation::{
-    CubicEaseInterpolator, ElasticInterpolator, KeyFrameCallback, KeyFrameColor, KeyFrameDouble,
-    KeyFrameId, KeyedObject, KeyedProperty, LinearAnimation,
+    CubicEaseInterpolator, ElasticInterpolator, KeyFrameBool, KeyFrameCallback, KeyFrameColor,
+    KeyFrameDouble, KeyFrameId, KeyFrameString, KeyedObject, KeyedProperty, LinearAnimation,
 };
 use crate::objects::artboard::{Artboard, Backboard, NestedArtboard};
 use crate::objects::assets::{AudioAsset, FontAsset, ImageAsset};
@@ -13,8 +13,15 @@ use crate::objects::constraints::{
     DistanceConstraint, FollowPathConstraint, IKConstraint, RotationConstraint, ScaleConstraint,
     TransformConstraint, TranslationConstraint,
 };
-use crate::objects::core::{BackingType, RiveObject, property_backing_type, property_keys};
-use crate::objects::data_binding::{DataBind, ViewModel, ViewModelProperty};
+use crate::objects::core::{
+    BackingType, RiveObject, is_bool_property, property_backing_type, property_keys, type_keys,
+};
+use crate::objects::data_binding::{
+    DataBind, ViewModel, ViewModelInstance, ViewModelInstanceBoolean, ViewModelInstanceColor,
+    ViewModelInstanceEnum, ViewModelInstanceList, ViewModelInstanceListItem,
+    ViewModelInstanceNumber, ViewModelInstanceString, ViewModelInstanceValue,
+    ViewModelInstanceViewModel, ViewModelProperty,
+};
 use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
 use crate::objects::shapes::{
     ClippingShape, CubicAsymmetricVertexObject, CubicDetachedVertexObject,
@@ -23,13 +30,21 @@ use crate::objects::shapes::{
     SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
 };
 use crate::objects::state_machine::{
-    AnimationState, AnyState, EntryState, Event, ExitState, ListenerBoolChange,
-    ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation, NestedStateMachine,
-    StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener, StateMachineNumber,
-    StateMachineTrigger, StateTransition, TransitionBoolCondition, TransitionInputCondition,
-    TransitionNumberCondition, TransitionTriggerCondition, TransitionValueCondition,
+    AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
+    BlendState1D, BlendState1DInput, BlendStateDirect, EntryState, Event, ExitState,
+    ListenerBoolChange, ListenerNumberChange, ListenerTriggerChange, NestedSimpleAnimation,
+    NestedStateMachine, StateMachine, StateMachineBool, StateMachineLayer, StateMachineListener,
+    StateMachineNumber, StateMachineTrigger, StateTransition, TransitionBoolCondition,
+    TransitionInputCondition, TransitionNumberCondition, TransitionPropertyComparator,
+    TransitionTriggerCondition, TransitionValueBooleanComparator, TransitionValueColorComparator,
+    TransitionValueCondition, TransitionValueEnumComparator, TransitionValueNumberComparator,
+    TransitionValueStringComparator, TransitionValueTriggerComparator,
+    TransitionViewModelCondition,
 };
-use crate::objects::text::{Text, TextStyle, TextValueRun};
+use crate::objects::text::{
+    Text, TextModifierGroup, TextModifierRange, TextStyle, TextStyleFeature, TextValueRun,
+    TextVariationModifier,
+};
 
 const SCENE_FORMAT_VERSION: u32 = 1;
 
@@ -551,6 +566,7 @@ pub enum ObjectSpec {
         line_height: Option<f32>,
         letter_spacing: Option<f32>,
         font_asset_id: Option<u64>,
+        children: Option<Vec<TextStyleChildSpec>>,
     },
     TextValueRun {
         name: String,
@@ -634,6 +650,75 @@ pub enum ObjectSpec {
         property_key: u64,
         flags: u64,
         converter_id: Option<u64>,
+    },
+    ViewModelInstance {
+        view_model_id: Option<u64>,
+    },
+    ViewModelInstanceValue {
+        view_model_property_id: Option<u64>,
+    },
+    ViewModelInstanceColor {
+        view_model_property_id: Option<u64>,
+        value: String,
+    },
+    ViewModelInstanceString {
+        view_model_property_id: Option<u64>,
+        value: String,
+    },
+    ViewModelInstanceNumber {
+        view_model_property_id: Option<u64>,
+        value: f32,
+    },
+    ViewModelInstanceBoolean {
+        view_model_property_id: Option<u64>,
+        value: bool,
+    },
+    ViewModelInstanceEnum {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    ViewModelInstanceList,
+    ViewModelInstanceListItem {
+        view_model_id: Option<u64>,
+        view_model_instance_id: Option<u64>,
+    },
+    ViewModelInstanceViewModel {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    TextModifierRange {
+        units_value: Option<u64>,
+        type_value: Option<u64>,
+        mode_value: Option<u64>,
+        modify_from: Option<f32>,
+        modify_to: Option<f32>,
+        strength: Option<f32>,
+        clamp: Option<bool>,
+        falloff_from: Option<f32>,
+        falloff_to: Option<f32>,
+        offset: Option<f32>,
+        run_id: Option<u64>,
+    },
+    TextModifierGroup {
+        name: String,
+        modifier_flags: Option<u64>,
+        origin_x: Option<f32>,
+        origin_y: Option<f32>,
+        opacity: Option<f32>,
+        x: Option<f32>,
+        y: Option<f32>,
+        rotation: Option<f32>,
+        scale_x: Option<f32>,
+        scale_y: Option<f32>,
+        children: Option<Vec<TextModifierGroupChildSpec>>,
+    },
+    TextVariationModifier {
+        axis_tag: Option<u64>,
+        axis_value: Option<f32>,
+    },
+    TextStyleFeature {
+        tag: Option<u64>,
+        feature_value: Option<u64>,
     },
 }
 
@@ -744,7 +829,78 @@ pub enum StateSpec {
     Entry,
     Exit,
     Any,
-    Animation { animation: String },
+    Animation {
+        animation: String,
+    },
+    BlendState {
+        children: Option<Vec<BlendStateChildSpec>>,
+    },
+    BlendStateDirect {
+        children: Option<Vec<BlendStateDirectChildSpec>>,
+    },
+    #[serde(alias = "blend_state_1d")]
+    BlendState1d {
+        input_id: Option<u64>,
+        children: Option<Vec<BlendState1DChildSpec>>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum BlendStateChildSpec {
+    BlendAnimation { animation_id: u64 },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum BlendStateDirectChildSpec {
+    BlendAnimationDirect {
+        animation_id: u64,
+        input_id: Option<u64>,
+        mix_value: Option<f32>,
+        blend_source: Option<u64>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum BlendState1DChildSpec {
+    #[serde(alias = "blend_animation_1d")]
+    BlendAnimation1D {
+        animation_id: u64,
+        value: Option<f32>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TextStyleChildSpec {
+    TextStyleFeature {
+        tag: Option<u64>,
+        feature_value: Option<u64>,
+    },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum TextModifierGroupChildSpec {
+    TextModifierRange {
+        units_value: Option<u64>,
+        type_value: Option<u64>,
+        mode_value: Option<u64>,
+        modify_from: Option<f32>,
+        modify_to: Option<f32>,
+        strength: Option<f32>,
+        clamp: Option<bool>,
+        falloff_from: Option<f32>,
+        falloff_to: Option<f32>,
+        offset: Option<f32>,
+        run_id: Option<u64>,
+    },
+    TextVariationModifier {
+        axis_tag: Option<u64>,
+        axis_value: Option<f32>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -753,6 +909,7 @@ pub struct TransitionSpec {
     pub to: usize,
     pub duration: Option<u64>,
     pub conditions: Option<Vec<ConditionSpec>>,
+    pub children: Option<Vec<TransitionChildSpec>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -760,6 +917,20 @@ pub struct ConditionSpec {
     pub input: String,
     pub op: Option<String>,
     pub value: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::enum_variant_names)]
+pub enum TransitionChildSpec {
+    TransitionPropertyComparator,
+    TransitionViewModelCondition { op_value: Option<u64> },
+    TransitionValueBooleanComparator { value: bool },
+    TransitionValueColorComparator { value: String },
+    TransitionValueNumberComparator { value: f32 },
+    TransitionValueEnumComparator,
+    TransitionValueStringComparator { value: String },
+    TransitionValueTriggerComparator { value: Option<u64> },
 }
 
 fn resolve_artboards(spec: &SceneSpec) -> Result<Vec<&ArtboardSpec>, String> {
@@ -916,12 +1087,13 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                     }));
 
                     let property_key =
-                        property_key_from_name(&group.property).ok_or_else(|| {
-                            format!(
-                                "unknown property referenced in keyframes: '{}'",
-                                group.property
-                            )
-                        })?;
+                        property_key_for_object(&group.property, objects[object_index].type_key())
+                            .ok_or_else(|| {
+                                format!(
+                                    "unknown property referenced in keyframes: '{}'",
+                                    group.property
+                                )
+                            })?;
                     objects.push(Box::new(KeyedProperty {
                         property_key: property_key as u64,
                     }));
@@ -955,6 +1127,27 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                 kf.interpolator_id = interp_id;
                                 objects.push(Box::new(kf));
                             }
+                            Some(BackingType::String) => {
+                                validate_discrete_keyframe_interpolation(
+                                    &group.object,
+                                    &group.property,
+                                    frame.frame,
+                                    frame.interpolation.as_deref(),
+                                    frame.interpolator.as_deref(),
+                                    interp_type,
+                                    interp_id,
+                                )?;
+                                let value = json_value_to_string(&frame.value).ok_or_else(|| {
+                                    format!(
+                                        "invalid string keyframe value for object '{}' property '{}' at frame {}",
+                                        group.object, group.property, frame.frame
+                                    )
+                                })?;
+                                objects.push(Box::new(KeyFrameString {
+                                    frame: frame.frame,
+                                    value,
+                                }));
+                            }
                             Some(BackingType::UInt) => {
                                 if property_key == property_keys::EVENT_TRIGGER {
                                     objects.push(Box::new(KeyFrameCallback { frame: frame.frame }));
@@ -966,10 +1159,26 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                         group.object, group.property, frame.frame
                                     )
                                 })?;
-                                let mut kf = KeyFrameId::new(frame.frame, value);
-                                kf.interpolation_type = interp_type;
-                                kf.interpolator_id = interp_id;
-                                objects.push(Box::new(kf));
+                                if is_bool_property(property_key) {
+                                    validate_discrete_keyframe_interpolation(
+                                        &group.object,
+                                        &group.property,
+                                        frame.frame,
+                                        frame.interpolation.as_deref(),
+                                        frame.interpolator.as_deref(),
+                                        interp_type,
+                                        interp_id,
+                                    )?;
+                                    objects.push(Box::new(KeyFrameBool {
+                                        frame: frame.frame,
+                                        value: value != 0,
+                                    }));
+                                } else {
+                                    let mut kf = KeyFrameId::new(frame.frame, value);
+                                    kf.interpolation_type = interp_type;
+                                    kf.interpolator_id = interp_id;
+                                    objects.push(Box::new(kf));
+                                }
                             }
                             _ => {
                                 let value = json_value_to_f32(&frame.value).ok_or_else(|| {
@@ -1149,6 +1358,35 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                     })? as u64;
                                 objects.push(Box::new(AnimationState::new(animation_id)));
                             }
+                            StateSpec::BlendState { children } => {
+                                objects.push(Box::new(BlendState));
+                                if let Some(children) = children {
+                                    for child in children {
+                                        append_blend_state_child(child, &mut objects);
+                                    }
+                                }
+                            }
+                            StateSpec::BlendStateDirect { children } => {
+                                objects.push(Box::new(BlendStateDirect));
+                                if let Some(children) = children {
+                                    for child in children {
+                                        append_blend_state_direct_child(child, &mut objects);
+                                    }
+                                }
+                            }
+                            StateSpec::BlendState1d { input_id, children } => {
+                                objects.push(Box::new(BlendState1D));
+                                if let Some(input_id) = input_id {
+                                    objects.push(Box::new(BlendState1DInput {
+                                        input_id: *input_id,
+                                    }));
+                                }
+                                if let Some(children) = children {
+                                    for child in children {
+                                        append_blend_state_1d_child(child, &mut objects);
+                                    }
+                                }
+                            }
                         }
 
                         if let Some(transitions) = &layer.transitions {
@@ -1246,6 +1484,12 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                                                 }
                                             }
                                         }
+                                    }
+                                }
+
+                                if let Some(children) = &transition.children {
+                                    for child in children {
+                                        append_transition_child(child, &mut objects)?;
                                     }
                                 }
                             }
@@ -2620,6 +2864,7 @@ fn append_object(
             line_height,
             letter_spacing,
             font_asset_id,
+            children,
         } => {
             let mut style = TextStyle::new(name.clone(), parent_id);
             if let Some(v) = font_size {
@@ -2636,6 +2881,15 @@ fn append_object(
             }
             objects.push(Box::new(style));
             name_to_index.insert(name.clone(), object_index);
+            let child_parent_id = object_index
+                .checked_sub(artboard_start)
+                .ok_or("internal error: parent index precedes artboard start".to_string())?
+                as u64;
+            if let Some(children) = children {
+                for child in children {
+                    append_text_style_child(child, child_parent_id, objects);
+                }
+            }
         }
         ObjectSpec::TextValueRun {
             name,
@@ -2934,6 +3188,248 @@ fn append_object(
             }
             objects.push(Box::new(db));
         }
+        ObjectSpec::ViewModelInstance { view_model_id } => {
+            objects.push(Box::new(ViewModelInstance {
+                view_model_id: required_u64_field(
+                    *view_model_id,
+                    "view_model_instance",
+                    "view_model_id",
+                )?,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceValue {
+            view_model_property_id,
+        } => {
+            objects.push(Box::new(ViewModelInstanceValue {
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_value",
+                    "view_model_property_id",
+                )?,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceColor {
+            view_model_property_id,
+            value,
+        } => {
+            let color = parse_color(value)?;
+            objects.push(Box::new(ViewModelInstanceColor {
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_color",
+                    "view_model_property_id",
+                )?,
+                property_value: color,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceString {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceString {
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_string",
+                    "view_model_property_id",
+                )?,
+                property_value: value.clone(),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceNumber {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceNumber {
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_number",
+                    "view_model_property_id",
+                )?,
+                property_value: *value,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceBoolean {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceBoolean {
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_boolean",
+                    "view_model_property_id",
+                )?,
+                property_value: *value,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceEnum {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceEnum {
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_enum",
+                    "view_model_property_id",
+                )?,
+                property_value: required_u64_field(*value, "view_model_instance_enum", "value")?,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceList => {
+            objects.push(Box::new(ViewModelInstanceList));
+        }
+        ObjectSpec::ViewModelInstanceListItem {
+            view_model_id,
+            view_model_instance_id,
+        } => {
+            objects.push(Box::new(ViewModelInstanceListItem {
+                view_model_id: required_u64_field(
+                    *view_model_id,
+                    "view_model_instance_list_item",
+                    "view_model_id",
+                )?,
+                view_model_instance_id: required_u64_field(
+                    *view_model_instance_id,
+                    "view_model_instance_list_item",
+                    "view_model_instance_id",
+                )?,
+            }));
+        }
+        ObjectSpec::ViewModelInstanceViewModel {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceViewModel {
+                view_model_property_id: required_u64_field(
+                    *view_model_property_id,
+                    "view_model_instance_view_model",
+                    "view_model_property_id",
+                )?,
+                property_value: required_u64_field(
+                    *value,
+                    "view_model_instance_view_model",
+                    "value",
+                )?,
+            }));
+        }
+        ObjectSpec::TextModifierRange {
+            units_value,
+            type_value,
+            mode_value,
+            modify_from,
+            modify_to,
+            strength,
+            clamp,
+            falloff_from,
+            falloff_to,
+            offset,
+            run_id,
+        } => {
+            let mut r = TextModifierRange::new(parent_id);
+            if let Some(v) = units_value {
+                r.units_value = *v;
+            }
+            if let Some(v) = type_value {
+                r.type_value = *v;
+            }
+            if let Some(v) = mode_value {
+                r.mode_value = *v;
+            }
+            if let Some(v) = modify_from {
+                r.modify_from = *v;
+            }
+            if let Some(v) = modify_to {
+                r.modify_to = *v;
+            }
+            if let Some(v) = strength {
+                r.strength = *v;
+            }
+            if let Some(v) = clamp {
+                r.clamp = *v;
+            }
+            if let Some(v) = falloff_from {
+                r.falloff_from = *v;
+            }
+            if let Some(v) = falloff_to {
+                r.falloff_to = *v;
+            }
+            if let Some(v) = offset {
+                r.offset = *v;
+            }
+            if let Some(v) = run_id {
+                r.run_id = *v;
+            }
+            objects.push(Box::new(r));
+        }
+        ObjectSpec::TextModifierGroup {
+            name,
+            modifier_flags,
+            origin_x,
+            origin_y,
+            opacity,
+            x,
+            y,
+            rotation,
+            scale_x,
+            scale_y,
+            children,
+        } => {
+            let mut g = TextModifierGroup::new(name.clone(), parent_id);
+            if let Some(v) = modifier_flags {
+                g.modifier_flags = *v;
+            }
+            if let Some(v) = origin_x {
+                g.origin_x = *v;
+            }
+            if let Some(v) = origin_y {
+                g.origin_y = *v;
+            }
+            if let Some(v) = opacity {
+                g.opacity = *v;
+            }
+            if let Some(v) = x {
+                g.x = *v;
+            }
+            if let Some(v) = y {
+                g.y = *v;
+            }
+            if let Some(v) = rotation {
+                g.rotation = *v;
+            }
+            if let Some(v) = scale_x {
+                g.scale_x = *v;
+            }
+            if let Some(v) = scale_y {
+                g.scale_y = *v;
+            }
+            objects.push(Box::new(g));
+            name_to_index.insert(name.clone(), object_index);
+            let child_parent_id = object_index
+                .checked_sub(artboard_start)
+                .ok_or("internal error: parent index precedes artboard start".to_string())?
+                as u64;
+            if let Some(children) = children {
+                for child in children {
+                    append_text_modifier_group_child(child, child_parent_id, objects);
+                }
+            }
+        }
+        ObjectSpec::TextVariationModifier {
+            axis_tag,
+            axis_value,
+        } => {
+            objects.push(Box::new(TextVariationModifier {
+                parent_id,
+                axis_tag: axis_tag.unwrap_or(0),
+                axis_value: axis_value.unwrap_or(0.0),
+            }));
+        }
+        ObjectSpec::TextStyleFeature { tag, feature_value } => {
+            objects.push(Box::new(TextStyleFeature {
+                parent_id,
+                tag: tag.unwrap_or(0),
+                feature_value: feature_value.unwrap_or(0),
+            }));
+        }
     }
     Ok(())
 }
@@ -2955,6 +3451,65 @@ fn property_key_from_name(name: &str) -> Option<u16> {
         "trigger" => Some(property_keys::EVENT_TRIGGER),
         "active_component_id" => Some(property_keys::SOLO_ACTIVE_COMPONENT_ID),
         _ => None,
+    }
+}
+
+fn property_key_for_object(name: &str, object_type_key: u16) -> Option<u16> {
+    if object_type_key == type_keys::TEXT {
+        return match name {
+            "width" => Some(property_keys::TEXT_WIDTH),
+            "height" => Some(property_keys::TEXT_HEIGHT),
+            "origin_x" => Some(property_keys::TEXT_ORIGIN_X),
+            "origin_y" => Some(property_keys::TEXT_ORIGIN_Y),
+            "paragraph_spacing" => Some(property_keys::TEXT_PARAGRAPH_SPACING),
+            _ => property_key_from_name(name),
+        };
+    }
+
+    if object_type_key == type_keys::LAYOUT_COMPONENT {
+        return match name {
+            "width" => Some(property_keys::LAYOUT_COMPONENT_WIDTH),
+            "height" => Some(property_keys::LAYOUT_COMPONENT_HEIGHT),
+            _ => property_key_from_name(name),
+        };
+    }
+
+    if object_type_key == type_keys::TEXT_STYLE {
+        return match name {
+            "font_size" => Some(property_keys::TEXT_STYLE_FONT_SIZE),
+            "line_height" => Some(property_keys::TEXT_STYLE_LINE_HEIGHT),
+            "letter_spacing" => Some(property_keys::TEXT_STYLE_LETTER_SPACING),
+            _ => None,
+        };
+    }
+
+    if object_type_key == type_keys::TEXT_MODIFIER_GROUP {
+        return match name {
+            "modifier_flags" => Some(property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS),
+            "origin_x" => Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X),
+            "origin_y" => Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y),
+            "opacity" => Some(property_keys::TEXT_MODIFIER_GROUP_OPACITY),
+            "x" => Some(property_keys::TEXT_MODIFIER_GROUP_X),
+            "y" => Some(property_keys::TEXT_MODIFIER_GROUP_Y),
+            "rotation" => Some(property_keys::TEXT_MODIFIER_GROUP_ROTATION),
+            "scale_x" => Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_X),
+            "scale_y" => Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_Y),
+            _ => None,
+        };
+    }
+
+    match name {
+        "text" if object_type_key == type_keys::TEXT_VALUE_RUN => {
+            Some(property_keys::TEXT_VALUE_RUN_TEXT)
+        }
+        "is_visible" if object_type_key == type_keys::CLIPPING_SHAPE => {
+            Some(property_keys::CLIPPING_SHAPE_IS_VISIBLE)
+        }
+        "is_visible" if matches!(object_type_key, type_keys::FILL | type_keys::STROKE) => {
+            Some(property_keys::SHAPE_PAINT_IS_VISIBLE)
+        }
+        "text" | "is_visible" => None,
+        _ => property_key_from_name(name),
     }
 }
 
@@ -3155,6 +3710,13 @@ fn json_value_to_f32(value: &serde_json::Value) -> Option<f32> {
     }
 }
 
+fn json_value_to_string(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::String(s) => Some(s.clone()),
+        _ => None,
+    }
+}
+
 fn json_value_to_u64(value: &serde_json::Value) -> Option<u64> {
     match value {
         serde_json::Value::Number(number) => number.as_u64(),
@@ -3204,6 +3766,264 @@ fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<String> {
         }
     }
     refs
+}
+
+fn collect_object_type_key(spec: &ObjectSpec, object_type_keys: &mut HashMap<String, u16>) {
+    match spec {
+        ObjectSpec::Shape { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SHAPE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Solo { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SOLO);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Ellipse { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ELLIPSE);
+        }
+        ObjectSpec::Rectangle { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::RECTANGLE);
+        }
+        ObjectSpec::Triangle { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRIANGLE);
+        }
+        ObjectSpec::Polygon { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::POLYGON);
+        }
+        ObjectSpec::Star { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::STAR);
+        }
+        ObjectSpec::Fill { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FILL);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Stroke { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::STROKE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::SolidColor { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SOLID_COLOR);
+        }
+        ObjectSpec::LinearGradient { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LINEAR_GRADIENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::RadialGradient { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::RADIAL_GRADIENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::GradientStop { name, .. } => {
+            if let Some(name) = name {
+                object_type_keys.insert(name.clone(), type_keys::GRADIENT_STOP);
+            }
+        }
+        ObjectSpec::Node { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NODE);
+        }
+        ObjectSpec::Image { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::IMAGE);
+        }
+        ObjectSpec::Path { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::PATH);
+        }
+        ObjectSpec::PointsPath { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::POINTS_PATH);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::StraightVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::STRAIGHT_VERTEX);
+        }
+        ObjectSpec::CubicMirroredVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_MIRRORED_VERTEX);
+        }
+        ObjectSpec::CubicDetachedVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_DETACHED_VERTEX);
+        }
+        ObjectSpec::CubicAsymmetricVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_ASYMMETRIC_VERTEX);
+        }
+        ObjectSpec::TrimPath { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRIM_PATH);
+        }
+        ObjectSpec::NestedArtboard { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_ARTBOARD);
+        }
+        ObjectSpec::NestedStateMachine { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_STATE_MACHINE);
+        }
+        ObjectSpec::NestedSimpleAnimation { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_SIMPLE_ANIMATION);
+        }
+        ObjectSpec::Event { name, children } => {
+            object_type_keys.insert(name.clone(), type_keys::EVENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Bone { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::BONE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::RootBone { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ROOT_BONE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Skin { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SKIN);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Tendon { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TENDON);
+        }
+        ObjectSpec::Weight { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::WEIGHT);
+        }
+        ObjectSpec::CubicWeight { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUBIC_WEIGHT);
+        }
+        ObjectSpec::IkConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::IK_CONSTRAINT);
+        }
+        ObjectSpec::DistanceConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DISTANCE_CONSTRAINT);
+        }
+        ObjectSpec::TransformConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRANSFORM_CONSTRAINT);
+        }
+        ObjectSpec::TranslationConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TRANSLATION_CONSTRAINT);
+        }
+        ObjectSpec::ScaleConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCALE_CONSTRAINT);
+        }
+        ObjectSpec::RotationConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ROTATION_CONSTRAINT);
+        }
+        ObjectSpec::FollowPathConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FOLLOW_PATH_CONSTRAINT);
+        }
+        ObjectSpec::ClippingShape { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CLIPPING_SHAPE);
+        }
+        ObjectSpec::DrawRules { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DRAW_RULES);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::DrawTarget { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DRAW_TARGET);
+        }
+        ObjectSpec::Joystick { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::JOYSTICK);
+        }
+        ObjectSpec::Text { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::TextStyle { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE);
+        }
+        ObjectSpec::TextValueRun { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_VALUE_RUN);
+        }
+        ObjectSpec::ImageAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::IMAGE_ASSET);
+        }
+        ObjectSpec::FontAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FONT_ASSET);
+        }
+        ObjectSpec::AudioAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::AUDIO_ASSET);
+        }
+        ObjectSpec::LayoutComponent { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LAYOUT_COMPONENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::LayoutComponentStyle { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LAYOUT_COMPONENT_STYLE);
+        }
+        ObjectSpec::ViewModel { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ViewModelProperty { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL_PROPERTY);
+        }
+        ObjectSpec::DataBind { .. } => {}
+        ObjectSpec::ViewModelInstance { .. }
+        | ObjectSpec::ViewModelInstanceValue { .. }
+        | ObjectSpec::ViewModelInstanceColor { .. }
+        | ObjectSpec::ViewModelInstanceString { .. }
+        | ObjectSpec::ViewModelInstanceNumber { .. }
+        | ObjectSpec::ViewModelInstanceBoolean { .. }
+        | ObjectSpec::ViewModelInstanceEnum { .. }
+        | ObjectSpec::ViewModelInstanceList
+        | ObjectSpec::ViewModelInstanceListItem { .. }
+        | ObjectSpec::ViewModelInstanceViewModel { .. }
+        | ObjectSpec::TextModifierRange { .. }
+        | ObjectSpec::TextVariationModifier { .. }
+        | ObjectSpec::TextStyleFeature { .. } => {}
+        ObjectSpec::TextModifierGroup { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_MODIFIER_GROUP);
+        }
+    }
 }
 
 fn detect_artboard_cycles(artboard_deps: &HashMap<String, Vec<String>>) -> Result<(), String> {
@@ -3279,8 +4099,10 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
     resolve_artboard_dimensions(artboard_spec)?;
 
     let mut object_names: HashSet<String> = HashSet::new();
+    let mut object_type_keys: HashMap<String, u16> = HashMap::new();
     for child in &artboard_spec.children {
         validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
+        collect_object_type_key(child, &mut object_type_keys);
     }
     validate_image_asset_references(&artboard_spec.children)?;
 
@@ -3316,18 +4138,16 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
             }
 
             for group in &animation.keyframes {
-                if !object_names.contains(&group.object) {
-                    return Err(format!(
-                        "unknown object referenced in keyframes: '{}'",
-                        group.object
-                    ));
-                }
-                let property_key = property_key_from_name(&group.property).ok_or_else(|| {
-                    format!(
-                        "unknown property referenced in keyframes: '{}'",
-                        group.property
-                    )
+                let object_type_key = *object_type_keys.get(&group.object).ok_or_else(|| {
+                    format!("unknown object referenced in keyframes: '{}'", group.object)
                 })?;
+                let property_key = property_key_for_object(&group.property, object_type_key)
+                    .ok_or_else(|| {
+                        format!(
+                            "unknown property referenced in keyframes: '{}'",
+                            group.property
+                        )
+                    })?;
 
                 for frame in &group.frames {
                     if let Some(interp_name) = &frame.interpolator
@@ -3341,6 +4161,15 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                     if let Some(interp_type) = &frame.interpolation {
                         interpolation_type_from_name(interp_type)?;
                     }
+                    let interp_type = match &frame.interpolation {
+                        Some(name) => interpolation_type_from_name(name)?,
+                        None => 1,
+                    };
+                    let interp_id = if frame.interpolator.is_some() {
+                        0
+                    } else {
+                        u32::MAX as u64
+                    };
 
                     match property_backing_type(property_key) {
                         Some(BackingType::Color) => {
@@ -3351,12 +4180,40 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                 ));
                             }
                         }
+                        Some(BackingType::String) => {
+                            validate_discrete_keyframe_interpolation(
+                                &group.object,
+                                &group.property,
+                                frame.frame,
+                                frame.interpolation.as_deref(),
+                                frame.interpolator.as_deref(),
+                                interp_type,
+                                interp_id,
+                            )?;
+                            if json_value_to_string(&frame.value).is_none() {
+                                return Err(format!(
+                                    "invalid string keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                ));
+                            }
+                        }
                         Some(BackingType::UInt) => {
                             if json_value_to_u64(&frame.value).is_none() {
                                 return Err(format!(
                                     "invalid integer keyframe value for object '{}' property '{}' at frame {}",
                                     group.object, group.property, frame.frame
                                 ));
+                            }
+                            if is_bool_property(property_key) {
+                                validate_discrete_keyframe_interpolation(
+                                    &group.object,
+                                    &group.property,
+                                    frame.frame,
+                                    frame.interpolation.as_deref(),
+                                    frame.interpolator.as_deref(),
+                                    interp_type,
+                                    interp_id,
+                                )?;
                             }
                         }
                         _ => {
@@ -3485,13 +4342,52 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
 
             for layer in &state_machine.layers {
                 for state in &layer.states {
-                    if let StateSpec::Animation { animation } = state
-                        && !animation_names.contains(animation)
-                    {
-                        return Err(format!(
-                            "unknown animation referenced in state machine '{}': '{}'",
-                            state_machine.name, animation
-                        ));
+                    match state {
+                        StateSpec::Animation { animation }
+                            if !animation_names.contains(animation) =>
+                        {
+                            return Err(format!(
+                                "unknown animation referenced in state machine '{}': '{}'",
+                                state_machine.name, animation
+                            ));
+                        }
+                        StateSpec::BlendState {
+                            children: Some(children),
+                        } => {
+                            validate_blend_state_children(
+                                children,
+                                animation_names.len(),
+                                state_machine.name.as_str(),
+                            )?;
+                        }
+                        StateSpec::BlendStateDirect {
+                            children: Some(children),
+                        } => {
+                            validate_blend_state_direct_children(
+                                children,
+                                animation_names.len(),
+                                state_machine.inputs.as_deref(),
+                                state_machine.name.as_str(),
+                            )?;
+                        }
+                        StateSpec::BlendState1d { input_id, children } => {
+                            if let Some(input_id) = input_id {
+                                validate_number_input(
+                                    *input_id,
+                                    state_machine.inputs.as_deref(),
+                                    "blend_state_1d input_id",
+                                    state_machine.name.as_str(),
+                                )?;
+                            }
+                            if let Some(children) = children {
+                                validate_blend_state_1d_children(
+                                    children,
+                                    animation_names.len(),
+                                    state_machine.name.as_str(),
+                                )?;
+                            }
+                        }
+                        _ => {}
                     }
                 }
 
@@ -3520,6 +4416,14 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                         condition.input
                                     ));
                                 }
+                                if let Some(op) = condition.op.as_deref()
+                                    && !condition_op_is_valid(op)
+                                {
+                                    return Err(format!(
+                                        "unknown condition operator '{}' in state machine '{}'",
+                                        op, state_machine.name
+                                    ));
+                                }
                                 if let Some(serde_json::Value::String(color)) =
                                     condition.value.as_ref()
                                 {
@@ -3527,12 +4431,333 @@ fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
                                 }
                             }
                         }
+
+                        if let Some(children) = &transition.children {
+                            validate_transition_children(children, state_machine.name.as_str())?;
+                        }
                     }
                 }
             }
         }
     }
 
+    Ok(())
+}
+
+fn validate_index(
+    index: u64,
+    len: usize,
+    label: &str,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    if index >= len as u64 {
+        return Err(format!(
+            "{} {} out of bounds in state machine '{}' (len {})",
+            label, index, state_machine_name, len
+        ));
+    }
+    Ok(())
+}
+
+fn validate_number_input(
+    index: u64,
+    inputs: Option<&[InputSpec]>,
+    label: &str,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    let inputs = inputs.unwrap_or(&[]);
+    validate_index(index, inputs.len(), label, state_machine_name)?;
+    match inputs.get(index as usize) {
+        Some(InputSpec::Number { .. }) => Ok(()),
+        Some(InputSpec::Bool { .. }) => Err(format!(
+            "{} {} in state machine '{}' must reference a number input, found bool",
+            label, index, state_machine_name
+        )),
+        Some(InputSpec::Trigger { .. }) => Err(format!(
+            "{} {} in state machine '{}' must reference a number input, found trigger",
+            label, index, state_machine_name
+        )),
+        None => Err(format!(
+            "{} {} out of bounds in state machine '{}' (len {})",
+            label,
+            index,
+            state_machine_name,
+            inputs.len()
+        )),
+    }
+}
+
+fn validate_blend_state_children(
+    children: &[BlendStateChildSpec],
+    animation_count: usize,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        let BlendStateChildSpec::BlendAnimation { animation_id } = child;
+        validate_index(
+            *animation_id,
+            animation_count,
+            "blend_animation animation_id",
+            state_machine_name,
+        )?;
+    }
+    Ok(())
+}
+
+fn validate_blend_state_direct_children(
+    children: &[BlendStateDirectChildSpec],
+    animation_count: usize,
+    inputs: Option<&[InputSpec]>,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        let BlendStateDirectChildSpec::BlendAnimationDirect {
+            animation_id,
+            input_id,
+            ..
+        } = child;
+        validate_index(
+            *animation_id,
+            animation_count,
+            "blend_animation_direct animation_id",
+            state_machine_name,
+        )?;
+        if let Some(input_id) = input_id {
+            validate_number_input(
+                *input_id,
+                inputs,
+                "blend_animation_direct input_id",
+                state_machine_name,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn validate_blend_state_1d_children(
+    children: &[BlendState1DChildSpec],
+    animation_count: usize,
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        let BlendState1DChildSpec::BlendAnimation1D { animation_id, .. } = child;
+        validate_index(
+            *animation_id,
+            animation_count,
+            "blend_animation_1d animation_id",
+            state_machine_name,
+        )?;
+    }
+    Ok(())
+}
+
+fn validate_transition_children(
+    children: &[TransitionChildSpec],
+    state_machine_name: &str,
+) -> Result<(), String> {
+    for child in children {
+        if let TransitionChildSpec::TransitionViewModelCondition { op_value } = child
+            && let Some(op_value) = op_value
+            && *op_value > 5
+        {
+            return Err(format!(
+                "transition_view_model_condition op_value {} out of range in state machine '{}'",
+                op_value, state_machine_name
+            ));
+        }
+        if let TransitionChildSpec::TransitionValueColorComparator { value } = child {
+            parse_color(value).map_err(|e| {
+                format!(
+                    "invalid transition_value_color_comparator in state machine '{}': {}",
+                    state_machine_name, e
+                )
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn append_blend_state_child(spec: &BlendStateChildSpec, objects: &mut Vec<Box<dyn RiveObject>>) {
+    let BlendStateChildSpec::BlendAnimation { animation_id } = spec;
+    objects.push(Box::new(BlendAnimation {
+        animation_id: *animation_id,
+    }));
+}
+
+fn append_blend_state_direct_child(
+    spec: &BlendStateDirectChildSpec,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    let BlendStateDirectChildSpec::BlendAnimationDirect {
+        animation_id,
+        input_id,
+        mix_value,
+        blend_source,
+    } = spec;
+    objects.push(Box::new(BlendAnimationDirect {
+        animation_id: *animation_id,
+        input_id: input_id.unwrap_or(u32::MAX as u64),
+        mix_value: mix_value.unwrap_or(100.0),
+        blend_source: blend_source.unwrap_or(0),
+    }));
+}
+
+fn append_blend_state_1d_child(
+    spec: &BlendState1DChildSpec,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    let BlendState1DChildSpec::BlendAnimation1D {
+        animation_id,
+        value,
+    } = spec;
+    objects.push(Box::new(BlendAnimation1D {
+        animation_id: *animation_id,
+        value: value.unwrap_or(0.0),
+    }));
+}
+
+fn append_transition_child(
+    spec: &TransitionChildSpec,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) -> Result<(), String> {
+    match spec {
+        TransitionChildSpec::TransitionPropertyComparator => {
+            objects.push(Box::new(TransitionPropertyComparator));
+        }
+        TransitionChildSpec::TransitionViewModelCondition { op_value } => {
+            objects.push(Box::new(TransitionViewModelCondition {
+                op_value: op_value.unwrap_or(0),
+            }));
+        }
+        TransitionChildSpec::TransitionValueBooleanComparator { value } => {
+            objects.push(Box::new(TransitionValueBooleanComparator { value: *value }));
+        }
+        TransitionChildSpec::TransitionValueColorComparator { value } => {
+            let color = parse_color(value)?;
+            objects.push(Box::new(TransitionValueColorComparator { value: color }));
+        }
+        TransitionChildSpec::TransitionValueNumberComparator { value } => {
+            objects.push(Box::new(TransitionValueNumberComparator { value: *value }));
+        }
+        TransitionChildSpec::TransitionValueEnumComparator => {
+            objects.push(Box::new(TransitionValueEnumComparator));
+        }
+        TransitionChildSpec::TransitionValueStringComparator { value } => {
+            objects.push(Box::new(TransitionValueStringComparator {
+                value: value.clone(),
+            }));
+        }
+        TransitionChildSpec::TransitionValueTriggerComparator { value } => {
+            objects.push(Box::new(TransitionValueTriggerComparator {
+                value: value.unwrap_or(0),
+            }));
+        }
+    }
+    Ok(())
+}
+
+fn append_text_style_child(
+    spec: &TextStyleChildSpec,
+    parent_id: u64,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    match spec {
+        TextStyleChildSpec::TextStyleFeature { tag, feature_value } => {
+            objects.push(Box::new(TextStyleFeature {
+                parent_id,
+                tag: tag.unwrap_or(0),
+                feature_value: feature_value.unwrap_or(0),
+            }));
+        }
+    }
+}
+
+fn append_text_modifier_group_child(
+    spec: &TextModifierGroupChildSpec,
+    parent_id: u64,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) {
+    match spec {
+        TextModifierGroupChildSpec::TextModifierRange {
+            units_value,
+            type_value,
+            mode_value,
+            modify_from,
+            modify_to,
+            strength,
+            clamp,
+            falloff_from,
+            falloff_to,
+            offset,
+            run_id,
+        } => {
+            let mut range = TextModifierRange::new(parent_id);
+            if let Some(v) = units_value {
+                range.units_value = *v;
+            }
+            if let Some(v) = type_value {
+                range.type_value = *v;
+            }
+            if let Some(v) = mode_value {
+                range.mode_value = *v;
+            }
+            if let Some(v) = modify_from {
+                range.modify_from = *v;
+            }
+            if let Some(v) = modify_to {
+                range.modify_to = *v;
+            }
+            if let Some(v) = strength {
+                range.strength = *v;
+            }
+            if let Some(v) = clamp {
+                range.clamp = *v;
+            }
+            if let Some(v) = falloff_from {
+                range.falloff_from = *v;
+            }
+            if let Some(v) = falloff_to {
+                range.falloff_to = *v;
+            }
+            if let Some(v) = offset {
+                range.offset = *v;
+            }
+            if let Some(v) = run_id {
+                range.run_id = *v;
+            }
+            objects.push(Box::new(range));
+        }
+        TextModifierGroupChildSpec::TextVariationModifier {
+            axis_tag,
+            axis_value,
+        } => {
+            objects.push(Box::new(TextVariationModifier {
+                parent_id,
+                axis_tag: axis_tag.unwrap_or(0),
+                axis_value: axis_value.unwrap_or(0.0),
+            }));
+        }
+    }
+}
+
+fn validate_discrete_keyframe_interpolation(
+    object_name: &str,
+    property_name: &str,
+    frame: u64,
+    interpolation_name: Option<&str>,
+    interpolator_name: Option<&str>,
+    interpolation_type: u64,
+    interpolator_id: u64,
+) -> Result<(), String> {
+    if interpolation_name.is_none() && interpolator_name.is_none() {
+        return Ok(());
+    }
+    if interpolation_type != 0 || interpolator_id != u32::MAX as u64 {
+        return Err(format!(
+            "unsupported interpolation for object '{}' property '{}' at frame {}",
+            object_name, property_name, frame
+        ));
+    }
     Ok(())
 }
 
@@ -3547,6 +4772,27 @@ enum ParentKind {
     Text,
     LayoutComponent,
     ViewModel,
+}
+
+fn validate_text_style_child_spec(spec: &TextStyleChildSpec) {
+    match spec {
+        TextStyleChildSpec::TextStyleFeature { .. } => {}
+    }
+}
+
+fn validate_text_modifier_group_child_spec(spec: &TextModifierGroupChildSpec) {
+    match spec {
+        TextModifierGroupChildSpec::TextModifierRange { .. }
+        | TextModifierGroupChildSpec::TextVariationModifier { .. } => {}
+    }
+}
+
+fn required_u64_field(
+    value: Option<u64>,
+    object_type: &str,
+    field_name: &str,
+) -> Result<u64, String> {
+    value.ok_or_else(|| format!("{} must specify {}", object_type, field_name))
 }
 
 fn validate_object_spec(
@@ -3625,7 +4871,8 @@ fn validate_object_spec(
                         | ObjectSpec::LayoutComponent { name, .. }
                         | ObjectSpec::LayoutComponentStyle { name, .. }
                         | ObjectSpec::ViewModel { name, .. }
-                        | ObjectSpec::ViewModelProperty { name, .. } => {
+                        | ObjectSpec::ViewModelProperty { name, .. }
+                        | ObjectSpec::TextModifierGroup { name, .. } => {
                             child_names.insert(name.clone());
                         }
                         ObjectSpec::GradientStop { name, .. } => {
@@ -3633,7 +4880,20 @@ fn validate_object_spec(
                                 child_names.insert(name.clone());
                             }
                         }
-                        ObjectSpec::DataBind { .. } => {}
+                        ObjectSpec::DataBind { .. }
+                        | ObjectSpec::ViewModelInstance { .. }
+                        | ObjectSpec::ViewModelInstanceValue { .. }
+                        | ObjectSpec::ViewModelInstanceColor { .. }
+                        | ObjectSpec::ViewModelInstanceString { .. }
+                        | ObjectSpec::ViewModelInstanceNumber { .. }
+                        | ObjectSpec::ViewModelInstanceBoolean { .. }
+                        | ObjectSpec::ViewModelInstanceEnum { .. }
+                        | ObjectSpec::ViewModelInstanceList
+                        | ObjectSpec::ViewModelInstanceListItem { .. }
+                        | ObjectSpec::ViewModelInstanceViewModel { .. }
+                        | ObjectSpec::TextModifierRange { .. }
+                        | ObjectSpec::TextVariationModifier { .. }
+                        | ObjectSpec::TextStyleFeature { .. } => {}
                     }
                     validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
@@ -4060,7 +5320,15 @@ fn validate_object_spec(
                 }
             }
         }
-        ObjectSpec::TextStyle { name, .. } | ObjectSpec::TextValueRun { name, .. } => {
+        ObjectSpec::TextStyle { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_text_style_child_spec(child);
+                }
+            }
+        }
+        ObjectSpec::TextValueRun { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::ImageAsset { name, .. }
@@ -4091,6 +5359,94 @@ fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
         }
         ObjectSpec::DataBind { .. } => {}
+        ObjectSpec::ViewModelInstance { view_model_id } => {
+            required_u64_field(*view_model_id, "view_model_instance", "view_model_id")?;
+        }
+        ObjectSpec::ViewModelInstanceValue {
+            view_model_property_id,
+        }
+        | ObjectSpec::ViewModelInstanceColor {
+            view_model_property_id,
+            ..
+        }
+        | ObjectSpec::ViewModelInstanceString {
+            view_model_property_id,
+            ..
+        }
+        | ObjectSpec::ViewModelInstanceNumber {
+            view_model_property_id,
+            ..
+        }
+        | ObjectSpec::ViewModelInstanceBoolean {
+            view_model_property_id,
+            ..
+        } => {
+            required_u64_field(
+                *view_model_property_id,
+                "view_model_instance_value",
+                "view_model_property_id",
+            )?;
+        }
+        ObjectSpec::ViewModelInstanceEnum {
+            view_model_property_id,
+            value,
+        } => {
+            required_u64_field(
+                *view_model_property_id,
+                "view_model_instance_enum",
+                "view_model_property_id",
+            )?;
+            required_u64_field(*value, "view_model_instance_enum", "value")?;
+        }
+        ObjectSpec::ViewModelInstanceList => {}
+        ObjectSpec::ViewModelInstanceListItem {
+            view_model_id,
+            view_model_instance_id,
+        } => {
+            required_u64_field(
+                *view_model_id,
+                "view_model_instance_list_item",
+                "view_model_id",
+            )?;
+            required_u64_field(
+                *view_model_instance_id,
+                "view_model_instance_list_item",
+                "view_model_instance_id",
+            )?;
+        }
+        ObjectSpec::ViewModelInstanceViewModel {
+            view_model_property_id,
+            value,
+        } => {
+            required_u64_field(
+                *view_model_property_id,
+                "view_model_instance_view_model",
+                "view_model_property_id",
+            )?;
+            required_u64_field(*value, "view_model_instance_view_model", "value")?;
+        }
+        ObjectSpec::TextModifierRange { .. } => {
+            return Err(
+                "text_modifier_range must be nested under text_modifier_group.children".to_string(),
+            );
+        }
+        ObjectSpec::TextVariationModifier { .. } => {
+            return Err(
+                "text_variation_modifier must be nested under text_modifier_group.children"
+                    .to_string(),
+            );
+        }
+        ObjectSpec::TextStyleFeature { .. } => {
+            return Err("text_style_feature must be nested under text_style.children".to_string());
+        }
+        ObjectSpec::TextModifierGroup { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_text_modifier_group_child_spec(child);
+                }
+            }
+        }
     }
 
     Ok(())
@@ -4160,6 +5516,13 @@ fn parse_condition_op(op: &str) -> u64 {
         "<=" | "lte" => 5,
         _ => 0,
     }
+}
+
+fn condition_op_is_valid(op: &str) -> bool {
+    matches!(
+        op,
+        "==" | "eq" | "!=" | "ne" | ">" | "gt" | ">=" | "gte" | "<" | "lt" | "<=" | "lte"
+    )
 }
 
 fn input_is_trigger(input_name: &str, inputs: Option<&Vec<InputSpec>>) -> bool {
@@ -4740,6 +6103,34 @@ mod tests {
     }
 
     #[test]
+    fn test_text_style_children_reject_invalid_variant_during_deserialization() {
+        let spec = serde_json::json!({
+            "scene_format_version": 1,
+            "artboard": {
+                "name": "Main",
+                "width": 100.0,
+                "height": 100.0,
+                "children": [{
+                    "type": "text",
+                    "name": "Label",
+                    "children": [{
+                        "type": "text_style",
+                        "name": "Style",
+                        "children": [{
+                            "type": "image",
+                            "name": "Icon",
+                            "asset_id": 0
+                        }]
+                    }]
+                }]
+            }
+        });
+
+        let err = serde_json::from_value::<SceneSpec>(spec).expect_err("expected parse failure");
+        assert!(err.to_string().contains("unknown variant `image`"));
+    }
+
+    #[test]
     fn test_build_scene_rejects_oob_transition_index() {
         let spec = SceneSpec {
             scene_format_version: 1,
@@ -4761,6 +6152,7 @@ mod tests {
                             to: 3,
                             duration: None,
                             conditions: None,
+                            children: None,
                         }]),
                     }],
                 }]),
@@ -4773,6 +6165,423 @@ mod tests {
             Err(err) => err,
         };
         assert!(err.contains("transition target index 3 out of bounds"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_non_number_blend_input() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: Some(vec![AnimationSpec {
+                    name: "anim".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![],
+                }]),
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "sm".to_string(),
+                    inputs: Some(vec![InputSpec::Bool {
+                        name: "enabled".to_string(),
+                        value: false,
+                    }]),
+                    listeners: None,
+                    layers: vec![LayerSpec {
+                        states: vec![
+                            StateSpec::Entry,
+                            StateSpec::BlendState1d {
+                                input_id: Some(0),
+                                children: Some(vec![BlendState1DChildSpec::BlendAnimation1D {
+                                    animation_id: 0,
+                                    value: Some(0.0),
+                                }]),
+                            },
+                            StateSpec::Exit,
+                        ],
+                        transitions: None,
+                    }],
+                }]),
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected non-number blend input error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("must reference a number input, found bool"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_invalid_transition_view_model_condition_op_value() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: None,
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "sm".to_string(),
+                    inputs: None,
+                    listeners: None,
+                    layers: vec![LayerSpec {
+                        states: vec![StateSpec::Entry, StateSpec::Exit],
+                        transitions: Some(vec![TransitionSpec {
+                            from: 0,
+                            to: 1,
+                            duration: None,
+                            conditions: None,
+                            children: Some(vec![
+                                TransitionChildSpec::TransitionViewModelCondition {
+                                    op_value: Some(6),
+                                },
+                            ]),
+                        }]),
+                    }],
+                }]),
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected invalid transition view model condition error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("transition_view_model_condition op_value 6 out of range"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_invalid_condition_operator() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![],
+                animations: None,
+                state_machines: Some(vec![StateMachineSpec {
+                    name: "sm".to_string(),
+                    inputs: Some(vec![InputSpec::Bool {
+                        name: "enabled".to_string(),
+                        value: false,
+                    }]),
+                    listeners: None,
+                    layers: vec![LayerSpec {
+                        states: vec![StateSpec::Entry, StateSpec::Exit],
+                        transitions: Some(vec![TransitionSpec {
+                            from: 0,
+                            to: 1,
+                            duration: None,
+                            conditions: Some(vec![ConditionSpec {
+                                input: "enabled".to_string(),
+                                op: Some("gtee".to_string()),
+                                value: Some(serde_json::json!(true)),
+                            }]),
+                            children: None,
+                        }]),
+                    }],
+                }]),
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected invalid condition operator error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unknown condition operator 'gtee'"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_missing_view_model_instance_reference() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::ViewModelInstance {
+                    view_model_id: None,
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected missing view model reference error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("view_model_instance must specify view_model_id"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_bool_keyframe_interpolation() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::ClippingShape {
+                    name: "Clip".to_string(),
+                    source: None,
+                    fill_rule: None,
+                    is_visible: Some(true),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "toggle".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![KeyframeGroupSpec {
+                        object: "Clip".to_string(),
+                        property: "is_visible".to_string(),
+                        frames: vec![KeyframeSpec {
+                            frame: 0,
+                            value: serde_json::json!(true),
+                            interpolation: Some("linear".to_string()),
+                            interpolator: None,
+                        }],
+                    }],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected bool interpolation error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unsupported interpolation"));
+    }
+
+    #[test]
+    fn test_build_scene_rejects_string_keyframe_interpolation() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Text {
+                    name: "Label".to_string(),
+                    align_value: None,
+                    sizing_value: None,
+                    overflow_value: None,
+                    width: None,
+                    height: None,
+                    origin_x: None,
+                    origin_y: None,
+                    paragraph_spacing: None,
+                    origin_value: None,
+                    children: Some(vec![ObjectSpec::TextValueRun {
+                        name: "Run".to_string(),
+                        text: "Hello".to_string(),
+                        style_id: None,
+                    }]),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "rewrite".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![KeyframeGroupSpec {
+                        object: "Run".to_string(),
+                        property: "text".to_string(),
+                        frames: vec![KeyframeSpec {
+                            frame: 0,
+                            value: serde_json::json!("World"),
+                            interpolation: Some("cubic".to_string()),
+                            interpolator: None,
+                        }],
+                    }],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let err = match build_scene(&spec) {
+            Ok(_) => panic!("expected string interpolation error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("unsupported interpolation"));
+    }
+
+    #[test]
+    fn test_text_modifier_group_keyframe_properties_use_text_modifier_keys() {
+        assert_eq!(
+            property_key_for_object("width", type_keys::TEXT),
+            Some(property_keys::TEXT_WIDTH)
+        );
+        assert_eq!(
+            property_key_for_object("height", type_keys::TEXT),
+            Some(property_keys::TEXT_HEIGHT)
+        );
+        assert_eq!(
+            property_key_for_object("origin_x", type_keys::TEXT),
+            Some(property_keys::TEXT_ORIGIN_X)
+        );
+        assert_eq!(
+            property_key_for_object("origin_y", type_keys::TEXT),
+            Some(property_keys::TEXT_ORIGIN_Y)
+        );
+        assert_eq!(
+            property_key_for_object("paragraph_spacing", type_keys::TEXT),
+            Some(property_keys::TEXT_PARAGRAPH_SPACING)
+        );
+        assert_eq!(
+            property_key_for_object("width", type_keys::LAYOUT_COMPONENT),
+            Some(property_keys::LAYOUT_COMPONENT_WIDTH)
+        );
+        assert_eq!(
+            property_key_for_object("height", type_keys::LAYOUT_COMPONENT),
+            Some(property_keys::LAYOUT_COMPONENT_HEIGHT)
+        );
+        assert_eq!(
+            property_key_for_object("font_size", type_keys::TEXT_STYLE),
+            Some(property_keys::TEXT_STYLE_FONT_SIZE)
+        );
+        assert_eq!(
+            property_key_for_object("line_height", type_keys::TEXT_STYLE),
+            Some(property_keys::TEXT_STYLE_LINE_HEIGHT)
+        );
+        assert_eq!(
+            property_key_for_object("letter_spacing", type_keys::TEXT_STYLE),
+            Some(property_keys::TEXT_STYLE_LETTER_SPACING)
+        );
+        assert_eq!(
+            property_key_for_object("origin_x", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X)
+        );
+        assert_eq!(
+            property_key_for_object("origin_y", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y)
+        );
+        assert_eq!(
+            property_key_for_object("opacity", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_OPACITY)
+        );
+        assert_eq!(
+            property_key_for_object("x", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_X)
+        );
+        assert_eq!(
+            property_key_for_object("y", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_Y)
+        );
+        assert_eq!(
+            property_key_for_object("rotation", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_ROTATION)
+        );
+        assert_eq!(
+            property_key_for_object("scale_x", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_X)
+        );
+        assert_eq!(
+            property_key_for_object("scale_y", type_keys::TEXT_MODIFIER_GROUP),
+            Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_Y)
+        );
+    }
+
+    #[test]
+    fn test_build_scene_rejects_standalone_text_leaf_variants() {
+        let text_modifier_range = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::TextModifierRange {
+                    units_value: None,
+                    type_value: None,
+                    mode_value: None,
+                    modify_from: None,
+                    modify_to: None,
+                    strength: None,
+                    clamp: None,
+                    falloff_from: None,
+                    falloff_to: None,
+                    offset: None,
+                    run_id: None,
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+        let err = match build_scene(&text_modifier_range) {
+            Ok(_) => panic!("expected standalone text_modifier_range error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("text_modifier_range must be nested"));
+
+        let text_variation_modifier = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::TextVariationModifier {
+                    axis_tag: Some(0),
+                    axis_value: Some(0.0),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+        let err = match build_scene(&text_variation_modifier) {
+            Ok(_) => panic!("expected standalone text_variation_modifier error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("text_variation_modifier must be nested"));
+
+        let text_style_feature = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::TextStyleFeature {
+                    tag: Some(0),
+                    feature_value: Some(0),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+        let err = match build_scene(&text_style_feature) {
+            Ok(_) => panic!("expected standalone text_style_feature error"),
+            Err(err) => err,
+        };
+        assert!(err.contains("text_style_feature must be nested"));
     }
 
     #[test]
@@ -5937,5 +7746,56 @@ mod tests {
 
         let objects = build_scene(&spec).unwrap();
         assert_eq!(objects.len(), 5);
+    }
+
+    #[test]
+    fn test_clipping_shape_visibility_keyframes_use_clipping_property() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::ClippingShape {
+                    name: "Clip".to_string(),
+                    source: None,
+                    fill_rule: None,
+                    is_visible: Some(true),
+                }],
+                animations: Some(vec![AnimationSpec {
+                    name: "toggle".to_string(),
+                    fps: 60,
+                    duration: 1,
+                    speed: None,
+                    loop_type: None,
+                    interpolators: None,
+                    keyframes: vec![KeyframeGroupSpec {
+                        object: "Clip".to_string(),
+                        property: "is_visible".to_string(),
+                        frames: vec![KeyframeSpec {
+                            frame: 0,
+                            value: serde_json::json!(true),
+                            interpolation: None,
+                            interpolator: None,
+                        }],
+                    }],
+                }]),
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        let objects = build_scene(&spec).unwrap();
+        let keyed_property = objects
+            .iter()
+            .find(|object| object.type_key() == type_keys::KEYED_PROPERTY)
+            .unwrap()
+            .properties();
+        assert_eq!(keyed_property.len(), 1);
+        assert_eq!(
+            keyed_property[0].value,
+            PropertyValue::UInt(property_keys::CLIPPING_SHAPE_IS_VISIBLE as u64)
+        );
     }
 }

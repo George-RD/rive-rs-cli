@@ -151,6 +151,39 @@ pub mod type_keys {
     pub const FILE_ASSET_CONTENTS: u16 = 106;
     pub const ASSET: u16 = 99;
     pub const FILE_ASSET: u16 = 103;
+    pub const BLEND_STATE: u16 = 72;
+    pub const BLEND_STATE_DIRECT: u16 = 73;
+    pub const BLEND_ANIMATION: u16 = 74;
+    pub const BLEND_ANIMATION_1D: u16 = 75;
+    pub const BLEND_STATE_1D_INPUT: u16 = 76;
+    pub const BLEND_ANIMATION_DIRECT: u16 = 77;
+    pub const BLEND_STATE_TRANSITION: u16 = 78;
+    pub const BLEND_STATE_1D: u16 = 527;
+    pub const TRANSITION_PROPERTY_COMPARATOR: u16 = 478;
+    pub const TRANSITION_VALUE_BOOLEAN_COMPARATOR: u16 = 481;
+    pub const TRANSITION_VIEW_MODEL_CONDITION: u16 = 482;
+    pub const TRANSITION_VALUE_COLOR_COMPARATOR: u16 = 483;
+    pub const TRANSITION_VALUE_NUMBER_COMPARATOR: u16 = 484;
+    pub const TRANSITION_VALUE_ENUM_COMPARATOR: u16 = 485;
+    pub const TRANSITION_VALUE_STRING_COMPARATOR: u16 = 486;
+    pub const TRANSITION_VALUE_TRIGGER_COMPARATOR: u16 = 505;
+    pub const VIEW_MODEL_INSTANCE: u16 = 437;
+    pub const VIEW_MODEL_INSTANCE_COLOR: u16 = 426;
+    pub const VIEW_MODEL_INSTANCE_LIST_ITEM: u16 = 427;
+    pub const VIEW_MODEL_INSTANCE_VALUE: u16 = 428;
+    pub const VIEW_MODEL_INSTANCE_ENUM: u16 = 432;
+    pub const VIEW_MODEL_INSTANCE_STRING: u16 = 433;
+    pub const VIEW_MODEL_INSTANCE_LIST: u16 = 441;
+    pub const VIEW_MODEL_INSTANCE_NUMBER: u16 = 442;
+    pub const VIEW_MODEL_INSTANCE_VIEW_MODEL: u16 = 444;
+    pub const VIEW_MODEL_INSTANCE_BOOLEAN: u16 = 449;
+    pub const KEY_FRAME_BOOL: u16 = 84;
+    pub const KEY_FRAME_STRING: u16 = 142;
+    pub const KEY_FRAME_UINT: u16 = 450;
+    pub const TEXT_MODIFIER_RANGE: u16 = 158;
+    pub const TEXT_MODIFIER_GROUP: u16 = 159;
+    pub const TEXT_VARIATION_MODIFIER: u16 = 162;
+    pub const TEXT_STYLE_FEATURE: u16 = 164;
 }
 
 pub mod property_keys {
@@ -402,6 +435,56 @@ pub mod property_keys {
     pub const DATA_BIND_PROPERTY_KEY: u16 = 586;
     pub const DATA_BIND_FLAGS: u16 = 587;
     pub const DATA_BIND_CONVERTER_ID: u16 = 660;
+    pub const BLEND_ANIMATION_ANIMATION_ID: u16 = 165;
+    pub const BLEND_ANIMATION_1D_VALUE: u16 = 166;
+    pub const BLEND_STATE_1D_INPUT_ID: u16 = 167;
+    pub const BLEND_ANIMATION_DIRECT_INPUT_ID: u16 = 168;
+    pub const BLEND_STATE_TRANSITION_EXIT_BLEND_ANIMATION_ID: u16 = 171;
+    pub const BLEND_ANIMATION_DIRECT_MIX_VALUE: u16 = 297;
+    pub const BLEND_ANIMATION_DIRECT_BLEND_SOURCE: u16 = 298;
+    pub const TRANSITION_VIEW_MODEL_CONDITION_OP_VALUE: u16 = 650;
+    pub const TRANSITION_VALUE_BOOLEAN_COMPARATOR_VALUE: u16 = 647;
+    pub const TRANSITION_VALUE_COLOR_COMPARATOR_VALUE: u16 = 651;
+    pub const TRANSITION_VALUE_NUMBER_COMPARATOR_VALUE: u16 = 652;
+    pub const TRANSITION_VALUE_STRING_COMPARATOR_VALUE: u16 = 654;
+    pub const TRANSITION_VALUE_TRIGGER_COMPARATOR_VALUE: u16 = 689;
+    pub const VIEW_MODEL_INSTANCE_VIEW_MODEL_ID: u16 = 566;
+    pub const VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID: u16 = 554;
+    pub const VIEW_MODEL_INSTANCE_COLOR_PROPERTY_VALUE: u16 = 555;
+    pub const VIEW_MODEL_INSTANCE_ENUM_PROPERTY_VALUE: u16 = 560;
+    pub const VIEW_MODEL_INSTANCE_STRING_PROPERTY_VALUE: u16 = 561;
+    pub const VIEW_MODEL_INSTANCE_NUMBER_PROPERTY_VALUE: u16 = 575;
+    pub const VIEW_MODEL_INSTANCE_VIEW_MODEL_PROPERTY_VALUE: u16 = 577;
+    pub const VIEW_MODEL_INSTANCE_BOOLEAN_PROPERTY_VALUE: u16 = 593;
+    pub const VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_ID: u16 = 549;
+    pub const VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_INSTANCE_ID: u16 = 550;
+    pub const KEY_FRAME_BOOL_VALUE: u16 = 181;
+    pub const KEY_FRAME_STRING_VALUE: u16 = 280;
+    pub const KEY_FRAME_UINT_VALUE: u16 = 631;
+    pub const TEXT_MODIFIER_RANGE_UNITS_VALUE: u16 = 316;
+    pub const TEXT_MODIFIER_RANGE_FALLOFF_FROM: u16 = 317;
+    pub const TEXT_MODIFIER_RANGE_FALLOFF_TO: u16 = 318;
+    pub const TEXT_MODIFIER_RANGE_OFFSET: u16 = 319;
+    pub const TEXT_MODIFIER_RANGE_TYPE_VALUE: u16 = 325;
+    pub const TEXT_MODIFIER_RANGE_MODE_VALUE: u16 = 326;
+    pub const TEXT_MODIFIER_RANGE_MODIFY_FROM: u16 = 327;
+    pub const TEXT_MODIFIER_RANGE_CLAMP: u16 = 333;
+    pub const TEXT_MODIFIER_RANGE_STRENGTH: u16 = 334;
+    pub const TEXT_MODIFIER_RANGE_MODIFY_TO: u16 = 336;
+    pub const TEXT_MODIFIER_RANGE_RUN_ID: u16 = 378;
+    pub const TEXT_MODIFIER_GROUP_MODIFIER_FLAGS: u16 = 335;
+    pub const TEXT_MODIFIER_GROUP_ORIGIN_X: u16 = 328;
+    pub const TEXT_MODIFIER_GROUP_ORIGIN_Y: u16 = 329;
+    pub const TEXT_MODIFIER_GROUP_OPACITY: u16 = 324;
+    pub const TEXT_MODIFIER_GROUP_X: u16 = 322;
+    pub const TEXT_MODIFIER_GROUP_Y: u16 = 323;
+    pub const TEXT_MODIFIER_GROUP_ROTATION: u16 = 332;
+    pub const TEXT_MODIFIER_GROUP_SCALE_X: u16 = 330;
+    pub const TEXT_MODIFIER_GROUP_SCALE_Y: u16 = 331;
+    pub const TEXT_VARIATION_MODIFIER_AXIS_TAG: u16 = 320;
+    pub const TEXT_VARIATION_MODIFIER_AXIS_VALUE: u16 = 321;
+    pub const TEXT_STYLE_FEATURE_TAG: u16 = 356;
+    pub const TEXT_STYLE_FEATURE_FEATURE_VALUE: u16 = 357;
 }
 
 pub fn is_bool_property(key: u16) -> bool {
@@ -427,6 +510,10 @@ pub fn is_bool_property(key: u16) -> bool {
             | property_keys::CLIPPING_SHAPE_IS_VISIBLE
             | property_keys::FOLLOW_PATH_CONSTRAINT_ORIENT
             | property_keys::FOLLOW_PATH_CONSTRAINT_OFFSET
+            | property_keys::KEY_FRAME_BOOL_VALUE
+            | property_keys::TRANSITION_VALUE_BOOLEAN_COMPARATOR_VALUE
+            | property_keys::VIEW_MODEL_INSTANCE_BOOLEAN_PROPERTY_VALUE
+            | property_keys::TEXT_MODIFIER_RANGE_CLAMP
     )
 }
 
@@ -437,7 +524,10 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::STATE_MACHINE_COMPONENT_NAME
         | property_keys::ASSET_NAME
         | property_keys::FILE_ASSET_CDN_BASE_URL
-        | property_keys::TEXT_VALUE_RUN_TEXT => Some(BackingType::String),
+        | property_keys::TEXT_VALUE_RUN_TEXT
+        | property_keys::KEY_FRAME_STRING_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_STRING_PROPERTY_VALUE
+        | property_keys::TRANSITION_VALUE_STRING_COMPARATOR_VALUE => Some(BackingType::String),
         property_keys::LAYOUT_COMPONENT_WIDTH
         | property_keys::LAYOUT_COMPONENT_HEIGHT
         | property_keys::NODE_X_ARTBOARD
@@ -565,7 +655,26 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::JOYSTICK_WIDTH
         | property_keys::JOYSTICK_HEIGHT
         | property_keys::JOYSTICK_ORIGIN_X
-        | property_keys::JOYSTICK_ORIGIN_Y => Some(BackingType::Float),
+        | property_keys::JOYSTICK_ORIGIN_Y
+        | property_keys::BLEND_ANIMATION_1D_VALUE
+        | property_keys::BLEND_ANIMATION_DIRECT_MIX_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_NUMBER_PROPERTY_VALUE
+        | property_keys::TRANSITION_VALUE_NUMBER_COMPARATOR_VALUE
+        | property_keys::TEXT_MODIFIER_RANGE_FALLOFF_FROM
+        | property_keys::TEXT_MODIFIER_RANGE_FALLOFF_TO
+        | property_keys::TEXT_MODIFIER_RANGE_OFFSET
+        | property_keys::TEXT_MODIFIER_RANGE_MODIFY_FROM
+        | property_keys::TEXT_MODIFIER_RANGE_STRENGTH
+        | property_keys::TEXT_MODIFIER_RANGE_MODIFY_TO
+        | property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X
+        | property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y
+        | property_keys::TEXT_MODIFIER_GROUP_OPACITY
+        | property_keys::TEXT_MODIFIER_GROUP_X
+        | property_keys::TEXT_MODIFIER_GROUP_Y
+        | property_keys::TEXT_MODIFIER_GROUP_ROTATION
+        | property_keys::TEXT_MODIFIER_GROUP_SCALE_X
+        | property_keys::TEXT_MODIFIER_GROUP_SCALE_Y
+        | property_keys::TEXT_VARIATION_MODIFIER_AXIS_VALUE => Some(BackingType::Float),
 
         property_keys::COMPONENT_PARENT_ID
         | property_keys::DRAWABLE_BLEND_MODE
@@ -676,11 +785,39 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::JOYSTICK_X_ID
         | property_keys::JOYSTICK_Y_ID
         | property_keys::JOYSTICK_FLAGS
-        | property_keys::JOYSTICK_HANDLE_SOURCE_ID => Some(BackingType::UInt),
+        | property_keys::JOYSTICK_HANDLE_SOURCE_ID
+        | property_keys::BLEND_ANIMATION_ANIMATION_ID
+        | property_keys::BLEND_STATE_1D_INPUT_ID
+        | property_keys::BLEND_ANIMATION_DIRECT_INPUT_ID
+        | property_keys::BLEND_STATE_TRANSITION_EXIT_BLEND_ANIMATION_ID
+        | property_keys::BLEND_ANIMATION_DIRECT_BLEND_SOURCE
+        | property_keys::TRANSITION_VIEW_MODEL_CONDITION_OP_VALUE
+        | property_keys::TRANSITION_VALUE_BOOLEAN_COMPARATOR_VALUE
+        | property_keys::TRANSITION_VALUE_TRIGGER_COMPARATOR_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_VIEW_MODEL_ID
+        | property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID
+        | property_keys::VIEW_MODEL_INSTANCE_ENUM_PROPERTY_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_VIEW_MODEL_PROPERTY_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_BOOLEAN_PROPERTY_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_ID
+        | property_keys::VIEW_MODEL_INSTANCE_LIST_ITEM_VIEW_MODEL_INSTANCE_ID
+        | property_keys::KEY_FRAME_BOOL_VALUE
+        | property_keys::KEY_FRAME_UINT_VALUE
+        | property_keys::TEXT_MODIFIER_RANGE_UNITS_VALUE
+        | property_keys::TEXT_MODIFIER_RANGE_TYPE_VALUE
+        | property_keys::TEXT_MODIFIER_RANGE_MODE_VALUE
+        | property_keys::TEXT_MODIFIER_RANGE_CLAMP
+        | property_keys::TEXT_MODIFIER_RANGE_RUN_ID
+        | property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS
+        | property_keys::TEXT_VARIATION_MODIFIER_AXIS_TAG
+        | property_keys::TEXT_STYLE_FEATURE_TAG
+        | property_keys::TEXT_STYLE_FEATURE_FEATURE_VALUE => Some(BackingType::UInt),
 
         property_keys::SOLID_COLOR_VALUE
         | property_keys::GRADIENT_STOP_COLOR
-        | property_keys::KEY_FRAME_COLOR_VALUE => Some(BackingType::Color),
+        | property_keys::KEY_FRAME_COLOR_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_COLOR_PROPERTY_VALUE
+        | property_keys::TRANSITION_VALUE_COLOR_COMPARATOR_VALUE => Some(BackingType::Color),
         _ => None,
     }
 }

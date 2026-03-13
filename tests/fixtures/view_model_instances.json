@@ -1,0 +1,30 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ViewModelDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "view_model",
+        "name": "ProfileModel",
+        "children": [
+          { "type": "view_model_property", "name": "Username", "property_type_value": 1 },
+          { "type": "view_model_property", "name": "Score", "property_type_value": 2 },
+          { "type": "view_model_property", "name": "IsActive", "property_type_value": 3 },
+          { "type": "view_model_property", "name": "ThemeColor", "property_type_value": 4 }
+        ]
+      },
+      { "type": "view_model_instance", "view_model_id": 1 },
+      { "type": "view_model_instance_string", "view_model_property_id": 1, "value": "Alice" },
+      { "type": "view_model_instance_number", "view_model_property_id": 2, "value": 42.5 },
+      { "type": "view_model_instance_boolean", "view_model_property_id": 3, "value": true },
+      { "type": "view_model_instance_color", "view_model_property_id": 4, "value": "#3366FF" },
+      { "type": "view_model_instance_enum", "view_model_property_id": 5, "value": 2 },
+      { "type": "view_model_instance_value", "view_model_property_id": 6 },
+      { "type": "view_model_instance_list" },
+      { "type": "view_model_instance_list_item", "view_model_id": 1, "view_model_instance_id": 2 },
+      { "type": "view_model_instance_view_model", "view_model_property_id": 7, "value": 3 }
+    ]
+  }
+}

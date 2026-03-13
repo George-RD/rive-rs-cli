@@ -220,6 +220,286 @@ impl RiveObject for TextValueRun {
     }
 }
 
+pub struct TextModifierRange {
+    pub parent_id: u64,
+    pub units_value: u64,
+    pub type_value: u64,
+    pub mode_value: u64,
+    pub modify_from: f32,
+    pub modify_to: f32,
+    pub strength: f32,
+    pub clamp: bool,
+    pub falloff_from: f32,
+    pub falloff_to: f32,
+    pub offset: f32,
+    pub run_id: u64,
+}
+
+impl TextModifierRange {
+    pub fn new(parent_id: u64) -> Self {
+        Self {
+            parent_id,
+            units_value: 0,
+            type_value: 0,
+            mode_value: 0,
+            modify_from: 0.0,
+            modify_to: 1.0,
+            strength: 1.0,
+            clamp: false,
+            falloff_from: 0.0,
+            falloff_to: 0.0,
+            offset: 0.0,
+            run_id: 0,
+        }
+    }
+}
+
+impl RiveObject for TextModifierRange {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_MODIFIER_RANGE
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::with_capacity(12);
+        props.push(Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        });
+        if self.units_value != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_UNITS_VALUE,
+                value: PropertyValue::UInt(self.units_value),
+            });
+        }
+        if self.type_value != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_TYPE_VALUE,
+                value: PropertyValue::UInt(self.type_value),
+            });
+        }
+        if self.mode_value != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_MODE_VALUE,
+                value: PropertyValue::UInt(self.mode_value),
+            });
+        }
+        if self.modify_from != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_MODIFY_FROM,
+                value: PropertyValue::Float(self.modify_from),
+            });
+        }
+        if self.modify_to != 1.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_MODIFY_TO,
+                value: PropertyValue::Float(self.modify_to),
+            });
+        }
+        if self.strength != 1.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.clamp {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_CLAMP,
+                value: PropertyValue::Bool(self.clamp),
+            });
+        }
+        if self.falloff_from != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_FALLOFF_FROM,
+                value: PropertyValue::Float(self.falloff_from),
+            });
+        }
+        if self.falloff_to != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_FALLOFF_TO,
+                value: PropertyValue::Float(self.falloff_to),
+            });
+        }
+        if self.offset != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_OFFSET,
+                value: PropertyValue::Float(self.offset),
+            });
+        }
+        if self.run_id != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_RANGE_RUN_ID,
+                value: PropertyValue::UInt(self.run_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct TextModifierGroup {
+    pub name: String,
+    pub parent_id: u64,
+    pub modifier_flags: u64,
+    pub origin_x: f32,
+    pub origin_y: f32,
+    pub opacity: f32,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+}
+
+impl TextModifierGroup {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            modifier_flags: 0,
+            origin_x: 0.0,
+            origin_y: 0.0,
+            opacity: 1.0,
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+        }
+    }
+}
+
+impl RiveObject for TextModifierGroup {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_MODIFIER_GROUP
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::with_capacity(11);
+        props.push(Property {
+            key: property_keys::COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        });
+        props.push(Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        });
+        if self.modifier_flags != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS,
+                value: PropertyValue::UInt(self.modifier_flags),
+            });
+        }
+        if self.origin_x != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X,
+                value: PropertyValue::Float(self.origin_x),
+            });
+        }
+        if self.origin_y != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y,
+                value: PropertyValue::Float(self.origin_y),
+            });
+        }
+        if self.opacity != 1.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_OPACITY,
+                value: PropertyValue::Float(self.opacity),
+            });
+        }
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_SCALE_X,
+                value: PropertyValue::Float(self.scale_x),
+            });
+        }
+        if self.scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TEXT_MODIFIER_GROUP_SCALE_Y,
+                value: PropertyValue::Float(self.scale_y),
+            });
+        }
+        props
+    }
+}
+
+pub struct TextVariationModifier {
+    pub parent_id: u64,
+    pub axis_tag: u64,
+    pub axis_value: f32,
+}
+
+impl RiveObject for TextVariationModifier {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_VARIATION_MODIFIER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        }];
+        if self.axis_tag != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_VARIATION_MODIFIER_AXIS_TAG,
+                value: PropertyValue::UInt(self.axis_tag),
+            });
+        }
+        if self.axis_value != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_VARIATION_MODIFIER_AXIS_VALUE,
+                value: PropertyValue::Float(self.axis_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct TextStyleFeature {
+    pub parent_id: u64,
+    pub tag: u64,
+    pub feature_value: u64,
+}
+
+impl RiveObject for TextStyleFeature {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_STYLE_FEATURE
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        }];
+        if self.tag != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_STYLE_FEATURE_TAG,
+                value: PropertyValue::UInt(self.tag),
+            });
+        }
+        if self.feature_value != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_STYLE_FEATURE_FEATURE_VALUE,
+                value: PropertyValue::UInt(self.feature_value),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -339,5 +619,116 @@ mod tests {
             .find(|p| p.key == property_keys::TEXT_VALUE_RUN_STYLE_ID)
             .unwrap();
         assert_eq!(style_prop.value, PropertyValue::UInt(2));
+    }
+
+    #[test]
+    fn test_text_modifier_range_default_properties() {
+        let range = TextModifierRange::new(7);
+        assert_eq!(range.type_key(), type_keys::TEXT_MODIFIER_RANGE);
+        let props = range.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(7));
+    }
+
+    #[test]
+    fn test_text_modifier_range_custom_properties() {
+        let mut range = TextModifierRange::new(7);
+        range.modify_to = 0.5;
+        range.strength = 0.25;
+        range.clamp = true;
+        range.run_id = 3;
+        let props = range.properties();
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_MODIFY_TO
+                && property.value == PropertyValue::Float(0.5)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_STRENGTH
+                && property.value == PropertyValue::Float(0.25)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_CLAMP
+                && property.value == PropertyValue::Bool(true)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_RANGE_RUN_ID
+                && property.value == PropertyValue::UInt(3)
+        }));
+    }
+
+    #[test]
+    fn test_text_modifier_group_default_properties() {
+        let group = TextModifierGroup::new("modifier".to_string(), 7);
+        assert_eq!(group.type_key(), type_keys::TEXT_MODIFIER_GROUP);
+        let props = group.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[0].key, property_keys::COMPONENT_NAME);
+        assert_eq!(props[1].key, property_keys::COMPONENT_PARENT_ID);
+    }
+
+    #[test]
+    fn test_text_modifier_group_custom_properties() {
+        let mut group = TextModifierGroup::new("modifier".to_string(), 7);
+        group.opacity = 0.5;
+        group.scale_x = 1.5;
+        group.scale_y = 0.75;
+        let props = group.properties();
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_GROUP_OPACITY
+                && property.value == PropertyValue::Float(0.5)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_GROUP_SCALE_X
+                && property.value == PropertyValue::Float(1.5)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_MODIFIER_GROUP_SCALE_Y
+                && property.value == PropertyValue::Float(0.75)
+        }));
+    }
+
+    #[test]
+    fn test_text_variation_modifier_properties() {
+        let modifier = TextVariationModifier {
+            parent_id: 9,
+            axis_tag: 0x77676874,
+            axis_value: 700.0,
+        };
+        assert_eq!(modifier.type_key(), type_keys::TEXT_VARIATION_MODIFIER);
+        let props = modifier.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(9));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_VARIATION_MODIFIER_AXIS_TAG
+                && property.value == PropertyValue::UInt(0x77676874)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_VARIATION_MODIFIER_AXIS_VALUE
+                && property.value == PropertyValue::Float(700.0)
+        }));
+    }
+
+    #[test]
+    fn test_text_style_feature_properties() {
+        let feature = TextStyleFeature {
+            parent_id: 5,
+            tag: 0x6C696761,
+            feature_value: 1,
+        };
+        assert_eq!(feature.type_key(), type_keys::TEXT_STYLE_FEATURE);
+        let props = feature.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::COMPONENT_PARENT_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(5));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_STYLE_FEATURE_TAG
+                && property.value == PropertyValue::UInt(0x6C696761)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TEXT_STYLE_FEATURE_FEATURE_VALUE
+                && property.value == PropertyValue::UInt(1)
+        }));
     }
 }

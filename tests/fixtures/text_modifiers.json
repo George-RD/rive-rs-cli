@@ -1,0 +1,75 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "TextModifierDemo",
+    "width": 500,
+    "height": 300,
+    "children": [
+      {
+        "type": "text",
+        "name": "ModifiedText",
+        "align_value": 1,
+        "sizing_value": 2,
+        "overflow_value": 0,
+        "width": 400.0,
+        "height": 100.0,
+        "origin_x": 0.5,
+        "origin_y": 0.5,
+        "children": [
+          {
+            "type": "text_style",
+            "name": "BaseStyle",
+            "font_size": 32.0,
+            "line_height": 1.2,
+            "font_asset_id": 1,
+            "children": [
+              {
+                "type": "text_style_feature",
+                "tag": 1818847073,
+                "feature_value": 1
+              }
+            ]
+          },
+          {
+            "type": "text_value_run",
+            "name": "MainRun",
+            "text": "Animated Text",
+            "style_id": 0
+          },
+          {
+            "type": "text_modifier_group",
+            "name": "WaveEffect",
+            "modifier_flags": 1,
+            "origin_x": 0.5,
+            "origin_y": 0.5,
+            "opacity": 1.0,
+            "x": 0.0,
+            "y": 10.0,
+            "rotation": 0.0,
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "children": [
+              {
+                "type": "text_modifier_range",
+                "units_value": 0,
+                "type_value": 0,
+                "mode_value": 0,
+                "modify_from": 0.0,
+                "modify_to": 1.0,
+                "strength": 1.0,
+                "falloff_from": 0.0,
+                "falloff_to": 1.0,
+                "offset": 0.0
+              },
+              {
+                "type": "text_variation_modifier",
+                "axis_tag": 2003265652,
+                "axis_value": 700.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,11 +1,14 @@
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 const ARTBOARD_TYPE_KEY: u64 = 1;
 const BACKBOARD_TYPE_KEY: u64 = 23;
 const COMPONENT_NAME_KEY: u64 = 4;
 const ARTBOARD_WIDTH_KEY: u64 = 7;
 const ARTBOARD_HEIGHT_KEY: u64 = 8;
+
+static TEMP_OUTPUT_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 fn rive_cli() -> Command {
     Command::new(env!("CARGO_BIN_EXE_rive-cli"))
@@ -26,7 +29,13 @@ fn fixture_path(name: &str) -> PathBuf {
 }
 
 fn temp_output(test_name: &str) -> PathBuf {
-    std::env::temp_dir().join(format!("rive_e2e_{}.riv", test_name))
+    let counter = TEMP_OUTPUT_COUNTER.fetch_add(1, Ordering::Relaxed);
+    std::env::temp_dir().join(format!(
+        "rive_e2e_{}_{}_{}.riv",
+        test_name,
+        std::process::id(),
+        counter
+    ))
 }
 
 fn cleanup(path: &PathBuf) {
@@ -41,11 +50,11 @@ impl Drop for CleanupOnDrop {
     }
 }
 
-fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
+fn generate_and_validate_output(fixture: &str, suffix: &str) -> (PathBuf, CleanupOnDrop) {
     let input = fixture_path(&format!("{}.json", fixture));
-    let output = temp_output(fixture);
+    let output = temp_output(&format!("{}_{}", fixture, suffix));
     cleanup(&output);
-    let _guard = CleanupOnDrop(output.clone());
+    let guard = CleanupOnDrop(output.clone());
 
     let generate = cargo_run(&[
         "generate",
@@ -66,6 +75,12 @@ fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
         String::from_utf8_lossy(&validate.stderr)
     );
 
+    (output, guard)
+}
+
+fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
+    let (output, _guard) = generate_and_validate_output(fixture, "inspect");
+
     let inspect = cargo_run(&["inspect", output.to_str().unwrap()]);
     let stdout = String::from_utf8_lossy(&inspect.stdout);
     assert!(
@@ -76,6 +91,82 @@ fn assert_generate_validate_inspect(fixture: &str, expected: &[&str]) {
     for s in expected {
         assert!(stdout.contains(s), "expected '{}' in inspect output", s);
     }
+}
+
+fn generate_and_inspect_json(fixture: &str) -> serde_json::Value {
+    let (output, _guard) = generate_and_validate_output(fixture, "json");
+
+    let inspect = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    assert!(
+        inspect.status.success(),
+        "inspect --json failed: {}",
+        String::from_utf8_lossy(&inspect.stderr)
+    );
+
+    serde_json::from_slice(&inspect.stdout).expect("inspect --json output is not valid JSON")
+}
+
+fn json_objects(parsed: &serde_json::Value) -> &[serde_json::Value] {
+    parsed["objects"]
+        .as_array()
+        .expect("objects should be an array")
+}
+
+fn json_properties(object: &serde_json::Value) -> &[serde_json::Value] {
+    object["properties"]
+        .as_array()
+        .expect("properties should be an array")
+}
+
+fn find_object_by_type<'a>(
+    objects: &'a [serde_json::Value],
+    type_name: &str,
+) -> &'a serde_json::Value {
+    objects
+        .iter()
+        .find(|object| object["type_name"] == type_name)
+        .unwrap_or_else(|| panic!("missing object type {}", type_name))
+}
+
+fn find_objects_by_type<'a>(
+    objects: &'a [serde_json::Value],
+    type_name: &str,
+) -> Vec<&'a serde_json::Value> {
+    objects
+        .iter()
+        .filter(|object| object["type_name"] == type_name)
+        .collect()
+}
+
+fn find_property<'a>(object: &'a serde_json::Value, property_name: &str) -> &'a serde_json::Value {
+    json_properties(object)
+        .iter()
+        .find(|property| property["name"] == property_name)
+        .unwrap_or_else(|| panic!("missing property {}", property_name))
+}
+
+fn uint_property(object: &serde_json::Value, property_name: &str) -> u64 {
+    find_property(object, property_name)["value"]["UInt"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{} should be a UInt", property_name))
+}
+
+fn float_property(object: &serde_json::Value, property_name: &str) -> f64 {
+    find_property(object, property_name)["value"]["Float"]
+        .as_f64()
+        .unwrap_or_else(|| panic!("{} should be a Float", property_name))
+}
+
+fn string_property<'a>(object: &'a serde_json::Value, property_name: &str) -> &'a str {
+    find_property(object, property_name)["value"]["String"]
+        .as_str()
+        .unwrap_or_else(|| panic!("{} should be a String", property_name))
+}
+
+fn color_property(object: &serde_json::Value, property_name: &str) -> u64 {
+    find_property(object, property_name)["value"]["Color"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{} should be a Color", property_name))
 }
 
 #[test]
@@ -3126,4 +3217,177 @@ fn test_generate_validate_inspect_draw_rules() {
 #[test]
 fn test_generate_validate_inspect_joystick() {
     assert_generate_validate_inspect("joystick", &["Joystick"]);
+}
+
+#[test]
+fn test_generate_validate_inspect_blend_animation() {
+    let parsed = generate_and_inspect_json("blend_animation");
+    let objects = json_objects(&parsed);
+
+    find_object_by_type(objects, "BlendState1D");
+    let blend_state_input = find_object_by_type(objects, "BlendState1DInput");
+    assert_eq!(uint_property(blend_state_input, "inputId"), 0);
+
+    let blend_animations_1d = find_objects_by_type(objects, "BlendAnimation1D");
+    assert_eq!(blend_animations_1d.len(), 2);
+    assert_eq!(uint_property(blend_animations_1d[0], "animationId"), 0);
+    assert!(
+        json_properties(blend_animations_1d[0])
+            .iter()
+            .all(|property| property["name"] != "value")
+    );
+    assert_eq!(uint_property(blend_animations_1d[1], "animationId"), 1);
+    assert_eq!(float_property(blend_animations_1d[1], "value"), 1.0);
+
+    find_object_by_type(objects, "BlendStateDirect");
+    let blend_animation_direct = find_object_by_type(objects, "BlendAnimationDirect");
+    assert_eq!(uint_property(blend_animation_direct, "animationId"), 1);
+    assert_eq!(uint_property(blend_animation_direct, "inputId"), 0);
+    assert_eq!(float_property(blend_animation_direct, "mixValue"), 0.5);
+    assert_eq!(uint_property(blend_animation_direct, "blendSource"), 1);
+}
+
+#[test]
+fn test_generate_validate_inspect_transition_comparators() {
+    let parsed = generate_and_inspect_json("transition_comparators");
+    let objects = json_objects(&parsed);
+
+    let bool_comparator = find_object_by_type(objects, "TransitionValueBooleanComparator");
+    assert_eq!(uint_property(bool_comparator, "value"), 1);
+
+    let number_comparator = find_object_by_type(objects, "TransitionValueNumberComparator");
+    assert_eq!(float_property(number_comparator, "value"), 1.0);
+
+    let string_comparator = find_object_by_type(objects, "TransitionValueStringComparator");
+    assert_eq!(string_property(string_comparator, "value"), "on");
+
+    let color_comparator = find_object_by_type(objects, "TransitionValueColorComparator");
+    assert_eq!(color_property(color_comparator, "value"), 0xFFFF0000);
+
+    let condition_ops: Vec<u64> = find_objects_by_type(objects, "TransitionBoolCondition")
+        .into_iter()
+        .map(|object| uint_property(object, "opValue"))
+        .collect();
+    assert_eq!(condition_ops, vec![0, 1]);
+}
+
+#[test]
+fn test_generate_validate_inspect_view_model_instances() {
+    let parsed = generate_and_inspect_json("view_model_instances");
+    let objects = json_objects(&parsed);
+
+    let view_model = find_object_by_type(objects, "ViewModel");
+    assert_eq!(string_property(view_model, "name"), "ProfileModel");
+
+    let properties = find_objects_by_type(objects, "ViewModelProperty");
+    assert_eq!(properties.len(), 4);
+    assert_eq!(string_property(properties[0], "name"), "Username");
+    assert_eq!(uint_property(properties[0], "symbolTypeValue"), 1);
+    assert_eq!(string_property(properties[3], "name"), "ThemeColor");
+    assert_eq!(uint_property(properties[3], "symbolTypeValue"), 4);
+
+    let instance = find_object_by_type(objects, "ViewModelInstance");
+    assert_eq!(uint_property(instance, "viewModelId"), 1);
+    assert_eq!(
+        string_property(
+            find_object_by_type(objects, "ViewModelInstanceString"),
+            "propertyValue"
+        ),
+        "Alice"
+    );
+    assert_eq!(
+        float_property(
+            find_object_by_type(objects, "ViewModelInstanceNumber"),
+            "propertyValue"
+        ),
+        42.5
+    );
+    assert_eq!(
+        uint_property(
+            find_object_by_type(objects, "ViewModelInstanceBoolean"),
+            "propertyValue"
+        ),
+        1
+    );
+    assert_eq!(
+        color_property(
+            find_object_by_type(objects, "ViewModelInstanceColor"),
+            "propertyValue"
+        ),
+        0xFF3366FF
+    );
+    assert_eq!(
+        uint_property(
+            find_object_by_type(objects, "ViewModelInstanceEnum"),
+            "propertyValue"
+        ),
+        2
+    );
+    assert_eq!(
+        uint_property(
+            find_object_by_type(objects, "ViewModelInstanceValue"),
+            "viewModelPropertyId"
+        ),
+        6
+    );
+    find_object_by_type(objects, "ViewModelInstanceList");
+    let list_item = find_object_by_type(objects, "ViewModelInstanceListItem");
+    assert_eq!(uint_property(list_item, "viewModelId"), 1);
+    assert_eq!(uint_property(list_item, "viewModelInstanceId"), 2);
+    let view_model_value = find_object_by_type(objects, "ViewModelInstanceViewModel");
+    assert_eq!(uint_property(view_model_value, "viewModelPropertyId"), 7);
+    assert_eq!(uint_property(view_model_value, "propertyValue"), 3);
+}
+
+#[test]
+fn test_generate_validate_inspect_keyframe_types() {
+    let parsed = generate_and_inspect_json("keyframe_types");
+    let objects = json_objects(&parsed);
+
+    let bool_frames = find_objects_by_type(objects, "KeyFrameBool");
+    assert_eq!(bool_frames.len(), 3);
+    assert_eq!(uint_property(bool_frames[0], "frame"), 0);
+    assert_eq!(uint_property(bool_frames[0], "value"), 1);
+    assert_eq!(uint_property(bool_frames[1], "frame"), 30);
+    assert_eq!(uint_property(bool_frames[1], "value"), 0);
+    assert_eq!(uint_property(bool_frames[2], "frame"), 59);
+    assert_eq!(uint_property(bool_frames[2], "value"), 1);
+
+    let string_frames = find_objects_by_type(objects, "KeyFrameString");
+    assert_eq!(string_frames.len(), 3);
+    assert_eq!(uint_property(string_frames[0], "frame"), 0);
+    assert_eq!(string_property(string_frames[0], "value"), "Hello");
+    assert_eq!(uint_property(string_frames[1], "frame"), 30);
+    assert_eq!(string_property(string_frames[1], "value"), "World");
+    assert_eq!(uint_property(string_frames[2], "frame"), 59);
+    assert_eq!(string_property(string_frames[2], "value"), "Done");
+}
+
+#[test]
+fn test_generate_validate_inspect_text_modifiers() {
+    let parsed = generate_and_inspect_json("text_modifiers");
+    let objects = json_objects(&parsed);
+
+    let text_style = find_object_by_type(objects, "TextStyle");
+    assert_eq!(string_property(text_style, "name"), "BaseStyle");
+    assert_eq!(float_property(text_style, "fontSize"), 32.0);
+
+    let style_feature = find_object_by_type(objects, "TextStyleFeature");
+    assert_eq!(uint_property(style_feature, "parentId"), 2);
+    assert_eq!(uint_property(style_feature, "tag"), 1818847073);
+    assert_eq!(uint_property(style_feature, "featureValue"), 1);
+
+    let modifier_group = find_object_by_type(objects, "TextModifierGroup");
+    assert_eq!(string_property(modifier_group, "name"), "WaveEffect");
+    assert_eq!(uint_property(modifier_group, "modifierFlags"), 1);
+    assert_eq!(float_property(modifier_group, "y"), 10.0);
+
+    let modifier_range = find_object_by_type(objects, "TextModifierRange");
+    assert_eq!(uint_property(modifier_range, "parentId"), 5);
+    assert_eq!(float_property(modifier_range, "falloffTo"), 1.0);
+
+    let variation = find_object_by_type(objects, "TextVariationModifier");
+    assert_eq!(uint_property(variation, "parentId"), 5);
+    assert_eq!(uint_property(variation, "axisTag"), 2003265652);
+    assert_eq!(float_property(variation, "axisValue"), 700.0);
 }
