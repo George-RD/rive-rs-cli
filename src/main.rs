@@ -208,17 +208,10 @@ fn main() {
                     eprintln!("AI config error: {}", e);
                     std::process::exit(1);
                 });
-                if template.is_some() && prompt.is_some() {
-                    eprintln!("error: cannot use both --template and --prompt");
-                    std::process::exit(1);
-                }
                 let input = if let Some(ref t) = template {
                     t.clone()
-                } else if let Some(ref p) = prompt {
-                    p.clone()
                 } else {
-                    eprintln!("error: provide --prompt or --template");
-                    std::process::exit(1);
+                    prompt.unwrap()
                 };
                 let provider =
                     ai::create_provider(&config, template.is_some()).unwrap_or_else(|e| {
