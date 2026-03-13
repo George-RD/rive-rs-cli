@@ -14,8 +14,8 @@ fn main() {
 
     if cli.list_presets {
         if cli.json {
-            let json = serde_json::to_string_pretty(&builder::artboard_presets())
-                .unwrap_or_else(|e| {
+            let json =
+                serde_json::to_string_pretty(&builder::artboard_presets()).unwrap_or_else(|e| {
                     eprintln!("JSON serialization failed: {}", e);
                     std::process::exit(1);
                 });
@@ -66,12 +66,19 @@ fn main() {
             });
             if json {
                 #[derive(serde::Serialize)]
-                struct GenerateOutput { bytes_written: usize, output_path: String }
+                struct GenerateOutput {
+                    bytes_written: usize,
+                    output_path: String,
+                }
                 let result = GenerateOutput {
                     bytes_written: bytes.len(),
                     output_path: output.display().to_string(),
                 };
-                println!("{}", serde_json::to_string_pretty(&result).unwrap());
+                let json_str = serde_json::to_string_pretty(&result).unwrap_or_else(|e| {
+                    eprintln!("JSON serialization failed: {}", e);
+                    std::process::exit(1);
+                });
+                println!("{}", json_str);
             } else {
                 eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
             }
@@ -84,11 +91,10 @@ fn main() {
             match validator::validate_riv(&bytes) {
                 Ok(report) => {
                     if json {
-                        let json_str =
-                            serde_json::to_string_pretty(&report).unwrap_or_else(|e| {
-                                eprintln!("JSON serialization failed: {}", e);
-                                std::process::exit(1);
-                            });
+                        let json_str = serde_json::to_string_pretty(&report).unwrap_or_else(|e| {
+                            eprintln!("JSON serialization failed: {}", e);
+                            std::process::exit(1);
+                        });
                         println!("{}", json_str);
                         if !report.valid {
                             std::process::exit(1);

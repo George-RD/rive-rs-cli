@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::objects::core::{is_bool_property, property_backing_type, type_keys, BackingType};
+use crate::objects::core::{BackingType, is_bool_property, property_backing_type, type_keys};
 
 use super::parsers::{
     condition_op_is_valid, interpolation_type_from_name, json_value_to_color, json_value_to_f32,
@@ -10,9 +10,9 @@ use super::parsers::{
 };
 use super::scene::resolve_artboard_dimensions;
 use super::spec::{
-    ArtboardSpec, BlendState1DChildSpec, BlendStateChildSpec, BlendStateDirectChildSpec,
-    InputSpec, ListenerActionSpec, ObjectSpec, ParentKind, SceneSpec, StateSpec,
-    TextModifierGroupChildSpec, TextStyleChildSpec, TransitionChildSpec, SCENE_FORMAT_VERSION,
+    ArtboardSpec, BlendState1DChildSpec, BlendStateChildSpec, BlendStateDirectChildSpec, InputSpec,
+    ListenerActionSpec, ObjectSpec, ParentKind, SCENE_FORMAT_VERSION, SceneSpec, StateSpec,
+    TextModifierGroupChildSpec, TextStyleChildSpec, TransitionChildSpec,
 };
 
 pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
@@ -1065,7 +1065,10 @@ pub(crate) fn validate_object_spec(
     Ok(())
 }
 
-pub(crate) fn collect_object_type_key(spec: &ObjectSpec, object_type_keys: &mut HashMap<String, u16>) {
+pub(crate) fn collect_object_type_key(
+    spec: &ObjectSpec,
+    object_type_keys: &mut HashMap<String, u16>,
+) {
     match spec {
         ObjectSpec::Shape { name, children, .. } => {
             object_type_keys.insert(name.clone(), type_keys::SHAPE);
@@ -1355,7 +1358,9 @@ pub(crate) fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<Strin
     refs
 }
 
-pub(crate) fn detect_artboard_cycles(artboard_deps: &HashMap<String, Vec<String>>) -> Result<(), String> {
+pub(crate) fn detect_artboard_cycles(
+    artboard_deps: &HashMap<String, Vec<String>>,
+) -> Result<(), String> {
     for start in artboard_deps.keys() {
         let mut visited: HashSet<&str> = HashSet::new();
         let mut stack = vec![start.as_str()];

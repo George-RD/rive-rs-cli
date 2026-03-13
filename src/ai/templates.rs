@@ -315,7 +315,7 @@ pub fn get_template(name: &str) -> Result<serde_json::Value, AiError> {
             return Err(AiError::UnknownTemplate {
                 name: name.to_string(),
                 available: list_templates().join(", "),
-            })
+            });
         }
     };
     serde_json::from_str(json_str).map_err(|e| AiError::InvalidResponse(e.to_string()))

@@ -14,11 +14,11 @@ use super::validation::validate_scene_spec;
 // Re-export spec types for public API and test visibility via `use super::*`.
 #[allow(unused_imports)]
 pub use super::spec::{
-    ArtboardSpec, AnimationSpec, BlendState1DChildSpec, BlendStateChildSpec,
+    AnimationSpec, ArtboardSpec, BlendState1DChildSpec, BlendStateChildSpec,
     BlendStateDirectChildSpec, ConditionSpec, InputSpec, InterpolatorSpec, KeyframeGroupSpec,
     KeyframeSpec, LayerSpec, ListenerActionSpec, ObjectSpec, StateMachineListenerSpec,
-    StateMachineSpec, StateSpec, TextModifierGroupChildSpec, TextStyleChildSpec, TransitionChildSpec,
-    TransitionSpec,
+    StateMachineSpec, StateSpec, TextModifierGroupChildSpec, TextStyleChildSpec,
+    TransitionChildSpec, TransitionSpec,
 };
 
 // Re-export parser functions for test visibility via `use super::*`.

@@ -3,15 +3,14 @@ use std::collections::HashMap;
 use crate::objects::core::RiveObject;
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
-    BlendState1D, BlendState1DInput, BlendStateDirect, EntryState, ExitState,
-    ListenerBoolChange, ListenerNumberChange, ListenerTriggerChange, StateMachine,
-    StateMachineBool, StateMachineLayer, StateMachineListener, StateMachineNumber,
-    StateMachineTrigger, StateTransition, TransitionBoolCondition, TransitionInputCondition,
-    TransitionNumberCondition, TransitionPropertyComparator, TransitionTriggerCondition,
-    TransitionValueBooleanComparator, TransitionValueColorComparator, TransitionValueCondition,
-    TransitionValueEnumComparator, TransitionValueNumberComparator,
-    TransitionValueStringComparator, TransitionValueTriggerComparator,
-    TransitionViewModelCondition,
+    BlendState1D, BlendState1DInput, BlendStateDirect, EntryState, ExitState, ListenerBoolChange,
+    ListenerNumberChange, ListenerTriggerChange, StateMachine, StateMachineBool, StateMachineLayer,
+    StateMachineListener, StateMachineNumber, StateMachineTrigger, StateTransition,
+    TransitionBoolCondition, TransitionInputCondition, TransitionNumberCondition,
+    TransitionPropertyComparator, TransitionTriggerCondition, TransitionValueBooleanComparator,
+    TransitionValueColorComparator, TransitionValueCondition, TransitionValueEnumComparator,
+    TransitionValueNumberComparator, TransitionValueStringComparator,
+    TransitionValueTriggerComparator, TransitionViewModelCondition,
 };
 
 use super::parsers::{input_is_trigger, json_value_to_f32, parse_color, parse_condition_op};
@@ -82,12 +81,13 @@ pub(crate) fn build_state_machines(
                     for action in actions {
                         match action {
                             ListenerActionSpec::BoolChange { input, value } => {
-                                let input_index = *input_name_to_index.get(input).ok_or_else(|| {
-                                    format!(
-                                        "unknown input referenced in listener action: '{}'",
-                                        input
-                                    )
-                                })?;
+                                let input_index =
+                                    *input_name_to_index.get(input).ok_or_else(|| {
+                                        format!(
+                                            "unknown input referenced in listener action: '{}'",
+                                            input
+                                        )
+                                    })?;
                                 let bool_value = match value {
                                     Some(serde_json::Value::Bool(v)) => {
                                         if *v { 1 } else { 0 }
@@ -114,23 +114,25 @@ pub(crate) fn build_state_machines(
                                 }));
                             }
                             ListenerActionSpec::TriggerChange { input } => {
-                                let input_index = *input_name_to_index.get(input).ok_or_else(|| {
-                                    format!(
-                                        "unknown input referenced in listener action: '{}'",
-                                        input
-                                    )
-                                })?;
+                                let input_index =
+                                    *input_name_to_index.get(input).ok_or_else(|| {
+                                        format!(
+                                            "unknown input referenced in listener action: '{}'",
+                                            input
+                                        )
+                                    })?;
                                 objects.push(Box::new(ListenerTriggerChange {
                                     input_id: input_index as u64,
                                 }));
                             }
                             ListenerActionSpec::NumberChange { input, value } => {
-                                let input_index = *input_name_to_index.get(input).ok_or_else(|| {
-                                    format!(
-                                        "unknown input referenced in listener action: '{}'",
-                                        input
-                                    )
-                                })?;
+                                let input_index =
+                                    *input_name_to_index.get(input).ok_or_else(|| {
+                                        format!(
+                                            "unknown input referenced in listener action: '{}'",
+                                            input
+                                        )
+                                    })?;
                                 let number_value = match value {
                                     Some(v) => json_value_to_f32(v).ok_or_else(|| {
                                         format!(
@@ -223,14 +225,13 @@ pub(crate) fn build_state_machines(
                         if transition.from != user_idx {
                             continue;
                         }
-                        let state_to_id =
-                            *user_to_final.get(transition.to).ok_or_else(|| {
-                                format!(
-                                    "transition target index {} out of bounds (layer has {} states)",
-                                    transition.to,
-                                    user_to_final.len()
-                                )
-                            })? as u64;
+                        let state_to_id = *user_to_final.get(transition.to).ok_or_else(|| {
+                            format!(
+                                "transition target index {} out of bounds (layer has {} states)",
+                                transition.to,
+                                user_to_final.len()
+                            )
+                        })? as u64;
                         let mut state_transition = StateTransition::new(state_to_id);
                         if let Some(duration) = transition.duration {
                             state_transition.duration = duration;
@@ -266,11 +267,9 @@ pub(crate) fn build_state_machines(
                                                         condition.input
                                                     )
                                                 })?;
-                                            objects.push(Box::new(
-                                                TransitionNumberCondition::new(
-                                                    input_id, op, value,
-                                                ),
-                                            ));
+                                            objects.push(Box::new(TransitionNumberCondition::new(
+                                                input_id, op, value,
+                                            )));
                                         }
                                         Some(serde_json::Value::Bool(v)) => {
                                             let bool_op = if condition.op.is_some() {
@@ -284,20 +283,16 @@ pub(crate) fn build_state_machines(
                                             } else {
                                                 1 // notEqual: true when input is false
                                             };
-                                            objects.push(Box::new(
-                                                TransitionBoolCondition::new(
-                                                    input_id, bool_op,
-                                                ),
-                                            ));
+                                            objects.push(Box::new(TransitionBoolCondition::new(
+                                                input_id, bool_op,
+                                            )));
                                         }
                                         _ => {
                                             if condition.op.is_some() {
-                                                objects.push(Box::new(
-                                                    TransitionValueCondition {
-                                                        input_id,
-                                                        op,
-                                                    },
-                                                ));
+                                                objects.push(Box::new(TransitionValueCondition {
+                                                    input_id,
+                                                    op,
+                                                }));
                                             } else if input_is_trigger(
                                                 &condition.input,
                                                 state_machine.inputs.as_ref(),
@@ -306,9 +301,9 @@ pub(crate) fn build_state_machines(
                                                     TransitionTriggerCondition { input_id },
                                                 ));
                                             } else {
-                                                objects.push(Box::new(
-                                                    TransitionInputCondition { input_id },
-                                                ));
+                                                objects.push(Box::new(TransitionInputCondition {
+                                                    input_id,
+                                                }));
                                             }
                                         }
                                     }
