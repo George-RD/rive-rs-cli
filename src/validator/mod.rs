@@ -62,7 +62,6 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
     for (idx, obj) in parsed.objects.iter().enumerate() {
         if obj.type_key == type_keys::IMAGE_ASSET {
             image_assets_seen += 1;
-            continue;
         }
         if obj.type_key == type_keys::IMAGE {
             let asset_id = obj
@@ -87,10 +86,8 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
                 )),
             }
         }
-    }
 
-    // Parent-ID range check
-    for (idx, obj) in parsed.objects.iter().enumerate() {
+        // Parent-ID range check
         for prop in &obj.properties {
             if prop.key == property_keys::COMPONENT_PARENT_ID {
                 if let PropertyValueRead::UInt(parent_idx) = &prop.value {
