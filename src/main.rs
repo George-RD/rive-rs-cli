@@ -65,10 +65,12 @@ fn main() {
                 std::process::exit(1);
             });
             if json {
-                let result = serde_json::json!({
-                    "bytes_written": bytes.len(),
-                    "output_path": output.display().to_string()
-                });
+                #[derive(serde::Serialize)]
+                struct GenerateOutput { bytes_written: usize, output_path: String }
+                let result = GenerateOutput {
+                    bytes_written: bytes.len(),
+                    output_path: output.display().to_string(),
+                };
                 println!("{}", serde_json::to_string_pretty(&result).unwrap());
             } else {
                 eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
