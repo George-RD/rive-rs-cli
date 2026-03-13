@@ -451,10 +451,11 @@ fn matches_object_filter(filter: &InspectFilter, object: &RivObject) -> bool {
             .is_some_and(|index| filter.artboard_indices.contains(&index));
     let artboard_name_match = filter.artboard_names.is_empty()
         || object.artboard_name.as_ref().is_some_and(|object_name| {
+            let object_name = object_name.to_lowercase();
             filter
                 .artboard_names
                 .iter()
-                .any(|name| name.eq_ignore_ascii_case(object_name))
+                .any(|name| name.to_lowercase() == object_name)
         });
     let local_index_match = filter.local_indices.is_empty()
         || object
@@ -893,6 +894,27 @@ mod tests {
         assert_eq!(parsed.objects[0].artboard_name.as_deref(), Some("Screen B"));
         assert_eq!(parsed.objects[0].local_index, Some(1));
         assert_eq!(parsed.objects[0].type_key, type_keys::SHAPE);
+    }
+
+    #[test]
+    fn test_apply_inspect_filter_artboard_name_unicode_case_insensitive() {
+        let backboard = Backboard;
+        let artboard = Artboard::new("Écran".to_string(), 400.0, 300.0);
+        let shape = Shape::new("shape".to_string(), 0);
+        let data = encode_riv(&[&backboard, &artboard, &shape], 0);
+        let filter = InspectFilter {
+            artboard_names: vec!["éCRAN".to_string()],
+            ..InspectFilter::default()
+        };
+        let parsed = parse_riv(&data, &filter).unwrap();
+
+        assert_eq!(parsed.objects.len(), 2);
+        assert!(
+            parsed
+                .objects
+                .iter()
+                .all(|object| object.artboard_name.as_deref() == Some("Écran"))
+        );
     }
 
     #[test]

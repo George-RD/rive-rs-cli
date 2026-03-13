@@ -7,8 +7,12 @@ const COMPONENT_NAME_KEY: u64 = 4;
 const ARTBOARD_WIDTH_KEY: u64 = 7;
 const ARTBOARD_HEIGHT_KEY: u64 = 8;
 
-fn cargo_run(args: &[&str]) -> std::process::Output {
+fn rive_cli() -> Command {
     Command::new(env!("CARGO_BIN_EXE_rive-cli"))
+}
+
+fn cargo_run(args: &[&str]) -> std::process::Output {
+    rive_cli()
         .args(args)
         .output()
         .expect("failed to run rive-cli binary")
@@ -1802,19 +1806,11 @@ fn test_ai_no_prompt_or_template() {
 
 #[test]
 fn test_ai_generate_prompt_without_api_key() {
-    let result = Command::new("cargo")
-        .args([
-            "run",
-            "--quiet",
-            "--",
-            "ai",
-            "generate",
-            "--prompt",
-            "make a bounce",
-        ])
+    let result = rive_cli()
+        .args(["ai", "generate", "--prompt", "make a bounce"])
         .env_remove("OPENAI_API_KEY")
         .output()
-        .expect("failed to run cargo");
+        .expect("failed to run rive-cli binary");
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!result.status.success());
     assert!(
@@ -1828,11 +1824,8 @@ fn test_ai_generate_prompt_without_api_key() {
 
 #[test]
 fn test_ai_rejects_both_template_and_prompt() {
-    let result = Command::new("cargo")
+    let result = rive_cli()
         .args([
-            "run",
-            "--quiet",
-            "--",
             "ai",
             "generate",
             "--template",
@@ -1842,7 +1835,7 @@ fn test_ai_rejects_both_template_and_prompt() {
         ])
         .env_remove("OPENAI_API_KEY")
         .output()
-        .expect("failed to run cargo");
+        .expect("failed to run rive-cli binary");
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!result.status.success());
     assert!(
