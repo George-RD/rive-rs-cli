@@ -8,5 +8,5 @@ pub mod templates;
 pub use config::AiConfig;
 pub use error::AiError;
 pub use eval::run_eval_suite;
-pub use provider::{AiProvider, create_provider};
-pub use repair::{RepairEngine, RepairResult, format_repair_summary, remediation_hints};
+pub use provider::create_provider;
+pub use repair::{RepairEngine, format_repair_summary, remediation_hints};

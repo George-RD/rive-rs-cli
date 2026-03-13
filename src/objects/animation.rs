@@ -9,6 +9,7 @@ pub struct LinearAnimation {
     pub work_start: u64,
     pub work_end: u64,
     pub enable_work_area: u64,
+    #[allow(dead_code)] // maps to Rive property LINEAR_ANIMATION_QUANTIZE
     pub quantize: u64,
 }
 
@@ -274,6 +275,7 @@ impl RiveObject for KeyFrameColor {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct Animation {
     pub name: String,
 }
@@ -291,6 +293,7 @@ impl RiveObject for Animation {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct KeyFrame {
     pub frame: u64,
 }
@@ -308,6 +311,7 @@ impl RiveObject for KeyFrame {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct InterpolatingKeyFrame {
     pub frame: u64,
     pub interpolation_type: u64,
@@ -351,6 +355,7 @@ pub struct ElasticInterpolator {
 }
 
 impl ElasticInterpolator {
+    #[allow(dead_code)] // used in tests
     pub fn new() -> Self {
         Self {
             easing_value: 1,

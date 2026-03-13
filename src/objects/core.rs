@@ -16,6 +16,7 @@ pub enum PropertyValue {
 }
 
 impl PropertyValue {
+    #[allow(dead_code)] // used in tests
     pub fn backing_type(&self) -> BackingType {
         match self {
             PropertyValue::UInt(_) => BackingType::UInt,
@@ -38,6 +39,7 @@ pub trait RiveObject {
     fn properties(&self) -> Vec<Property>;
 }
 
+#[allow(dead_code)] // complete rive-runtime type key catalog; abstract base types unused at build time
 pub mod type_keys {
     pub const ARTBOARD: u16 = 1;
     pub const NODE: u16 = 2;

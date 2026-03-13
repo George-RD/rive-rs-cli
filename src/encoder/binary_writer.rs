@@ -7,6 +7,7 @@ impl BinaryWriter {
         BinaryWriter { buffer: Vec::new() }
     }
 
+    #[allow(dead_code)] // used in tests
     pub fn len(&self) -> usize {
         self.buffer.len()
     }

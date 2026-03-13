@@ -44,6 +44,7 @@ pub struct RepairAttempt {
 
 #[derive(Debug)]
 pub struct RepairResult {
+    #[allow(dead_code)] // read in tests and available for callers
     pub scene_json: Value,
     pub riv_bytes: Vec<u8>,
     pub attempts: Vec<RepairAttempt>,

@@ -1,5 +1,3 @@
-#![allow(dead_code, unused_imports)]
-
 mod ai;
 mod builder;
 mod cli;

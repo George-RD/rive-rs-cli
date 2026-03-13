@@ -23,6 +23,7 @@ impl RiveObject for StateMachine {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct StateMachineComponent {
     pub name: String,
 }
@@ -40,6 +41,7 @@ impl RiveObject for StateMachineComponent {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct StateMachineInput {
     pub name: String,
 }
@@ -406,6 +408,7 @@ impl RiveObject for AnimationState {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct LayerState {
     pub flags: u64,
 }
@@ -485,6 +488,7 @@ impl RiveObject for StateTransition {
     }
 }
 
+#[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct TransitionCondition;
 
 impl RiveObject for TransitionCondition {

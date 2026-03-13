@@ -1374,6 +1374,7 @@ pub fn property_backing_type_generated(key: u16) -> Option<BackingType> {
     }
 }
 
+#[allow(dead_code)] // lookup utility from generated rive-runtime definitions
 pub fn type_key_from_name(name: &str) -> Option<u16> {
     match name {
         "AdvanceableState" => Some(145),
