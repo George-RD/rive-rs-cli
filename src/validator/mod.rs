@@ -208,7 +208,6 @@ mod tests {
     fn test_validate_riv_parent_id_out_of_range() {
         use crate::objects::core::{Property, PropertyValue, RiveObject};
 
-        // Create an object with an out-of-range parentId
         struct BadParent;
         impl RiveObject for BadParent {
             fn type_key(&self) -> u16 {
