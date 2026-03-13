@@ -1869,7 +1869,7 @@ fn test_ai_no_prompt_or_template() {
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!result.status.success());
     assert!(
-        stderr.contains("provide --prompt or --template"),
+        stderr.contains("--prompt") || stderr.contains("--template"),
         "stderr was: {}",
         stderr
     );
@@ -3455,9 +3455,9 @@ fn test_version_flag() {
     let output = cargo_run(&["--version"]);
     assert!(output.status.success(), "--version failed");
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(
-        stdout.contains("rive-cli"),
-        "version output should contain binary name"
+    assert_eq!(
+        stdout.trim(),
+        format!("rive-cli {}", env!("CARGO_PKG_VERSION"))
     );
 }
 
@@ -3483,6 +3483,29 @@ fn test_help_output() {
         "help should mention decompile command"
     );
     assert!(stdout.contains("ai"), "help should mention ai command");
+    assert!(
+        stdout.contains("JSON scene spec"),
+        "help should include generate description"
+    );
+    assert!(
+        stdout.contains("AI-assisted"),
+        "help should include ai description"
+    );
+}
+
+#[test]
+fn test_inspect_help() {
+    let output = cargo_run(&["inspect", "--help"]);
+    assert!(output.status.success(), "inspect --help failed");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("objects and properties"),
+        "inspect help should include description"
+    );
+    assert!(
+        stdout.contains("Examples:"),
+        "inspect help should include examples"
+    );
 }
 
 #[test]
@@ -3512,5 +3535,24 @@ fn test_ai_help() {
     assert!(
         stdout.contains("lab"),
         "ai help should mention lab subcommand"
+    );
+    assert!(
+        stdout.contains("evaluation suites"),
+        "ai help should include lab description"
+    );
+}
+
+#[test]
+fn test_ai_generate_help() {
+    let output = cargo_run(&["ai", "generate", "--help"]);
+    assert!(output.status.success(), "ai generate --help failed");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("natural language prompt"),
+        "ai generate help should include description"
+    );
+    assert!(
+        stdout.contains("Examples:"),
+        "ai generate help should include examples"
     );
 }

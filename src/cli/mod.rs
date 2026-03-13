@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{ArgGroup, Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -114,7 +114,12 @@ pub enum Command {
 pub enum AiCommand {
     #[command(
         about = "Generate a .riv file from a natural language prompt or template",
-        long_about = "Generate a .riv file from a natural language prompt or template.\n\nExamples:\n  rive-cli ai generate --template bounce\n  rive-cli ai generate --prompt \"a spinning logo\" -o logo.riv\n  rive-cli ai generate --prompt \"pulsing button\" --max-retries 5"
+        long_about = "Generate a .riv file from a natural language prompt or template.\n\nExamples:\n  rive-cli ai generate --template bounce\n  rive-cli ai generate --prompt \"a spinning logo\" -o logo.riv\n  rive-cli ai generate --prompt \"pulsing button\" --max-retries 5",
+        group(
+            ArgGroup::new("input")
+                .args(["prompt", "template"])
+                .required(true)
+        )
     )]
     Generate {
         #[arg(
