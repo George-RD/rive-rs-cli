@@ -61,7 +61,7 @@ Target: all object types from the Rive runtime's generated definitions (~150-200
 
 Build incrementally, driven by real output at each step:
 
-1. **Binary foundation** — Encoder writes valid .riv headers and empty artboards. Validate by loading in Rive runtime.
+1. **Binary foundation** — Encoder writes valid .riv headers and empty artboards. Validate by loading in the Rive runtime.
 2. **Static drawing** — Shapes, paths, fills, strokes, colors. Produce visible artwork.
 3. **Animation** — Linear animations with keyframes. Things move.
 4. **State machines** — Interactive states with transitions and listeners. Things respond.
