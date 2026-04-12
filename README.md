@@ -1,6 +1,6 @@
 # rive-cli
 
-A feature-complete CLI for programmatic creation and manipulation of Rive (`.riv`) animation files, written in Rust.
+A feature-complete CLI for programmatic creation and manipulation of Rive (`.riv`) animation files, written in Rust. 
 
 ## Vision
 
