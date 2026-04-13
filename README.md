@@ -6,7 +6,7 @@ A feature-complete CLI for programmatic creation and manipulation of Rive (`.riv
 
 Generate production-ready `.riv` files from structured input (JSON, CLI commands, or piped instructions) without requiring the Rive editor. Output files are loadable by any Rive runtime (iOS, Android, Web, Flutter, etc.).
 
-This tool is designed to be composable — usable standalone, scriptable in CI pipelines, and connectable to AI agents via MCP skills/plugins.
+This tool is designed to be composable — usable standalone, scriptable in CI pipelines, and connectable to AI agents via MCP skills/plugins. 
 
 ## Why This Exists
 
