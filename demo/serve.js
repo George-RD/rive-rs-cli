@@ -349,7 +349,7 @@ fs.writeFileSync(MANIFEST_JS_TARGET, manifestJs, 'utf8');
 console.log('Generated demo/riv/manifest.js');
 
 // 4. Start HTTP server
-const PORT = 3000;
+const PORT = 3021;
 const MIME_TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
