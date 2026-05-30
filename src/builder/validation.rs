@@ -1199,6 +1199,24 @@ pub(crate) fn validate_object_spec(
                 }
             }
         }
+        ObjectSpec::Dash { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::DashPath) {
+                return Err(format!(
+                    "dash '{}' must be a child of a dash_path, not a {:?}",
+                    name, parent_kind
+                ));
+            }
+        }
+        ObjectSpec::Feather { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::Fill | ParentKind::Stroke) {
+                return Err(format!(
+                    "feather '{}' must be a child of a fill or stroke, not a {:?}",
+                    name, parent_kind
+                ));
+            }
+        }
         ObjectSpec::Folder { name, .. }
         | ObjectSpec::LayeredAsset { name, .. }
         | ObjectSpec::LayerImageAsset { name, .. }
@@ -1207,8 +1225,6 @@ pub(crate) fn validate_object_spec(
         | ObjectSpec::ExportAudio { name, .. }
         | ObjectSpec::ScriptAsset { name, .. }
         | ObjectSpec::BlobAsset { name, .. }
-        | ObjectSpec::Dash { name, .. }
-        | ObjectSpec::Feather { name, .. }
         | ObjectSpec::CustomPropertyNumber { name, .. }
         | ObjectSpec::CustomPropertyBoolean { name, .. }
         | ObjectSpec::CustomPropertyString { name, .. }
@@ -1221,8 +1237,21 @@ pub(crate) fn validate_object_spec(
         | ObjectSpec::ArtboardListMapRule { name, .. } => {
             ensure_unique_name(name, object_names)?;
         }
-        ObjectSpec::DashPath { name, children, .. }
-        | ObjectSpec::OpenUrlEvent { name, children, .. }
+        ObjectSpec::DashPath { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if !matches!(parent_kind, ParentKind::Fill | ParentKind::Stroke) {
+                return Err(format!(
+                    "dash_path '{}' must be a child of a fill or stroke, not a {:?}",
+                    name, parent_kind
+                ));
+            }
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::DashPath)?;
+                }
+            }
+        }
+        ObjectSpec::OpenUrlEvent { name, children, .. }
         | ObjectSpec::AudioEvent { name, children, .. }
         | ObjectSpec::CustomPropertyGroup { name, children, .. }
         | ObjectSpec::GroupEffect { name, children, .. }

@@ -1615,6 +1615,186 @@ mod tests {
     }
 
     #[test]
+    fn test_dash_path_rejects_shape_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::DashPath {
+                        name: "dp_1".to_string(),
+                        offset: None,
+                        offset_is_percentage: None,
+                        children: None,
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        match build_scene(&spec) {
+            Err(err) => assert!(
+                err.contains("must be a child of a fill or stroke"),
+                "unexpected error: {}",
+                err
+            ),
+            Ok(_) => panic!("expected error for DashPath under Shape"),
+        }
+    }
+
+    #[test]
+    fn test_dash_path_accepts_stroke_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::Stroke {
+                        name: "stroke_1".to_string(),
+                        thickness: Some(2.0),
+                        cap: None,
+                        join: None,
+                        is_visible: None,
+                        children: Some(vec![ObjectSpec::DashPath {
+                            name: "dp_1".to_string(),
+                            offset: None,
+                            offset_is_percentage: None,
+                            children: Some(vec![ObjectSpec::Dash {
+                                name: "dash_1".to_string(),
+                                length: Some(5.0),
+                                length_is_percentage: None,
+                            }]),
+                        }]),
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        build_scene(&spec).unwrap();
+    }
+
+    #[test]
+    fn test_dash_rejects_artboard_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Dash {
+                    name: "dash_1".to_string(),
+                    length: Some(5.0),
+                    length_is_percentage: None,
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        match build_scene(&spec) {
+            Err(err) => assert!(
+                err.contains("must be a child of a dash_path"),
+                "unexpected error: {}",
+                err
+            ),
+            Ok(_) => panic!("expected error for Dash under Artboard"),
+        }
+    }
+
+    #[test]
+    fn test_feather_rejects_shape_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::Feather {
+                        name: "feather_1".to_string(),
+                        strength: Some(1.0),
+                        offset_x: None,
+                        offset_y: None,
+                        space_value: None,
+                        inner: None,
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        match build_scene(&spec) {
+            Err(err) => assert!(
+                err.contains("must be a child of a fill or stroke"),
+                "unexpected error: {}",
+                err
+            ),
+            Ok(_) => panic!("expected error for Feather under Shape"),
+        }
+    }
+
+    #[test]
+    fn test_feather_accepts_fill_parent() {
+        let spec = SceneSpec {
+            scene_format_version: 1,
+            artboard: Some(ArtboardSpec {
+                name: "Main".to_string(),
+                preset: None,
+                width: 100.0,
+                height: 100.0,
+                children: vec![ObjectSpec::Shape {
+                    name: "shape_1".to_string(),
+                    x: None,
+                    y: None,
+                    children: Some(vec![ObjectSpec::Fill {
+                        name: "fill_1".to_string(),
+                        fill_rule: None,
+                        is_visible: None,
+                        children: Some(vec![ObjectSpec::Feather {
+                            name: "feather_1".to_string(),
+                            strength: Some(1.0),
+                            offset_x: None,
+                            offset_y: None,
+                            space_value: None,
+                            inner: None,
+                        }]),
+                    }]),
+                }],
+                animations: None,
+                state_machines: None,
+            }),
+            artboards: None,
+        };
+
+        build_scene(&spec).unwrap();
+    }
+
+    #[test]
     fn test_image_reference_requires_preceding_asset() {
         let spec = SceneSpec {
             scene_format_version: 1,
