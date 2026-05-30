@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::objects::artboard::NestedArtboard;
-use crate::objects::assets::{AudioAsset, FontAsset, ImageAsset};
+use crate::objects::assets::{self, AudioAsset, FontAsset, ImageAsset};
 use crate::objects::bones::{Bone, CubicWeight, RootBone, Skin, Tendon, Weight};
 use crate::objects::constraints::{
     DistanceConstraint, FollowPathConstraint, IKConstraint, RotationConstraint, ScaleConstraint,
@@ -9,21 +9,31 @@ use crate::objects::constraints::{
 };
 use crate::objects::core::RiveObject;
 use crate::objects::data_binding::{
-    DataBind, ViewModel, ViewModelInstance, ViewModelInstanceBoolean, ViewModelInstanceColor,
-    ViewModelInstanceEnum, ViewModelInstanceList, ViewModelInstanceListItem,
-    ViewModelInstanceNumber, ViewModelInstanceString, ViewModelInstanceValue,
-    ViewModelInstanceViewModel, ViewModelProperty,
+    self, BindablePropertyArtboard, BindablePropertyBoolean, BindablePropertyColor,
+    BindablePropertyEnum, BindablePropertyId, BindablePropertyInteger, BindablePropertyList,
+    BindablePropertyNumber, BindablePropertyString, BindablePropertyTrigger, DataBind,
+    DataBindPath, DataEnum, DataEnumCustom, DataEnumSystem, DataEnumValue, ViewModel,
+    ViewModelInstance, ViewModelInstanceArtboard, ViewModelInstanceAssetImage,
+    ViewModelInstanceBoolean, ViewModelInstanceColor, ViewModelInstanceEnum, ViewModelInstanceList,
+    ViewModelInstanceListItem, ViewModelInstanceNumber, ViewModelInstanceString,
+    ViewModelInstanceSymbol, ViewModelInstanceSymbolListIndex, ViewModelInstanceTrigger,
+    ViewModelInstanceValue, ViewModelInstanceViewModel, ViewModelProperty,
 };
-use crate::objects::layout::{LayoutComponent, LayoutComponentStyle};
+use crate::objects::data_converters;
+use crate::objects::layout::{self, LayoutComponent, LayoutComponentStyle};
+use crate::objects::paint;
+use crate::objects::scripting;
 use crate::objects::shapes::{
-    ClippingShape, CubicAsymmetricVertexObject, CubicDetachedVertexObject,
-    CubicMirroredVertexObject, DrawRules, DrawTarget, Ellipse, Fill, GradientStop, Image, Joystick,
-    LinearGradient, Node, PathObject, PointsPathObject, Polygon, RadialGradient, Rectangle, Shape,
-    SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
+    self, ClippingShape, CubicAsymmetricVertexObject, CubicDetachedVertexObject,
+    CubicMirroredVertexObject, DrawRules, DrawTarget, Ellipse, Fill, GradientStop, Guide, Image,
+    Joystick, LinearGradient, Node, PathObject, PointsPathObject, Polygon, RadialGradient,
+    Rectangle, Shape, SolidColor, Solo, Star, StraightVertexObject, Stroke, Triangle, TrimPath,
 };
-use crate::objects::state_machine::{Event, NestedSimpleAnimation, NestedStateMachine};
+use crate::objects::state_machine::{self, Event, NestedSimpleAnimation, NestedStateMachine};
 use crate::objects::text::{
-    Text, TextModifierGroup, TextModifierRange, TextStyle, TextStyleFeature, TextValueRun,
+    self, Text, TextFollowPathModifier, TextInput, TextInputCursor, TextInputDrawable,
+    TextInputSelectedText, TextInputSelection, TextModifierGroup, TextModifierRange, TextStyle,
+    TextStyleAxis, TextStyleFeature, TextStylePaint, TextTargetModifier, TextValueRun,
     TextVariationModifier,
 };
 
@@ -417,6 +427,7 @@ pub(crate) fn append_object(
             asset_id,
             x,
             y,
+            children,
         } => {
             let mut image = Image::new(name.clone(), parent_id, *asset_id);
             if let Some(v) = x {
@@ -427,6 +438,20 @@ pub(crate) fn append_object(
             }
             objects.push(Box::new(image));
             name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
         }
         ObjectSpec::Path { name, path_flags } => {
             objects.push(Box::new(PathObject {
@@ -566,6 +591,7 @@ pub(crate) fn append_object(
             source_artboard,
             x,
             y,
+            children,
         } => {
             if source_artboard == current_artboard_name {
                 return Err(format!(
@@ -588,6 +614,20 @@ pub(crate) fn append_object(
                 y: y.unwrap_or(0.0),
             }));
             name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
         }
         ObjectSpec::NestedStateMachine { name, animation } => {
             let animation_id = *animation_name_to_index.get(animation).ok_or_else(|| {
@@ -768,7 +808,12 @@ pub(crate) fn append_object(
                 let bone_global = *name_to_index.get(bone_name).ok_or_else(|| {
                     format!("tendon '{}' references unknown bone '{}'", name, bone_name)
                 })?;
-                tendon.bone_id = (bone_global - artboard_start) as u64;
+                tendon.bone_id = bone_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "tendon '{}' bone '{}' precedes current artboard",
+                        name, bone_name
+                    )
+                })? as u64;
             }
             if let Some(xx) = xx {
                 tendon.xx = *xx;
@@ -844,7 +889,12 @@ pub(crate) fn append_object(
                         name, target_name
                     )
                 })?;
-                ik.target_id = (target_global - artboard_start) as u64;
+                ik.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "ik_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
             }
             if let Some(s) = strength {
                 ik.strength = *s;
@@ -873,7 +923,12 @@ pub(crate) fn append_object(
                         name, target_name
                     )
                 })?;
-                dc.target_id = (target_global - artboard_start) as u64;
+                dc.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "distance_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
             }
             if let Some(s) = strength {
                 dc.strength = *s;
@@ -904,7 +959,12 @@ pub(crate) fn append_object(
                         name, target_name
                     )
                 })?;
-                tc.target_id = (target_global - artboard_start) as u64;
+                tc.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "transform_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
             }
             if let Some(s) = strength {
                 tc.strength = *s;
@@ -953,7 +1013,12 @@ pub(crate) fn append_object(
                         name, target_name
                     )
                 })?;
-                tlc.target_id = (target_global - artboard_start) as u64;
+                tlc.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "translation_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
             }
             if let Some(s) = strength {
                 tlc.strength = *s;
@@ -1038,7 +1103,12 @@ pub(crate) fn append_object(
                         name, target_name
                     )
                 })?;
-                sc.target_id = (target_global - artboard_start) as u64;
+                sc.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "scale_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
             }
             if let Some(s) = strength {
                 sc.strength = *s;
@@ -1117,7 +1187,12 @@ pub(crate) fn append_object(
                         name, target_name
                     )
                 })?;
-                rc.target_id = (target_global - artboard_start) as u64;
+                rc.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "rotation_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
             }
             if let Some(s) = strength {
                 rc.strength = *s;
@@ -1173,7 +1248,12 @@ pub(crate) fn append_object(
                         name, target_name
                     )
                 })?;
-                fpc.target_id = (target_global - artboard_start) as u64;
+                fpc.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "follow_path_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
             }
             if let Some(s) = strength {
                 fpc.strength = *s;
@@ -1210,7 +1290,12 @@ pub(crate) fn append_object(
                         name, source_name
                     )
                 })?;
-                cs.source_id = (source_global - artboard_start) as u64;
+                cs.source_id = source_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "clipping_shape '{}' source '{}' precedes current artboard",
+                        name, source_name
+                    )
+                })? as u64;
             }
             if let Some(fr) = fill_rule {
                 cs.fill_rule = parse_fill_rule(fr)?;
@@ -1250,7 +1335,12 @@ pub(crate) fn append_object(
                     )
                 })?;
                 let mut dr = DrawRules::new(name.clone(), parent_id);
-                dr.draw_target_id = (target_global - artboard_start) as u64;
+                dr.draw_target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "draw_rules '{}' draw_target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
                 objects[object_index] = Box::new(dr);
             }
         }
@@ -1267,7 +1357,12 @@ pub(crate) fn append_object(
                         name, drawable_name
                     )
                 })?;
-                dt.drawable_id = (drawable_global - artboard_start) as u64;
+                dt.drawable_id = drawable_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "draw_target '{}' drawable '{}' precedes current artboard",
+                        name, drawable_name
+                    )
+                })? as u64;
             }
             if let Some(pv) = placement_value {
                 dt.placement_value = *pv;
@@ -1959,6 +2054,2208 @@ pub(crate) fn append_object(
                 tag: tag.unwrap_or(0),
                 feature_value: feature_value.unwrap_or(0),
             }));
+        }
+        ObjectSpec::Folder {
+            name,
+            parent_id: pid,
+        } => {
+            let folder = assets::Folder::new(name.clone(), pid.unwrap_or(parent_id));
+            objects.push(Box::new(folder));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::LayeredAsset { name } => {
+            objects.push(Box::new(assets::LayeredAsset::new(name.clone())));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::LayerImageAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = assets::LayerImageAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::SVGAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = assets::SVGAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::LottieAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = assets::LottieAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ExportAudio { name, volume } => {
+            let mut ea = assets::ExportAudio::new(name.clone(), parent_id);
+            if let Some(v) = volume {
+                ea.volume = *v;
+            }
+            objects.push(Box::new(ea));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+            is_module,
+        } => {
+            let mut asset = assets::ScriptAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            if let Some(v) = is_module {
+                asset.is_module = *v;
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::BlobAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = assets::BlobAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DashPath {
+            name,
+            offset,
+            offset_is_percentage,
+            children,
+        } => {
+            let mut dp = paint::DashPath::new(name.clone(), parent_id);
+            if let Some(v) = offset {
+                dp.offset = *v;
+            }
+            if let Some(v) = offset_is_percentage {
+                dp.offset_is_percentage = *v;
+            }
+            objects.push(Box::new(dp));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::Dash {
+            name,
+            length,
+            length_is_percentage,
+        } => {
+            let mut d = paint::Dash::new(name.clone(), parent_id);
+            if let Some(v) = length {
+                d.length = *v;
+            }
+            if let Some(v) = length_is_percentage {
+                d.length_is_percentage = *v;
+            }
+            objects.push(Box::new(d));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::Feather {
+            name,
+            strength,
+            offset_x,
+            offset_y,
+            space_value,
+            inner,
+        } => {
+            let mut f = paint::Feather::new(name.clone(), parent_id);
+            if let Some(v) = strength {
+                f.strength = *v;
+            }
+            if let Some(v) = offset_x {
+                f.offset_x = *v;
+            }
+            if let Some(v) = offset_y {
+                f.offset_y = *v;
+            }
+            if let Some(v) = space_value {
+                f.space_value = *v;
+            }
+            if let Some(v) = inner {
+                f.inner = *v;
+            }
+            objects.push(Box::new(f));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::OpenUrlEvent {
+            name,
+            url,
+            target_value,
+            children,
+        } => {
+            let mut evt = state_machine::OpenUrlEvent::new(
+                name.clone(),
+                parent_id,
+                url.clone().unwrap_or_default(),
+            );
+            if let Some(v) = target_value {
+                evt.target_value = *v;
+            }
+            objects.push(Box::new(evt));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::AudioEvent {
+            name,
+            asset_id,
+            children,
+        } => {
+            let mut evt = state_machine::AudioEvent::new(name.clone(), parent_id);
+            if let Some(v) = asset_id {
+                evt.asset_id = *v;
+            }
+            objects.push(Box::new(evt));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::CustomPropertyNumber {
+            name,
+            property_value,
+        } => {
+            let mut cp = state_machine::CustomPropertyNumber::new(name.clone(), parent_id);
+            if let Some(v) = property_value {
+                cp.property_value = *v;
+            }
+            objects.push(Box::new(cp));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CustomPropertyBoolean {
+            name,
+            property_value,
+        } => {
+            let mut cp = state_machine::CustomPropertyBoolean::new(name.clone(), parent_id);
+            if let Some(v) = property_value {
+                cp.property_value = if v.is_boolean() {
+                    if v.as_bool().unwrap_or(false) { 1 } else { 0 }
+                } else {
+                    v.as_u64().unwrap_or(0)
+                };
+            }
+            objects.push(Box::new(cp));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CustomPropertyString {
+            name,
+            property_value,
+        } => {
+            let mut cp = state_machine::CustomPropertyString::new(name.clone(), parent_id);
+            if let Some(v) = property_value {
+                cp.property_value = v.clone();
+            }
+            objects.push(Box::new(cp));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CustomPropertyColor {
+            name,
+            property_value,
+        } => {
+            let mut cp = state_machine::CustomPropertyColor::new(name.clone(), parent_id);
+            if let Some(v) = property_value {
+                cp.property_value = parse_color(v)?;
+            }
+            objects.push(Box::new(cp));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CustomPropertyTrigger { name } => {
+            let cp = state_machine::CustomPropertyTrigger::new(name.clone(), parent_id);
+            objects.push(Box::new(cp));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CustomPropertyEnum {
+            name,
+            property_value,
+            enum_id,
+        } => {
+            let mut cp = state_machine::CustomPropertyEnum::new(name.clone(), parent_id);
+            if let Some(v) = property_value {
+                cp.property_value = *v;
+            }
+            if let Some(v) = enum_id {
+                cp.enum_id = *v;
+            }
+            objects.push(Box::new(cp));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::CustomPropertyGroup { name, children } => {
+            let cp = state_machine::CustomPropertyGroup::new(name.clone(), parent_id);
+            objects.push(Box::new(cp));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TargetEffect { name, target_id } => {
+            let mut te = shapes::TargetEffect::new(name.clone(), parent_id);
+            if let Some(v) = target_id {
+                te.target_id = *v;
+            }
+            objects.push(Box::new(te));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::GroupEffect { name, children } => {
+            let ge = shapes::GroupEffect::new(name.clone(), parent_id);
+            objects.push(Box::new(ge));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ListPath {
+            name,
+            is_closed,
+            list_source,
+            children,
+        } => {
+            let mut lp = shapes::ListPath::new(name.clone(), parent_id);
+            if let Some(v) = is_closed {
+                lp.is_closed = *v;
+            }
+            if let Some(v) = list_source {
+                lp.list_source = *v;
+            }
+            objects.push(Box::new(lp));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::PointsCommonPath {
+            name,
+            is_closed,
+            children,
+        } => {
+            let mut pcp = shapes::PointsCommonPath::new(name.clone(), parent_id);
+            if let Some(v) = is_closed {
+                pcp.is_closed = *v;
+            }
+            objects.push(Box::new(pcp));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::Guide { name } => {
+            objects.push(Box::new(Guide::new(name.clone(), parent_id)));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ArtboardComponentList {
+            name,
+            list_source,
+            children,
+        } => {
+            let mut acl = shapes::ArtboardComponentList::new(name.clone(), parent_id);
+            if let Some(v) = list_source {
+                acl.list_source = *v;
+            }
+            objects.push(Box::new(acl));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ArtboardComponentListOverride {
+            name,
+            artboard_id,
+            instance_width,
+            instance_height,
+            instance_width_units_value,
+            instance_height_units_value,
+            instance_width_scale_type,
+            instance_height_scale_type,
+        } => {
+            let mut ov = shapes::ArtboardComponentListOverride::new(name.clone(), parent_id);
+            if let Some(v) = artboard_id {
+                ov.artboard_id = *v;
+            }
+            if let Some(v) = instance_width {
+                ov.instance_width = *v;
+            }
+            if let Some(v) = instance_height {
+                ov.instance_height = *v;
+            }
+            if let Some(v) = instance_width_units_value {
+                ov.instance_width_units_value = *v;
+            }
+            if let Some(v) = instance_height_units_value {
+                ov.instance_height_units_value = *v;
+            }
+            if let Some(v) = instance_width_scale_type {
+                ov.instance_width_scale_type = *v;
+            }
+            if let Some(v) = instance_height_scale_type {
+                ov.instance_height_scale_type = *v;
+            }
+            objects.push(Box::new(ov));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ArtboardListMapRule {
+            name,
+            artboard_id,
+            view_model_id,
+        } => {
+            let mut rule = shapes::ArtboardListMapRule::new(name.clone(), parent_id);
+            if let Some(v) = artboard_id {
+                rule.artboard_id = *v;
+            }
+            if let Some(v) = view_model_id {
+                rule.view_model_id = *v;
+            }
+            objects.push(Box::new(rule));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ForegroundLayoutDrawable { name, children } => {
+            let fld = layout::ForegroundLayoutDrawable::new(name.clone(), parent_id);
+            objects.push(Box::new(fld));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ClampedScrollPhysics {
+            friction,
+            speed_multiplier,
+        } => {
+            let mut csp = layout::ClampedScrollPhysics::new();
+            if let Some(v) = friction {
+                csp.friction = *v;
+            }
+            if let Some(v) = speed_multiplier {
+                csp.speed_multiplier = *v;
+            }
+            objects.push(Box::new(csp));
+        }
+        ObjectSpec::ElasticScrollPhysics {
+            friction,
+            speed_multiplier,
+            elastic_factor,
+        } => {
+            let mut esp = layout::ElasticScrollPhysics::new();
+            if let Some(v) = friction {
+                esp.friction = *v;
+            }
+            if let Some(v) = speed_multiplier {
+                esp.speed_multiplier = *v;
+            }
+            if let Some(v) = elastic_factor {
+                esp.elastic_factor = *v;
+            }
+            objects.push(Box::new(esp));
+        }
+        ObjectSpec::Mesh { name, children } => {
+            objects.push(Box::new(crate::objects::mesh::Mesh::new(
+                name.clone(),
+                parent_id,
+            )));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::MeshVertex { name, x, y, u, v } => {
+            let mut mv = crate::objects::mesh::MeshVertex::new(name.clone(), parent_id);
+            if let Some(val) = x {
+                mv.x = *val;
+            }
+            if let Some(val) = y {
+                mv.y = *val;
+            }
+            if let Some(val) = u {
+                mv.u = *val;
+            }
+            if let Some(val) = v {
+                mv.v = *val;
+            }
+            objects.push(Box::new(mv));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ContourMeshVertex { name, x, y, u, v } => {
+            let mut cv = crate::objects::mesh::ContourMeshVertex::new(name.clone(), parent_id);
+            if let Some(val) = x {
+                cv.x = *val;
+            }
+            if let Some(val) = y {
+                cv.y = *val;
+            }
+            if let Some(val) = u {
+                cv.u = *val;
+            }
+            if let Some(val) = v {
+                cv.v = *val;
+            }
+            objects.push(Box::new(cv));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ForcedEdge {
+            name,
+            from_vertex,
+            to_vertex,
+        } => {
+            let mut fe = crate::objects::mesh::ForcedEdge::new(name.clone(), parent_id);
+            if let Some(from_name) = from_vertex {
+                let from_global = *name_to_index.get(from_name).ok_or_else(|| {
+                    format!(
+                        "forced_edge '{}' references unknown from_vertex '{}'",
+                        name, from_name
+                    )
+                })?;
+                fe.from_id = from_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "forced_edge '{}' from_vertex '{}' precedes current artboard",
+                        name, from_name
+                    )
+                })? as u64;
+            }
+            if let Some(to_name) = to_vertex {
+                let to_global = *name_to_index.get(to_name).ok_or_else(|| {
+                    format!(
+                        "forced_edge '{}' references unknown to_vertex '{}'",
+                        name, to_name
+                    )
+                })?;
+                fe.to_id = to_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "forced_edge '{}' to_vertex '{}' precedes current artboard",
+                        name, to_name
+                    )
+                })? as u64;
+            }
+            objects.push(Box::new(fe));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedLinearAnimation {
+            name,
+            animation,
+            mix,
+        } => {
+            let animation_id = *animation_name_to_index.get(animation).ok_or_else(|| {
+                format!(
+                    "nested_linear_animation '{}' references unknown animation '{}'",
+                    name, animation
+                )
+            })? as u64;
+            objects.push(Box::new(crate::objects::artboard::NestedLinearAnimation {
+                name: name.clone(),
+                parent_id,
+                animation_id,
+                mix: mix.unwrap_or(1.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedRemapAnimation {
+            name,
+            animation,
+            time,
+        } => {
+            let animation_id = *animation_name_to_index.get(animation).ok_or_else(|| {
+                format!(
+                    "nested_remap_animation '{}' references unknown animation '{}'",
+                    name, animation
+                )
+            })? as u64;
+            objects.push(Box::new(crate::objects::artboard::NestedRemapAnimation {
+                name: name.clone(),
+                parent_id,
+                animation_id,
+                time: time.unwrap_or(0.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedTrigger {
+            name,
+            nested_input_id,
+        } => {
+            objects.push(Box::new(crate::objects::artboard::NestedTrigger {
+                name: name.clone(),
+                parent_id,
+                nested_input_id: *nested_input_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedBool {
+            name,
+            nested_input_id,
+            value,
+        } => {
+            objects.push(Box::new(crate::objects::artboard::NestedBool {
+                name: name.clone(),
+                parent_id,
+                nested_input_id: *nested_input_id,
+                nested_value: value.unwrap_or(false),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedNumber {
+            name,
+            nested_input_id,
+            value,
+        } => {
+            objects.push(Box::new(crate::objects::artboard::NestedNumber {
+                name: name.clone(),
+                parent_id,
+                nested_input_id: *nested_input_id,
+                nested_value: value.unwrap_or(0.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NestedArtboardLeaf {
+            name,
+            source_artboard,
+            x,
+            y,
+            children,
+        } => {
+            if source_artboard == current_artboard_name {
+                return Err(format!(
+                    "nested artboard leaf '{}' cannot reference its own artboard '{}'",
+                    name, source_artboard
+                ));
+            }
+            let source_artboard_index =
+                *artboard_name_to_index.get(source_artboard).ok_or_else(|| {
+                    format!(
+                        "nested artboard leaf '{}' references unknown artboard '{}'",
+                        name, source_artboard
+                    )
+                })?;
+            objects.push(Box::new(crate::objects::artboard::NestedArtboardLeaf {
+                name: name.clone(),
+                parent_id,
+                artboard_id: source_artboard_index as u64,
+                x: x.unwrap_or(0.0),
+                y: y.unwrap_or(0.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::NestedArtboardLayout {
+            name,
+            source_artboard,
+            x,
+            y,
+            width,
+            height,
+            style_id,
+            children,
+        } => {
+            if source_artboard == current_artboard_name {
+                return Err(format!(
+                    "nested artboard layout '{}' cannot reference its own artboard '{}'",
+                    name, source_artboard
+                ));
+            }
+            let source_artboard_index =
+                *artboard_name_to_index.get(source_artboard).ok_or_else(|| {
+                    format!(
+                        "nested artboard layout '{}' references unknown artboard '{}'",
+                        name, source_artboard
+                    )
+                })?;
+            let mut nal = crate::objects::artboard::NestedArtboardLayout::new(
+                name.clone(),
+                parent_id,
+                source_artboard_index as u64,
+            );
+            if let Some(v) = x {
+                nal.x = *v;
+            }
+            if let Some(v) = y {
+                nal.y = *v;
+            }
+            if let Some(v) = width {
+                nal.width = *v;
+            }
+            if let Some(v) = height {
+                nal.height = *v;
+            }
+            if let Some(v) = style_id {
+                nal.style_id = *v;
+            }
+            objects.push(Box::new(nal));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::DraggableConstraint {
+            name,
+            target: _,
+            strength,
+            direction_value,
+        } => {
+            let mut dc =
+                crate::objects::constraints::DraggableConstraint::new(name.clone(), parent_id);
+            if let Some(v) = strength {
+                dc.strength = *v;
+            }
+            if let Some(v) = direction_value {
+                dc.direction_value = *v;
+            }
+            objects.push(Box::new(dc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScrollConstraint {
+            name,
+            target: _,
+            strength,
+            direction_value,
+            snap,
+            physics_id,
+            scroll_offset_x,
+            scroll_offset_y,
+            scroll_percent_x,
+            scroll_percent_y,
+            scroll_index,
+            children,
+        } => {
+            let mut sc =
+                crate::objects::constraints::ScrollConstraint::new(name.clone(), parent_id);
+            if let Some(v) = strength {
+                sc.strength = *v;
+            }
+            if let Some(v) = direction_value {
+                sc.direction_value = *v;
+            }
+            if let Some(v) = snap {
+                sc.snap = *v;
+            }
+            if let Some(v) = physics_id {
+                sc.physics_id = *v;
+            }
+            if let Some(v) = scroll_offset_x {
+                sc.scroll_offset_x = *v;
+            }
+            if let Some(v) = scroll_offset_y {
+                sc.scroll_offset_y = *v;
+            }
+            if let Some(v) = scroll_percent_x {
+                sc.scroll_percent_x = *v;
+            }
+            if let Some(v) = scroll_percent_y {
+                sc.scroll_percent_y = *v;
+            }
+            if let Some(v) = scroll_index {
+                sc.scroll_index = *v;
+            }
+            objects.push(Box::new(sc));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ScrollBarConstraint {
+            name,
+            target: _,
+            strength,
+            scroll_constraint_id,
+            auto_size,
+        } => {
+            let mut sbc =
+                crate::objects::constraints::ScrollBarConstraint::new(name.clone(), parent_id);
+            if let Some(v) = strength {
+                sbc.strength = *v;
+            }
+            if let Some(v) = scroll_constraint_id {
+                sbc.scroll_constraint_id = *v;
+            }
+            if let Some(v) = auto_size {
+                sbc.auto_size = *v;
+            }
+            objects.push(Box::new(sbc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ListFollowPathConstraint {
+            name,
+            target,
+            strength,
+            orient,
+            start,
+            end,
+            list_source,
+            distance_end,
+            distance_offset,
+            random_mode_value,
+        } => {
+            let mut lfpc =
+                crate::objects::constraints::ListFollowPathConstraint::new(name.clone(), parent_id);
+            if let Some(v) = strength {
+                lfpc.strength = *v;
+            }
+            if let Some(target_name) = target {
+                let target_global = *name_to_index.get(target_name).ok_or_else(|| {
+                    format!(
+                        "list_follow_path_constraint '{}' references unknown target '{}'",
+                        name, target_name
+                    )
+                })?;
+                lfpc.target_id = target_global.checked_sub(artboard_start).ok_or_else(|| {
+                    format!(
+                        "list_follow_path_constraint '{}' target '{}' precedes current artboard",
+                        name, target_name
+                    )
+                })? as u64;
+            }
+            if let Some(v) = orient {
+                lfpc.orient = *v;
+            }
+            if let Some(v) = start {
+                lfpc.start = *v;
+            }
+            if let Some(v) = end {
+                lfpc.end = *v;
+            }
+            if let Some(v) = list_source {
+                lfpc.list_source = *v;
+            }
+            if let Some(v) = distance_end {
+                lfpc.distance_end = *v;
+            }
+            if let Some(v) = distance_offset {
+                lfpc.distance_offset = *v;
+            }
+            if let Some(v) = random_mode_value {
+                lfpc.random_mode_value = *v;
+            }
+            objects.push(Box::new(lfpc));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::NSlicerTileMode {
+            name,
+            patch_index,
+            style,
+        } => {
+            let mut tm = crate::objects::nslicer::NSlicerTileMode::new(
+                name.clone().unwrap_or_default(),
+                parent_id,
+                *patch_index,
+            );
+            if let Some(v) = style {
+                tm.style = *v;
+            }
+            objects.push(Box::new(tm));
+        }
+        ObjectSpec::NSlicer {
+            name,
+            initial_width,
+            initial_height,
+            width,
+            height,
+            children,
+        } => {
+            let mut ns = crate::objects::nslicer::NSlicer::new(name.clone(), parent_id);
+            if let Some(v) = initial_width {
+                ns.initial_width = *v;
+            }
+            if let Some(v) = initial_height {
+                ns.initial_height = *v;
+            }
+            if let Some(v) = width {
+                ns.width = *v;
+            }
+            if let Some(v) = height {
+                ns.height = *v;
+            }
+            objects.push(Box::new(ns));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::AxisY {
+            name,
+            offset,
+            normalized,
+        } => {
+            let mut ay = crate::objects::nslicer::AxisY::new(
+                name.clone().unwrap_or_default(),
+                parent_id,
+                *offset,
+            );
+            if let Some(v) = normalized {
+                ay.normalized = *v;
+            }
+            objects.push(Box::new(ay));
+        }
+        ObjectSpec::AxisX {
+            name,
+            offset,
+            normalized,
+        } => {
+            let mut ax = crate::objects::nslicer::AxisX::new(
+                name.clone().unwrap_or_default(),
+                parent_id,
+                *offset,
+            );
+            if let Some(v) = normalized {
+                ax.normalized = *v;
+            }
+            objects.push(Box::new(ax));
+        }
+        ObjectSpec::NSlicedNode {
+            name,
+            x,
+            y,
+            children,
+        } => {
+            let mut node = crate::objects::nslicer::NSlicedNode::new(name.clone(), parent_id);
+            if let Some(v) = x {
+                node.x = *v;
+            }
+            if let Some(v) = y {
+                node.y = *v;
+            }
+            objects.push(Box::new(node));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyNumber { name, children } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyNumber {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyBoolean { name, children } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyBoolean {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyString { name, children } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyString {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyColor { name, children } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyColor {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyList {
+            name,
+            view_model_reference_id,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyList {
+                name: name.clone(),
+                parent_id,
+                view_model_reference_id: view_model_reference_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyViewModel {
+            name,
+            view_model_reference_id,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyViewModel {
+                name: name.clone(),
+                parent_id,
+                view_model_reference_id: view_model_reference_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyEnum {
+            name,
+            enum_id,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyEnum {
+                name: name.clone(),
+                parent_id,
+                enum_id: enum_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyEnumCustom {
+            name,
+            enum_id,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyEnumCustom {
+                name: name.clone(),
+                parent_id,
+                enum_id: enum_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyEnumSystem {
+            name,
+            enum_id,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyEnumSystem {
+                name: name.clone(),
+                parent_id,
+                enum_id: enum_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyTrigger { name, children } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyTrigger {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyAssetImage { name, children } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyAssetImage {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyArtboard {
+            name,
+            artboard_id,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertyArtboard {
+                name: name.clone(),
+                parent_id,
+                artboard_id: artboard_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertySymbol {
+            name,
+            symbol_type_value,
+            artboard_id,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertySymbol {
+                name: name.clone(),
+                parent_id,
+                symbol_type_value: symbol_type_value.unwrap_or(0),
+                artboard_id: artboard_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertySymbolListIndex {
+            name,
+            symbol_type_value,
+            artboard_id,
+            list_source,
+            children,
+        } => {
+            objects.push(Box::new(data_binding::ViewModelPropertySymbolListIndex {
+                name: name.clone(),
+                parent_id,
+                symbol_type_value: symbol_type_value.unwrap_or(0),
+                artboard_id: artboard_id.unwrap_or(0),
+                list_source: list_source.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelInstanceTrigger {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceTrigger {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceSymbol {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceSymbol {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceSymbolListIndex {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceSymbolListIndex {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceAssetImage {
+            view_model_property_id,
+            value,
+        } => {
+            objects.push(Box::new(ViewModelInstanceAssetImage {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::ViewModelInstanceArtboard {
+            view_model_property_id,
+            value,
+            artboard_id,
+        } => {
+            objects.push(Box::new(ViewModelInstanceArtboard {
+                view_model_property_id: view_model_property_id.unwrap_or(0),
+                property_value: value.unwrap_or(0),
+                artboard_id: artboard_id.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::DataEnum { name, children } => {
+            objects.push(Box::new(DataEnum {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::DataEnumCustom { name, children } => {
+            objects.push(Box::new(DataEnumCustom {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::DataEnumValue { key, value } => {
+            objects.push(Box::new(DataEnumValue {
+                key: key.clone(),
+                value: value.clone(),
+            }));
+        }
+        ObjectSpec::DataEnumSystem { name, enum_type } => {
+            objects.push(Box::new(DataEnumSystem {
+                name: name.clone(),
+                parent_id,
+                enum_type: enum_type.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::BindablePropertyString { value } => {
+            objects.push(Box::new(BindablePropertyString {
+                property_value: value.clone().unwrap_or_default(),
+            }));
+        }
+        ObjectSpec::BindablePropertyBoolean { value } => {
+            objects.push(Box::new(BindablePropertyBoolean {
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::BindablePropertyNumber { value } => {
+            objects.push(Box::new(BindablePropertyNumber {
+                property_value: value.unwrap_or(0.0),
+            }));
+        }
+        ObjectSpec::BindablePropertyEnum { value } => {
+            objects.push(Box::new(BindablePropertyEnum {
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::BindablePropertyColor { value } => {
+            let color = parse_color(value)?;
+            objects.push(Box::new(BindablePropertyColor {
+                property_value: color,
+            }));
+        }
+        ObjectSpec::BindablePropertyTrigger { value } => {
+            objects.push(Box::new(BindablePropertyTrigger {
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::BindablePropertyInteger { value } => {
+            objects.push(Box::new(BindablePropertyInteger {
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::BindablePropertyList { value } => {
+            objects.push(Box::new(BindablePropertyList {
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::BindablePropertyId { value } => {
+            let color = parse_color(value)?;
+            objects.push(Box::new(BindablePropertyId {
+                property_value: color,
+            }));
+        }
+        ObjectSpec::BindablePropertyArtboard { value } => {
+            objects.push(Box::new(BindablePropertyArtboard {
+                property_value: value.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::DataBindPath {
+            property_key,
+            flags,
+            converter_id,
+        } => {
+            let mut dbp = DataBindPath::new(*property_key, *flags);
+            if let Some(v) = converter_id {
+                dbp.converter_id = *v;
+            }
+            objects.push(Box::new(dbp));
+        }
+        ObjectSpec::TextStylePaint { name, children } => {
+            objects.push(Box::new(TextStylePaint {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextStyleAxis { tag, axis_value } => {
+            objects.push(Box::new(TextStyleAxis {
+                parent_id,
+                tag: tag.unwrap_or(0),
+                axis_value: axis_value.unwrap_or(0.0),
+            }));
+        }
+        ObjectSpec::TextTargetModifier { name, target_id } => {
+            objects.push(Box::new(TextTargetModifier {
+                name: name.clone(),
+                parent_id,
+                target_id: target_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::TextFollowPathModifier {
+            name,
+            target_id,
+            orient,
+            start,
+            end,
+            strength,
+            offset,
+        } => {
+            let mut modifier = TextFollowPathModifier::new(name.clone(), parent_id);
+            if let Some(v) = target_id {
+                modifier.target_id = *v;
+            }
+            if let Some(v) = orient {
+                modifier.orient = *v;
+            }
+            if let Some(v) = start {
+                modifier.start = *v;
+            }
+            if let Some(v) = end {
+                modifier.end = *v;
+            }
+            if let Some(v) = strength {
+                modifier.strength = *v;
+            }
+            if let Some(v) = offset {
+                modifier.offset = *v;
+            }
+            objects.push(Box::new(modifier));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::TextInput {
+            name,
+            align_value,
+            sizing_value,
+            overflow_value,
+            width,
+            height,
+            text,
+            selection_radius,
+            interactive,
+            children,
+        } => {
+            let mut input = TextInput::new(name.clone(), parent_id);
+            if let Some(v) = align_value {
+                input.align_value = *v;
+            }
+            if let Some(v) = sizing_value {
+                input.sizing_value = *v;
+            }
+            if let Some(v) = overflow_value {
+                input.overflow_value = *v;
+            }
+            if let Some(v) = width {
+                input.width = *v;
+            }
+            if let Some(v) = height {
+                input.height = *v;
+            }
+            if let Some(v) = text {
+                input.text = v.clone();
+            }
+            if let Some(v) = selection_radius {
+                input.selection_radius = *v;
+            }
+            if let Some(v) = interactive {
+                input.interactive = *v;
+            }
+            objects.push(Box::new(input));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextInputDrawable { name, children } => {
+            objects.push(Box::new(TextInputDrawable {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextInputCursor { name, children } => {
+            objects.push(Box::new(TextInputCursor {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextInputText { name, children } => {
+            objects.push(Box::new(text::TextInputText {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextInputSelection { name, children } => {
+            objects.push(Box::new(TextInputSelection {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::TextInputSelectedText { name, children } => {
+            objects.push(Box::new(TextInputSelectedText {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::DataConverterRounder { name, decimals } => {
+            objects.push(Box::new(data_converters::DataConverterRounder {
+                name: name.clone(),
+                decimals: decimals.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterToString {
+            name,
+            flags,
+            decimals,
+            color_format,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterToString {
+                name: name.clone(),
+                flags: flags.unwrap_or(0),
+                decimals: decimals.unwrap_or(0),
+                color_format: color_format.clone().unwrap_or_default(),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterToNumber { name } => {
+            objects.push(Box::new(data_converters::DataConverterToNumber {
+                name: name.clone(),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterGroup { name, children } => {
+            objects.push(Box::new(data_converters::DataConverterGroup {
+                name: name.clone(),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::DataConverterGroupItem { converter_id } => {
+            objects.push(Box::new(data_converters::DataConverterGroupItem {
+                converter_id: converter_id.unwrap_or(u32::MAX as u64),
+            }));
+        }
+        ObjectSpec::DataConverterOperationValue {
+            name,
+            operation_type,
+            operation_value,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterOperationValue {
+                name: name.clone(),
+                operation_type: operation_type.unwrap_or(0),
+                operation_value: operation_value.unwrap_or(1.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterTrigger { name } => {
+            objects.push(Box::new(data_converters::DataConverterTrigger {
+                name: name.clone(),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterOperationViewModel {
+            name,
+            operation_type,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterOperationViewModel {
+                name: name.clone(),
+                operation_type: operation_type.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterStringPad {
+            name,
+            length,
+            text,
+            pad_type,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterStringPad {
+                name: name.clone(),
+                length: length.unwrap_or(1),
+                text: text.clone().unwrap_or_default(),
+                pad_type: pad_type.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterStringRemoveZeros { name } => {
+            objects.push(Box::new(data_converters::DataConverterStringRemoveZeros {
+                name: name.clone(),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterStringTrim { name, trim_type } => {
+            objects.push(Box::new(data_converters::DataConverterStringTrim {
+                name: name.clone(),
+                trim_type: trim_type.unwrap_or(1),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterInterpolator {
+            name,
+            duration,
+            interpolation_type,
+            interpolator_id,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterInterpolator {
+                name: name.clone(),
+                duration: duration.unwrap_or(1.0),
+                interpolation_type: interpolation_type.unwrap_or(1),
+                interpolator_id: interpolator_id.unwrap_or(u32::MAX as u64),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterBooleanNegate { name } => {
+            objects.push(Box::new(data_converters::DataConverterBooleanNegate {
+                name: name.clone(),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterRangeMapper {
+            name,
+            interpolation_type,
+            interpolator_id,
+            flags,
+            min_input,
+            max_input,
+            min_output,
+            max_output,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterRangeMapper {
+                name: name.clone(),
+                interpolation_type: interpolation_type.unwrap_or(1),
+                interpolator_id: interpolator_id.unwrap_or(u32::MAX as u64),
+                flags: flags.unwrap_or(0),
+                min_input: min_input.unwrap_or(1.0),
+                max_input: max_input.unwrap_or(1.0),
+                min_output: min_output.unwrap_or(1.0),
+                max_output: max_output.unwrap_or(1.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterFormula {
+            name,
+            random_mode_value,
+            children,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterFormula {
+                name: name.clone(),
+                random_mode_value: random_mode_value.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::DataConverterSystemDegsToRads {
+            name,
+            operation_type,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterSystemDegsToRads {
+                name: name.clone(),
+                operation_type: operation_type.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterSystemNormalizer {
+            name,
+            operation_type,
+            operation_value,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterSystemNormalizer {
+                name: name.clone(),
+                operation_type: operation_type.unwrap_or(0),
+                operation_value: operation_value.unwrap_or(1.0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterNumberToList {
+            name,
+            view_model_id,
+        } => {
+            objects.push(Box::new(data_converters::DataConverterNumberToList {
+                name: name.clone(),
+                view_model_id: view_model_id.unwrap_or(u32::MAX as u64),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::DataConverterListToLength { name } => {
+            objects.push(Box::new(data_converters::DataConverterListToLength {
+                name: name.clone(),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::FormulaTokenArgumentSeparator => {
+            objects.push(Box::new(data_converters::FormulaTokenArgumentSeparator {
+                parent_id,
+            }));
+        }
+        ObjectSpec::FormulaTokenParenthesisClose => {
+            objects.push(Box::new(data_converters::FormulaTokenParenthesisClose {
+                parent_id,
+            }));
+        }
+        ObjectSpec::FormulaTokenOperation { operation_type } => {
+            objects.push(Box::new(data_converters::FormulaTokenOperation {
+                parent_id,
+                operation_type: operation_type.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::FormulaTokenFunction { function_type } => {
+            objects.push(Box::new(data_converters::FormulaTokenFunction {
+                parent_id,
+                function_type: function_type.unwrap_or(0),
+            }));
+        }
+        ObjectSpec::FormulaTokenValue { operation_value } => {
+            objects.push(Box::new(data_converters::FormulaTokenValue {
+                parent_id,
+                operation_value: operation_value.unwrap_or(1.0),
+            }));
+        }
+        ObjectSpec::FormulaTokenParenthesisOpen => {
+            objects.push(Box::new(data_converters::FormulaTokenParenthesisOpen {
+                parent_id,
+            }));
+        }
+        ObjectSpec::FormulaTokenInput => {
+            objects.push(Box::new(data_converters::FormulaTokenInput { parent_id }));
+        }
+        ObjectSpec::ScriptedDrawable {
+            name,
+            script_asset_id,
+            generator_function_ref,
+            threshold,
+            is_paused,
+            speed,
+            quantize,
+            interactive,
+            children,
+        } => {
+            objects.push(Box::new(scripting::ScriptedDrawable {
+                name: name.clone(),
+                parent_id,
+                script_asset_id: script_asset_id.unwrap_or(0),
+                generator_function_ref: generator_function_ref.unwrap_or(0),
+                threshold: threshold.unwrap_or(0.0),
+                is_paused: is_paused.unwrap_or(false),
+                speed: speed.unwrap_or(1.0),
+                quantize: quantize.unwrap_or(0.0),
+                interactive: interactive.unwrap_or(false),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ScriptedDataConverter {
+            name,
+            script_asset_id,
+        } => {
+            objects.push(Box::new(scripting::ScriptedDataConverter {
+                name: name.clone(),
+                script_asset_id: script_asset_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptedLayout {
+            name,
+            script_asset_id,
+            children,
+        } => {
+            objects.push(Box::new(scripting::ScriptedLayout {
+                name: name.clone(),
+                parent_id,
+                script_asset_id: script_asset_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
+        }
+        ObjectSpec::ScriptedPathEffect {
+            name,
+            is_relative,
+            target_id,
+        } => {
+            objects.push(Box::new(scripting::ScriptedPathEffect {
+                name: name.clone(),
+                parent_id,
+                is_relative: is_relative.unwrap_or(false),
+                target_id: target_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptedListenerAction {
+            script_asset_id,
+            is_stateful,
+        } => {
+            objects.push(Box::new(scripting::ScriptedListenerAction {
+                script_asset_id: script_asset_id.unwrap_or(0),
+                is_stateful: is_stateful.unwrap_or(false),
+            }));
+        }
+        ObjectSpec::ScriptedTransitionCondition {
+            script_asset_id,
+            is_stateful,
+        } => {
+            objects.push(Box::new(scripting::ScriptedTransitionCondition {
+                script_asset_id: script_asset_id.unwrap_or(0),
+                is_stateful: is_stateful.unwrap_or(false),
+            }));
+        }
+        ObjectSpec::ScriptInputNumber { name } => {
+            objects.push(Box::new(scripting::ScriptInputNumber {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptInputViewModelProperty {
+            name,
+            view_model_id,
+        } => {
+            objects.push(Box::new(scripting::ScriptInputViewModelProperty {
+                name: name.clone(),
+                parent_id,
+                view_model_id: view_model_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptInputTrigger { name } => {
+            objects.push(Box::new(scripting::ScriptInputTrigger {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptInputArtboard { name, artboard_id } => {
+            objects.push(Box::new(scripting::ScriptInputArtboard {
+                name: name.clone(),
+                parent_id,
+                artboard_id: artboard_id.unwrap_or(0),
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptInputColor { name } => {
+            objects.push(Box::new(scripting::ScriptInputColor {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptInputString { name } => {
+            objects.push(Box::new(scripting::ScriptInputString {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
+        }
+        ObjectSpec::ScriptInputBoolean { name } => {
+            objects.push(Box::new(scripting::ScriptInputBoolean {
+                name: name.clone(),
+                parent_id,
+            }));
+            name_to_index.insert(name.clone(), object_index);
         }
     }
     Ok(())

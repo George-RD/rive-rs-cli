@@ -85,6 +85,36 @@ impl RiveObject for Solo {
     }
 }
 
+pub struct Guide {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl Guide {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self { name, parent_id }
+    }
+}
+
+impl RiveObject for Guide {
+    fn type_key(&self) -> u16 {
+        type_keys::GUIDE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
 #[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct TransformComponent {
     pub name: String,

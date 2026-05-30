@@ -1,0 +1,143 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "DataConvertersTest",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "data_converter_rounder",
+        "name": "Rounder",
+        "decimals": 2
+      },
+      {
+        "type": "data_converter_to_string",
+        "name": "ToString",
+        "flags": 1,
+        "decimals": 3,
+        "color_format": "hex"
+      },
+      {
+        "type": "data_converter_to_number",
+        "name": "ToNumber"
+      },
+      {
+        "type": "data_converter_group",
+        "name": "Group",
+        "children": [
+          {
+            "type": "data_converter_group_item",
+            "converter_id": 0
+          },
+          {
+            "type": "data_converter_group_item",
+            "converter_id": 1
+          }
+        ]
+      },
+      {
+        "type": "data_converter_operation_value",
+        "name": "Multiply",
+        "operation_type": 2,
+        "operation_value": 3.5
+      },
+      {
+        "type": "data_converter_trigger",
+        "name": "TrigConv"
+      },
+      {
+        "type": "data_converter_operation_view_model",
+        "name": "OpVM",
+        "operation_type": 1
+      },
+      {
+        "type": "data_converter_string_pad",
+        "name": "Pad",
+        "length": 10,
+        "text": "0",
+        "pad_type": 1
+      },
+      {
+        "type": "data_converter_string_remove_zeros",
+        "name": "RemoveZeros"
+      },
+      {
+        "type": "data_converter_string_trim",
+        "name": "Trim",
+        "trim_type": 3
+      },
+      {
+        "type": "data_converter_interpolator",
+        "name": "Interp",
+        "duration": 0.5,
+        "interpolation_type": 2,
+        "interpolator_id": 3
+      },
+      {
+        "type": "data_converter_boolean_negate",
+        "name": "Negate"
+      },
+      {
+        "type": "data_converter_range_mapper",
+        "name": "RangeMap",
+        "interpolation_type": 2,
+        "interpolator_id": 7,
+        "flags": 1,
+        "min_input": 0.0,
+        "max_input": 100.0,
+        "min_output": 0.0,
+        "max_output": 200.0
+      },
+      {
+        "type": "data_converter_formula",
+        "name": "Formula",
+        "random_mode_value": 1,
+        "children": [
+          {
+            "type": "formula_token_value",
+            "operation_value": 42.0
+          },
+          {
+            "type": "formula_token_input"
+          },
+          {
+            "type": "formula_token_operation",
+            "operation_type": 1
+          },
+          {
+            "type": "formula_token_function",
+            "function_type": 2
+          },
+          {
+            "type": "formula_token_argument_separator"
+          },
+          {
+            "type": "formula_token_parenthesis_open"
+          },
+          {
+            "type": "formula_token_parenthesis_close"
+          }
+        ]
+      },
+      {
+        "type": "data_converter_system_degs_to_rads",
+        "name": "DegsToRads"
+      },
+      {
+        "type": "data_converter_system_normalizer",
+        "name": "Normalizer",
+        "operation_type": 1,
+        "operation_value": 0.5
+      },
+      {
+        "type": "data_converter_number_to_list",
+        "name": "NumToList",
+        "view_model_id": 5
+      },
+      {
+        "type": "data_converter_list_to_length",
+        "name": "ListToLen"
+      }
+    ]
+  }
+}

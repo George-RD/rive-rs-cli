@@ -1,0 +1,73 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "EffectsTest",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "DashedShape",
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Circle",
+            "width": 100,
+            "height": 100
+          },
+          {
+            "type": "stroke",
+            "name": "DashedStroke",
+            "thickness": 3.0,
+            "cap": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "StrokeColor",
+                "color": "#000000FF"
+              },
+              {
+                "type": "dash_path",
+                "name": "DashEffect",
+                "offset": 5.0,
+                "offset_is_percentage": false,
+                "children": [
+                  {
+                    "type": "dash",
+                    "name": "DashSeg",
+                    "length": 10.0
+                  },
+                  {
+                    "type": "dash",
+                    "name": "GapSeg",
+                    "length": 5.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "SoftFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "FillColor",
+                "color": "#FF6600FF"
+              },
+              {
+                "type": "feather",
+                "name": "Blur",
+                "strength": 8.0,
+                "offset_y": 2.0,
+                "inner": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [],
+    "state_machines": []
+  }
+}

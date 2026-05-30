@@ -1,0 +1,79 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "EventsExtended",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "open_url_event",
+        "name": "VisitWebsite",
+        "url": "https://rive.app",
+        "target_value": 0,
+        "children": [
+          {
+            "type": "custom_property_string",
+            "name": "source",
+            "property_value": "animation"
+          },
+          {
+            "type": "custom_property_boolean",
+            "name": "is_external",
+            "property_value": true
+          }
+        ]
+      },
+      {
+        "type": "audio_event",
+        "name": "ButtonClick",
+        "asset_id": 42,
+        "children": [
+          {
+            "type": "custom_property_number",
+            "name": "delay_ms",
+            "property_value": 100.0
+          }
+        ]
+      },
+      {
+        "type": "event",
+        "name": "CustomAction",
+        "children": [
+          {
+            "type": "custom_property_group",
+            "name": "metadata",
+            "children": [
+              {
+                "type": "custom_property_string",
+                "name": "action_type",
+                "property_value": "purchase"
+              },
+              {
+                "type": "custom_property_number",
+                "name": "item_id",
+                "property_value": 42.0
+              },
+              {
+                "type": "custom_property_color",
+                "name": "highlight_color",
+                "property_value": "#FF6600FF"
+              },
+              {
+                "type": "custom_property_enum",
+                "name": "priority",
+                "property_value": 1,
+                "enum_id": 5
+              },
+              {
+                "type": "custom_property_trigger",
+                "name": "on_confirm"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [],
+    "state_machines": []
+  }
+}

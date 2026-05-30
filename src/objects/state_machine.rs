@@ -944,6 +944,709 @@ impl RiveObject for TransitionValueTriggerComparator {
     }
 }
 
+pub struct OpenUrlEvent {
+    pub name: String,
+    pub parent_id: u64,
+    pub url: String,
+    pub target_value: u64,
+}
+
+impl OpenUrlEvent {
+    pub fn new(name: String, parent_id: u64, url: String) -> Self {
+        Self {
+            name,
+            parent_id,
+            url,
+            target_value: 0,
+        }
+    }
+}
+
+impl RiveObject for OpenUrlEvent {
+    fn type_key(&self) -> u16 {
+        type_keys::OPEN_URL_EVENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if !self.url.is_empty() {
+            props.push(Property {
+                key: property_keys::OPEN_URL_EVENT_URL,
+                value: PropertyValue::String(self.url.clone()),
+            });
+        }
+        if self.target_value != 0 {
+            props.push(Property {
+                key: property_keys::OPEN_URL_EVENT_TARGET_VALUE,
+                value: PropertyValue::UInt(self.target_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct AudioEvent {
+    pub name: String,
+    pub parent_id: u64,
+    pub asset_id: u64,
+}
+
+impl AudioEvent {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            asset_id: u32::MAX as u64,
+        }
+    }
+}
+
+impl RiveObject for AudioEvent {
+    fn type_key(&self) -> u16 {
+        type_keys::AUDIO_EVENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.asset_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::AUDIO_EVENT_ASSET_ID,
+                value: PropertyValue::UInt(self.asset_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct CustomPropertyNumber {
+    pub name: String,
+    pub parent_id: u64,
+    pub property_value: f32,
+}
+
+impl CustomPropertyNumber {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            property_value: 0.0,
+        }
+    }
+}
+
+impl RiveObject for CustomPropertyNumber {
+    fn type_key(&self) -> u16 {
+        type_keys::CUSTOM_PROPERTY_NUMBER
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.property_value != 0.0 {
+            props.push(Property {
+                key: property_keys::CUSTOM_PROPERTY_NUMBER_PROPERTY_VALUE,
+                value: PropertyValue::Float(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct CustomPropertyBoolean {
+    pub name: String,
+    pub parent_id: u64,
+    pub property_value: u64,
+}
+
+impl CustomPropertyBoolean {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            property_value: 0,
+        }
+    }
+}
+
+impl RiveObject for CustomPropertyBoolean {
+    fn type_key(&self) -> u16 {
+        type_keys::CUSTOM_PROPERTY_BOOLEAN
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::CUSTOM_PROPERTY_BOOLEAN_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct CustomPropertyString {
+    pub name: String,
+    pub parent_id: u64,
+    pub property_value: String,
+}
+
+impl CustomPropertyString {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            property_value: String::new(),
+        }
+    }
+}
+
+impl RiveObject for CustomPropertyString {
+    fn type_key(&self) -> u16 {
+        type_keys::CUSTOM_PROPERTY_STRING
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if !self.property_value.is_empty() {
+            props.push(Property {
+                key: property_keys::CUSTOM_PROPERTY_STRING_PROPERTY_VALUE,
+                value: PropertyValue::String(self.property_value.clone()),
+            });
+        }
+        props
+    }
+}
+
+pub struct CustomPropertyColor {
+    pub name: String,
+    pub parent_id: u64,
+    pub property_value: u32,
+}
+
+impl CustomPropertyColor {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            property_value: 0xFF000000,
+        }
+    }
+}
+
+impl RiveObject for CustomPropertyColor {
+    fn type_key(&self) -> u16 {
+        type_keys::CUSTOM_PROPERTY_COLOR
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.property_value != 0x00000000 {
+            props.push(Property {
+                key: property_keys::CUSTOM_PROPERTY_COLOR_PROPERTY_VALUE,
+                value: PropertyValue::Color(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct CustomPropertyTrigger {
+    pub name: String,
+    pub parent_id: u64,
+    pub property_value: u64,
+}
+
+impl CustomPropertyTrigger {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            property_value: 0,
+        }
+    }
+}
+
+impl RiveObject for CustomPropertyTrigger {
+    fn type_key(&self) -> u16 {
+        type_keys::CUSTOM_PROPERTY_TRIGGER
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::CUSTOM_PROPERTY_TRIGGER_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct CustomPropertyEnum {
+    pub name: String,
+    pub parent_id: u64,
+    pub property_value: u64,
+    pub enum_id: u64,
+}
+
+impl CustomPropertyEnum {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            property_value: 0,
+            enum_id: 0,
+        }
+    }
+}
+
+impl RiveObject for CustomPropertyEnum {
+    fn type_key(&self) -> u16 {
+        type_keys::CUSTOM_PROPERTY_ENUM
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::CUSTOM_PROPERTY_ENUM_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        if self.enum_id != 0 {
+            props.push(Property {
+                key: property_keys::CUSTOM_PROPERTY_ENUM_ENUM_ID,
+                value: PropertyValue::UInt(self.enum_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct CustomPropertyGroup {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl CustomPropertyGroup {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self { name, parent_id }
+    }
+}
+
+impl RiveObject for CustomPropertyGroup {
+    fn type_key(&self) -> u16 {
+        type_keys::CUSTOM_PROPERTY_GROUP
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ListenerAlignTarget {
+    pub target_id: u64,
+}
+
+impl RiveObject for ListenerAlignTarget {
+    fn type_key(&self) -> u16 {
+        type_keys::LISTENER_ALIGN_TARGET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.target_id != 0 {
+            props.push(Property {
+                key: property_keys::LISTENER_ALIGN_TARGET_ID,
+                value: PropertyValue::UInt(self.target_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ListenerFireEvent {
+    pub event_id: u64,
+}
+
+impl RiveObject for ListenerFireEvent {
+    fn type_key(&self) -> u16 {
+        type_keys::LISTENER_FIRE_EVENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.event_id != 0 {
+            props.push(Property {
+                key: property_keys::LISTENER_FIRE_EVENT_EVENT_ID,
+                value: PropertyValue::UInt(self.event_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ListenerViewModelChange {
+    pub view_model_property_id: u64,
+}
+
+impl RiveObject for ListenerViewModelChange {
+    fn type_key(&self) -> u16 {
+        type_keys::LISTENER_VIEW_MODEL_CHANGE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        props
+    }
+}
+
+#[allow(dead_code)]
+pub struct StateMachineFireEvent {
+    pub name: String,
+    pub event_id: u64,
+    pub occurs_value: u64,
+}
+
+#[allow(dead_code)]
+impl StateMachineFireEvent {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            event_id: 0,
+            occurs_value: 0,
+        }
+    }
+}
+
+impl RiveObject for StateMachineFireEvent {
+    fn type_key(&self) -> u16 {
+        type_keys::STATE_MACHINE_FIRE_EVENT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::STATE_MACHINE_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.event_id != 0 {
+            props.push(Property {
+                key: property_keys::STATE_MACHINE_FIRE_EVENT_EVENT_ID,
+                value: PropertyValue::UInt(self.event_id),
+            });
+        }
+        if self.occurs_value != 0 {
+            props.push(Property {
+                key: property_keys::STATE_MACHINE_FIRE_EVENT_OCCURS_VALUE,
+                value: PropertyValue::UInt(self.occurs_value),
+            });
+        }
+        props
+    }
+}
+
+#[allow(dead_code)]
+pub struct StateMachineFireTrigger {
+    pub name: String,
+}
+
+impl RiveObject for StateMachineFireTrigger {
+    fn type_key(&self) -> u16 {
+        type_keys::STATE_MACHINE_FIRE_TRIGGER
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::STATE_MACHINE_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
+    }
+}
+
+#[allow(dead_code)]
+pub struct StateMachineFireAction {
+    pub name: String,
+}
+
+impl RiveObject for StateMachineFireAction {
+    fn type_key(&self) -> u16 {
+        type_keys::STATE_MACHINE_FIRE_ACTION
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::STATE_MACHINE_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
+    }
+}
+
+#[allow(dead_code)]
+pub struct StateMachineComponentNestedArtboard {
+    pub name: String,
+    pub artboard_id: u64,
+}
+
+impl RiveObject for StateMachineComponentNestedArtboard {
+    fn type_key(&self) -> u16 {
+        type_keys::STATE_MACHINE_COMPONENT_NESTED_ARTBOARD
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::STATE_MACHINE_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.artboard_id != 0 {
+            props.push(Property {
+                key: property_keys::NESTED_ARTBOARD_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            });
+        }
+        props
+    }
+}
+
+#[allow(dead_code)]
+pub struct StateMachineNestedInput {
+    pub name: String,
+    pub nested_input_id: u64,
+}
+
+impl RiveObject for StateMachineNestedInput {
+    fn type_key(&self) -> u16 {
+        type_keys::STATE_MACHINE_NESTED_INPUT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::STATE_MACHINE_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.nested_input_id != 0 {
+            props.push(Property {
+                key: property_keys::NESTED_INPUT_ID,
+                value: PropertyValue::UInt(self.nested_input_id),
+            });
+        }
+        props
+    }
+}
+
+#[allow(dead_code)]
+pub struct BlendState1DViewModel;
+
+impl RiveObject for BlendState1DViewModel {
+    fn type_key(&self) -> u16 {
+        type_keys::BLEND_STATE_1D_VIEW_MODEL
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct TransitionPropertyViewModelComparator;
+
+impl RiveObject for TransitionPropertyViewModelComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_PROPERTY_VIEW_MODEL_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct TransitionPropertyArtboardComparator;
+
+impl RiveObject for TransitionPropertyArtboardComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_PROPERTY_ARTBOARD_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct TransitionArtboardCondition {
+    pub op_value: u64,
+}
+
+impl RiveObject for TransitionArtboardCondition {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_ARTBOARD_CONDITION
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.op_value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSITION_VIEW_MODEL_CONDITION_OP_VALUE,
+                value: PropertyValue::UInt(self.op_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct TransitionSelfComparator;
+
+impl RiveObject for TransitionSelfComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_SELF_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![]
+    }
+}
+
+pub struct TransitionValueIdComparator {
+    pub value: u64,
+}
+
+impl RiveObject for TransitionValueIdComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_ID_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSITION_VALUE_ID_COMPARATOR_VALUE,
+                value: PropertyValue::UInt(self.value),
+            });
+        }
+        props
+    }
+}
+
+pub struct TransitionValueAssetComparator {
+    pub value: u64,
+}
+
+impl RiveObject for TransitionValueAssetComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_ASSET_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSITION_VALUE_ASSET_COMPARATOR_VALUE,
+                value: PropertyValue::UInt(self.value),
+            });
+        }
+        props
+    }
+}
+
+pub struct TransitionValueArtboardComparator {
+    pub value: u64,
+}
+
+impl RiveObject for TransitionValueArtboardComparator {
+    fn type_key(&self) -> u16 {
+        type_keys::TRANSITION_VALUE_ARTBOARD_COMPARATOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.value != 0 {
+            props.push(Property {
+                key: property_keys::TRANSITION_VALUE_ARTBOARD_COMPARATOR_VALUE,
+                value: PropertyValue::UInt(self.value),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1356,5 +2059,121 @@ mod tests {
         assert_eq!(input.type_key(), 55);
         assert_eq!(input.properties().len(), 1);
         assert_eq!(input.properties()[0].key, 138);
+    }
+
+    #[test]
+    fn test_listener_align_target_type_key() {
+        let obj = ListenerAlignTarget { target_id: 5 };
+        assert_eq!(obj.type_key(), 126);
+    }
+
+    #[test]
+    fn test_listener_align_target_properties() {
+        let obj = ListenerAlignTarget { target_id: 3 };
+        let props = obj.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::LISTENER_ALIGN_TARGET_ID);
+        assert_eq!(props[0].value, PropertyValue::UInt(3));
+    }
+
+    #[test]
+    fn test_listener_align_target_zero_omitted() {
+        let obj = ListenerAlignTarget { target_id: 0 };
+        assert!(obj.properties().is_empty());
+    }
+
+    #[test]
+    fn test_listener_fire_event_type_key() {
+        let obj = ListenerFireEvent { event_id: 1 };
+        assert_eq!(obj.type_key(), 168);
+    }
+
+    #[test]
+    fn test_listener_fire_event_properties() {
+        let obj = ListenerFireEvent { event_id: 7 };
+        let props = obj.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::LISTENER_FIRE_EVENT_EVENT_ID);
+    }
+
+    #[test]
+    fn test_listener_view_model_change_type_key() {
+        let obj = ListenerViewModelChange {
+            view_model_property_id: 1,
+        };
+        assert_eq!(obj.type_key(), 487);
+    }
+
+    #[test]
+    fn test_state_machine_fire_event_type_key() {
+        let obj = StateMachineFireEvent::new("fire".to_string());
+        assert_eq!(obj.type_key(), 169);
+    }
+
+    #[test]
+    fn test_state_machine_fire_event_properties() {
+        let mut obj = StateMachineFireEvent::new("fire".to_string());
+        obj.event_id = 2;
+        obj.occurs_value = 1;
+        let props = obj.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[0].key, property_keys::STATE_MACHINE_COMPONENT_NAME);
+        assert_eq!(
+            props[1].key,
+            property_keys::STATE_MACHINE_FIRE_EVENT_EVENT_ID
+        );
+        assert_eq!(
+            props[2].key,
+            property_keys::STATE_MACHINE_FIRE_EVENT_OCCURS_VALUE
+        );
+    }
+
+    #[test]
+    fn test_state_machine_fire_trigger_type_key() {
+        let obj = StateMachineFireTrigger {
+            name: "trig".to_string(),
+        };
+        assert_eq!(obj.type_key(), 614);
+        assert_eq!(obj.properties().len(), 1);
+    }
+
+    #[test]
+    fn test_state_machine_fire_action_type_key() {
+        let obj = StateMachineFireAction {
+            name: "action".to_string(),
+        };
+        assert_eq!(obj.type_key(), 615);
+        assert_eq!(obj.properties().len(), 1);
+    }
+
+    #[test]
+    fn test_sm_component_nested_artboard_type_key() {
+        let obj = StateMachineComponentNestedArtboard {
+            name: "nested".to_string(),
+            artboard_id: 1,
+        };
+        assert_eq!(obj.type_key(), 172);
+        let props = obj.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[1].key, property_keys::NESTED_ARTBOARD_ARTBOARD_ID);
+    }
+
+    #[test]
+    fn test_sm_nested_input_type_key() {
+        let obj = StateMachineNestedInput {
+            name: "ni".to_string(),
+            nested_input_id: 5,
+        };
+        assert_eq!(obj.type_key(), 173);
+        let props = obj.properties();
+        assert_eq!(props.len(), 2);
+        assert_eq!(props[1].key, property_keys::NESTED_INPUT_ID);
+    }
+
+    #[test]
+    fn test_blend_state_1d_view_model_type_key() {
+        let obj = BlendState1DViewModel;
+        assert_eq!(obj.type_key(), 528);
+        assert!(obj.properties().is_empty());
     }
 }

@@ -1,0 +1,65 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ScriptingTest",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "scripted_drawable",
+        "name": "MyDrawable",
+        "script_asset_id": 5,
+        "is_paused": true,
+        "interactive": true,
+        "children": [
+          {
+            "type": "script_input_number",
+            "name": "NumInput"
+          },
+          {
+            "type": "script_input_view_model_property",
+            "name": "VMPInput",
+            "view_model_id": 3
+          },
+          {
+            "type": "script_input_trigger",
+            "name": "TrigInput"
+          },
+          {
+            "type": "script_input_artboard",
+            "name": "ABInput",
+            "artboard_id": 2
+          },
+          {
+            "type": "script_input_color",
+            "name": "ColorInput"
+          },
+          {
+            "type": "script_input_string",
+            "name": "StrInput"
+          },
+          {
+            "type": "script_input_boolean",
+            "name": "BoolInput"
+          }
+        ]
+      },
+      {
+        "type": "scripted_data_converter",
+        "name": "ScriptConverter",
+        "script_asset_id": 7
+      },
+      {
+        "type": "scripted_layout",
+        "name": "ScriptLayout",
+        "script_asset_id": 10
+      },
+      {
+        "type": "scripted_path_effect",
+        "name": "ScriptPathFx",
+        "is_relative": true,
+        "target_id": 4
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{"ts":"2026-05-30T12:00:00Z","event":"campaign_started","campaign":"camp-121","template":"hotfix","phases":["implement","review","fix","siege","conquered"]}
+{"ts":"2026-05-30T12:05:00Z","event":"phase_started","campaign":"camp-121","phase":"implement"}
+{"ts":"2026-05-30T12:05:30Z","event":"task_dispatched","campaign":"camp-121","phase":"implement","task":"T1-implement","force":"nazgul"}
+{"ts":"2026-05-30T12:20:00Z","event":"quality_gate_executed","campaign":"camp-121","phase":"implement","gate_name":"green","outcome":"pass"}
+{"ts":"2026-05-30T12:21:00Z","event":"task_completed","campaign":"camp-121","phase":"implement","task":"T1-implement"}
+{"ts":"2026-05-30T12:21:30Z","event":"phase_completed","campaign":"camp-121","phase":"implement"}
+{"ts":"2026-05-30T12:22:00Z","event":"phase_started","campaign":"camp-121","phase":"review"}
+{"ts":"2026-05-30T12:22:30Z","event":"task_dispatched","campaign":"camp-121","phase":"review","task":"T2-review","force":"watcher"}
+{"ts":"2026-05-30T12:25:00Z","event":"watcher_verdict_recorded","campaign":"camp-121","phase":"review","task_id":"T2-review","verdict":"PASS"}
+{"ts":"2026-05-30T12:25:30Z","event":"task_verified","campaign":"camp-121","phase":"review","task":"T2-review","verified_by":"watcher"}
+{"ts":"2026-05-30T12:26:00Z","event":"phase_completed","campaign":"camp-121","phase":"review"}

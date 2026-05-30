@@ -1,0 +1,27 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "LayoutExtensions",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "foreground_layout_drawable",
+        "name": "ForegroundOverlay"
+      },
+      {
+        "type": "clamped_scroll_physics",
+        "friction": 0.5,
+        "speed_multiplier": 2.0
+      },
+      {
+        "type": "elastic_scroll_physics",
+        "friction": 0.3,
+        "speed_multiplier": 1.5,
+        "elastic_factor": 0.8
+      }
+    ],
+    "animations": [],
+    "state_machines": []
+  }
+}

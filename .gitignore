@@ -4,3 +4,13 @@
 !docs/race-results/**/*.json
 evals/runs/
 data/rive_ledger.db
+.claude/skills/
+.claude/ralph-wiggum.local.md
+.claude/settings.local.json
+.claude/worktrees/
+.codex/
+.playwright-cli/
+PROMPT_*.md
+loop.sh
+retro/
+TODO_REMAINING_TYPES.md

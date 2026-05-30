@@ -1,0 +1,83 @@
+{
+  "scene_format_version": 1,
+  "artboards": [
+    {
+      "name": "Component",
+      "width": 200,
+      "height": 200,
+      "children": [
+        {
+          "type": "shape",
+          "name": "bg",
+          "children": [
+            { "type": "rectangle", "name": "bg_rect", "width": 200, "height": 200 },
+            { "type": "fill", "name": "bg_fill", "children": [{ "type": "solid_color", "name": "bg_color", "color": "#FF0000FF" }] }
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "name": "intro",
+          "fps": 60,
+          "duration": 30,
+          "keyframes": []
+        }
+      ],
+      "state_machines": []
+    },
+    {
+      "name": "Main",
+      "width": 500,
+      "height": 500,
+      "children": [
+        {
+          "type": "nested_artboard",
+          "name": "embedded",
+          "source_artboard": "Component",
+          "x": 100,
+          "y": 100,
+          "children": [
+            {
+              "type": "nested_linear_animation",
+              "name": "anim_controller",
+              "animation": "main_anim",
+              "mix": 0.8
+            },
+            {
+              "type": "nested_trigger",
+              "name": "click_trigger",
+              "nested_input_id": 0
+            },
+            {
+              "type": "nested_bool",
+              "name": "is_active",
+              "nested_input_id": 1,
+              "value": true
+            },
+            {
+              "type": "nested_number",
+              "name": "progress",
+              "nested_input_id": 2,
+              "value": 0.75
+            }
+          ]
+        },
+        {
+          "type": "nested_artboard_leaf",
+          "name": "static_icon",
+          "source_artboard": "Component",
+          "x": 300,
+          "y": 300
+        }
+      ],
+      "animations": [
+        {
+          "name": "main_anim",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": []
+        }
+      ]
+    }
+  ]
+}

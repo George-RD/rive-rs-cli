@@ -1,0 +1,39 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "ConstraintsDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "shape",
+        "name": "draggable_box",
+        "children": [
+          { "type": "rectangle", "name": "drag_rect", "width": 100, "height": 100 },
+          { "type": "fill", "name": "drag_fill", "children": [{ "type": "solid_color", "name": "drag_color", "color": "#3366FFFF" }] },
+          {
+            "type": "draggable_constraint",
+            "name": "drag_ctrl",
+            "direction_value": 1
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "scroll_area",
+        "x": 200,
+        "children": [
+          { "type": "rectangle", "name": "scroll_rect", "width": 200, "height": 300 },
+          { "type": "fill", "name": "scroll_fill", "children": [{ "type": "solid_color", "name": "scroll_color", "color": "#00FF00FF" }] },
+          {
+            "type": "scroll_constraint",
+            "name": "scroll_ctrl",
+            "direction_value": 2,
+            "snap": true
+          }
+        ]
+      }
+    ],
+    "animations": []
+  }
+}

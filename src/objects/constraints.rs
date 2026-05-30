@@ -790,6 +790,326 @@ impl RiveObject for FollowPathConstraint {
     }
 }
 
+pub struct DraggableConstraint {
+    pub name: String,
+    pub parent_id: u64,
+    pub strength: f32,
+    pub direction_value: u64,
+}
+
+impl DraggableConstraint {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            strength: 1.0,
+            direction_value: 0,
+        }
+    }
+}
+
+impl RiveObject for DraggableConstraint {
+    fn type_key(&self) -> u16 {
+        type_keys::DRAGGABLE_CONSTRAINT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.strength != 1.0 {
+            props.push(Property {
+                key: property_keys::CONSTRAINT_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.direction_value != 0 {
+            props.push(Property {
+                key: property_keys::DRAGGABLE_CONSTRAINT_DIRECTION_VALUE,
+                value: PropertyValue::UInt(self.direction_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct ScrollConstraint {
+    pub name: String,
+    pub parent_id: u64,
+    pub strength: f32,
+    pub direction_value: u64,
+    pub snap: bool,
+    pub physics_id: u64,
+    pub scroll_offset_x: f32,
+    pub scroll_offset_y: f32,
+    pub scroll_percent_x: f32,
+    pub scroll_percent_y: f32,
+    pub scroll_index: f32,
+}
+
+impl ScrollConstraint {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            strength: 1.0,
+            direction_value: 0,
+            snap: false,
+            physics_id: 0,
+            scroll_offset_x: 0.0,
+            scroll_offset_y: 0.0,
+            scroll_percent_x: 0.0,
+            scroll_percent_y: 0.0,
+            scroll_index: 0.0,
+        }
+    }
+}
+
+impl RiveObject for ScrollConstraint {
+    fn type_key(&self) -> u16 {
+        type_keys::SCROLL_CONSTRAINT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.strength != 1.0 {
+            props.push(Property {
+                key: property_keys::CONSTRAINT_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.direction_value != 0 {
+            props.push(Property {
+                key: property_keys::DRAGGABLE_CONSTRAINT_DIRECTION_VALUE,
+                value: PropertyValue::UInt(self.direction_value),
+            });
+        }
+        if self.snap {
+            props.push(Property {
+                key: property_keys::SCROLL_CONSTRAINT_SNAP,
+                value: PropertyValue::Bool(self.snap),
+            });
+        }
+        if self.physics_id != 0 {
+            props.push(Property {
+                key: property_keys::SCROLL_CONSTRAINT_PHYSICS_ID,
+                value: PropertyValue::UInt(self.physics_id),
+            });
+        }
+        if self.scroll_offset_x != 0.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_CONSTRAINT_SCROLL_OFFSET_X,
+                value: PropertyValue::Float(self.scroll_offset_x),
+            });
+        }
+        if self.scroll_offset_y != 0.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_CONSTRAINT_SCROLL_OFFSET_Y,
+                value: PropertyValue::Float(self.scroll_offset_y),
+            });
+        }
+        if self.scroll_percent_x != 0.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_CONSTRAINT_SCROLL_PERCENT_X,
+                value: PropertyValue::Float(self.scroll_percent_x),
+            });
+        }
+        if self.scroll_percent_y != 0.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_CONSTRAINT_SCROLL_PERCENT_Y,
+                value: PropertyValue::Float(self.scroll_percent_y),
+            });
+        }
+        if self.scroll_index != 0.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_CONSTRAINT_SCROLL_INDEX,
+                value: PropertyValue::Float(self.scroll_index),
+            });
+        }
+        props
+    }
+}
+
+pub struct ScrollBarConstraint {
+    pub name: String,
+    pub parent_id: u64,
+    pub strength: f32,
+    pub scroll_constraint_id: u64,
+    pub auto_size: bool,
+}
+
+impl ScrollBarConstraint {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            strength: 1.0,
+            scroll_constraint_id: 0,
+            auto_size: false,
+        }
+    }
+}
+
+impl RiveObject for ScrollBarConstraint {
+    fn type_key(&self) -> u16 {
+        type_keys::SCROLL_BAR_CONSTRAINT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.strength != 1.0 {
+            props.push(Property {
+                key: property_keys::CONSTRAINT_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.scroll_constraint_id != 0 {
+            props.push(Property {
+                key: property_keys::SCROLL_BAR_CONSTRAINT_SCROLL_CONSTRAINT_ID,
+                value: PropertyValue::UInt(self.scroll_constraint_id),
+            });
+        }
+        if self.auto_size {
+            props.push(Property {
+                key: property_keys::SCROLL_BAR_CONSTRAINT_AUTO_SIZE,
+                value: PropertyValue::Bool(self.auto_size),
+            });
+        }
+        props
+    }
+}
+
+pub struct ListFollowPathConstraint {
+    pub name: String,
+    pub parent_id: u64,
+    pub strength: f32,
+    pub target_id: u64,
+    pub orient: bool,
+    pub start: f32,
+    pub end: f32,
+    pub list_source: u64,
+    pub distance_end: f32,
+    pub distance_offset: f32,
+    pub random_mode_value: u64,
+}
+
+impl ListFollowPathConstraint {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            strength: 1.0,
+            target_id: u32::MAX as u64,
+            orient: false,
+            start: 0.0,
+            end: 1.0,
+            list_source: 0,
+            distance_end: 0.0,
+            distance_offset: 0.0,
+            random_mode_value: 0,
+        }
+    }
+}
+
+impl RiveObject for ListFollowPathConstraint {
+    fn type_key(&self) -> u16 {
+        type_keys::LIST_FOLLOW_PATH_CONSTRAINT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.strength != 1.0 {
+            props.push(Property {
+                key: property_keys::CONSTRAINT_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.target_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::TARGETED_CONSTRAINT_TARGET_ID,
+                value: PropertyValue::UInt(self.target_id),
+            });
+        }
+        if self.orient {
+            props.push(Property {
+                key: property_keys::LIST_FOLLOW_PATH_CONSTRAINT_ORIENT,
+                value: PropertyValue::UInt(1),
+            });
+        }
+        if self.start != 0.0 {
+            props.push(Property {
+                key: property_keys::LIST_FOLLOW_PATH_CONSTRAINT_START,
+                value: PropertyValue::Float(self.start),
+            });
+        }
+        if self.end != 1.0 {
+            props.push(Property {
+                key: property_keys::LIST_FOLLOW_PATH_CONSTRAINT_END,
+                value: PropertyValue::Float(self.end),
+            });
+        }
+        if self.list_source != 0 {
+            props.push(Property {
+                key: property_keys::LIST_FOLLOW_PATH_CONSTRAINT_LIST_SOURCE,
+                value: PropertyValue::UInt(self.list_source),
+            });
+        }
+        if self.distance_end != 0.0 {
+            props.push(Property {
+                key: property_keys::LIST_FOLLOW_PATH_CONSTRAINT_DISTANCE_END,
+                value: PropertyValue::Float(self.distance_end),
+            });
+        }
+        if self.distance_offset != 0.0 {
+            props.push(Property {
+                key: property_keys::LIST_FOLLOW_PATH_CONSTRAINT_DISTANCE_OFFSET,
+                value: PropertyValue::Float(self.distance_offset),
+            });
+        }
+        if self.random_mode_value != 0 {
+            props.push(Property {
+                key: property_keys::LIST_FOLLOW_PATH_CONSTRAINT_RANDOM_MODE_VALUE,
+                value: PropertyValue::UInt(self.random_mode_value),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -996,5 +1316,89 @@ mod tests {
             |p| p.key == property_keys::TRANSFORM_COMPONENT_CONSTRAINT_MAX
                 && p.value == PropertyValue::UInt(1)
         ));
+    }
+
+    #[test]
+    fn test_draggable_constraint_type_key() {
+        let obj = DraggableConstraint::new("drag".to_string(), 1);
+        assert_eq!(obj.type_key(), 520);
+    }
+
+    #[test]
+    fn test_draggable_constraint_defaults() {
+        let obj = DraggableConstraint::new("drag".to_string(), 1);
+        let props = obj.properties();
+        assert_eq!(props.len(), 2);
+    }
+
+    #[test]
+    fn test_draggable_constraint_with_values() {
+        let mut obj = DraggableConstraint::new("drag".to_string(), 1);
+        obj.strength = 0.5;
+        obj.direction_value = 1;
+        let props = obj.properties();
+        assert_eq!(props.len(), 4);
+    }
+
+    #[test]
+    fn test_scroll_constraint_type_key() {
+        let obj = ScrollConstraint::new("scroll".to_string(), 1);
+        assert_eq!(obj.type_key(), 521);
+    }
+
+    #[test]
+    fn test_scroll_constraint_defaults() {
+        let obj = ScrollConstraint::new("scroll".to_string(), 1);
+        let props = obj.properties();
+        assert_eq!(props.len(), 2);
+    }
+
+    #[test]
+    fn test_scroll_constraint_with_values() {
+        let mut obj = ScrollConstraint::new("scroll".to_string(), 1);
+        obj.snap = true;
+        obj.scroll_offset_x = 10.0;
+        let props = obj.properties();
+        assert_eq!(props.len(), 4);
+    }
+
+    #[test]
+    fn test_scroll_bar_constraint_type_key() {
+        let obj = ScrollBarConstraint::new("bar".to_string(), 1);
+        assert_eq!(obj.type_key(), 522);
+    }
+
+    #[test]
+    fn test_scroll_bar_constraint_with_values() {
+        let mut obj = ScrollBarConstraint::new("bar".to_string(), 1);
+        obj.scroll_constraint_id = 3;
+        obj.auto_size = true;
+        let props = obj.properties();
+        assert_eq!(props.len(), 4);
+    }
+
+    #[test]
+    fn test_list_follow_path_constraint_type_key() {
+        let obj = ListFollowPathConstraint::new("lfpc".to_string(), 1);
+        assert_eq!(obj.type_key(), 625);
+    }
+
+    #[test]
+    fn test_list_follow_path_constraint_defaults() {
+        let obj = ListFollowPathConstraint::new("lfpc".to_string(), 1);
+        let props = obj.properties();
+        assert_eq!(props.len(), 2);
+    }
+
+    #[test]
+    fn test_list_follow_path_constraint_with_values() {
+        let mut obj = ListFollowPathConstraint::new("lfpc".to_string(), 1);
+        obj.target_id = 5;
+        obj.orient = true;
+        obj.start = 0.1;
+        obj.end = 0.9;
+        obj.list_source = 2;
+        let props = obj.properties();
+        assert_eq!(props.len(), 7);
     }
 }

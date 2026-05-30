@@ -3,20 +3,27 @@ use std::collections::HashMap;
 use crate::objects::core::RiveObject;
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
-    BlendState1D, BlendState1DInput, BlendStateDirect, EntryState, ExitState, ListenerBoolChange,
-    ListenerNumberChange, ListenerTriggerChange, StateMachine, StateMachineBool, StateMachineLayer,
-    StateMachineListener, StateMachineNumber, StateMachineTrigger, StateTransition,
+    BlendState1D, BlendState1DInput, BlendState1DViewModel, BlendStateDirect, EntryState,
+    ExitState, ListenerAlignTarget, ListenerBoolChange, ListenerFireEvent, ListenerNumberChange,
+    ListenerTriggerChange, ListenerViewModelChange, StateMachine, StateMachineBool,
+    StateMachineComponentNestedArtboard, StateMachineFireAction, StateMachineFireEvent,
+    StateMachineFireTrigger, StateMachineLayer, StateMachineListener, StateMachineNestedInput,
+    StateMachineNumber, StateMachineTrigger, StateTransition, TransitionArtboardCondition,
     TransitionBoolCondition, TransitionInputCondition, TransitionNumberCondition,
-    TransitionPropertyComparator, TransitionTriggerCondition, TransitionValueBooleanComparator,
-    TransitionValueColorComparator, TransitionValueCondition, TransitionValueEnumComparator,
-    TransitionValueNumberComparator, TransitionValueStringComparator,
-    TransitionValueTriggerComparator, TransitionViewModelCondition,
+    TransitionPropertyArtboardComparator, TransitionPropertyComparator,
+    TransitionPropertyViewModelComparator, TransitionSelfComparator, TransitionTriggerCondition,
+    TransitionValueArtboardComparator, TransitionValueAssetComparator,
+    TransitionValueBooleanComparator, TransitionValueColorComparator, TransitionValueCondition,
+    TransitionValueEnumComparator, TransitionValueIdComparator, TransitionValueNumberComparator,
+    TransitionValueStringComparator, TransitionValueTriggerComparator,
+    TransitionViewModelCondition,
 };
 
 use super::parsers::{input_is_trigger, json_value_to_f32, parse_color, parse_condition_op};
 use super::spec::{
     BlendState1DChildSpec, BlendStateChildSpec, BlendStateDirectChildSpec, InputSpec,
-    ListenerActionSpec, StateMachineSpec, StateSpec, TransitionChildSpec,
+    ListenerActionSpec, StateMachineComponentSpec, StateMachineSpec, StateSpec,
+    TransitionChildSpec,
 };
 
 /// Builds all state machine objects for an artboard.
@@ -51,6 +58,48 @@ pub(crate) fn build_state_machines(
                     InputSpec::Trigger { name } => {
                         objects.push(Box::new(StateMachineTrigger { name: name.clone() }));
                         input_name_to_index.insert(name.clone(), input_index);
+                    }
+                }
+            }
+        }
+
+        if let Some(components) = &state_machine.components {
+            for component in components {
+                match component {
+                    StateMachineComponentSpec::FireEvent {
+                        name,
+                        event_id,
+                        occurs_value,
+                    } => {
+                        objects.push(Box::new(StateMachineFireEvent {
+                            name: name.clone(),
+                            event_id: event_id.unwrap_or(0),
+                            occurs_value: occurs_value.unwrap_or(0),
+                        }));
+                    }
+                    StateMachineComponentSpec::FireTrigger { name } => {
+                        objects.push(Box::new(StateMachineFireTrigger { name: name.clone() }));
+                    }
+                    StateMachineComponentSpec::FireAction { name } => {
+                        objects.push(Box::new(StateMachineFireAction { name: name.clone() }));
+                    }
+                    StateMachineComponentSpec::NestedArtboard { name, artboard_id } => {
+                        objects.push(Box::new(StateMachineComponentNestedArtboard {
+                            name: name.clone(),
+                            artboard_id: artboard_id.unwrap_or(0),
+                        }));
+                    }
+                    StateMachineComponentSpec::NestedInput {
+                        name,
+                        nested_input_id,
+                    } => {
+                        objects.push(Box::new(StateMachineNestedInput {
+                            name: name.clone(),
+                            nested_input_id: nested_input_id.unwrap_or(0),
+                        }));
+                    }
+                    StateMachineComponentSpec::BlendState1DViewModel => {
+                        objects.push(Box::new(BlendState1DViewModel));
                     }
                 }
             }
@@ -145,6 +194,23 @@ pub(crate) fn build_state_machines(
                                 objects.push(Box::new(ListenerNumberChange {
                                     input_id: input_index as u64,
                                     value: number_value,
+                                }));
+                            }
+                            ListenerActionSpec::AlignTarget { target_id } => {
+                                objects.push(Box::new(ListenerAlignTarget {
+                                    target_id: target_id.unwrap_or(0),
+                                }));
+                            }
+                            ListenerActionSpec::FireEvent { event_id } => {
+                                objects.push(Box::new(ListenerFireEvent {
+                                    event_id: event_id.unwrap_or(0),
+                                }));
+                            }
+                            ListenerActionSpec::ViewModelChange {
+                                view_model_property_id,
+                            } => {
+                                objects.push(Box::new(ListenerViewModelChange {
+                                    view_model_property_id: view_model_property_id.unwrap_or(0),
                                 }));
                             }
                         }
@@ -396,6 +462,35 @@ fn append_transition_child(
         }
         TransitionChildSpec::TransitionValueTriggerComparator { value } => {
             objects.push(Box::new(TransitionValueTriggerComparator {
+                value: value.unwrap_or(0),
+            }));
+        }
+        TransitionChildSpec::TransitionPropertyViewModelComparator => {
+            objects.push(Box::new(TransitionPropertyViewModelComparator));
+        }
+        TransitionChildSpec::TransitionPropertyArtboardComparator => {
+            objects.push(Box::new(TransitionPropertyArtboardComparator));
+        }
+        TransitionChildSpec::TransitionArtboardCondition { op_value } => {
+            objects.push(Box::new(TransitionArtboardCondition {
+                op_value: op_value.unwrap_or(0),
+            }));
+        }
+        TransitionChildSpec::TransitionSelfComparator => {
+            objects.push(Box::new(TransitionSelfComparator));
+        }
+        TransitionChildSpec::TransitionValueIdComparator { value } => {
+            objects.push(Box::new(TransitionValueIdComparator {
+                value: value.unwrap_or(0),
+            }));
+        }
+        TransitionChildSpec::TransitionValueAssetComparator { value } => {
+            objects.push(Box::new(TransitionValueAssetComparator {
+                value: value.unwrap_or(0),
+            }));
+        }
+        TransitionChildSpec::TransitionValueArtboardComparator { value } => {
+            objects.push(Box::new(TransitionValueArtboardComparator {
                 value: value.unwrap_or(0),
             }));
         }

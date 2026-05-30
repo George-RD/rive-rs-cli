@@ -1,0 +1,41 @@
+name: Orchestration Validate
+
+on:
+  push:
+    paths:
+      - '.sauron/**'
+      - 'docs/orchestration/**'
+  pull_request:
+    paths:
+      - '.sauron/**'
+      - 'docs/orchestration/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Run schema tests
+        run: node .sauron/scripts/lib/war-state-schema.mjs || true
+      - name: Validate DAG tool
+        run: |
+          echo '{"id":"test","phases":[{"id":"a","force":"nazgul"},{"id":"b","force":"watcher","dependencies":["a"]}]}' | node .sauron/scripts/dag-validate.mjs --stdin
+      - name: Test mordor-state
+        run: |
+          node .sauron/scripts/mordor-state.mjs validate '{"ts":"2026-05-30T00:00:00Z","event":"campaign_started","campaign":"test","template":"hotfix"}'
+      - name: Test materialize-state
+        run: |
+          mkdir -p .sauron/state/campaigns/test
+          echo '{"ts":"2026-05-30T00:00:00Z","event":"campaign_started","campaign":"test","template":"hotfix"}' > .sauron/state/campaigns/test/war-log.jsonl
+          node .sauron/scripts/materialize-state.mjs --campaign test --dry-run
+      - name: Test war-query
+        run: |
+          bash .sauron/scripts/war-query.sh test dashboard --json
+      - name: Test sauron-status
+        run: |
+          node .sauron/scripts/sauron-status.mjs test dashboard

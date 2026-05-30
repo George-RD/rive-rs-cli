@@ -132,6 +132,7 @@ pub enum ObjectSpec {
         asset_id: u64,
         x: Option<f32>,
         y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
     },
     Path {
         name: String,
@@ -215,6 +216,7 @@ pub enum ObjectSpec {
         source_artboard: String,
         x: Option<f32>,
         y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
     },
     NestedStateMachine {
         name: String,
@@ -573,6 +575,750 @@ pub enum ObjectSpec {
         tag: Option<u64>,
         feature_value: Option<u64>,
     },
+    Folder {
+        name: String,
+        #[serde(default)]
+        parent_id: Option<u64>,
+    },
+    LayeredAsset {
+        name: String,
+    },
+    #[serde(rename = "layer_image_asset")]
+    LayerImageAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+    },
+    #[serde(rename = "svg_asset")]
+    SVGAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+    },
+    LottieAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+    },
+    ExportAudio {
+        name: String,
+        volume: Option<f32>,
+    },
+    ScriptAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+        is_module: Option<bool>,
+    },
+    BlobAsset {
+        name: String,
+        asset_id: Option<u64>,
+        cdn_base_url: Option<String>,
+    },
+    #[serde(rename = "dash_path")]
+    DashPath {
+        name: String,
+        offset: Option<f32>,
+        offset_is_percentage: Option<bool>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    Dash {
+        name: String,
+        length: Option<f32>,
+        length_is_percentage: Option<bool>,
+    },
+    Feather {
+        name: String,
+        strength: Option<f32>,
+        offset_x: Option<f32>,
+        offset_y: Option<f32>,
+        space_value: Option<u64>,
+        inner: Option<bool>,
+    },
+    #[serde(rename = "open_url_event")]
+    OpenUrlEvent {
+        name: String,
+        url: Option<String>,
+        target_value: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "audio_event")]
+    AudioEvent {
+        name: String,
+        asset_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "custom_property_number")]
+    CustomPropertyNumber {
+        name: String,
+        property_value: Option<f32>,
+    },
+    #[serde(rename = "custom_property_boolean")]
+    CustomPropertyBoolean {
+        name: String,
+        property_value: Option<serde_json::Value>,
+    },
+    #[serde(rename = "custom_property_string")]
+    CustomPropertyString {
+        name: String,
+        property_value: Option<String>,
+    },
+    #[serde(rename = "custom_property_color")]
+    CustomPropertyColor {
+        name: String,
+        property_value: Option<String>,
+    },
+    #[serde(rename = "custom_property_trigger")]
+    CustomPropertyTrigger {
+        name: String,
+    },
+    #[serde(rename = "custom_property_enum")]
+    CustomPropertyEnum {
+        name: String,
+        property_value: Option<u64>,
+        enum_id: Option<u64>,
+    },
+    #[serde(rename = "custom_property_group")]
+    CustomPropertyGroup {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "target_effect")]
+    TargetEffect {
+        name: String,
+        target_id: Option<u64>,
+    },
+    #[serde(rename = "group_effect")]
+    GroupEffect {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "list_path")]
+    ListPath {
+        name: String,
+        is_closed: Option<bool>,
+        list_source: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "points_common_path")]
+    PointsCommonPath {
+        name: String,
+        is_closed: Option<bool>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    Guide {
+        name: String,
+    },
+    #[serde(rename = "artboard_component_list")]
+    ArtboardComponentList {
+        name: String,
+        list_source: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "artboard_component_list_override")]
+    ArtboardComponentListOverride {
+        name: String,
+        artboard_id: Option<u64>,
+        instance_width: Option<f32>,
+        instance_height: Option<f32>,
+        instance_width_units_value: Option<u64>,
+        instance_height_units_value: Option<u64>,
+        instance_width_scale_type: Option<u64>,
+        instance_height_scale_type: Option<u64>,
+    },
+    #[serde(rename = "artboard_list_map_rule")]
+    ArtboardListMapRule {
+        name: String,
+        artboard_id: Option<u64>,
+        view_model_id: Option<u64>,
+    },
+    #[serde(rename = "foreground_layout_drawable")]
+    ForegroundLayoutDrawable {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "clamped_scroll_physics")]
+    ClampedScrollPhysics {
+        friction: Option<f32>,
+        speed_multiplier: Option<f32>,
+    },
+    #[serde(rename = "elastic_scroll_physics")]
+    ElasticScrollPhysics {
+        friction: Option<f32>,
+        speed_multiplier: Option<f32>,
+        elastic_factor: Option<f32>,
+    },
+    Mesh {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "mesh_vertex")]
+    MeshVertex {
+        name: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        u: Option<f32>,
+        v: Option<f32>,
+    },
+    #[serde(rename = "contour_mesh_vertex")]
+    ContourMeshVertex {
+        name: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        u: Option<f32>,
+        v: Option<f32>,
+    },
+    #[serde(rename = "forced_edge")]
+    ForcedEdge {
+        name: String,
+        from_vertex: Option<String>,
+        to_vertex: Option<String>,
+    },
+    #[serde(rename = "nested_linear_animation")]
+    NestedLinearAnimation {
+        name: String,
+        animation: String,
+        mix: Option<f32>,
+    },
+    #[serde(rename = "nested_remap_animation")]
+    NestedRemapAnimation {
+        name: String,
+        animation: String,
+        time: Option<f32>,
+    },
+    #[serde(rename = "nested_trigger")]
+    NestedTrigger {
+        name: String,
+        nested_input_id: u64,
+    },
+    #[serde(rename = "nested_bool")]
+    NestedBool {
+        name: String,
+        nested_input_id: u64,
+        value: Option<bool>,
+    },
+    #[serde(rename = "nested_number")]
+    NestedNumber {
+        name: String,
+        nested_input_id: u64,
+        value: Option<f32>,
+    },
+    #[serde(rename = "nested_artboard_leaf")]
+    NestedArtboardLeaf {
+        name: String,
+        source_artboard: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "nested_artboard_layout")]
+    NestedArtboardLayout {
+        name: String,
+        source_artboard: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        width: Option<f32>,
+        height: Option<f32>,
+        style_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "draggable_constraint")]
+    DraggableConstraint {
+        name: String,
+        #[allow(dead_code)]
+        target: Option<String>,
+        strength: Option<f32>,
+        direction_value: Option<u64>,
+    },
+    #[serde(rename = "scroll_constraint")]
+    ScrollConstraint {
+        name: String,
+        #[allow(dead_code)]
+        target: Option<String>,
+        strength: Option<f32>,
+        direction_value: Option<u64>,
+        snap: Option<bool>,
+        physics_id: Option<u64>,
+        scroll_offset_x: Option<f32>,
+        scroll_offset_y: Option<f32>,
+        scroll_percent_x: Option<f32>,
+        scroll_percent_y: Option<f32>,
+        scroll_index: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "scroll_bar_constraint")]
+    ScrollBarConstraint {
+        name: String,
+        #[allow(dead_code)]
+        target: Option<String>,
+        strength: Option<f32>,
+        scroll_constraint_id: Option<u64>,
+        auto_size: Option<bool>,
+    },
+    #[serde(rename = "list_follow_path_constraint")]
+    ListFollowPathConstraint {
+        name: String,
+        target: Option<String>,
+        strength: Option<f32>,
+        orient: Option<bool>,
+        start: Option<f32>,
+        end: Option<f32>,
+        list_source: Option<u64>,
+        distance_end: Option<f32>,
+        distance_offset: Option<f32>,
+        random_mode_value: Option<u64>,
+    },
+    #[serde(rename = "nslicer_tile_mode")]
+    NSlicerTileMode {
+        name: Option<String>,
+        patch_index: u64,
+        style: Option<u64>,
+    },
+    #[serde(rename = "nslicer")]
+    NSlicer {
+        name: String,
+        initial_width: Option<f32>,
+        initial_height: Option<f32>,
+        width: Option<f32>,
+        height: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "axis_y")]
+    AxisY {
+        name: Option<String>,
+        offset: f32,
+        normalized: Option<bool>,
+    },
+    #[serde(rename = "axis_x")]
+    AxisX {
+        name: Option<String>,
+        offset: f32,
+        normalized: Option<bool>,
+    },
+    #[serde(rename = "n_sliced_node")]
+    NSlicedNode {
+        name: String,
+        x: Option<f32>,
+        y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_number")]
+    ViewModelPropertyNumber {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_boolean")]
+    ViewModelPropertyBoolean {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_string")]
+    ViewModelPropertyString {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_color")]
+    ViewModelPropertyColor {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_list")]
+    ViewModelPropertyList {
+        name: String,
+        view_model_reference_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_view_model")]
+    ViewModelPropertyViewModel {
+        name: String,
+        view_model_reference_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_enum")]
+    ViewModelPropertyEnum {
+        name: String,
+        enum_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_enum_custom")]
+    ViewModelPropertyEnumCustom {
+        name: String,
+        enum_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_enum_system")]
+    ViewModelPropertyEnumSystem {
+        name: String,
+        enum_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_trigger")]
+    ViewModelPropertyTrigger {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_asset_image")]
+    ViewModelPropertyAssetImage {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_artboard")]
+    ViewModelPropertyArtboard {
+        name: String,
+        artboard_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_symbol")]
+    ViewModelPropertySymbol {
+        name: String,
+        symbol_type_value: Option<u64>,
+        artboard_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_property_symbol_list_index")]
+    ViewModelPropertySymbolListIndex {
+        name: String,
+        symbol_type_value: Option<u64>,
+        artboard_id: Option<u64>,
+        list_source: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "view_model_instance_trigger")]
+    ViewModelInstanceTrigger {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    #[serde(rename = "view_model_instance_symbol")]
+    ViewModelInstanceSymbol {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    #[serde(rename = "view_model_instance_symbol_list_index")]
+    ViewModelInstanceSymbolListIndex {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    #[serde(rename = "view_model_instance_asset_image")]
+    ViewModelInstanceAssetImage {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+    },
+    #[serde(rename = "view_model_instance_artboard")]
+    ViewModelInstanceArtboard {
+        view_model_property_id: Option<u64>,
+        value: Option<u64>,
+        artboard_id: Option<u64>,
+    },
+    #[serde(rename = "data_enum")]
+    DataEnum {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "data_enum_custom")]
+    DataEnumCustom {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    DataEnumValue {
+        key: String,
+        value: String,
+    },
+    #[serde(rename = "data_enum_system")]
+    DataEnumSystem {
+        name: String,
+        enum_type: Option<u64>,
+    },
+    #[serde(rename = "bindable_property_string")]
+    BindablePropertyString {
+        value: Option<String>,
+    },
+    #[serde(rename = "bindable_property_boolean")]
+    BindablePropertyBoolean {
+        value: Option<u64>,
+    },
+    #[serde(rename = "bindable_property_number")]
+    BindablePropertyNumber {
+        value: Option<f32>,
+    },
+    #[serde(rename = "bindable_property_enum")]
+    BindablePropertyEnum {
+        value: Option<u64>,
+    },
+    #[serde(rename = "bindable_property_color")]
+    BindablePropertyColor {
+        value: String,
+    },
+    #[serde(rename = "bindable_property_trigger")]
+    BindablePropertyTrigger {
+        value: Option<u64>,
+    },
+    #[serde(rename = "bindable_property_integer")]
+    BindablePropertyInteger {
+        value: Option<u64>,
+    },
+    #[serde(rename = "bindable_property_list")]
+    BindablePropertyList {
+        value: Option<u64>,
+    },
+    #[serde(rename = "bindable_property_id")]
+    BindablePropertyId {
+        value: String,
+    },
+    #[serde(rename = "bindable_property_artboard")]
+    BindablePropertyArtboard {
+        value: Option<u64>,
+    },
+    DataBindPath {
+        property_key: u64,
+        flags: u64,
+        converter_id: Option<u64>,
+    },
+    TextStylePaint {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextStyleAxis {
+        tag: Option<u64>,
+        axis_value: Option<f32>,
+    },
+    TextTargetModifier {
+        name: String,
+        target_id: Option<u64>,
+    },
+    TextFollowPathModifier {
+        name: String,
+        target_id: Option<u64>,
+        orient: Option<bool>,
+        start: Option<f32>,
+        end: Option<f32>,
+        strength: Option<f32>,
+        offset: Option<f32>,
+    },
+    TextInput {
+        name: String,
+        align_value: Option<u64>,
+        sizing_value: Option<u64>,
+        overflow_value: Option<u64>,
+        width: Option<f32>,
+        height: Option<f32>,
+        text: Option<String>,
+        selection_radius: Option<f32>,
+        interactive: Option<bool>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextInputDrawable {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextInputCursor {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextInputText {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextInputSelection {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    TextInputSelectedText {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "data_converter_rounder")]
+    DataConverterRounder {
+        name: String,
+        decimals: Option<u64>,
+    },
+    #[serde(rename = "data_converter_to_string")]
+    DataConverterToString {
+        name: String,
+        flags: Option<u64>,
+        decimals: Option<u64>,
+        color_format: Option<String>,
+    },
+    #[serde(rename = "data_converter_to_number")]
+    DataConverterToNumber {
+        name: String,
+    },
+    #[serde(rename = "data_converter_group")]
+    DataConverterGroup {
+        name: String,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "data_converter_group_item")]
+    DataConverterGroupItem {
+        converter_id: Option<u64>,
+    },
+    #[serde(rename = "data_converter_operation_value")]
+    DataConverterOperationValue {
+        name: String,
+        operation_type: Option<u64>,
+        operation_value: Option<f32>,
+    },
+    #[serde(rename = "data_converter_trigger")]
+    DataConverterTrigger {
+        name: String,
+    },
+    #[serde(rename = "data_converter_operation_view_model")]
+    DataConverterOperationViewModel {
+        name: String,
+        operation_type: Option<u64>,
+    },
+    #[serde(rename = "data_converter_string_pad")]
+    DataConverterStringPad {
+        name: String,
+        length: Option<u64>,
+        text: Option<String>,
+        pad_type: Option<u64>,
+    },
+    #[serde(rename = "data_converter_string_remove_zeros")]
+    DataConverterStringRemoveZeros {
+        name: String,
+    },
+    #[serde(rename = "data_converter_string_trim")]
+    DataConverterStringTrim {
+        name: String,
+        trim_type: Option<u64>,
+    },
+    #[serde(rename = "data_converter_interpolator")]
+    DataConverterInterpolator {
+        name: String,
+        duration: Option<f32>,
+        interpolation_type: Option<u64>,
+        interpolator_id: Option<u64>,
+    },
+    #[serde(rename = "data_converter_boolean_negate")]
+    DataConverterBooleanNegate {
+        name: String,
+    },
+    #[serde(rename = "data_converter_range_mapper")]
+    DataConverterRangeMapper {
+        name: String,
+        interpolation_type: Option<u64>,
+        interpolator_id: Option<u64>,
+        flags: Option<u64>,
+        min_input: Option<f32>,
+        max_input: Option<f32>,
+        min_output: Option<f32>,
+        max_output: Option<f32>,
+    },
+    #[serde(rename = "data_converter_formula")]
+    DataConverterFormula {
+        name: String,
+        random_mode_value: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "data_converter_system_degs_to_rads")]
+    DataConverterSystemDegsToRads {
+        name: String,
+        operation_type: Option<u64>,
+    },
+    #[serde(rename = "data_converter_system_normalizer")]
+    DataConverterSystemNormalizer {
+        name: String,
+        operation_type: Option<u64>,
+        operation_value: Option<f32>,
+    },
+    #[serde(rename = "data_converter_number_to_list")]
+    DataConverterNumberToList {
+        name: String,
+        view_model_id: Option<u64>,
+    },
+    #[serde(rename = "data_converter_list_to_length")]
+    DataConverterListToLength {
+        name: String,
+    },
+    #[serde(rename = "formula_token_argument_separator")]
+    FormulaTokenArgumentSeparator,
+    #[serde(rename = "formula_token_parenthesis_close")]
+    FormulaTokenParenthesisClose,
+    #[serde(rename = "formula_token_operation")]
+    FormulaTokenOperation {
+        operation_type: Option<u64>,
+    },
+    #[serde(rename = "formula_token_function")]
+    FormulaTokenFunction {
+        function_type: Option<u64>,
+    },
+    #[serde(rename = "formula_token_value")]
+    FormulaTokenValue {
+        operation_value: Option<f32>,
+    },
+    #[serde(rename = "formula_token_parenthesis_open")]
+    FormulaTokenParenthesisOpen,
+    #[serde(rename = "formula_token_input")]
+    FormulaTokenInput,
+    #[serde(rename = "scripted_drawable")]
+    ScriptedDrawable {
+        name: String,
+        script_asset_id: Option<u64>,
+        generator_function_ref: Option<u64>,
+        threshold: Option<f32>,
+        is_paused: Option<bool>,
+        speed: Option<f32>,
+        quantize: Option<f32>,
+        interactive: Option<bool>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "scripted_data_converter")]
+    ScriptedDataConverter {
+        name: String,
+        script_asset_id: Option<u64>,
+    },
+    #[serde(rename = "scripted_layout")]
+    ScriptedLayout {
+        name: String,
+        script_asset_id: Option<u64>,
+        children: Option<Vec<ObjectSpec>>,
+    },
+    #[serde(rename = "scripted_path_effect")]
+    ScriptedPathEffect {
+        name: String,
+        is_relative: Option<bool>,
+        target_id: Option<u64>,
+    },
+    #[serde(rename = "scripted_listener_action")]
+    ScriptedListenerAction {
+        script_asset_id: Option<u64>,
+        is_stateful: Option<bool>,
+    },
+    #[serde(rename = "scripted_transition_condition")]
+    ScriptedTransitionCondition {
+        script_asset_id: Option<u64>,
+        is_stateful: Option<bool>,
+    },
+    #[serde(rename = "script_input_number")]
+    ScriptInputNumber {
+        name: String,
+    },
+    #[serde(rename = "script_input_view_model_property")]
+    ScriptInputViewModelProperty {
+        name: String,
+        view_model_id: Option<u64>,
+    },
+    #[serde(rename = "script_input_trigger")]
+    ScriptInputTrigger {
+        name: String,
+    },
+    #[serde(rename = "script_input_artboard")]
+    ScriptInputArtboard {
+        name: String,
+        artboard_id: Option<u64>,
+    },
+    #[serde(rename = "script_input_color")]
+    ScriptInputColor {
+        name: String,
+    },
+    #[serde(rename = "script_input_string")]
+    ScriptInputString {
+        name: String,
+    },
+    #[serde(rename = "script_input_boolean")]
+    ScriptInputBoolean {
+        name: String,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -620,7 +1366,34 @@ pub struct StateMachineSpec {
     pub name: String,
     pub inputs: Option<Vec<InputSpec>>,
     pub listeners: Option<Vec<StateMachineListenerSpec>>,
+    pub components: Option<Vec<StateMachineComponentSpec>>,
     pub layers: Vec<LayerSpec>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum StateMachineComponentSpec {
+    FireEvent {
+        name: String,
+        event_id: Option<u64>,
+        occurs_value: Option<u64>,
+    },
+    FireTrigger {
+        name: String,
+    },
+    FireAction {
+        name: String,
+    },
+    NestedArtboard {
+        name: String,
+        artboard_id: Option<u64>,
+    },
+    NestedInput {
+        name: String,
+        nested_input_id: Option<u64>,
+    },
+    #[serde(alias = "blend_state_1d_view_model")]
+    BlendState1DViewModel,
 }
 
 #[derive(Debug, Deserialize)]
@@ -644,6 +1417,15 @@ pub enum ListenerActionSpec {
     NumberChange {
         input: String,
         value: Option<serde_json::Value>,
+    },
+    AlignTarget {
+        target_id: Option<u64>,
+    },
+    FireEvent {
+        event_id: Option<u64>,
+    },
+    ViewModelChange {
+        view_model_property_id: Option<u64>,
     },
 }
 
@@ -784,8 +1566,16 @@ pub enum TransitionChildSpec {
     TransitionValueEnumComparator,
     TransitionValueStringComparator { value: String },
     TransitionValueTriggerComparator { value: Option<u64> },
+    TransitionPropertyViewModelComparator,
+    TransitionPropertyArtboardComparator,
+    TransitionArtboardCondition { op_value: Option<u64> },
+    TransitionSelfComparator,
+    TransitionValueIdComparator { value: Option<u64> },
+    TransitionValueAssetComparator { value: Option<u64> },
+    TransitionValueArtboardComparator { value: Option<u64> },
 }
 
+#[allow(dead_code)]
 pub(crate) enum ParentKind {
     Artboard,
     Shape,
@@ -797,4 +1587,9 @@ pub(crate) enum ParentKind {
     Text,
     LayoutComponent,
     ViewModel,
+    Mesh,
+    NSlicer,
+    NSlicedNode,
+    Image,
+    NestedArtboard,
 }

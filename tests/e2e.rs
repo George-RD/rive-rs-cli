@@ -3925,3 +3925,95 @@ fn test_ai_generate_json_output() {
         String::from_utf8_lossy(&validate.stderr)
     );
 }
+
+#[test]
+fn test_generate_data_converters() {
+    let input = fixture_path("data_converters.json");
+    let output = temp_output("data_converters");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_data_converters() {
+    let input = fixture_path("data_converters.json");
+    let output = temp_output("validate_data_converters");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success(), "generate failed");
+
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        v.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&v.stderr)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_scripting() {
+    let input = fixture_path("scripting.json");
+    let output = temp_output("scripting");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_scripting() {
+    let input = fixture_path("scripting.json");
+    let output = temp_output("validate_scripting");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success(), "generate failed");
+
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        v.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&v.stderr)
+    );
+    cleanup(&output);
+}

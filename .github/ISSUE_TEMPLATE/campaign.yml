@@ -1,0 +1,26 @@
+name: Campaign
+description: Track a sauron campaign driving an issue through the DAG.
+labels: [in-progress]
+body:
+  - type: input
+    id: issue
+    attributes:
+      label: Linked Issue
+      description: "e.g., #121"
+    validations:
+      required: true
+  - type: dropdown
+    id: template
+    attributes:
+      label: Campaign Template
+      options:
+        - full
+        - standard
+        - hotfix
+        - goblin
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Campaign Notes

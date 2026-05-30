@@ -673,7 +673,7 @@ mod tests {
         assert!(
             objects
                 .iter()
-                .any(|o| o.type_key() == type_keys::KEY_FRAME_ID)
+                .any(|o| o.type_key() == type_keys::KEY_FRAME_UINT)
         );
     }
 
@@ -713,6 +713,7 @@ mod tests {
                             value: Some(serde_json::json!(true)),
                         }]),
                     }]),
+                    components: None,
                     layers: vec![LayerSpec {
                         states: vec![StateSpec::Entry, StateSpec::Exit],
                         transitions: None,
@@ -839,6 +840,7 @@ mod tests {
                     name: "sm".to_string(),
                     inputs: None,
                     listeners: None,
+                    components: None,
                     layers: vec![LayerSpec {
                         states: vec![StateSpec::Entry, StateSpec::Exit],
                         transitions: Some(vec![TransitionSpec {
@@ -887,6 +889,7 @@ mod tests {
                         value: false,
                     }]),
                     listeners: None,
+                    components: None,
                     layers: vec![LayerSpec {
                         states: vec![
                             StateSpec::Entry,
@@ -928,6 +931,7 @@ mod tests {
                     name: "sm".to_string(),
                     inputs: None,
                     listeners: None,
+                    components: None,
                     layers: vec![LayerSpec {
                         states: vec![StateSpec::Entry, StateSpec::Exit],
                         transitions: Some(vec![TransitionSpec {
@@ -972,6 +976,7 @@ mod tests {
                         value: false,
                     }]),
                     listeners: None,
+                    components: None,
                     layers: vec![LayerSpec {
                         states: vec![StateSpec::Entry, StateSpec::Exit],
                         transitions: Some(vec![TransitionSpec {
@@ -1623,6 +1628,7 @@ mod tests {
                     asset_id: 0,
                     x: Some(10.0),
                     y: Some(20.0),
+                    children: None,
                 }],
                 animations: None,
                 state_machines: None,
@@ -1660,6 +1666,7 @@ mod tests {
                         asset_id: 0,
                         x: Some(10.0),
                         y: Some(20.0),
+                        children: None,
                     },
                 ],
                 animations: None,
@@ -1776,6 +1783,7 @@ mod tests {
                         source_artboard: "Component".to_string(),
                         x: Some(100.0),
                         y: Some(100.0),
+                        children: None,
                     }],
                     animations: None,
                     state_machines: None,
@@ -1826,6 +1834,7 @@ mod tests {
                     source_artboard: "DoesNotExist".to_string(),
                     x: None,
                     y: None,
+                    children: None,
                 }],
                 animations: None,
                 state_machines: None,
@@ -1856,6 +1865,7 @@ mod tests {
                     source_artboard: "Main".to_string(),
                     x: None,
                     y: None,
+                    children: None,
                 }],
                 animations: None,
                 state_machines: None,
@@ -1886,6 +1896,7 @@ mod tests {
                         source_artboard: "B".to_string(),
                         x: None,
                         y: None,
+                        children: None,
                     }],
                     animations: None,
                     state_machines: None,
@@ -1900,6 +1911,7 @@ mod tests {
                         source_artboard: "A".to_string(),
                         x: None,
                         y: None,
+                        children: None,
                     }],
                     animations: None,
                     state_machines: None,

@@ -1,0 +1,64 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "NSlicerDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "image_asset",
+        "name": "ButtonBg",
+        "asset_id": 0
+      },
+      {
+        "type": "n_sliced_node",
+        "name": "sliced_button",
+        "x": 100,
+        "y": 50,
+        "children": [
+          {
+            "type": "image",
+            "name": "button_img",
+            "asset_id": 0
+          },
+          {
+            "type": "nslicer",
+            "name": "slicer",
+            "initial_width": 200,
+            "initial_height": 80,
+            "width": 400,
+            "height": 80,
+            "children": [
+              {
+                "type": "axis_x",
+                "name": "left_cut",
+                "offset": 30.0
+              },
+              {
+                "type": "axis_x",
+                "name": "right_cut",
+                "offset": 170.0
+              },
+              {
+                "type": "axis_y",
+                "name": "top_cut",
+                "offset": 20.0
+              },
+              {
+                "type": "axis_y",
+                "name": "bottom_cut",
+                "offset": 60.0
+              },
+              {
+                "type": "nslicer_tile_mode",
+                "patch_index": 4,
+                "style": 1
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": []
+  }
+}

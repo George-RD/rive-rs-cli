@@ -186,8 +186,171 @@ pub mod type_keys {
     pub const TEXT_MODIFIER_GROUP: u16 = 159;
     pub const TEXT_VARIATION_MODIFIER: u16 = 162;
     pub const TEXT_STYLE_FEATURE: u16 = 164;
+    pub const VERTEX: u16 = 107;
+    pub const MESH_VERTEX: u16 = 108;
+    pub const MESH: u16 = 109;
+    pub const CONTOUR_MESH_VERTEX: u16 = 111;
+    pub const FORCED_EDGE: u16 = 112;
+    pub const NESTED_LINEAR_ANIMATION: u16 = 97;
+    pub const NESTED_REMAP_ANIMATION: u16 = 98;
+    pub const FOLDER: u16 = 102;
+    pub const LAYERED_ASSET: u16 = 119;
+    pub const LAYER_IMAGE_ASSET: u16 = 120;
+    pub const NESTED_INPUT: u16 = 121;
+    pub const NESTED_TRIGGER: u16 = 122;
+    pub const NESTED_BOOL: u16 = 123;
+    pub const NESTED_NUMBER: u16 = 124;
+    pub const LISTENER_ACTION: u16 = 125;
+    pub const LISTENER_ALIGN_TARGET: u16 = 126;
+    pub const CUSTOM_PROPERTY_NUMBER: u16 = 127;
+    pub const CUSTOM_PROPERTY_BOOLEAN: u16 = 129;
+    pub const CUSTOM_PROPERTY_STRING: u16 = 130;
+    pub const OPEN_URL_EVENT: u16 = 131;
+    pub const SVG_ASSET: u16 = 132;
+    pub const LOTTIE_ASSET: u16 = 133;
+    pub const TEXT_STYLE_PAINT: u16 = 137;
+    pub const GUIDE: u16 = 140;
+    pub const TEXT_STYLE_AXIS: u16 = 144;
+    pub const CUSTOM_PROPERTY: u16 = 167;
+    pub const LISTENER_FIRE_EVENT: u16 = 168;
+    pub const STATE_MACHINE_FIRE_EVENT: u16 = 169;
+    pub const STATE_MACHINE_COMPONENT_NESTED_ARTBOARD: u16 = 172;
+    pub const STATE_MACHINE_NESTED_INPUT: u16 = 173;
+    pub const AUDIO_EVENT: u16 = 407;
+    pub const EXPORT_AUDIO: u16 = 422;
+    pub const VIEW_MODEL_PROPERTY_NUMBER: u16 = 431;
+    pub const VIEW_MODEL_PROPERTY_LIST: u16 = 434;
+    pub const DATA_ENUM_CUSTOM: u16 = 438;
+    pub const VIEW_MODEL_PROPERTY_ENUM_CUSTOM: u16 = 439;
+    pub const VIEW_MODEL_PROPERTY_COLOR: u16 = 440;
+    pub const VIEW_MODEL_PROPERTY_STRING: u16 = 443;
+    pub const DATA_ENUM_VALUE: u16 = 445;
+    pub const VIEW_MODEL_PROPERTY_BOOLEAN: u16 = 448;
+    pub const NESTED_ARTBOARD_LEAF: u16 = 451;
+    pub const NESTED_ARTBOARD_LAYOUT: u16 = 452;
+    pub const BINDABLE_PROPERTY_STRING: u16 = 471;
+    pub const BINDABLE_PROPERTY_BOOLEAN: u16 = 472;
+    pub const BINDABLE_PROPERTY_NUMBER: u16 = 473;
+    pub const BINDABLE_PROPERTY_ENUM: u16 = 474;
+    pub const BINDABLE_PROPERTY_COLOR: u16 = 475;
+    pub const TRANSITION_COMPARATOR: u16 = 477;
+    pub const TRANSITION_PROPERTY_VIEW_MODEL_COMPARATOR: u16 = 479;
+    pub const TRANSITION_VALUE_COMPARATOR: u16 = 480;
+    pub const LISTENER_VIEW_MODEL_CHANGE: u16 = 487;
+    pub const DATA_CONVERTER: u16 = 488;
+    pub const DATA_CONVERTER_ROUNDER: u16 = 489;
+    pub const DATA_CONVERTER_TO_STRING: u16 = 490;
+    pub const NSLICER_TILE_MODE: u16 = 491;
+    pub const NSLICER: u16 = 493;
+    pub const AXIS_Y: u16 = 494;
+    pub const AXIS_X: u16 = 495;
+    pub const TRANSITION_PROPERTY_ARTBOARD_COMPARATOR: u16 = 496;
+    pub const TRANSITION_ARTBOARD_CONDITION: u16 = 497;
+    pub const DATA_CONVERTER_GROUP_ITEM: u16 = 498;
+    pub const DATA_CONVERTER_GROUP: u16 = 499;
+    pub const DATA_CONVERTER_OPERATION_VALUE: u16 = 500;
+    pub const VIEW_MODEL_INSTANCE_TRIGGER: u16 = 501;
+    pub const VIEW_MODEL_PROPERTY_TRIGGER: u16 = 502;
+    pub const BINDABLE_PROPERTY_TRIGGER: u16 = 503;
+    pub const DATA_CONVERTER_TRIGGER: u16 = 504;
+    pub const DASH_PATH: u16 = 506;
+    pub const DASH: u16 = 507;
+    pub const NSLICED_NODE: u16 = 508;
+    pub const VIEW_MODEL_PROPERTY_ENUM: u16 = 509;
+    pub const DATA_ENUM: u16 = 510;
+    pub const VIEW_MODEL_PROPERTY_ENUM_SYSTEM: u16 = 511;
+    pub const DATA_ENUM_SYSTEM: u16 = 512;
+    pub const FOREGROUND_LAYOUT_DRAWABLE: u16 = 513;
+    pub const DATA_CONVERTER_SYSTEM_DEGS_TO_RADS: u16 = 514;
+    pub const DATA_CONVERTER_SYSTEM_NORMALIZER: u16 = 515;
+    pub const DATA_CONVERTER_OPERATION: u16 = 516;
+    pub const DATA_CONVERTER_OPERATION_VIEW_MODEL: u16 = 517;
+    pub const DATA_CONVERTER_RANGE_MAPPER: u16 = 519;
+    pub const DRAGGABLE_CONSTRAINT: u16 = 520;
+    pub const SCROLL_CONSTRAINT: u16 = 521;
+    pub const SCROLL_BAR_CONSTRAINT: u16 = 522;
+    pub const SCROLL_PHYSICS: u16 = 523;
+    pub const CLAMPED_SCROLL_PHYSICS: u16 = 524;
+    pub const ELASTIC_SCROLL_PHYSICS: u16 = 525;
+    pub const BLEND_STATE_1D_VIEW_MODEL: u16 = 528;
+    pub const SCRIPT_ASSET: u16 = 529;
+    pub const DATA_CONVERTER_STRING_PAD: u16 = 530;
+    pub const DATA_CONVERTER_STRING_REMOVE_ZEROS: u16 = 531;
+    pub const DATA_CONVERTER_STRING_TRIM: u16 = 532;
+    pub const FEATHER: u16 = 533;
+    pub const DATA_CONVERTER_INTERPOLATOR: u16 = 534;
+    pub const DATA_CONVERTER_BOOLEAN_NEGATE: u16 = 535;
+    pub const DATA_CONVERTER_FORMULA: u16 = 536;
+    pub const FORMULA_TOKEN: u16 = 537;
+    pub const FORMULA_TOKEN_ARGUMENT_SEPARATOR: u16 = 538;
+    pub const FORMULA_TOKEN_PARENTHESIS: u16 = 539;
+    pub const FORMULA_TOKEN_PARENTHESIS_CLOSE: u16 = 540;
+    pub const FORMULA_TOKEN_OPERATION: u16 = 541;
+    pub const FORMULA_TOKEN_FUNCTION: u16 = 542;
+    pub const FORMULA_TOKEN_VALUE: u16 = 543;
+    pub const FORMULA_TOKEN_PARENTHESIS_OPEN: u16 = 544;
+    pub const FORMULA_TOKEN_INPUT: u16 = 545;
+    pub const TEXT_TARGET_MODIFIER: u16 = 546;
+    pub const TEXT_FOLLOW_PATH_MODIFIER: u16 = 547;
+    pub const CUSTOM_PROPERTY_GROUP: u16 = 548;
+    pub const ARTBOARD_COMPONENT_LIST: u16 = 559;
+    pub const VIEW_MODEL_PROPERTY_SYMBOL: u16 = 563;
+    pub const VIEW_MODEL_PROPERTY_SYMBOL_LIST_INDEX: u16 = 564;
+    pub const VIEW_MODEL_INSTANCE_SYMBOL: u16 = 565;
+    pub const VIEW_MODEL_INSTANCE_SYMBOL_LIST_INDEX: u16 = 566;
+    pub const BINDABLE_PROPERTY_INTEGER: u16 = 567;
+    pub const DATA_CONVERTER_NUMBER_TO_LIST: u16 = 568;
+    pub const TEXT_INPUT: u16 = 569;
+    pub const TEXT_INPUT_DRAWABLE: u16 = 570;
+    pub const TEXT_INPUT_CURSOR: u16 = 571;
+    pub const TEXT_INPUT_TEXT: u16 = 572;
+    pub const TEXT_INPUT_SELECTION: u16 = 574;
+    pub const TEXT_INPUT_SELECTED_TEXT: u16 = 575;
+    pub const VIEW_MODEL_PROPERTY_ASSET: u16 = 584;
+    pub const VIEW_MODEL_PROPERTY_ASSET_IMAGE: u16 = 585;
+    pub const VIEW_MODEL_INSTANCE_ASSET: u16 = 586;
+    pub const VIEW_MODEL_INSTANCE_ASSET_IMAGE: u16 = 587;
+    pub const BINDABLE_PROPERTY_LIST: u16 = 590;
+    pub const DATA_CONVERTER_LIST_TO_LENGTH: u16 = 591;
+    pub const CUSTOM_PROPERTY_COLOR: u16 = 592;
+    pub const TRANSITION_SELF_COMPARATOR: u16 = 593;
+    pub const BINDABLE_PROPERTY_ID: u16 = 596;
+    pub const BINDABLE_PROPERTY_ARTBOARD: u16 = 597;
+    pub const VIEW_MODEL_PROPERTY_ARTBOARD: u16 = 598;
+    pub const VIEW_MODEL_INSTANCE_ARTBOARD: u16 = 599;
+    pub const TRANSITION_VALUE_ID_COMPARATOR: u16 = 601;
+    pub const TRANSITION_VALUE_ASSET_COMPARATOR: u16 = 602;
+    pub const SCRIPTED_DRAWABLE: u16 = 603;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE: u16 = 606;
+    pub const SCRIPT_INPUT_NUMBER: u16 = 611;
+    pub const SCRIPT_INPUT_VIEW_MODEL_PROPERTY: u16 = 612;
+    pub const CUSTOM_PROPERTY_TRIGGER: u16 = 613;
+    pub const STATE_MACHINE_FIRE_TRIGGER: u16 = 614;
+    pub const STATE_MACHINE_FIRE_ACTION: u16 = 615;
+    pub const CUSTOM_PROPERTY_ENUM: u16 = 616;
+    pub const DATA_CONVERTER_TO_NUMBER: u16 = 617;
+    pub const SCRIPT_INPUT_TRIGGER: u16 = 618;
+    pub const LIST_PATH: u16 = 619;
+    pub const POINTS_COMMON_PATH: u16 = 620;
+    pub const SCRIPT_INPUT_ARTBOARD: u16 = 621;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT: u16 = 625;
+    pub const SCRIPT_INPUT_COLOR: u16 = 626;
+    pub const SCRIPT_INPUT_STRING: u16 = 627;
+    pub const SCRIPTED_DATA_CONVERTER: u16 = 629;
+    pub const TRANSITION_VALUE_ARTBOARD_COMPARATOR: u16 = 630;
+    pub const SCRIPT_INPUT_BOOLEAN: u16 = 631;
+    pub const SCRIPTED_LAYOUT: u16 = 637;
+    pub const SCRIPTED_PATH_EFFECT: u16 = 640;
+    pub const DATA_BIND_PATH: u16 = 643;
+    pub const TARGET_EFFECT: u16 = 644;
+    pub const GROUP_EFFECT: u16 = 645;
+    pub const SCRIPTED_LISTENER_ACTION: u16 = 646;
+    pub const SCRIPTED_TRANSITION_CONDITION: u16 = 647;
+    pub const ARTBOARD_LIST_MAP_RULE: u16 = 648;
+    pub const BLOB_ASSET: u16 = 649;
 }
 
+#[allow(dead_code)] // complete rive-runtime property key catalog; alias constants for shared property IDs unused until implementing types
 pub mod property_keys {
     pub const COMPONENT_NAME: u16 = 4;
     pub const COMPONENT_PARENT_ID: u16 = 5;
@@ -487,6 +650,168 @@ pub mod property_keys {
     pub const TEXT_VARIATION_MODIFIER_AXIS_VALUE: u16 = 321;
     pub const TEXT_STYLE_FEATURE_TAG: u16 = 356;
     pub const TEXT_STYLE_FEATURE_FEATURE_VALUE: u16 = 357;
+    pub const MESH_VERTEX_U: u16 = 215;
+    pub const MESH_VERTEX_V: u16 = 216;
+    pub const FORCED_EDGE_FROM_ID: u16 = 219;
+    pub const FORCED_EDGE_TO_ID: u16 = 220;
+    pub const NESTED_REMAP_TIME: u16 = 202;
+    pub const NESTED_INPUT_INPUT_ID: u16 = 237;
+    pub const NESTED_BOOL_VALUE: u16 = 238;
+    pub const NESTED_NUMBER_VALUE: u16 = 239;
+    pub const LISTENER_ALIGN_TARGET_ID: u16 = 240;
+    pub const CUSTOM_PROPERTY_NUMBER_PROPERTY_VALUE: u16 = 243;
+    pub const CUSTOM_PROPERTY_BOOLEAN_PROPERTY_VALUE: u16 = 245;
+    pub const CUSTOM_PROPERTY_STRING_PROPERTY_VALUE: u16 = 246;
+    pub const OPEN_URL_EVENT_URL: u16 = 248;
+    pub const OPEN_URL_EVENT_TARGET_VALUE: u16 = 249;
+    pub const TEXT_STYLE_AXIS_AXIS_VALUE: u16 = 288;
+    pub const TEXT_STYLE_AXIS_TAG: u16 = 289;
+    pub const LISTENER_FIRE_EVENT_EVENT_ID: u16 = 389;
+    pub const STATE_MACHINE_FIRE_EVENT_EVENT_ID: u16 = 392;
+    pub const STATE_MACHINE_FIRE_EVENT_OCCURS_VALUE: u16 = 393;
+    pub const AUDIO_EVENT_ASSET_ID: u16 = 408;
+    pub const EXPORT_AUDIO_VOLUME: u16 = 530;
+    pub const VIEW_MODEL_REFERENCE_ID: u16 = 565;
+    pub const DATA_ENUM_CUSTOM_NAME: u16 = 572;
+    pub const DATA_ENUM_CUSTOM_ENUM_ID: u16 = 574;
+    pub const DATA_ENUM_VALUE_KEY: u16 = 578;
+    pub const DATA_ENUM_VALUE_VALUE: u16 = 579;
+    pub const BINDABLE_PROPERTY_BOOLEAN_VALUE: u16 = 634;
+    pub const BINDABLE_PROPERTY_STRING_VALUE: u16 = 635;
+    pub const BINDABLE_PROPERTY_NUMBER_VALUE: u16 = 636;
+    pub const BINDABLE_PROPERTY_ENUM_VALUE: u16 = 637;
+    pub const BINDABLE_PROPERTY_COLOR_VALUE: u16 = 638;
+    pub const NESTED_ARTBOARD_LAYOUT_INSTANCE_WIDTH: u16 = 663;
+    pub const NESTED_ARTBOARD_LAYOUT_INSTANCE_HEIGHT: u16 = 664;
+    pub const NESTED_ARTBOARD_LAYOUT_INSTANCE_WIDTH_UNITS_VALUE: u16 = 665;
+    pub const NESTED_ARTBOARD_LAYOUT_INSTANCE_HEIGHT_UNITS_VALUE: u16 = 666;
+    pub const NESTED_ARTBOARD_LAYOUT_INSTANCE_WIDTH_SCALE_TYPE: u16 = 667;
+    pub const NESTED_ARTBOARD_LAYOUT_INSTANCE_HEIGHT_SCALE_TYPE: u16 = 668;
+    pub const DATA_CONVERTER_NAME: u16 = 662;
+    pub const DATA_CONVERTER_ROUNDER_DECIMALS: u16 = 669;
+    pub const NSLICER_TILE_MODE_PATCH_INDEX: u16 = 672;
+    pub const NSLICER_TILE_MODE_STYLE: u16 = 673;
+    pub const AXIS_OFFSET: u16 = 675;
+    pub const AXIS_NORMALIZED: u16 = 676;
+    pub const DATA_CONVERTER_GROUP_ITEM_CONVERTER_ID: u16 = 679;
+    pub const DATA_CONVERTER_OPERATION_VALUE_VALUE: u16 = 681;
+    pub const DATA_CONVERTER_OPERATION_TYPE: u16 = 682;
+    pub const BINDABLE_PROPERTY_TRIGGER_VALUE: u16 = 686;
+    pub const BINDABLE_PROPERTY_ARTBOARD_VALUE: u16 = 687;
+    pub const DASH_PATH_OFFSET: u16 = 690;
+    pub const DASH_PATH_OFFSET_IS_PERCENTAGE: u16 = 691;
+    pub const DASH_LENGTH: u16 = 692;
+    pub const DASH_LENGTH_IS_PERCENTAGE: u16 = 693;
+    pub const NSLICER_INITIAL_WIDTH: u16 = 697;
+    pub const NSLICER_INITIAL_HEIGHT: u16 = 698;
+    pub const NSLICER_WIDTH: u16 = 699;
+    pub const NSLICER_HEIGHT: u16 = 700;
+    pub const DATA_ENUM_ENUM_TYPE: u16 = 708;
+    pub const DATA_CONVERTER_RANGE_MAPPER_INTERPOLATION_TYPE: u16 = 713;
+    pub const DATA_CONVERTER_RANGE_MAPPER_INTERPOLATOR_ID: u16 = 714;
+    pub const DATA_CONVERTER_RANGE_MAPPER_FLAGS: u16 = 715;
+    pub const DATA_CONVERTER_RANGE_MAPPER_MIN_INPUT: u16 = 716;
+    pub const DATA_CONVERTER_RANGE_MAPPER_MAX_INPUT: u16 = 717;
+    pub const DATA_CONVERTER_RANGE_MAPPER_MIN_OUTPUT: u16 = 718;
+    pub const DATA_CONVERTER_RANGE_MAPPER_MAX_OUTPUT: u16 = 719;
+    pub const DRAGGABLE_CONSTRAINT_DIRECTION_VALUE: u16 = 722;
+    pub const SCROLL_CONSTRAINT_SNAP: u16 = 724;
+    pub const SCROLL_BAR_CONSTRAINT_SCROLL_CONSTRAINT_ID: u16 = 725;
+    pub const SCROLL_CONSTRAINT_PHYSICS_ID: u16 = 726;
+    pub const SCROLL_PHYSICS_FRICTION: u16 = 728;
+    pub const SCROLL_PHYSICS_SPEED_MULTIPLIER: u16 = 729;
+    pub const ELASTIC_SCROLL_PHYSICS_ELASTIC_FACTOR: u16 = 730;
+    pub const SCROLL_BAR_CONSTRAINT_AUTO_SIZE: u16 = 734;
+    pub const DATA_CONVERTER_STRING_PAD_LENGTH: u16 = 743;
+    pub const DATA_CONVERTER_STRING_PAD_TEXT: u16 = 744;
+    pub const DATA_CONVERTER_STRING_PAD_TYPE: u16 = 745;
+    pub const DATA_CONVERTER_STRING_TRIM_TYPE: u16 = 746;
+    pub const FEATHER_SPACE_VALUE: u16 = 748;
+    pub const FEATHER_STRENGTH: u16 = 749;
+    pub const FEATHER_OFFSET_X: u16 = 750;
+    pub const FEATHER_OFFSET_Y: u16 = 751;
+    pub const FEATHER_INNER: u16 = 752;
+    pub const DATA_CONVERTER_INTERPOLATOR_DURATION: u16 = 756;
+    pub const DATA_CONVERTER_INTERPOLATOR_INTERPOLATION_TYPE: u16 = 757;
+    pub const DATA_CONVERTER_INTERPOLATOR_INTERPOLATOR_ID: u16 = 758;
+    pub const SCROLL_CONSTRAINT_SCROLL_OFFSET_X: u16 = 759;
+    pub const SCROLL_CONSTRAINT_SCROLL_OFFSET_Y: u16 = 760;
+    pub const SCROLL_CONSTRAINT_SCROLL_PERCENT_X: u16 = 761;
+    pub const SCROLL_CONSTRAINT_SCROLL_PERCENT_Y: u16 = 762;
+    pub const SCROLL_CONSTRAINT_SCROLL_INDEX: u16 = 763;
+    pub const DATA_CONVERTER_TO_STRING_FLAGS: u16 = 764;
+    pub const DATA_CONVERTER_TO_STRING_DECIMALS: u16 = 765;
+    pub const DATA_CONVERTER_TO_STRING_COLOR_FORMAT: u16 = 766;
+    pub const FORMULA_TOKEN_OPERATION_TYPE: u16 = 775;
+    pub const FORMULA_TOKEN_FUNCTION_TYPE: u16 = 776;
+    pub const FORMULA_TOKEN_VALUE_OPERATION_VALUE: u16 = 777;
+    pub const TEXT_TARGET_MODIFIER_TARGET_ID: u16 = 778;
+    pub const TEXT_FOLLOW_PATH_MODIFIER_ORIENT: u16 = 782;
+    pub const TEXT_FOLLOW_PATH_MODIFIER_START: u16 = 783;
+    pub const TEXT_FOLLOW_PATH_MODIFIER_END: u16 = 784;
+    pub const TEXT_FOLLOW_PATH_MODIFIER_STRENGTH: u16 = 785;
+    pub const TEXT_FOLLOW_PATH_MODIFIER_OFFSET: u16 = 786;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT_LIST_SOURCE: u16 = 800;
+    pub const ARTBOARD_COMPONENT_LIST_LIST_SOURCE: u16 = 800;
+    pub const VIEW_MODEL_INSTANCE_TRIGGER_PROPERTY_VALUE: u16 = 814;
+    pub const DATA_CONVERTER_NUMBER_TO_LIST_VIEW_MODEL_ID: u16 = 816;
+    pub const TEXT_INPUT_TEXT_VALUE: u16 = 817;
+    pub const TEXT_INPUT_SELECTION_RADIUS: u16 = 818;
+    pub const BINDABLE_PROPERTY_INTEGER_VALUE: u16 = 823;
+    pub const TRANSITION_VALUE_ID_COMPARATOR_VALUE: u16 = 823;
+    pub const BINDABLE_PROPERTY_LIST_VALUE: u16 = 824;
+    pub const TRANSITION_VALUE_ASSET_COMPARATOR_VALUE: u16 = 824;
+    pub const VIEW_MODEL_INSTANCE_ARTBOARD_PROPERTY_VALUE: u16 = 835;
+    pub const CUSTOM_PROPERTY_COLOR_PROPERTY_VALUE: u16 = 836;
+    pub const BINDABLE_PROPERTY_ID_VALUE: u16 = 836;
+    pub const VIEW_MODEL_INSTANCE_ASSET_IMAGE_PROPERTY_VALUE: u16 = 846;
+    pub const SCRIPTED_DRAWABLE_SCRIPT_ASSET_ID: u16 = 848;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH_UNITS_VALUE: u16 = 856;
+    pub const VIEW_MODEL_INSTANCE_ARTBOARD_ARTBOARD_ID: u16 = 858;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE_ARTBOARD_ID: u16 = 858;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH: u16 = 859;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT: u16 = 860;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT_UNITS_VALUE: u16 = 861;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH_SCALE_TYPE: u16 = 862;
+    pub const ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT_SCALE_TYPE: u16 = 863;
+    pub const VIEW_MODEL_INSTANCE_SYMBOL_PROPERTY_VALUE: u16 = 870;
+    pub const TRANSITION_VALUE_ARTBOARD_COMPARATOR_VALUE: u16 = 870;
+    pub const VIEW_MODEL_INSTANCE_SYMBOL_LIST_INDEX_PROPERTY_VALUE: u16 = 872;
+    pub const DATA_ENUM_ENUM_ID: u16 = 873;
+    pub const LIST_SOURCE: u16 = 874;
+    pub const VIEW_MODEL_PROPERTY_TYPE_VALUE_SYMBOL: u16 = 875;
+    pub const VM_PROPERTY_ARTBOARD_ID: u16 = 876;
+    pub const DATA_CONVERTER_FORMULA_RANDOM_MODE_VALUE: u16 = 887;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT_RANDOM_MODE_VALUE: u16 = 887;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT_DISTANCE_END: u16 = 888;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT_DISTANCE_OFFSET: u16 = 889;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT_ORIENT: u16 = 782;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT_START: u16 = 783;
+    pub const LIST_FOLLOW_PATH_CONSTRAINT_END: u16 = 784;
+    pub const TEXT_INPUT_INTERACTIVE: u16 = 891;
+    pub const SCRIPTED_DRAWABLE_GENERATOR_FUNCTION_REF: u16 = 893;
+    pub const SCRIPTED_DRAWABLE_THRESHOLD: u16 = 894;
+    pub const SCRIPTED_DRAWABLE_IS_PAUSED: u16 = 895;
+    pub const SCRIPTED_DRAWABLE_SPEED: u16 = 907;
+    pub const SCRIPTED_DRAWABLE_QUANTIZE: u16 = 908;
+    pub const SCRIPTED_DATA_CONVERTER_SCRIPT_ASSET_ID: u16 = 892;
+    pub const SCRIPTED_LAYOUT_SCRIPT_ASSET_ID: u16 = 912;
+    pub const SCRIPT_ASSET_IS_MODULE: u16 = 914;
+    pub const SCRIPTED_PATH_EFFECT_IS_RELATIVE: u16 = 921;
+    pub const SCRIPTED_PATH_EFFECT_TARGET_ID: u16 = 922;
+    pub const TARGET_EFFECT_TARGET_ID: u16 = 922;
+    pub const FOLDER_PATH: u16 = 926;
+    pub const SCRIPTED_LISTENER_ACTION_SCRIPT_ASSET_ID: u16 = 930;
+    pub const SCRIPTED_TRANSITION_CONDITION_SCRIPT_ASSET_ID: u16 = 931;
+    pub const SCRIPT_INPUT_ARTBOARD_ARTBOARD_ID: u16 = 934;
+    pub const ARTBOARD_LIST_MAP_RULE_ARTBOARD_ID: u16 = 934;
+    pub const SCRIPT_INPUT_VIEW_MODEL_PROPERTY_VIEW_MODEL_ID: u16 = 935;
+    pub const ARTBOARD_LIST_MAP_RULE_VIEW_MODEL_ID: u16 = 935;
+    pub const SCRIPTED_IS_STATEFUL: u16 = 951;
+    pub const SCRIPTED_DRAWABLE_INTERACTIVE: u16 = 891;
+    pub const CUSTOM_PROPERTY_TRIGGER_PROPERTY_VALUE: u16 = 870;
+    pub const CUSTOM_PROPERTY_ENUM_PROPERTY_VALUE: u16 = 872;
+    pub const CUSTOM_PROPERTY_ENUM_ENUM_ID: u16 = 873;
 }
 
 pub fn is_bool_property(key: u16) -> bool {
@@ -516,6 +841,18 @@ pub fn is_bool_property(key: u16) -> bool {
             | property_keys::TRANSITION_VALUE_BOOLEAN_COMPARATOR_VALUE
             | property_keys::VIEW_MODEL_INSTANCE_BOOLEAN_PROPERTY_VALUE
             | property_keys::TEXT_MODIFIER_RANGE_CLAMP
+            | property_keys::NESTED_BOOL_VALUE
+            | property_keys::DASH_PATH_OFFSET_IS_PERCENTAGE
+            | property_keys::DASH_LENGTH_IS_PERCENTAGE
+            | property_keys::FEATHER_INNER
+            | property_keys::AXIS_NORMALIZED
+            | property_keys::SCROLL_CONSTRAINT_SNAP
+            | property_keys::SCROLL_BAR_CONSTRAINT_AUTO_SIZE
+            | property_keys::TEXT_FOLLOW_PATH_MODIFIER_ORIENT
+            | property_keys::TEXT_INPUT_INTERACTIVE
+            | property_keys::SCRIPTED_DRAWABLE_IS_PAUSED
+            | property_keys::SCRIPTED_PATH_EFFECT_IS_RELATIVE
+            | property_keys::SCRIPTED_IS_STATEFUL
     )
 }
 
@@ -529,7 +866,18 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TEXT_VALUE_RUN_TEXT
         | property_keys::KEY_FRAME_STRING_VALUE
         | property_keys::VIEW_MODEL_INSTANCE_STRING_PROPERTY_VALUE
-        | property_keys::TRANSITION_VALUE_STRING_COMPARATOR_VALUE => Some(BackingType::String),
+        | property_keys::TRANSITION_VALUE_STRING_COMPARATOR_VALUE
+        | property_keys::OPEN_URL_EVENT_URL
+        | property_keys::CUSTOM_PROPERTY_STRING_PROPERTY_VALUE
+        | property_keys::DATA_CONVERTER_NAME
+        | property_keys::DATA_CONVERTER_STRING_PAD_TEXT
+        | property_keys::DATA_CONVERTER_TO_STRING_COLOR_FORMAT
+        | property_keys::DATA_ENUM_CUSTOM_NAME
+        | property_keys::DATA_ENUM_VALUE_KEY
+        | property_keys::DATA_ENUM_VALUE_VALUE
+        | property_keys::BINDABLE_PROPERTY_STRING_VALUE
+        | property_keys::TEXT_INPUT_TEXT_VALUE
+        | property_keys::FOLDER_PATH => Some(BackingType::String),
         property_keys::LAYOUT_COMPONENT_WIDTH
         | property_keys::LAYOUT_COMPONENT_HEIGHT
         | property_keys::NODE_X_ARTBOARD
@@ -676,7 +1024,54 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TEXT_MODIFIER_GROUP_ROTATION
         | property_keys::TEXT_MODIFIER_GROUP_SCALE_X
         | property_keys::TEXT_MODIFIER_GROUP_SCALE_Y
-        | property_keys::TEXT_VARIATION_MODIFIER_AXIS_VALUE => Some(BackingType::Float),
+        | property_keys::TEXT_VARIATION_MODIFIER_AXIS_VALUE
+        | property_keys::MESH_VERTEX_U
+        | property_keys::MESH_VERTEX_V
+        | property_keys::NESTED_REMAP_TIME
+        | property_keys::NESTED_NUMBER_VALUE
+        | property_keys::CUSTOM_PROPERTY_NUMBER_PROPERTY_VALUE
+        | property_keys::TEXT_STYLE_AXIS_AXIS_VALUE
+        | property_keys::EXPORT_AUDIO_VOLUME
+        | property_keys::BINDABLE_PROPERTY_NUMBER_VALUE
+        | property_keys::DASH_PATH_OFFSET
+        | property_keys::DASH_LENGTH
+        | property_keys::FEATHER_STRENGTH
+        | property_keys::FEATHER_OFFSET_X
+        | property_keys::FEATHER_OFFSET_Y
+        | property_keys::AXIS_OFFSET
+        | property_keys::NSLICER_INITIAL_WIDTH
+        | property_keys::NSLICER_INITIAL_HEIGHT
+        | property_keys::NSLICER_WIDTH
+        | property_keys::NSLICER_HEIGHT
+        | property_keys::DATA_CONVERTER_OPERATION_VALUE_VALUE
+        | property_keys::DATA_CONVERTER_RANGE_MAPPER_MIN_INPUT
+        | property_keys::DATA_CONVERTER_RANGE_MAPPER_MAX_INPUT
+        | property_keys::DATA_CONVERTER_RANGE_MAPPER_MIN_OUTPUT
+        | property_keys::DATA_CONVERTER_RANGE_MAPPER_MAX_OUTPUT
+        | property_keys::DATA_CONVERTER_INTERPOLATOR_DURATION
+        | property_keys::FORMULA_TOKEN_VALUE_OPERATION_VALUE
+        | property_keys::TEXT_FOLLOW_PATH_MODIFIER_START
+        | property_keys::TEXT_FOLLOW_PATH_MODIFIER_END
+        | property_keys::TEXT_FOLLOW_PATH_MODIFIER_STRENGTH
+        | property_keys::TEXT_FOLLOW_PATH_MODIFIER_OFFSET
+        | property_keys::TEXT_INPUT_SELECTION_RADIUS
+        | property_keys::SCROLL_CONSTRAINT_SCROLL_OFFSET_X
+        | property_keys::SCROLL_CONSTRAINT_SCROLL_OFFSET_Y
+        | property_keys::SCROLL_CONSTRAINT_SCROLL_PERCENT_X
+        | property_keys::SCROLL_CONSTRAINT_SCROLL_PERCENT_Y
+        | property_keys::SCROLL_CONSTRAINT_SCROLL_INDEX
+        | property_keys::SCROLL_PHYSICS_FRICTION
+        | property_keys::SCROLL_PHYSICS_SPEED_MULTIPLIER
+        | property_keys::ELASTIC_SCROLL_PHYSICS_ELASTIC_FACTOR
+        | property_keys::SCRIPTED_DRAWABLE_THRESHOLD
+        | property_keys::SCRIPTED_DRAWABLE_SPEED
+        | property_keys::SCRIPTED_DRAWABLE_QUANTIZE
+        | property_keys::NESTED_ARTBOARD_LAYOUT_INSTANCE_WIDTH
+        | property_keys::NESTED_ARTBOARD_LAYOUT_INSTANCE_HEIGHT
+        | property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH
+        | property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT
+        | property_keys::LIST_FOLLOW_PATH_CONSTRAINT_DISTANCE_END
+        | property_keys::LIST_FOLLOW_PATH_CONSTRAINT_DISTANCE_OFFSET => Some(BackingType::Float),
 
         property_keys::COMPONENT_PARENT_ID
         | property_keys::DRAWABLE_BLEND_MODE
@@ -813,13 +1208,101 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS
         | property_keys::TEXT_VARIATION_MODIFIER_AXIS_TAG
         | property_keys::TEXT_STYLE_FEATURE_TAG
-        | property_keys::TEXT_STYLE_FEATURE_FEATURE_VALUE => Some(BackingType::UInt),
+        | property_keys::TEXT_STYLE_FEATURE_FEATURE_VALUE
+        | property_keys::FORCED_EDGE_FROM_ID
+        | property_keys::FORCED_EDGE_TO_ID
+        | property_keys::NESTED_INPUT_INPUT_ID
+        | property_keys::NESTED_BOOL_VALUE
+        | property_keys::LISTENER_ALIGN_TARGET_ID
+        | property_keys::CUSTOM_PROPERTY_BOOLEAN_PROPERTY_VALUE
+        | property_keys::OPEN_URL_EVENT_TARGET_VALUE
+        | property_keys::TEXT_STYLE_AXIS_TAG
+        | property_keys::LISTENER_FIRE_EVENT_EVENT_ID
+        | property_keys::STATE_MACHINE_FIRE_EVENT_EVENT_ID
+        | property_keys::STATE_MACHINE_FIRE_EVENT_OCCURS_VALUE
+        | property_keys::AUDIO_EVENT_ASSET_ID
+        | property_keys::VIEW_MODEL_REFERENCE_ID
+        | property_keys::DATA_ENUM_CUSTOM_ENUM_ID
+        | property_keys::DATA_ENUM_ENUM_TYPE
+        | property_keys::VIEW_MODEL_INSTANCE_TRIGGER_PROPERTY_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_ARTBOARD_PROPERTY_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_ASSET_IMAGE_PROPERTY_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_ARTBOARD_ARTBOARD_ID
+        | property_keys::VIEW_MODEL_INSTANCE_SYMBOL_PROPERTY_VALUE
+        | property_keys::VIEW_MODEL_INSTANCE_SYMBOL_LIST_INDEX_PROPERTY_VALUE
+        | property_keys::DATA_ENUM_ENUM_ID
+        | property_keys::LIST_SOURCE
+        | property_keys::VM_PROPERTY_ARTBOARD_ID
+        | property_keys::BINDABLE_PROPERTY_BOOLEAN_VALUE
+        | property_keys::BINDABLE_PROPERTY_ENUM_VALUE
+        | property_keys::BINDABLE_PROPERTY_TRIGGER_VALUE
+        | property_keys::BINDABLE_PROPERTY_ARTBOARD_VALUE
+        | property_keys::BINDABLE_PROPERTY_INTEGER_VALUE
+        | property_keys::BINDABLE_PROPERTY_LIST_VALUE
+        | property_keys::NSLICER_TILE_MODE_PATCH_INDEX
+        | property_keys::NSLICER_TILE_MODE_STYLE
+        | property_keys::AXIS_NORMALIZED
+        | property_keys::DASH_PATH_OFFSET_IS_PERCENTAGE
+        | property_keys::DASH_LENGTH_IS_PERCENTAGE
+        | property_keys::FEATHER_SPACE_VALUE
+        | property_keys::FEATHER_INNER
+        | property_keys::DATA_CONVERTER_ROUNDER_DECIMALS
+        | property_keys::DATA_CONVERTER_GROUP_ITEM_CONVERTER_ID
+        | property_keys::DATA_CONVERTER_OPERATION_TYPE
+        | property_keys::DATA_CONVERTER_RANGE_MAPPER_INTERPOLATION_TYPE
+        | property_keys::DATA_CONVERTER_RANGE_MAPPER_INTERPOLATOR_ID
+        | property_keys::DATA_CONVERTER_RANGE_MAPPER_FLAGS
+        | property_keys::DATA_CONVERTER_STRING_PAD_LENGTH
+        | property_keys::DATA_CONVERTER_STRING_PAD_TYPE
+        | property_keys::DATA_CONVERTER_STRING_TRIM_TYPE
+        | property_keys::DATA_CONVERTER_INTERPOLATOR_INTERPOLATION_TYPE
+        | property_keys::DATA_CONVERTER_INTERPOLATOR_INTERPOLATOR_ID
+        | property_keys::DATA_CONVERTER_TO_STRING_FLAGS
+        | property_keys::DATA_CONVERTER_TO_STRING_DECIMALS
+        | property_keys::FORMULA_TOKEN_OPERATION_TYPE
+        | property_keys::FORMULA_TOKEN_FUNCTION_TYPE
+        | property_keys::DATA_CONVERTER_NUMBER_TO_LIST_VIEW_MODEL_ID
+        | property_keys::DATA_CONVERTER_FORMULA_RANDOM_MODE_VALUE
+        | property_keys::TEXT_TARGET_MODIFIER_TARGET_ID
+        | property_keys::TEXT_FOLLOW_PATH_MODIFIER_ORIENT
+        | property_keys::TEXT_INPUT_INTERACTIVE
+        | property_keys::DRAGGABLE_CONSTRAINT_DIRECTION_VALUE
+        | property_keys::SCROLL_CONSTRAINT_SNAP
+        | property_keys::SCROLL_BAR_CONSTRAINT_SCROLL_CONSTRAINT_ID
+        | property_keys::SCROLL_CONSTRAINT_PHYSICS_ID
+        | property_keys::SCROLL_BAR_CONSTRAINT_AUTO_SIZE
+        | property_keys::LIST_FOLLOW_PATH_CONSTRAINT_LIST_SOURCE
+        | property_keys::SCRIPTED_DRAWABLE_SCRIPT_ASSET_ID
+        | property_keys::SCRIPTED_DRAWABLE_GENERATOR_FUNCTION_REF
+        | property_keys::SCRIPTED_DRAWABLE_IS_PAUSED
+        | property_keys::SCRIPTED_DATA_CONVERTER_SCRIPT_ASSET_ID
+        | property_keys::SCRIPTED_LAYOUT_SCRIPT_ASSET_ID
+        | property_keys::SCRIPTED_PATH_EFFECT_IS_RELATIVE
+        | property_keys::SCRIPTED_PATH_EFFECT_TARGET_ID
+        | property_keys::SCRIPTED_LISTENER_ACTION_SCRIPT_ASSET_ID
+        | property_keys::SCRIPTED_TRANSITION_CONDITION_SCRIPT_ASSET_ID
+        | property_keys::SCRIPTED_IS_STATEFUL
+        | property_keys::SCRIPT_INPUT_ARTBOARD_ARTBOARD_ID
+        | property_keys::SCRIPT_INPUT_VIEW_MODEL_PROPERTY_VIEW_MODEL_ID
+        | property_keys::SCRIPT_ASSET_IS_MODULE
+        | property_keys::NESTED_ARTBOARD_LAYOUT_INSTANCE_WIDTH_UNITS_VALUE
+        | property_keys::NESTED_ARTBOARD_LAYOUT_INSTANCE_HEIGHT_UNITS_VALUE
+        | property_keys::NESTED_ARTBOARD_LAYOUT_INSTANCE_WIDTH_SCALE_TYPE
+        | property_keys::NESTED_ARTBOARD_LAYOUT_INSTANCE_HEIGHT_SCALE_TYPE
+        | property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH_UNITS_VALUE
+        | property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT_UNITS_VALUE
+        | property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH_SCALE_TYPE
+        | property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT_SCALE_TYPE => {
+            Some(BackingType::UInt)
+        }
 
         property_keys::SOLID_COLOR_VALUE
         | property_keys::GRADIENT_STOP_COLOR
         | property_keys::KEY_FRAME_COLOR_VALUE
         | property_keys::VIEW_MODEL_INSTANCE_COLOR_PROPERTY_VALUE
-        | property_keys::TRANSITION_VALUE_COLOR_COMPARATOR_VALUE => Some(BackingType::Color),
+        | property_keys::TRANSITION_VALUE_COLOR_COMPARATOR_VALUE
+        | property_keys::CUSTOM_PROPERTY_COLOR_PROPERTY_VALUE
+        | property_keys::BINDABLE_PROPERTY_COLOR_VALUE => Some(BackingType::Color),
         _ => None,
     }
 }

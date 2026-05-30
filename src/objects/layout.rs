@@ -412,6 +412,118 @@ impl RiveObject for LayoutComponentStyle {
     }
 }
 
+pub struct ForegroundLayoutDrawable {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl ForegroundLayoutDrawable {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self { name, parent_id }
+    }
+}
+
+impl RiveObject for ForegroundLayoutDrawable {
+    fn type_key(&self) -> u16 {
+        type_keys::FOREGROUND_LAYOUT_DRAWABLE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ClampedScrollPhysics {
+    pub friction: f32,
+    pub speed_multiplier: f32,
+}
+
+impl ClampedScrollPhysics {
+    pub fn new() -> Self {
+        Self {
+            friction: 0.0,
+            speed_multiplier: 1.0,
+        }
+    }
+}
+
+impl RiveObject for ClampedScrollPhysics {
+    fn type_key(&self) -> u16 {
+        type_keys::CLAMPED_SCROLL_PHYSICS
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.friction != 0.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_PHYSICS_FRICTION,
+                value: PropertyValue::Float(self.friction),
+            });
+        }
+        if self.speed_multiplier != 1.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_PHYSICS_SPEED_MULTIPLIER,
+                value: PropertyValue::Float(self.speed_multiplier),
+            });
+        }
+        props
+    }
+}
+
+pub struct ElasticScrollPhysics {
+    pub friction: f32,
+    pub speed_multiplier: f32,
+    pub elastic_factor: f32,
+}
+
+impl ElasticScrollPhysics {
+    pub fn new() -> Self {
+        Self {
+            friction: 0.0,
+            speed_multiplier: 1.0,
+            elastic_factor: 0.0,
+        }
+    }
+}
+
+impl RiveObject for ElasticScrollPhysics {
+    fn type_key(&self) -> u16 {
+        type_keys::ELASTIC_SCROLL_PHYSICS
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.friction != 0.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_PHYSICS_FRICTION,
+                value: PropertyValue::Float(self.friction),
+            });
+        }
+        if self.speed_multiplier != 1.0 {
+            props.push(Property {
+                key: property_keys::SCROLL_PHYSICS_SPEED_MULTIPLIER,
+                value: PropertyValue::Float(self.speed_multiplier),
+            });
+        }
+        if self.elastic_factor != 0.0 {
+            props.push(Property {
+                key: property_keys::ELASTIC_SCROLL_PHYSICS_ELASTIC_FACTOR,
+                value: PropertyValue::Float(self.elastic_factor),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

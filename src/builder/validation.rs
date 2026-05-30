@@ -298,6 +298,9 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
                                         ));
                                     }
                                 }
+                                ListenerActionSpec::AlignTarget { .. }
+                                | ListenerActionSpec::FireEvent { .. }
+                                | ListenerActionSpec::ViewModelChange { .. } => {}
                             }
                         }
                     }
@@ -485,7 +488,91 @@ pub(crate) fn validate_object_spec(
                         | ObjectSpec::LayoutComponentStyle { name, .. }
                         | ObjectSpec::ViewModel { name, .. }
                         | ObjectSpec::ViewModelProperty { name, .. }
-                        | ObjectSpec::TextModifierGroup { name, .. } => {
+                        | ObjectSpec::TextModifierGroup { name, .. }
+                        | ObjectSpec::Folder { name, .. }
+                        | ObjectSpec::LayeredAsset { name, .. }
+                        | ObjectSpec::LayerImageAsset { name, .. }
+                        | ObjectSpec::SVGAsset { name, .. }
+                        | ObjectSpec::LottieAsset { name, .. }
+                        | ObjectSpec::ExportAudio { name, .. }
+                        | ObjectSpec::ScriptAsset { name, .. }
+                        | ObjectSpec::BlobAsset { name, .. }
+                        | ObjectSpec::DashPath { name, .. }
+                        | ObjectSpec::Dash { name, .. }
+                        | ObjectSpec::Feather { name, .. }
+                        | ObjectSpec::OpenUrlEvent { name, .. }
+                        | ObjectSpec::AudioEvent { name, .. }
+                        | ObjectSpec::CustomPropertyNumber { name, .. }
+                        | ObjectSpec::CustomPropertyBoolean { name, .. }
+                        | ObjectSpec::CustomPropertyString { name, .. }
+                        | ObjectSpec::CustomPropertyColor { name, .. }
+                        | ObjectSpec::CustomPropertyTrigger { name, .. }
+                        | ObjectSpec::CustomPropertyEnum { name, .. }
+                        | ObjectSpec::CustomPropertyGroup { name, .. }
+                        | ObjectSpec::TargetEffect { name, .. }
+                        | ObjectSpec::GroupEffect { name, .. }
+                        | ObjectSpec::ListPath { name, .. }
+                        | ObjectSpec::PointsCommonPath { name, .. }
+                        | ObjectSpec::Guide { name, .. }
+                        | ObjectSpec::ArtboardComponentList { name, .. }
+                        | ObjectSpec::ArtboardComponentListOverride { name, .. }
+                        | ObjectSpec::ArtboardListMapRule { name, .. }
+                        | ObjectSpec::ForegroundLayoutDrawable { name, .. }
+                        | ObjectSpec::ViewModelPropertyNumber { name, .. }
+                        | ObjectSpec::ViewModelPropertyBoolean { name, .. }
+                        | ObjectSpec::ViewModelPropertyString { name, .. }
+                        | ObjectSpec::ViewModelPropertyColor { name, .. }
+                        | ObjectSpec::ViewModelPropertyList { name, .. }
+                        | ObjectSpec::ViewModelPropertyViewModel { name, .. }
+                        | ObjectSpec::ViewModelPropertyEnum { name, .. }
+                        | ObjectSpec::ViewModelPropertyEnumCustom { name, .. }
+                        | ObjectSpec::ViewModelPropertyEnumSystem { name, .. }
+                        | ObjectSpec::ViewModelPropertyTrigger { name, .. }
+                        | ObjectSpec::ViewModelPropertyAssetImage { name, .. }
+                        | ObjectSpec::ViewModelPropertyArtboard { name, .. }
+                        | ObjectSpec::ViewModelPropertySymbol { name, .. }
+                        | ObjectSpec::ViewModelPropertySymbolListIndex { name, .. }
+                        | ObjectSpec::DataEnum { name, .. }
+                        | ObjectSpec::DataEnumCustom { name, .. }
+                        | ObjectSpec::DataEnumSystem { name, .. }
+                        | ObjectSpec::TextStylePaint { name, .. }
+                        | ObjectSpec::TextTargetModifier { name, .. }
+                        | ObjectSpec::TextFollowPathModifier { name, .. }
+                        | ObjectSpec::TextInput { name, .. }
+                        | ObjectSpec::TextInputDrawable { name, .. }
+                        | ObjectSpec::TextInputCursor { name, .. }
+                        | ObjectSpec::TextInputText { name, .. }
+                        | ObjectSpec::TextInputSelection { name, .. }
+                        | ObjectSpec::TextInputSelectedText { name, .. }
+                        | ObjectSpec::DataConverterRounder { name, .. }
+                        | ObjectSpec::DataConverterToString { name, .. }
+                        | ObjectSpec::DataConverterToNumber { name, .. }
+                        | ObjectSpec::DataConverterGroup { name, .. }
+                        | ObjectSpec::DataConverterOperationValue { name, .. }
+                        | ObjectSpec::DataConverterTrigger { name, .. }
+                        | ObjectSpec::DataConverterOperationViewModel { name, .. }
+                        | ObjectSpec::DataConverterStringPad { name, .. }
+                        | ObjectSpec::DataConverterStringRemoveZeros { name, .. }
+                        | ObjectSpec::DataConverterStringTrim { name, .. }
+                        | ObjectSpec::DataConverterInterpolator { name, .. }
+                        | ObjectSpec::DataConverterBooleanNegate { name, .. }
+                        | ObjectSpec::DataConverterRangeMapper { name, .. }
+                        | ObjectSpec::DataConverterFormula { name, .. }
+                        | ObjectSpec::DataConverterSystemDegsToRads { name, .. }
+                        | ObjectSpec::DataConverterSystemNormalizer { name, .. }
+                        | ObjectSpec::DataConverterNumberToList { name, .. }
+                        | ObjectSpec::DataConverterListToLength { name, .. }
+                        | ObjectSpec::ScriptedDrawable { name, .. }
+                        | ObjectSpec::ScriptedDataConverter { name, .. }
+                        | ObjectSpec::ScriptedLayout { name, .. }
+                        | ObjectSpec::ScriptedPathEffect { name, .. }
+                        | ObjectSpec::ScriptInputNumber { name, .. }
+                        | ObjectSpec::ScriptInputViewModelProperty { name, .. }
+                        | ObjectSpec::ScriptInputTrigger { name, .. }
+                        | ObjectSpec::ScriptInputArtboard { name, .. }
+                        | ObjectSpec::ScriptInputColor { name, .. }
+                        | ObjectSpec::ScriptInputString { name, .. }
+                        | ObjectSpec::ScriptInputBoolean { name, .. } => {
                             child_names.insert(name.clone());
                         }
                         ObjectSpec::GradientStop { name, .. } => {
@@ -504,9 +591,61 @@ pub(crate) fn validate_object_spec(
                         | ObjectSpec::ViewModelInstanceList
                         | ObjectSpec::ViewModelInstanceListItem { .. }
                         | ObjectSpec::ViewModelInstanceViewModel { .. }
+                        | ObjectSpec::ViewModelInstanceTrigger { .. }
+                        | ObjectSpec::ViewModelInstanceSymbol { .. }
+                        | ObjectSpec::ViewModelInstanceSymbolListIndex { .. }
+                        | ObjectSpec::ViewModelInstanceAssetImage { .. }
+                        | ObjectSpec::ViewModelInstanceArtboard { .. }
                         | ObjectSpec::TextModifierRange { .. }
                         | ObjectSpec::TextVariationModifier { .. }
-                        | ObjectSpec::TextStyleFeature { .. } => {}
+                        | ObjectSpec::TextStyleFeature { .. }
+                        | ObjectSpec::TextStyleAxis { .. }
+                        | ObjectSpec::DataEnumValue { .. }
+                        | ObjectSpec::BindablePropertyString { .. }
+                        | ObjectSpec::BindablePropertyBoolean { .. }
+                        | ObjectSpec::BindablePropertyNumber { .. }
+                        | ObjectSpec::BindablePropertyEnum { .. }
+                        | ObjectSpec::BindablePropertyColor { .. }
+                        | ObjectSpec::BindablePropertyTrigger { .. }
+                        | ObjectSpec::BindablePropertyInteger { .. }
+                        | ObjectSpec::BindablePropertyList { .. }
+                        | ObjectSpec::BindablePropertyId { .. }
+                        | ObjectSpec::BindablePropertyArtboard { .. }
+                        | ObjectSpec::DataBindPath { .. }
+                        | ObjectSpec::ClampedScrollPhysics { .. }
+                        | ObjectSpec::ElasticScrollPhysics { .. }
+                        | ObjectSpec::NSlicerTileMode { .. }
+                        | ObjectSpec::AxisX { .. }
+                        | ObjectSpec::AxisY { .. }
+                        | ObjectSpec::DataConverterGroupItem { .. }
+                        | ObjectSpec::FormulaTokenArgumentSeparator
+                        | ObjectSpec::FormulaTokenParenthesisClose
+                        | ObjectSpec::FormulaTokenOperation { .. }
+                        | ObjectSpec::FormulaTokenFunction { .. }
+                        | ObjectSpec::FormulaTokenValue { .. }
+                        | ObjectSpec::FormulaTokenParenthesisOpen
+                        | ObjectSpec::FormulaTokenInput
+                        | ObjectSpec::ScriptedListenerAction { .. }
+                        | ObjectSpec::ScriptedTransitionCondition { .. } => {}
+                        ObjectSpec::Mesh { name, .. }
+                        | ObjectSpec::MeshVertex { name, .. }
+                        | ObjectSpec::ContourMeshVertex { name, .. }
+                        | ObjectSpec::ForcedEdge { name, .. }
+                        | ObjectSpec::NestedLinearAnimation { name, .. }
+                        | ObjectSpec::NestedRemapAnimation { name, .. }
+                        | ObjectSpec::NestedTrigger { name, .. }
+                        | ObjectSpec::NestedBool { name, .. }
+                        | ObjectSpec::NestedNumber { name, .. }
+                        | ObjectSpec::NestedArtboardLeaf { name, .. }
+                        | ObjectSpec::NestedArtboardLayout { name, .. }
+                        | ObjectSpec::DraggableConstraint { name, .. }
+                        | ObjectSpec::ScrollConstraint { name, .. }
+                        | ObjectSpec::ScrollBarConstraint { name, .. }
+                        | ObjectSpec::ListFollowPathConstraint { name, .. }
+                        | ObjectSpec::NSlicer { name, .. }
+                        | ObjectSpec::NSlicedNode { name, .. } => {
+                            child_names.insert(name.clone());
+                        }
                     }
                     validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
@@ -1060,6 +1199,275 @@ pub(crate) fn validate_object_spec(
                 }
             }
         }
+        ObjectSpec::Folder { name, .. }
+        | ObjectSpec::LayeredAsset { name, .. }
+        | ObjectSpec::LayerImageAsset { name, .. }
+        | ObjectSpec::SVGAsset { name, .. }
+        | ObjectSpec::LottieAsset { name, .. }
+        | ObjectSpec::ExportAudio { name, .. }
+        | ObjectSpec::ScriptAsset { name, .. }
+        | ObjectSpec::BlobAsset { name, .. }
+        | ObjectSpec::Dash { name, .. }
+        | ObjectSpec::Feather { name, .. }
+        | ObjectSpec::CustomPropertyNumber { name, .. }
+        | ObjectSpec::CustomPropertyBoolean { name, .. }
+        | ObjectSpec::CustomPropertyString { name, .. }
+        | ObjectSpec::CustomPropertyColor { name, .. }
+        | ObjectSpec::CustomPropertyTrigger { name, .. }
+        | ObjectSpec::CustomPropertyEnum { name, .. }
+        | ObjectSpec::TargetEffect { name, .. }
+        | ObjectSpec::Guide { name, .. }
+        | ObjectSpec::ArtboardComponentListOverride { name, .. }
+        | ObjectSpec::ArtboardListMapRule { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::DashPath { name, children, .. }
+        | ObjectSpec::OpenUrlEvent { name, children, .. }
+        | ObjectSpec::AudioEvent { name, children, .. }
+        | ObjectSpec::CustomPropertyGroup { name, children, .. }
+        | ObjectSpec::GroupEffect { name, children, .. }
+        | ObjectSpec::ListPath { name, children, .. }
+        | ObjectSpec::PointsCommonPath { name, children, .. }
+        | ObjectSpec::ArtboardComponentList { name, children, .. }
+        | ObjectSpec::ForegroundLayoutDrawable { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::ClampedScrollPhysics { .. } | ObjectSpec::ElasticScrollPhysics { .. } => {}
+        ObjectSpec::Mesh { name, children } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::MeshVertex { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::ContourMeshVertex { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::ForcedEdge { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::NestedLinearAnimation { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::NestedRemapAnimation { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::NestedTrigger { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::NestedBool { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::NestedNumber { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::NestedArtboardLeaf { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::NestedArtboardLayout { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::DraggableConstraint { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::ScrollConstraint { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::ScrollBarConstraint { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::ListFollowPathConstraint { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::NSlicerTileMode { .. } => {}
+        ObjectSpec::NSlicer { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::AxisY { .. } => {}
+        ObjectSpec::AxisX { .. } => {}
+        ObjectSpec::NSlicedNode { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyNumber { name, children }
+        | ObjectSpec::ViewModelPropertyBoolean { name, children }
+        | ObjectSpec::ViewModelPropertyString { name, children }
+        | ObjectSpec::ViewModelPropertyColor { name, children }
+        | ObjectSpec::ViewModelPropertyTrigger { name, children }
+        | ObjectSpec::ViewModelPropertyAssetImage { name, children } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyList { name, children, .. }
+        | ObjectSpec::ViewModelPropertyViewModel { name, children, .. }
+        | ObjectSpec::ViewModelPropertyEnum { name, children, .. }
+        | ObjectSpec::ViewModelPropertyEnumCustom { name, children, .. }
+        | ObjectSpec::ViewModelPropertyEnumSystem { name, children, .. }
+        | ObjectSpec::ViewModelPropertyArtboard { name, children, .. }
+        | ObjectSpec::ViewModelPropertySymbol { name, children, .. }
+        | ObjectSpec::ViewModelPropertySymbolListIndex { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::ViewModelInstanceTrigger { .. }
+        | ObjectSpec::ViewModelInstanceSymbol { .. }
+        | ObjectSpec::ViewModelInstanceSymbolListIndex { .. }
+        | ObjectSpec::ViewModelInstanceAssetImage { .. }
+        | ObjectSpec::ViewModelInstanceArtboard { .. } => {}
+        ObjectSpec::DataEnum { name, children } | ObjectSpec::DataEnumCustom { name, children } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::DataEnumValue { .. } => {}
+        ObjectSpec::DataEnumSystem { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::BindablePropertyString { .. }
+        | ObjectSpec::BindablePropertyBoolean { .. }
+        | ObjectSpec::BindablePropertyNumber { .. }
+        | ObjectSpec::BindablePropertyEnum { .. }
+        | ObjectSpec::BindablePropertyColor { .. }
+        | ObjectSpec::BindablePropertyTrigger { .. }
+        | ObjectSpec::BindablePropertyInteger { .. }
+        | ObjectSpec::BindablePropertyList { .. }
+        | ObjectSpec::BindablePropertyId { .. }
+        | ObjectSpec::BindablePropertyArtboard { .. } => {}
+        ObjectSpec::DataBindPath { .. } => {}
+        ObjectSpec::TextStylePaint { name, children } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::TextStyleAxis { .. } => {}
+        ObjectSpec::TextTargetModifier { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::TextFollowPathModifier { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::TextInput { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::TextInputDrawable { name, children }
+        | ObjectSpec::TextInputCursor { name, children }
+        | ObjectSpec::TextInputText { name, children }
+        | ObjectSpec::TextInputSelection { name, children }
+        | ObjectSpec::TextInputSelectedText { name, children } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::DataConverterRounder { name, .. }
+        | ObjectSpec::DataConverterToString { name, .. }
+        | ObjectSpec::DataConverterToNumber { name, .. }
+        | ObjectSpec::DataConverterOperationValue { name, .. }
+        | ObjectSpec::DataConverterTrigger { name, .. }
+        | ObjectSpec::DataConverterOperationViewModel { name, .. }
+        | ObjectSpec::DataConverterStringPad { name, .. }
+        | ObjectSpec::DataConverterStringRemoveZeros { name, .. }
+        | ObjectSpec::DataConverterStringTrim { name, .. }
+        | ObjectSpec::DataConverterInterpolator { name, .. }
+        | ObjectSpec::DataConverterBooleanNegate { name, .. }
+        | ObjectSpec::DataConverterRangeMapper { name, .. }
+        | ObjectSpec::DataConverterSystemDegsToRads { name, .. }
+        | ObjectSpec::DataConverterSystemNormalizer { name, .. }
+        | ObjectSpec::DataConverterNumberToList { name, .. }
+        | ObjectSpec::DataConverterListToLength { name, .. }
+        | ObjectSpec::ScriptedDataConverter { name, .. }
+        | ObjectSpec::ScriptInputNumber { name, .. }
+        | ObjectSpec::ScriptInputViewModelProperty { name, .. }
+        | ObjectSpec::ScriptInputTrigger { name, .. }
+        | ObjectSpec::ScriptInputArtboard { name, .. }
+        | ObjectSpec::ScriptInputColor { name, .. }
+        | ObjectSpec::ScriptInputString { name, .. }
+        | ObjectSpec::ScriptInputBoolean { name, .. }
+        | ObjectSpec::ScriptedPathEffect { name, .. } => {
+            ensure_unique_name(name, object_names)?;
+        }
+        ObjectSpec::DataConverterGroup { name, children }
+        | ObjectSpec::DataConverterFormula { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::ScriptedDrawable { name, children, .. }
+        | ObjectSpec::ScriptedLayout { name, children, .. } => {
+            ensure_unique_name(name, object_names)?;
+            if let Some(children) = children {
+                for child in children {
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
+                }
+            }
+        }
+        ObjectSpec::DataConverterGroupItem { .. }
+        | ObjectSpec::FormulaTokenArgumentSeparator
+        | ObjectSpec::FormulaTokenParenthesisClose
+        | ObjectSpec::FormulaTokenOperation { .. }
+        | ObjectSpec::FormulaTokenFunction { .. }
+        | ObjectSpec::FormulaTokenValue { .. }
+        | ObjectSpec::FormulaTokenParenthesisOpen
+        | ObjectSpec::FormulaTokenInput
+        | ObjectSpec::ScriptedListenerAction { .. }
+        | ObjectSpec::ScriptedTransitionCondition { .. } => {}
     }
 
     Ok(())
@@ -1323,6 +1731,425 @@ pub(crate) fn collect_object_type_key(
         ObjectSpec::TextModifierGroup { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::TEXT_MODIFIER_GROUP);
         }
+        ObjectSpec::Folder { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FOLDER);
+        }
+        ObjectSpec::LayeredAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LAYERED_ASSET);
+        }
+        ObjectSpec::LayerImageAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LAYER_IMAGE_ASSET);
+        }
+        ObjectSpec::SVGAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SVG_ASSET);
+        }
+        ObjectSpec::LottieAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LOTTIE_ASSET);
+        }
+        ObjectSpec::ExportAudio { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::EXPORT_AUDIO);
+        }
+        ObjectSpec::ScriptAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_ASSET);
+        }
+        ObjectSpec::BlobAsset { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::BLOB_ASSET);
+        }
+        ObjectSpec::DashPath { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DASH_PATH);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Dash { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DASH);
+        }
+        ObjectSpec::Feather { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FEATHER);
+        }
+        ObjectSpec::OpenUrlEvent { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::OPEN_URL_EVENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::AudioEvent { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::AUDIO_EVENT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::CustomPropertyNumber { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_NUMBER);
+        }
+        ObjectSpec::CustomPropertyBoolean { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_BOOLEAN);
+        }
+        ObjectSpec::CustomPropertyString { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_STRING);
+        }
+        ObjectSpec::CustomPropertyColor { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_COLOR);
+        }
+        ObjectSpec::CustomPropertyTrigger { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_TRIGGER);
+        }
+        ObjectSpec::CustomPropertyEnum { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_ENUM);
+        }
+        ObjectSpec::CustomPropertyGroup { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_GROUP);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::TargetEffect { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TARGET_EFFECT);
+        }
+        ObjectSpec::GroupEffect { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::GROUP_EFFECT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ListPath { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LIST_PATH);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::PointsCommonPath { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::POINTS_COMMON_PATH);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::Guide { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::GUIDE);
+        }
+        ObjectSpec::ArtboardComponentList { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ARTBOARD_COMPONENT_LIST);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ArtboardComponentListOverride { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE);
+        }
+        ObjectSpec::ArtboardListMapRule { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::ARTBOARD_LIST_MAP_RULE);
+        }
+        ObjectSpec::ForegroundLayoutDrawable { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FOREGROUND_LAYOUT_DRAWABLE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ClampedScrollPhysics { .. } => {}
+        ObjectSpec::ElasticScrollPhysics { .. } => {}
+        ObjectSpec::Mesh { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::MESH);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::MeshVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::MESH_VERTEX);
+        }
+        ObjectSpec::ContourMeshVertex { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::CONTOUR_MESH_VERTEX);
+        }
+        ObjectSpec::ForcedEdge { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::FORCED_EDGE);
+        }
+        ObjectSpec::NestedLinearAnimation { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_LINEAR_ANIMATION);
+        }
+        ObjectSpec::NestedRemapAnimation { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_REMAP_ANIMATION);
+        }
+        ObjectSpec::NestedTrigger { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_TRIGGER);
+        }
+        ObjectSpec::NestedBool { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_BOOL);
+        }
+        ObjectSpec::NestedNumber { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_NUMBER);
+        }
+        ObjectSpec::NestedArtboardLeaf { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_ARTBOARD_LEAF);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::NestedArtboardLayout { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NESTED_ARTBOARD_LAYOUT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::DraggableConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DRAGGABLE_CONSTRAINT);
+        }
+        ObjectSpec::ScrollConstraint { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCROLL_CONSTRAINT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ScrollBarConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCROLL_BAR_CONSTRAINT);
+        }
+        ObjectSpec::ListFollowPathConstraint { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::LIST_FOLLOW_PATH_CONSTRAINT);
+        }
+        ObjectSpec::NSlicerTileMode { .. } => {}
+        ObjectSpec::NSlicer { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NSLICER);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::AxisY { .. } => {}
+        ObjectSpec::AxisX { .. } => {}
+        ObjectSpec::NSlicedNode { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::NSLICED_NODE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ViewModelPropertyNumber { name, children, .. }
+        | ObjectSpec::ViewModelPropertyBoolean { name, children, .. }
+        | ObjectSpec::ViewModelPropertyString { name, children, .. }
+        | ObjectSpec::ViewModelPropertyColor { name, children, .. }
+        | ObjectSpec::ViewModelPropertyList { name, children, .. }
+        | ObjectSpec::ViewModelPropertyViewModel { name, children, .. }
+        | ObjectSpec::ViewModelPropertyEnum { name, children, .. }
+        | ObjectSpec::ViewModelPropertyEnumCustom { name, children, .. }
+        | ObjectSpec::ViewModelPropertyEnumSystem { name, children, .. }
+        | ObjectSpec::ViewModelPropertyTrigger { name, children, .. }
+        | ObjectSpec::ViewModelPropertyAssetImage { name, children, .. }
+        | ObjectSpec::ViewModelPropertyArtboard { name, children, .. }
+        | ObjectSpec::ViewModelPropertySymbol { name, children, .. }
+        | ObjectSpec::ViewModelPropertySymbolListIndex { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL_PROPERTY);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::DataEnum { name, children } | ObjectSpec::DataEnumCustom { name, children } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_ENUM);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::DataEnumSystem { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_ENUM_SYSTEM);
+        }
+        ObjectSpec::TextStylePaint { name, children } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE_PAINT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::TextTargetModifier { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_TARGET_MODIFIER);
+        }
+        ObjectSpec::TextFollowPathModifier { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_FOLLOW_PATH_MODIFIER);
+        }
+        ObjectSpec::TextInput { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT_INPUT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::TextInputDrawable { name, children }
+        | ObjectSpec::TextInputCursor { name, children }
+        | ObjectSpec::TextInputText { name, children }
+        | ObjectSpec::TextInputSelection { name, children }
+        | ObjectSpec::TextInputSelectedText { name, children } => {
+            object_type_keys.insert(name.clone(), type_keys::TEXT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ViewModelInstanceTrigger { .. }
+        | ObjectSpec::ViewModelInstanceSymbol { .. }
+        | ObjectSpec::ViewModelInstanceSymbolListIndex { .. }
+        | ObjectSpec::ViewModelInstanceAssetImage { .. }
+        | ObjectSpec::ViewModelInstanceArtboard { .. }
+        | ObjectSpec::DataEnumValue { .. }
+        | ObjectSpec::BindablePropertyString { .. }
+        | ObjectSpec::BindablePropertyBoolean { .. }
+        | ObjectSpec::BindablePropertyNumber { .. }
+        | ObjectSpec::BindablePropertyEnum { .. }
+        | ObjectSpec::BindablePropertyColor { .. }
+        | ObjectSpec::BindablePropertyTrigger { .. }
+        | ObjectSpec::BindablePropertyInteger { .. }
+        | ObjectSpec::BindablePropertyList { .. }
+        | ObjectSpec::BindablePropertyId { .. }
+        | ObjectSpec::BindablePropertyArtboard { .. }
+        | ObjectSpec::DataBindPath { .. }
+        | ObjectSpec::TextStyleAxis { .. }
+        | ObjectSpec::DataConverterGroupItem { .. }
+        | ObjectSpec::FormulaTokenArgumentSeparator
+        | ObjectSpec::FormulaTokenParenthesisClose
+        | ObjectSpec::FormulaTokenOperation { .. }
+        | ObjectSpec::FormulaTokenFunction { .. }
+        | ObjectSpec::FormulaTokenValue { .. }
+        | ObjectSpec::FormulaTokenParenthesisOpen
+        | ObjectSpec::FormulaTokenInput
+        | ObjectSpec::ScriptedListenerAction { .. }
+        | ObjectSpec::ScriptedTransitionCondition { .. } => {}
+        ObjectSpec::DataConverterRounder { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_ROUNDER);
+        }
+        ObjectSpec::DataConverterToString { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_TO_STRING);
+        }
+        ObjectSpec::DataConverterToNumber { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_TO_NUMBER);
+        }
+        ObjectSpec::DataConverterGroup { name, children } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_GROUP);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::DataConverterOperationValue { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_OPERATION_VALUE);
+        }
+        ObjectSpec::DataConverterTrigger { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_TRIGGER);
+        }
+        ObjectSpec::DataConverterOperationViewModel { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_OPERATION_VIEW_MODEL);
+        }
+        ObjectSpec::DataConverterStringPad { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_STRING_PAD);
+        }
+        ObjectSpec::DataConverterStringRemoveZeros { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_STRING_REMOVE_ZEROS);
+        }
+        ObjectSpec::DataConverterStringTrim { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_STRING_TRIM);
+        }
+        ObjectSpec::DataConverterInterpolator { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_INTERPOLATOR);
+        }
+        ObjectSpec::DataConverterBooleanNegate { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_BOOLEAN_NEGATE);
+        }
+        ObjectSpec::DataConverterRangeMapper { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_RANGE_MAPPER);
+        }
+        ObjectSpec::DataConverterFormula { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_FORMULA);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::DataConverterSystemDegsToRads { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_SYSTEM_DEGS_TO_RADS);
+        }
+        ObjectSpec::DataConverterSystemNormalizer { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_SYSTEM_NORMALIZER);
+        }
+        ObjectSpec::DataConverterNumberToList { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_NUMBER_TO_LIST);
+        }
+        ObjectSpec::DataConverterListToLength { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_LIST_TO_LENGTH);
+        }
+        ObjectSpec::ScriptedDrawable { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_DRAWABLE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ScriptedDataConverter { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_DATA_CONVERTER);
+        }
+        ObjectSpec::ScriptedLayout { name, children, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_LAYOUT);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
+        }
+        ObjectSpec::ScriptedPathEffect { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_PATH_EFFECT);
+        }
+        ObjectSpec::ScriptInputNumber { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_NUMBER);
+        }
+        ObjectSpec::ScriptInputViewModelProperty { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_VIEW_MODEL_PROPERTY);
+        }
+        ObjectSpec::ScriptInputTrigger { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_TRIGGER);
+        }
+        ObjectSpec::ScriptInputArtboard { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_ARTBOARD);
+        }
+        ObjectSpec::ScriptInputColor { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_COLOR);
+        }
+        ObjectSpec::ScriptInputString { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_STRING);
+        }
+        ObjectSpec::ScriptInputBoolean { name, .. } => {
+            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_BOOLEAN);
+        }
     }
 }
 
@@ -1331,6 +2158,12 @@ pub(crate) fn collect_nested_artboard_refs(children: &[ObjectSpec]) -> Vec<Strin
     for child in children {
         match child {
             ObjectSpec::NestedArtboard {
+                source_artboard, ..
+            }
+            | ObjectSpec::NestedArtboardLeaf {
+                source_artboard, ..
+            }
+            | ObjectSpec::NestedArtboardLayout {
                 source_artboard, ..
             } => {
                 refs.push(source_artboard.clone());

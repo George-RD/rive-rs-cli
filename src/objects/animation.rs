@@ -186,6 +186,7 @@ impl KeyFrameColor {
     }
 }
 
+#[allow(dead_code)]
 pub struct KeyFrameId {
     pub frame: u64,
     pub interpolation_type: u64,
@@ -198,6 +199,7 @@ pub struct KeyFrameCallback {
 }
 
 impl KeyFrameId {
+    #[allow(dead_code)]
     pub fn new(frame: u64, value: u64) -> Self {
         Self {
             frame,
@@ -429,6 +431,56 @@ impl RiveObject for ElasticInterpolator {
             props.push(Property {
                 key: property_keys::ELASTIC_PERIOD,
                 value: PropertyValue::Float(self.period),
+            });
+        }
+        props
+    }
+}
+
+#[allow(dead_code)] // rive-runtime type, used for uint keyframe animations
+pub struct KeyFrameUint {
+    pub frame: u64,
+    pub interpolation_type: u64,
+    pub interpolator_id: u64,
+    pub value: u64,
+}
+
+impl KeyFrameUint {
+    #[allow(dead_code)]
+    pub fn new(frame: u64, value: u64) -> Self {
+        Self {
+            frame,
+            interpolation_type: 1,
+            interpolator_id: u32::MAX as u64,
+            value,
+        }
+    }
+}
+
+impl RiveObject for KeyFrameUint {
+    fn type_key(&self) -> u16 {
+        type_keys::KEY_FRAME_UINT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::KEY_FRAME_FRAME,
+                value: PropertyValue::UInt(self.frame),
+            },
+            Property {
+                key: property_keys::INTERPOLATING_KEY_FRAME_TYPE,
+                value: PropertyValue::UInt(self.interpolation_type),
+            },
+            Property {
+                key: property_keys::INTERPOLATING_KEY_FRAME_INTERPOLATOR_ID,
+                value: PropertyValue::UInt(self.interpolator_id),
+            },
+        ];
+        if self.value != 0 {
+            props.push(Property {
+                key: property_keys::KEY_FRAME_UINT_VALUE,
+                value: PropertyValue::UInt(self.value),
             });
         }
         props

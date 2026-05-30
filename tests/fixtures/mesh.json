@@ -1,0 +1,67 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "MeshDemo",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "image_asset",
+        "name": "TestImage",
+        "asset_id": 0
+      },
+      {
+        "type": "image",
+        "name": "WarpedImage",
+        "asset_id": 0,
+        "x": 250,
+        "y": 250,
+        "children": [
+          {
+            "type": "mesh",
+            "name": "ImageMesh",
+            "children": [
+              {
+                "type": "contour_mesh_vertex",
+                "name": "TL",
+                "x": 0, "y": 0,
+                "u": 0.0, "v": 0.0
+              },
+              {
+                "type": "contour_mesh_vertex",
+                "name": "TR",
+                "x": 200, "y": 0,
+                "u": 1.0, "v": 0.0
+              },
+              {
+                "type": "contour_mesh_vertex",
+                "name": "BR",
+                "x": 200, "y": 200,
+                "u": 1.0, "v": 1.0
+              },
+              {
+                "type": "contour_mesh_vertex",
+                "name": "BL",
+                "x": 0, "y": 200,
+                "u": 0.0, "v": 1.0
+              },
+              {
+                "type": "mesh_vertex",
+                "name": "Center",
+                "x": 100, "y": 100,
+                "u": 0.5, "v": 0.5
+              },
+              {
+                "type": "forced_edge",
+                "name": "Diagonal",
+                "from_vertex": "TL",
+                "to_vertex": "BR"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": []
+  }
+}

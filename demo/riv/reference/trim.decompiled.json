@@ -1,0 +1,364 @@
+{
+  "header": {
+    "major_version": 7,
+    "minor_version": 0,
+    "file_id": 9553
+  },
+  "toc_property_keys": [],
+  "objects": [
+    {
+      "type_key": 23,
+      "type_name": "Backboard",
+      "properties": []
+    },
+    {
+      "type_key": 1,
+      "type_name": "Artboard",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "work"
+          }
+        },
+        {
+          "key": 7,
+          "name": "width",
+          "value": {
+            "Float": 1920.0
+          }
+        },
+        {
+          "key": 8,
+          "name": "height",
+          "value": {
+            "Float": 1080.0
+          }
+        },
+        {
+          "key": 9,
+          "value": {
+            "Float": 600.0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 2,
+      "type_name": "Node",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Shape I"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 1285.5
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 476.5
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 2,
+      "type_name": "Node",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "I"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": -0.9499512
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": -0.9500122
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 2
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 16,
+      "type_name": "PointsPath",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 3
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": -1.0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 5,
+      "type_name": "StraightVertex",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 24,
+          "name": "x",
+          "value": {
+            "Float": -10.75
+          }
+        },
+        {
+          "key": 25,
+          "name": "y",
+          "value": {
+            "Float": 18.05
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 5,
+      "type_name": "StraightVertex",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 24,
+          "name": "x",
+          "value": {
+            "Float": 11.25
+          }
+        },
+        {
+          "key": 25,
+          "name": "y",
+          "value": {
+            "Float": 18.05
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 5,
+      "type_name": "StraightVertex",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 24,
+          "name": "x",
+          "value": {
+            "Float": -0.05
+          }
+        },
+        {
+          "key": 25,
+          "name": "y",
+          "value": {
+            "Float": 18.05
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 5,
+      "type_name": "StraightVertex",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 24,
+          "name": "x",
+          "value": {
+            "Float": 0.15
+          }
+        },
+        {
+          "key": 25,
+          "name": "y",
+          "value": {
+            "Float": -12.15
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 13
+          }
+        },
+        {
+          "key": 37,
+          "name": "colorValue",
+          "value": {
+            "Color": 4292993505
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 47,
+      "type_name": "TrimPath",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 13
+          }
+        },
+        {
+          "key": 117,
+          "name": "modeValue",
+          "value": {
+            "UInt": 2
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 12
+          }
+        },
+        {
+          "key": 37,
+          "name": "colorValue",
+          "value": {
+            "Color": 4294967295
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 24,
+      "type_name": "Stroke",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 3
+          }
+        },
+        {
+          "key": 47,
+          "name": "thickness",
+          "value": {
+            "Float": 15.0
+          }
+        },
+        {
+          "key": 48,
+          "name": "cap",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 49,
+          "name": "join",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    }
+  ]
+}

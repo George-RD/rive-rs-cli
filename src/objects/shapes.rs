@@ -1111,6 +1111,352 @@ impl RiveObject for Joystick {
     }
 }
 
+pub struct TargetEffect {
+    pub name: String,
+    pub parent_id: u64,
+    pub target_id: u64,
+}
+
+impl TargetEffect {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            target_id: u32::MAX as u64,
+        }
+    }
+}
+
+impl RiveObject for TargetEffect {
+    fn type_key(&self) -> u16 {
+        type_keys::TARGET_EFFECT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.target_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::TARGET_EFFECT_TARGET_ID,
+                value: PropertyValue::UInt(self.target_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct GroupEffect {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl GroupEffect {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self { name, parent_id }
+    }
+}
+
+impl RiveObject for GroupEffect {
+    fn type_key(&self) -> u16 {
+        type_keys::GROUP_EFFECT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ListPath {
+    pub name: String,
+    pub parent_id: u64,
+    pub is_closed: bool,
+    pub list_source: u64,
+}
+
+impl ListPath {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            is_closed: false,
+            list_source: u32::MAX as u64,
+        }
+    }
+}
+
+impl RiveObject for ListPath {
+    fn type_key(&self) -> u16 {
+        type_keys::LIST_PATH
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.is_closed {
+            props.push(Property {
+                key: property_keys::POINTS_PATH_IS_CLOSED,
+                value: PropertyValue::Bool(true),
+            });
+        }
+        if self.list_source != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::LIST_SOURCE,
+                value: PropertyValue::UInt(self.list_source),
+            });
+        }
+        props
+    }
+}
+
+pub struct PointsCommonPath {
+    pub name: String,
+    pub parent_id: u64,
+    pub is_closed: bool,
+}
+
+impl PointsCommonPath {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            is_closed: false,
+        }
+    }
+}
+
+impl RiveObject for PointsCommonPath {
+    fn type_key(&self) -> u16 {
+        type_keys::POINTS_COMMON_PATH
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.is_closed {
+            props.push(Property {
+                key: property_keys::POINTS_PATH_IS_CLOSED,
+                value: PropertyValue::Bool(true),
+            });
+        }
+        props
+    }
+}
+
+pub struct ArtboardComponentList {
+    pub name: String,
+    pub parent_id: u64,
+    pub list_source: u64,
+}
+
+impl ArtboardComponentList {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            list_source: u32::MAX as u64,
+        }
+    }
+}
+
+impl RiveObject for ArtboardComponentList {
+    fn type_key(&self) -> u16 {
+        type_keys::ARTBOARD_COMPONENT_LIST
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.list_source != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_LIST_SOURCE,
+                value: PropertyValue::UInt(self.list_source),
+            });
+        }
+        props
+    }
+}
+
+pub struct ArtboardComponentListOverride {
+    pub name: String,
+    pub parent_id: u64,
+    pub artboard_id: u64,
+    pub instance_width: f32,
+    pub instance_height: f32,
+    pub instance_width_units_value: u64,
+    pub instance_height_units_value: u64,
+    pub instance_width_scale_type: u64,
+    pub instance_height_scale_type: u64,
+}
+
+impl ArtboardComponentListOverride {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            artboard_id: u32::MAX as u64,
+            instance_width: -1.0,
+            instance_height: -1.0,
+            instance_width_units_value: 1,
+            instance_height_units_value: 1,
+            instance_width_scale_type: 0,
+            instance_height_scale_type: 0,
+        }
+    }
+}
+
+impl RiveObject for ArtboardComponentListOverride {
+    fn type_key(&self) -> u16 {
+        type_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.artboard_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            });
+        }
+        if self.instance_width != -1.0 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH,
+                value: PropertyValue::Float(self.instance_width),
+            });
+        }
+        if self.instance_height != -1.0 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT,
+                value: PropertyValue::Float(self.instance_height),
+            });
+        }
+        if self.instance_width_units_value != 1 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH_UNITS_VALUE,
+                value: PropertyValue::UInt(self.instance_width_units_value),
+            });
+        }
+        if self.instance_height_units_value != 1 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT_UNITS_VALUE,
+                value: PropertyValue::UInt(self.instance_height_units_value),
+            });
+        }
+        if self.instance_width_scale_type != 0 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_WIDTH_SCALE_TYPE,
+                value: PropertyValue::UInt(self.instance_width_scale_type),
+            });
+        }
+        if self.instance_height_scale_type != 0 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE_INSTANCE_HEIGHT_SCALE_TYPE,
+                value: PropertyValue::UInt(self.instance_height_scale_type),
+            });
+        }
+        props
+    }
+}
+
+pub struct ArtboardListMapRule {
+    pub name: String,
+    pub parent_id: u64,
+    pub artboard_id: u64,
+    pub view_model_id: u64,
+}
+
+impl ArtboardListMapRule {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            artboard_id: u32::MAX as u64,
+            view_model_id: u32::MAX as u64,
+        }
+    }
+}
+
+impl RiveObject for ArtboardListMapRule {
+    fn type_key(&self) -> u16 {
+        type_keys::ARTBOARD_LIST_MAP_RULE
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.artboard_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_LIST_MAP_RULE_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            });
+        }
+        if self.view_model_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::ARTBOARD_LIST_MAP_RULE_VIEW_MODEL_ID,
+                value: PropertyValue::UInt(self.view_model_id),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

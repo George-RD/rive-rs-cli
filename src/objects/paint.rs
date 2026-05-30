@@ -325,6 +325,180 @@ impl RiveObject for GradientStop {
     }
 }
 
+pub struct DashPath {
+    pub name: String,
+    pub parent_id: u64,
+    pub offset: f32,
+    pub offset_is_percentage: bool,
+}
+
+impl DashPath {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            offset: 0.0,
+            offset_is_percentage: false,
+        }
+    }
+}
+
+impl RiveObject for DashPath {
+    fn type_key(&self) -> u16 {
+        type_keys::DASH_PATH
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.offset != 0.0 {
+            props.push(Property {
+                key: property_keys::DASH_PATH_OFFSET,
+                value: PropertyValue::Float(self.offset),
+            });
+        }
+        if self.offset_is_percentage {
+            props.push(Property {
+                key: property_keys::DASH_PATH_OFFSET_IS_PERCENTAGE,
+                value: PropertyValue::Bool(true),
+            });
+        }
+        props
+    }
+}
+
+pub struct Dash {
+    pub name: String,
+    pub parent_id: u64,
+    pub length: f32,
+    pub length_is_percentage: bool,
+}
+
+impl Dash {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            length: 0.0,
+            length_is_percentage: false,
+        }
+    }
+}
+
+impl RiveObject for Dash {
+    fn type_key(&self) -> u16 {
+        type_keys::DASH
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.length != 0.0 {
+            props.push(Property {
+                key: property_keys::DASH_LENGTH,
+                value: PropertyValue::Float(self.length),
+            });
+        }
+        if self.length_is_percentage {
+            props.push(Property {
+                key: property_keys::DASH_LENGTH_IS_PERCENTAGE,
+                value: PropertyValue::Bool(true),
+            });
+        }
+        props
+    }
+}
+
+pub struct Feather {
+    pub name: String,
+    pub parent_id: u64,
+    pub strength: f32,
+    pub offset_x: f32,
+    pub offset_y: f32,
+    pub space_value: u64,
+    pub inner: bool,
+}
+
+impl Feather {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            strength: 0.0,
+            offset_x: 0.0,
+            offset_y: 0.0,
+            space_value: 0,
+            inner: false,
+        }
+    }
+}
+
+impl RiveObject for Feather {
+    fn type_key(&self) -> u16 {
+        type_keys::FEATHER
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.strength != 0.0 {
+            props.push(Property {
+                key: property_keys::FEATHER_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.offset_x != 0.0 {
+            props.push(Property {
+                key: property_keys::FEATHER_OFFSET_X,
+                value: PropertyValue::Float(self.offset_x),
+            });
+        }
+        if self.offset_y != 0.0 {
+            props.push(Property {
+                key: property_keys::FEATHER_OFFSET_Y,
+                value: PropertyValue::Float(self.offset_y),
+            });
+        }
+        if self.space_value != 0 {
+            props.push(Property {
+                key: property_keys::FEATHER_SPACE_VALUE,
+                value: PropertyValue::UInt(self.space_value),
+            });
+        }
+        if self.inner {
+            props.push(Property {
+                key: property_keys::FEATHER_INNER,
+                value: PropertyValue::Bool(true),
+            });
+        }
+        props
+    }
+}
+
 #[allow(dead_code)] // abstract base type from rive-runtime hierarchy
 pub struct ShapePaint {
     pub name: String,

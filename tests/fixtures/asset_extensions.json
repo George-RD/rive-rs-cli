@@ -1,0 +1,52 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "AssetExtensions",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "folder",
+        "name": "MyFolder"
+      },
+      {
+        "type": "layered_asset",
+        "name": "LayeredImg"
+      },
+      {
+        "type": "layer_image_asset",
+        "name": "Layer1",
+        "asset_id": 10,
+        "cdn_base_url": "https://cdn.example.com"
+      },
+      {
+        "type": "svg_asset",
+        "name": "Logo",
+        "asset_id": 20
+      },
+      {
+        "type": "lottie_asset",
+        "name": "Anim",
+        "asset_id": 30
+      },
+      {
+        "type": "export_audio",
+        "name": "SFX",
+        "volume": 0.75
+      },
+      {
+        "type": "script_asset",
+        "name": "Script1",
+        "asset_id": 40,
+        "is_module": true
+      },
+      {
+        "type": "blob_asset",
+        "name": "Data1",
+        "asset_id": 50
+      }
+    ],
+    "animations": [],
+    "state_machines": []
+  }
+}

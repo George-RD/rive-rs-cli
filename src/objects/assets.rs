@@ -126,6 +126,319 @@ impl RiveObject for AudioAsset {
     }
 }
 
+pub struct Folder {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl Folder {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self { name, parent_id }
+    }
+}
+
+impl RiveObject for Folder {
+    fn type_key(&self) -> u16 {
+        type_keys::FOLDER
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct LayeredAsset {
+    pub name: String,
+}
+
+impl LayeredAsset {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
+}
+
+impl RiveObject for LayeredAsset {
+    fn type_key(&self) -> u16 {
+        type_keys::LAYERED_ASSET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::ASSET_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
+    }
+}
+
+pub struct LayerImageAsset {
+    pub name: String,
+    pub asset_id: u64,
+    pub cdn_base_url: String,
+}
+
+impl LayerImageAsset {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            asset_id: 0,
+            cdn_base_url: String::new(),
+        }
+    }
+}
+
+impl RiveObject for LayerImageAsset {
+    fn type_key(&self) -> u16 {
+        type_keys::LAYER_IMAGE_ASSET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::ASSET_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.asset_id != 0 {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_ASSET_ID,
+                value: PropertyValue::UInt(self.asset_id),
+            });
+        }
+        if !self.cdn_base_url.is_empty() {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_CDN_BASE_URL,
+                value: PropertyValue::String(self.cdn_base_url.clone()),
+            });
+        }
+        props
+    }
+}
+
+pub struct SVGAsset {
+    pub name: String,
+    pub asset_id: u64,
+    pub cdn_base_url: String,
+}
+
+impl SVGAsset {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            asset_id: 0,
+            cdn_base_url: String::new(),
+        }
+    }
+}
+
+impl RiveObject for SVGAsset {
+    fn type_key(&self) -> u16 {
+        type_keys::SVG_ASSET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::ASSET_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.asset_id != 0 {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_ASSET_ID,
+                value: PropertyValue::UInt(self.asset_id),
+            });
+        }
+        if !self.cdn_base_url.is_empty() {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_CDN_BASE_URL,
+                value: PropertyValue::String(self.cdn_base_url.clone()),
+            });
+        }
+        props
+    }
+}
+
+pub struct LottieAsset {
+    pub name: String,
+    pub asset_id: u64,
+    pub cdn_base_url: String,
+}
+
+impl LottieAsset {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            asset_id: 0,
+            cdn_base_url: String::new(),
+        }
+    }
+}
+
+impl RiveObject for LottieAsset {
+    fn type_key(&self) -> u16 {
+        type_keys::LOTTIE_ASSET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::ASSET_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.asset_id != 0 {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_ASSET_ID,
+                value: PropertyValue::UInt(self.asset_id),
+            });
+        }
+        if !self.cdn_base_url.is_empty() {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_CDN_BASE_URL,
+                value: PropertyValue::String(self.cdn_base_url.clone()),
+            });
+        }
+        props
+    }
+}
+
+pub struct ExportAudio {
+    pub name: String,
+    pub parent_id: u64,
+    pub volume: f32,
+}
+
+impl ExportAudio {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            volume: 1.0,
+        }
+    }
+}
+
+impl RiveObject for ExportAudio {
+    fn type_key(&self) -> u16 {
+        type_keys::EXPORT_AUDIO
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.volume != 1.0 {
+            props.push(Property {
+                key: property_keys::EXPORT_AUDIO_VOLUME,
+                value: PropertyValue::Float(self.volume),
+            });
+        }
+        props
+    }
+}
+
+pub struct ScriptAsset {
+    pub name: String,
+    pub asset_id: u64,
+    pub cdn_base_url: String,
+    pub is_module: bool,
+}
+
+impl ScriptAsset {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            asset_id: 0,
+            cdn_base_url: String::new(),
+            is_module: false,
+        }
+    }
+}
+
+impl RiveObject for ScriptAsset {
+    fn type_key(&self) -> u16 {
+        type_keys::SCRIPT_ASSET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::ASSET_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.asset_id != 0 {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_ASSET_ID,
+                value: PropertyValue::UInt(self.asset_id),
+            });
+        }
+        if !self.cdn_base_url.is_empty() {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_CDN_BASE_URL,
+                value: PropertyValue::String(self.cdn_base_url.clone()),
+            });
+        }
+        if self.is_module {
+            props.push(Property {
+                key: property_keys::SCRIPT_ASSET_IS_MODULE,
+                value: PropertyValue::UInt(1),
+            });
+        }
+        props
+    }
+}
+
+pub struct BlobAsset {
+    pub name: String,
+    pub asset_id: u64,
+    pub cdn_base_url: String,
+}
+
+impl BlobAsset {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            asset_id: 0,
+            cdn_base_url: String::new(),
+        }
+    }
+}
+
+impl RiveObject for BlobAsset {
+    fn type_key(&self) -> u16 {
+        type_keys::BLOB_ASSET
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::ASSET_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }];
+        if self.asset_id != 0 {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_ASSET_ID,
+                value: PropertyValue::UInt(self.asset_id),
+            });
+        }
+        if !self.cdn_base_url.is_empty() {
+            props.push(Property {
+                key: property_keys::FILE_ASSET_CDN_BASE_URL,
+                value: PropertyValue::String(self.cdn_base_url.clone()),
+            });
+        }
+        props
+    }
+}
+
 #[allow(dead_code)] // rive-runtime type for embedded asset content
 pub struct FileAssetContents {
     pub bytes: u64,

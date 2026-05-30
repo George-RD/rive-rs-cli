@@ -500,6 +500,384 @@ impl RiveObject for TextStyleFeature {
     }
 }
 
+pub struct TextStylePaint {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for TextStylePaint {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_STYLE_PAINT
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct TextStyleAxis {
+    pub parent_id: u64,
+    pub tag: u64,
+    pub axis_value: f32,
+}
+
+impl RiveObject for TextStyleAxis {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_STYLE_AXIS
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![Property {
+            key: property_keys::COMPONENT_PARENT_ID,
+            value: PropertyValue::UInt(self.parent_id),
+        }];
+        if self.tag != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_STYLE_AXIS_TAG,
+                value: PropertyValue::UInt(self.tag),
+            });
+        }
+        if self.axis_value != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_STYLE_AXIS_AXIS_VALUE,
+                value: PropertyValue::Float(self.axis_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct TextTargetModifier {
+    pub name: String,
+    pub parent_id: u64,
+    pub target_id: u64,
+}
+
+impl RiveObject for TextTargetModifier {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_TARGET_MODIFIER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.target_id != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_TARGET_MODIFIER_TARGET_ID,
+                value: PropertyValue::UInt(self.target_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct TextFollowPathModifier {
+    pub name: String,
+    pub parent_id: u64,
+    pub target_id: u64,
+    pub orient: bool,
+    pub start: f32,
+    pub end: f32,
+    pub strength: f32,
+    pub offset: f32,
+}
+
+impl TextFollowPathModifier {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            target_id: 0,
+            orient: false,
+            start: 0.0,
+            end: 1.0,
+            strength: 1.0,
+            offset: 0.0,
+        }
+    }
+}
+
+impl RiveObject for TextFollowPathModifier {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_FOLLOW_PATH_MODIFIER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.target_id != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_TARGET_MODIFIER_TARGET_ID,
+                value: PropertyValue::UInt(self.target_id),
+            });
+        }
+        if self.orient {
+            props.push(Property {
+                key: property_keys::TEXT_FOLLOW_PATH_MODIFIER_ORIENT,
+                value: PropertyValue::Bool(self.orient),
+            });
+        }
+        if self.start != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_FOLLOW_PATH_MODIFIER_START,
+                value: PropertyValue::Float(self.start),
+            });
+        }
+        if self.end != 1.0 {
+            props.push(Property {
+                key: property_keys::TEXT_FOLLOW_PATH_MODIFIER_END,
+                value: PropertyValue::Float(self.end),
+            });
+        }
+        if self.strength != 1.0 {
+            props.push(Property {
+                key: property_keys::TEXT_FOLLOW_PATH_MODIFIER_STRENGTH,
+                value: PropertyValue::Float(self.strength),
+            });
+        }
+        if self.offset != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_FOLLOW_PATH_MODIFIER_OFFSET,
+                value: PropertyValue::Float(self.offset),
+            });
+        }
+        props
+    }
+}
+
+pub struct TextInput {
+    pub name: String,
+    pub parent_id: u64,
+    pub align_value: u64,
+    pub sizing_value: u64,
+    pub overflow_value: u64,
+    pub width: f32,
+    pub height: f32,
+    pub text: String,
+    pub selection_radius: f32,
+    pub interactive: bool,
+}
+
+impl TextInput {
+    pub fn new(name: String, parent_id: u64) -> Self {
+        Self {
+            name,
+            parent_id,
+            align_value: 0,
+            sizing_value: 0,
+            overflow_value: 0,
+            width: 0.0,
+            height: 0.0,
+            text: String::new(),
+            selection_radius: 0.0,
+            interactive: false,
+        }
+    }
+}
+
+impl RiveObject for TextInput {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_INPUT
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.align_value != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_ALIGN_VALUE,
+                value: PropertyValue::UInt(self.align_value),
+            });
+        }
+        if self.sizing_value != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_SIZING_VALUE,
+                value: PropertyValue::UInt(self.sizing_value),
+            });
+        }
+        if self.overflow_value != 0 {
+            props.push(Property {
+                key: property_keys::TEXT_OVERFLOW_VALUE,
+                value: PropertyValue::UInt(self.overflow_value),
+            });
+        }
+        if self.width != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_WIDTH,
+                value: PropertyValue::Float(self.width),
+            });
+        }
+        if self.height != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_HEIGHT,
+                value: PropertyValue::Float(self.height),
+            });
+        }
+        if !self.text.is_empty() {
+            props.push(Property {
+                key: property_keys::TEXT_INPUT_TEXT_VALUE,
+                value: PropertyValue::String(self.text.clone()),
+            });
+        }
+        if self.selection_radius != 0.0 {
+            props.push(Property {
+                key: property_keys::TEXT_INPUT_SELECTION_RADIUS,
+                value: PropertyValue::Float(self.selection_radius),
+            });
+        }
+        if self.interactive {
+            props.push(Property {
+                key: property_keys::TEXT_INPUT_INTERACTIVE,
+                value: PropertyValue::Bool(self.interactive),
+            });
+        }
+        props
+    }
+}
+
+pub struct TextInputDrawable {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for TextInputDrawable {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_INPUT_DRAWABLE
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct TextInputCursor {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for TextInputCursor {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_INPUT_CURSOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct TextInputText {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for TextInputText {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_INPUT_TEXT
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct TextInputSelection {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for TextInputSelection {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_INPUT_SELECTION
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct TextInputSelectedText {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for TextInputSelectedText {
+    fn type_key(&self) -> u16 {
+        type_keys::TEXT_INPUT_SELECTED_TEXT
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

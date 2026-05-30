@@ -346,6 +346,884 @@ impl RiveObject for ViewModelInstanceViewModel {
     }
 }
 
+pub struct ViewModelPropertyNumber {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyNumber {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_NUMBER
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ViewModelPropertyBoolean {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyBoolean {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_BOOLEAN
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ViewModelPropertyString {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyString {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_STRING
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ViewModelPropertyColor {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyColor {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_COLOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ViewModelPropertyList {
+    pub name: String,
+    pub parent_id: u64,
+    pub view_model_reference_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyList {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_LIST
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.view_model_reference_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_REFERENCE_ID,
+                value: PropertyValue::UInt(self.view_model_reference_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelPropertyViewModel {
+    pub name: String,
+    pub parent_id: u64,
+    pub view_model_reference_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyViewModel {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_COMPONENT
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.view_model_reference_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_REFERENCE_ID,
+                value: PropertyValue::UInt(self.view_model_reference_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelPropertyEnum {
+    pub name: String,
+    pub parent_id: u64,
+    pub enum_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyEnum {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_ENUM
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.enum_id != 0 {
+            props.push(Property {
+                key: property_keys::DATA_ENUM_ENUM_ID,
+                value: PropertyValue::UInt(self.enum_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelPropertyEnumCustom {
+    pub name: String,
+    pub parent_id: u64,
+    pub enum_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyEnumCustom {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_ENUM_CUSTOM
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.enum_id != 0 {
+            props.push(Property {
+                key: property_keys::DATA_ENUM_CUSTOM_ENUM_ID,
+                value: PropertyValue::UInt(self.enum_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelPropertyEnumSystem {
+    pub name: String,
+    pub parent_id: u64,
+    pub enum_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyEnumSystem {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_ENUM_SYSTEM
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.enum_id != 0 {
+            props.push(Property {
+                key: property_keys::DATA_ENUM_ENUM_ID,
+                value: PropertyValue::UInt(self.enum_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelPropertyTrigger {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyTrigger {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_TRIGGER
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ViewModelPropertyAssetImage {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyAssetImage {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_ASSET_IMAGE
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct ViewModelPropertyArtboard {
+    pub name: String,
+    pub parent_id: u64,
+    pub artboard_id: u64,
+}
+
+impl RiveObject for ViewModelPropertyArtboard {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_ARTBOARD
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.artboard_id != 0 {
+            props.push(Property {
+                key: property_keys::VM_PROPERTY_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelPropertySymbol {
+    pub name: String,
+    pub parent_id: u64,
+    pub symbol_type_value: u64,
+    pub artboard_id: u64,
+}
+
+impl RiveObject for ViewModelPropertySymbol {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_SYMBOL
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.symbol_type_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_PROPERTY_TYPE_VALUE_SYMBOL,
+                value: PropertyValue::UInt(self.symbol_type_value),
+            });
+        }
+        if self.artboard_id != 0 {
+            props.push(Property {
+                key: property_keys::VM_PROPERTY_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelPropertySymbolListIndex {
+    pub name: String,
+    pub parent_id: u64,
+    pub symbol_type_value: u64,
+    pub artboard_id: u64,
+    pub list_source: u64,
+}
+
+impl RiveObject for ViewModelPropertySymbolListIndex {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_PROPERTY_SYMBOL_LIST_INDEX
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.symbol_type_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_PROPERTY_TYPE_VALUE_SYMBOL,
+                value: PropertyValue::UInt(self.symbol_type_value),
+            });
+        }
+        if self.artboard_id != 0 {
+            props.push(Property {
+                key: property_keys::VM_PROPERTY_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            });
+        }
+        if self.list_source != 0 {
+            props.push(Property {
+                key: property_keys::LIST_SOURCE,
+                value: PropertyValue::UInt(self.list_source),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceTrigger {
+    pub view_model_property_id: u64,
+    pub property_value: u64,
+}
+
+impl RiveObject for ViewModelInstanceTrigger {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_TRIGGER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_TRIGGER_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceSymbol {
+    pub view_model_property_id: u64,
+    pub property_value: u64,
+}
+
+impl RiveObject for ViewModelInstanceSymbol {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_SYMBOL
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_SYMBOL_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceSymbolListIndex {
+    pub view_model_property_id: u64,
+    pub property_value: u64,
+}
+
+impl RiveObject for ViewModelInstanceSymbolListIndex {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_SYMBOL_LIST_INDEX
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_SYMBOL_LIST_INDEX_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceAssetImage {
+    pub view_model_property_id: u64,
+    pub property_value: u64,
+}
+
+impl RiveObject for ViewModelInstanceAssetImage {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_ASSET_IMAGE
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_ASSET_IMAGE_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct ViewModelInstanceArtboard {
+    pub view_model_property_id: u64,
+    pub property_value: u64,
+    pub artboard_id: u64,
+}
+
+impl RiveObject for ViewModelInstanceArtboard {
+    fn type_key(&self) -> u16 {
+        type_keys::VIEW_MODEL_INSTANCE_ARTBOARD
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.view_model_property_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_VALUE_VIEW_MODEL_PROPERTY_ID,
+                value: PropertyValue::UInt(self.view_model_property_id),
+            });
+        }
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_ARTBOARD_PROPERTY_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        if self.artboard_id != 0 {
+            props.push(Property {
+                key: property_keys::VIEW_MODEL_INSTANCE_ARTBOARD_ARTBOARD_ID,
+                value: PropertyValue::UInt(self.artboard_id),
+            });
+        }
+        props
+    }
+}
+
+pub struct DataEnum {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for DataEnum {
+    fn type_key(&self) -> u16 {
+        type_keys::DATA_ENUM
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct DataEnumCustom {
+    pub name: String,
+    pub parent_id: u64,
+}
+
+impl RiveObject for DataEnumCustom {
+    fn type_key(&self) -> u16 {
+        type_keys::DATA_ENUM_CUSTOM
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::DATA_ENUM_CUSTOM_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ]
+    }
+}
+
+pub struct DataEnumValue {
+    pub key: String,
+    pub value: String,
+}
+
+impl RiveObject for DataEnumValue {
+    fn type_key(&self) -> u16 {
+        type_keys::DATA_ENUM_VALUE
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::DATA_ENUM_VALUE_KEY,
+                value: PropertyValue::String(self.key.clone()),
+            },
+            Property {
+                key: property_keys::DATA_ENUM_VALUE_VALUE,
+                value: PropertyValue::String(self.value.clone()),
+            },
+        ]
+    }
+}
+
+pub struct DataEnumSystem {
+    pub name: String,
+    pub parent_id: u64,
+    pub enum_type: u64,
+}
+
+impl RiveObject for DataEnumSystem {
+    fn type_key(&self) -> u16 {
+        type_keys::DATA_ENUM_SYSTEM
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::COMPONENT_NAME,
+                value: PropertyValue::String(self.name.clone()),
+            },
+            Property {
+                key: property_keys::COMPONENT_PARENT_ID,
+                value: PropertyValue::UInt(self.parent_id),
+            },
+        ];
+        if self.enum_type != 0 {
+            props.push(Property {
+                key: property_keys::DATA_ENUM_ENUM_TYPE,
+                value: PropertyValue::UInt(self.enum_type),
+            });
+        }
+        props
+    }
+}
+
+pub struct BindablePropertyString {
+    pub property_value: String,
+}
+
+impl RiveObject for BindablePropertyString {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_STRING
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::BINDABLE_PROPERTY_STRING_VALUE,
+            value: PropertyValue::String(self.property_value.clone()),
+        }]
+    }
+}
+
+pub struct BindablePropertyBoolean {
+    pub property_value: u64,
+}
+
+impl RiveObject for BindablePropertyBoolean {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_BOOLEAN
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::BINDABLE_PROPERTY_BOOLEAN_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct BindablePropertyNumber {
+    pub property_value: f32,
+}
+
+impl RiveObject for BindablePropertyNumber {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_NUMBER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.property_value != 0.0 {
+            props.push(Property {
+                key: property_keys::BINDABLE_PROPERTY_NUMBER_VALUE,
+                value: PropertyValue::Float(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct BindablePropertyEnum {
+    pub property_value: u64,
+}
+
+impl RiveObject for BindablePropertyEnum {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_ENUM
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::BINDABLE_PROPERTY_ENUM_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct BindablePropertyColor {
+    pub property_value: u32,
+}
+
+impl RiveObject for BindablePropertyColor {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_COLOR
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::BINDABLE_PROPERTY_COLOR_VALUE,
+            value: PropertyValue::Color(self.property_value),
+        }]
+    }
+}
+
+pub struct BindablePropertyTrigger {
+    pub property_value: u64,
+}
+
+impl RiveObject for BindablePropertyTrigger {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_TRIGGER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::BINDABLE_PROPERTY_TRIGGER_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct BindablePropertyInteger {
+    pub property_value: u64,
+}
+
+impl RiveObject for BindablePropertyInteger {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_INTEGER
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::BINDABLE_PROPERTY_INTEGER_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct BindablePropertyList {
+    pub property_value: u64,
+}
+
+impl RiveObject for BindablePropertyList {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_LIST
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::BINDABLE_PROPERTY_LIST_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct BindablePropertyId {
+    pub property_value: u32,
+}
+
+impl RiveObject for BindablePropertyId {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_ID
+    }
+    fn properties(&self) -> Vec<Property> {
+        vec![Property {
+            key: property_keys::BINDABLE_PROPERTY_ID_VALUE,
+            value: PropertyValue::Color(self.property_value),
+        }]
+    }
+}
+
+pub struct BindablePropertyArtboard {
+    pub property_value: u64,
+}
+
+impl RiveObject for BindablePropertyArtboard {
+    fn type_key(&self) -> u16 {
+        type_keys::BINDABLE_PROPERTY_ARTBOARD
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = Vec::new();
+        if self.property_value != 0 {
+            props.push(Property {
+                key: property_keys::BINDABLE_PROPERTY_ARTBOARD_VALUE,
+                value: PropertyValue::UInt(self.property_value),
+            });
+        }
+        props
+    }
+}
+
+pub struct DataBindPath {
+    pub property_key: u64,
+    pub flags: u64,
+    pub converter_id: u64,
+}
+
+impl DataBindPath {
+    pub fn new(property_key: u64, flags: u64) -> Self {
+        Self {
+            property_key,
+            flags,
+            converter_id: u32::MAX as u64,
+        }
+    }
+}
+
+impl RiveObject for DataBindPath {
+    fn type_key(&self) -> u16 {
+        type_keys::DATA_BIND_PATH
+    }
+    fn properties(&self) -> Vec<Property> {
+        let mut props = vec![
+            Property {
+                key: property_keys::DATA_BIND_PROPERTY_KEY,
+                value: PropertyValue::UInt(self.property_key),
+            },
+            Property {
+                key: property_keys::DATA_BIND_FLAGS,
+                value: PropertyValue::UInt(self.flags),
+            },
+        ];
+        if self.converter_id != u32::MAX as u64 {
+            props.push(Property {
+                key: property_keys::DATA_BIND_CONVERTER_ID,
+                value: PropertyValue::UInt(self.converter_id),
+            });
+        }
+        props
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

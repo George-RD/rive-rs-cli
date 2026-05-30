@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::objects::animation::{
     CubicEaseInterpolator, ElasticInterpolator, KeyFrameBool, KeyFrameCallback, KeyFrameColor,
-    KeyFrameDouble, KeyFrameId, KeyFrameString, KeyedObject, KeyedProperty, LinearAnimation,
+    KeyFrameDouble, KeyFrameString, KeyFrameUint, KeyedObject, KeyedProperty, LinearAnimation,
 };
 use crate::objects::core::{
     BackingType, RiveObject, is_bool_property, property_backing_type, property_keys,
@@ -204,7 +204,7 @@ pub(crate) fn build_animations(
                                 value: value != 0,
                             }));
                         } else {
-                            let mut kf = KeyFrameId::new(frame.frame, value);
+                            let mut kf = KeyFrameUint::new(frame.frame, value);
                             kf.interpolation_type = interp_type;
                             kf.interpolator_id = interp_id;
                             objects.push(Box::new(kf));

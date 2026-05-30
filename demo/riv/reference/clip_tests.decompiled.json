@@ -1,0 +1,1220 @@
+{
+  "header": {
+    "major_version": 7,
+    "minor_version": 0,
+    "file_id": 13748
+  },
+  "toc_property_keys": [
+    236
+  ],
+  "objects": [
+    {
+      "type_key": 23,
+      "type_name": "Backboard",
+      "properties": []
+    },
+    {
+      "type_key": 1,
+      "type_name": "Artboard",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Empty-Shape"
+          }
+        },
+        {
+          "key": 7,
+          "name": "width",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 8,
+          "name": "height",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 236,
+          "name": "defaultStateMachineId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Ellipse-clipper"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 209.74123
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 231.75682
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 4,
+      "type_name": "Ellipse",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 128,
+          "name": "pathFlags",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 171.51874
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 171.51874
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 8
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Rectangle-clipped"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 258.90436
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 176.34956
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 7,
+      "type_name": "Rectangle",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 448.10938
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 319.54688
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 9
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 42,
+      "type_name": "ClippingShape",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 92,
+          "name": "sourceId",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 41,
+          "name": "isVisible",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 31,
+      "type_name": "LinearAnimation",
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "Timeline 1"
+          }
+        },
+        {
+          "key": 57,
+          "name": "duration",
+          "value": {
+            "UInt": 840
+          }
+        },
+        {
+          "key": 59,
+          "name": "loopValue",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 53,
+      "type_name": "StateMachine",
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "State Machine 1"
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 57,
+      "type_name": "StateMachineLayer",
+      "properties": [
+        {
+          "key": 138,
+          "name": "name",
+          "value": {
+            "String": "Layer 1"
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 64,
+      "type_name": "ExitState",
+      "properties": []
+    },
+    {
+      "type_key": 62,
+      "type_name": "AnyState",
+      "properties": []
+    },
+    {
+      "type_key": 63,
+      "type_name": "EntryState",
+      "properties": []
+    },
+    {
+      "type_key": 65,
+      "type_name": "StateTransition",
+      "properties": [
+        {
+          "key": 151,
+          "name": "stateToId",
+          "value": {
+            "UInt": 3
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 61,
+      "type_name": "AnimationState",
+      "properties": [
+        {
+          "key": 149,
+          "name": "animationId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 1,
+      "type_name": "Artboard",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "One-Clipping-Shape-Visible-One-Hidden"
+          }
+        },
+        {
+          "key": 7,
+          "name": "width",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 8,
+          "name": "height",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 9,
+          "value": {
+            "Float": 1200.0
+          }
+        },
+        {
+          "key": 236,
+          "name": "defaultStateMachineId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Ellipse-clipper-1"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 209.74123
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 231.75682
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 4,
+      "type_name": "Ellipse",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": -89.13214
+          }
+        },
+        {
+          "key": 128,
+          "name": "pathFlags",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 171.51874
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 171.51874
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 12
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Ellipse-clipper-2"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 209.74123
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 231.75682
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 4,
+      "type_name": "Ellipse",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 150.10751
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 171.51874
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 171.51874
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 13
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Rectangle-clipped"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 258.90436
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 176.34956
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 7,
+      "type_name": "Rectangle",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 7
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 448.10938
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 319.54688
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 14
+          }
+        },
+        {
+          "key": 37,
+          "name": "colorValue",
+          "value": {
+            "Color": 4287102976
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 42,
+      "type_name": "ClippingShape",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 7
+          }
+        },
+        {
+          "key": 92,
+          "name": "sourceId",
+          "value": {
+            "UInt": 4
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 42,
+      "type_name": "ClippingShape",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 7
+          }
+        },
+        {
+          "key": 92,
+          "name": "sourceId",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 41,
+          "name": "isVisible",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 4
+          }
+        },
+        {
+          "key": 41,
+          "name": "isVisible",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 7
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 31,
+      "type_name": "LinearAnimation",
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "Timeline 1"
+          }
+        },
+        {
+          "key": 57,
+          "name": "duration",
+          "value": {
+            "UInt": 840
+          }
+        },
+        {
+          "key": 59,
+          "name": "loopValue",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 53,
+      "type_name": "StateMachine",
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "State Machine 1"
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 57,
+      "type_name": "StateMachineLayer",
+      "properties": [
+        {
+          "key": 138,
+          "name": "name",
+          "value": {
+            "String": "Layer 1"
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 61,
+      "type_name": "AnimationState",
+      "properties": [
+        {
+          "key": 149,
+          "name": "animationId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 64,
+      "type_name": "ExitState",
+      "properties": []
+    },
+    {
+      "type_key": 62,
+      "type_name": "AnyState",
+      "properties": []
+    },
+    {
+      "type_key": 63,
+      "type_name": "EntryState",
+      "properties": []
+    },
+    {
+      "type_key": 65,
+      "type_name": "StateTransition",
+      "properties": [
+        {
+          "key": 151,
+          "name": "stateToId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 1,
+      "type_name": "Artboard",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Hidden-Path-Visible-Path"
+          }
+        },
+        {
+          "key": 7,
+          "name": "width",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 8,
+          "name": "height",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 9,
+          "value": {
+            "Float": 600.0
+          }
+        },
+        {
+          "key": 236,
+          "name": "defaultStateMachineId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Ellipse-clipper"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 209.74123
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 231.75682
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 4,
+      "type_name": "Ellipse",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 150.10751
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 171.51874
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 171.51874
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 4,
+      "type_name": "Ellipse",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": -89.13214
+          }
+        },
+        {
+          "key": 128,
+          "name": "pathFlags",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 171.51874
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 171.51874
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 9
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 3,
+      "type_name": "Shape",
+      "properties": [
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "Rectangle-clipped"
+          }
+        },
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 258.90436
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 176.34956
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 7,
+      "type_name": "Rectangle",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 5
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 448.10938
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 319.54688
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 10
+          }
+        },
+        {
+          "key": 37,
+          "name": "colorValue",
+          "value": {
+            "Color": 4287102976
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 42,
+      "type_name": "ClippingShape",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 5
+          }
+        },
+        {
+          "key": 92,
+          "name": "sourceId",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 41,
+          "name": "isVisible",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 20,
+      "type_name": "Fill",
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 5
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 31,
+      "type_name": "LinearAnimation",
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "Timeline 1"
+          }
+        },
+        {
+          "key": 57,
+          "name": "duration",
+          "value": {
+            "UInt": 840
+          }
+        },
+        {
+          "key": 59,
+          "name": "loopValue",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 53,
+      "type_name": "StateMachine",
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "State Machine 1"
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 57,
+      "type_name": "StateMachineLayer",
+      "properties": [
+        {
+          "key": 138,
+          "name": "name",
+          "value": {
+            "String": "Layer 1"
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 61,
+      "type_name": "AnimationState",
+      "properties": [
+        {
+          "key": 149,
+          "name": "animationId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 62,
+      "type_name": "AnyState",
+      "properties": []
+    },
+    {
+      "type_key": 63,
+      "type_name": "EntryState",
+      "properties": []
+    },
+    {
+      "type_key": 65,
+      "type_name": "StateTransition",
+      "properties": [
+        {
+          "key": 151,
+          "name": "stateToId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "type_key": 64,
+      "type_name": "ExitState",
+      "properties": []
+    }
+  ]
+}

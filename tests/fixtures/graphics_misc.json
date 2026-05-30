@@ -1,0 +1,85 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "GraphicsMisc",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "guide",
+        "name": "HGuide"
+      },
+      {
+        "type": "group_effect",
+        "name": "BlurGroup"
+      },
+      {
+        "type": "shape",
+        "name": "EffectShape",
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "ShapeCircle",
+            "width": 50,
+            "height": 50
+          },
+          {
+            "type": "fill",
+            "name": "EffectFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "EffectColor",
+                "color": "#FF0000FF"
+              },
+              {
+                "type": "target_effect",
+                "name": "EffectRef",
+                "target_id": 1
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "ListShape",
+        "children": [
+          {
+            "type": "list_path",
+            "name": "DataPath",
+            "is_closed": true,
+            "list_source": 99
+          },
+          {
+            "type": "points_common_path",
+            "name": "CommonPath",
+            "is_closed": false
+          }
+        ]
+      },
+      {
+        "type": "artboard_component_list",
+        "name": "ItemList",
+        "list_source": 10,
+        "children": [
+          {
+            "type": "artboard_list_map_rule",
+            "name": "MapRule1",
+            "artboard_id": 0,
+            "view_model_id": 1
+          },
+          {
+            "type": "artboard_component_list_override",
+            "name": "SizeOverride",
+            "instance_width": 200.0,
+            "instance_height": 100.0,
+            "instance_width_units_value": 0
+          }
+        ]
+      }
+    ],
+    "animations": [],
+    "state_machines": []
+  }
+}
