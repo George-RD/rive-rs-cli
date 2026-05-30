@@ -3138,6 +3138,212 @@ fn test_inspect_loader() {
 fn test_generate_validate_inspect_elastic_interpolator() {
     assert_generate_validate_inspect("elastic_interpolator", &["ElasticInterpolator"]);
 }
+#[test]
+fn test_generate_icon_set() {
+    let input = fixture_path("icon_set.json");
+    let output = temp_output("icon_set");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_icon_set() {
+    let input = fixture_path("icon_set.json");
+    let output = temp_output("icon_set_validate");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&v.stdout);
+    assert!(v.status.success());
+    assert!(stdout.contains("valid"));
+    assert!(stdout.contains("28 objects"));
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_icon_set() {
+    let input = fixture_path("icon_set.json");
+    let output = temp_output("icon_set_inspect");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(insp.status.success());
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+    assert_eq!(objects.len(), 28);
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_game_hud() {
+    let input = fixture_path("game_hud.json");
+    let output = temp_output("game_hud");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_game_hud() {
+    let input = fixture_path("game_hud.json");
+    let output = temp_output("game_hud_validate");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&v.stdout);
+    assert!(v.status.success());
+    assert!(stdout.contains("valid"));
+    assert!(stdout.contains("32 objects"));
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_game_hud() {
+    let input = fixture_path("game_hud.json");
+    let output = temp_output("game_hud_inspect");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(insp.status.success());
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+    assert_eq!(objects.len(), 32);
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_mascot() {
+    let input = fixture_path("mascot.json");
+    let output = temp_output("mascot");
+    cleanup(&output);
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(output.exists());
+    let bytes = std::fs::read(&output).unwrap();
+    assert_eq!(&bytes[0..4], b"RIVE");
+    cleanup(&output);
+}
+
+#[test]
+fn test_validate_mascot() {
+    let input = fixture_path("mascot.json");
+    let output = temp_output("mascot_validate");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&v.stdout);
+    assert!(v.status.success());
+    assert!(stdout.contains("valid"));
+    assert!(stdout.contains("42 objects"));
+    cleanup(&output);
+}
+
+#[test]
+fn test_inspect_mascot() {
+    let input = fixture_path("mascot.json");
+    let output = temp_output("mascot_inspect");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success());
+
+    let insp = cargo_run(&["inspect", "--json", output.to_str().unwrap()]);
+    let stdout = String::from_utf8_lossy(&insp.stdout);
+    assert!(insp.status.success());
+    let parsed: serde_json::Value =
+        serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
+    let objects = parsed.get("objects").unwrap().as_array().unwrap();
+    assert_eq!(objects.len(), 42);
+    cleanup(&output);
+}
 
 #[test]
 fn test_generate_validate_inspect_triangle() {
