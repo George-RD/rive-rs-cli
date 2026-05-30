@@ -1575,6 +1575,7 @@ pub enum TransitionChildSpec {
     TransitionValueArtboardComparator { value: Option<u64> },
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) enum ParentKind {
     Artboard,
