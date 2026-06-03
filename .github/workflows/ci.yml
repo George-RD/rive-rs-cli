@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
 
 jobs:
   check:
@@ -36,3 +37,20 @@ jobs:
       - run: npm install --no-save playwright@1.50.1
       - run: npx playwright install --with-deps chromium
       - run: node tests/playwright/regression.js
+
+  demo:
+    needs: [check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npm install --no-save playwright@1.50.1
+      - run: npx playwright install --with-deps chromium
+      - run: node demo/serve.js &
+      - run: sleep 15
+      - run: node tests/playwright/demo-validation.js

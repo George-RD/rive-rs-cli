@@ -167,16 +167,126 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 
 ### CI Pipeline
 - `cargo fmt --check`
-- `cargo clippy -- -D warnings`
+- `cargo clippy -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
 - `cargo test`
 - Playwright runtime regression (depends on `check` job)
+- Demo console error validation (depends on `check` job)
 
-### Release Pipeline
-- Triggered on `v*` tags
-- Verifies tag matches `Cargo.toml` version
-- Runs full quality gates (fmt + clippy + test + Playwright)
-- Cross-compiles `--release --locked` for 4 targets (`x86_64-linux`, `x86_64-windows`, `x86_64-macos`, `aarch64-macos`)
-- Packages with SHA256 checksums and publishes GitHub Release
+## Development Workflow
+
+### 1. Feature Development Flow (Adding New Rive Object Types)
+
+Entry: Look up the C++ runtime source in the rive-runtime repository. Extract `type_key` and `property_keys` from the corresponding `*_base.hpp` file.
+
+Steps:
+1. Add constants: define the new `type_key` and each `property_key` as `u16` constants in `src/objects/core.rs` or the appropriate module.
+2. Add struct: create a Rust struct with fields matching the C++ base class properties.
+3. Implement `RiveObject`: implement `type_key() -> u16` and `properties() -> Vec<Property>` for the struct. Map each field to its property key and backing type.
+4. Add builder dispatch: wire the new type into `src/builder.rs` so the JSON deserializer can construct it from scene specifications.
+5. Add unit tests: add a `#[cfg(test)] mod tests` block in the same file. Cover `type_key()` correctness, `properties()` length and ordering, and round-trip through the encoder.
+6. Add fixture: create a minimal JSON fixture in `tests/fixtures/` that exercises the new object type. Register it in `tests/e2e.rs`.
+7. Run full validation:
+   ```bash
+   cargo test
+   cargo run -- generate tests/fixtures/your_new_fixture.json -o /tmp/out.riv
+   cargo run -- validate /tmp/out.riv
+   cargo run -- decompile /tmp/out.riv
+   ```
+
+Exit gates:
+- `cargo test` passes with no warnings (`RUSTFLAGS="-D warnings"`).
+- Demo loads with 0 console errors when served via `demo/serve.js`.
+- Fixture renders in the Rive WASM runtime with no runtime rejection.
+
+### 2. Comparison/Parity Flow (Achieving Parity with Official Rive Files)
+
+Entry: Identify an official `.riv` file from the rive-runtime repository or Rive's public asset collection.
+
+Steps:
+1. Acquire reference: download or copy the official `.riv` file into `tests/fixtures/reference/`.
+2. Decompile: run `cargo run -- decompile` on the reference to produce a human-readable structural dump.
+3. Create comparison fixture: write a JSON scene specification that attempts to reproduce the same structure.
+4. Generate: produce a `.riv` from the comparison fixture.
+5. Compare:
+   - Structural: diff the decompile output of the reference against the generated file.
+   - Visual: load both in the Rive WASM runtime side-by-side.
+   - Pixel: run Playwright visual regression to compute pixel difference.
+6. Document gaps: if differences exceed thresholds, document them in `docs/parity.md` with a `gapType` label.
+
+Exit gates:
+- Structural match: decompile diff is below the threshold, or every delta is labeled with a `gapType`.
+- Visual match: pixel diff is below the threshold, or the mismatch is documented with a `gapType`.
+- All gaps use the `gapType` vocabulary: `missing-type`, `property-drift`, `encoding-difference`, `visual-mismatch`, `runtime-rejection`.
+
+### 3. Issue Triage Flow
+
+Entry: An issue is found during validation (console error, performance problem, corrupt file, or visual mismatch).
+
+Steps:
+1. Reproduce: create a minimal fixture or script that triggers the issue consistently.
+2. Root-cause: trace the issue to a specific object type, encoder path, builder field, or runtime interaction.
+3. Fix or document:
+   - If fixable in scope: fix it and add a regression test.
+   - If out of scope or blocked: document it as a known issue in `docs/parity.md` with a specific ticket reference and acceptance criteria.
+4. Re-validate: run the full validation suite (`cargo test`, demo validation, Playwright regression) to confirm resolution.
+
+Rule: Issues are NEVER dismissed as "pre-existing". They are either fixed or tracked with a specific ticket.
+
+Exit gates:
+- Issue is resolved and a regression test exists, OR
+- Issue is documented in `docs/parity.md` with a ticket link, `gapType`, and clear acceptance criteria for closure.
+
+### 4. Release Flow
+
+Entry: A version bump is committed in `Cargo.toml`.
+
+Steps:
+1. Run full quality gates (see Pre-Commit Gates below).
+2. Cross-compile: build `--release --locked` for all four targets:
+   ```bash
+   cargo build --release --locked --target x86_64-unknown-linux-gnu
+   cargo build --release --locked --target x86_64-pc-windows-gnu
+   cargo build --release --locked --target x86_64-apple-darwin
+   cargo build --release --locked --target aarch64-apple-darwin
+   ```
+3. Tag: create an annotated Git tag matching the `Cargo.toml` version (`git tag -a vX.Y.Z`).
+4. GitHub Release: push the tag to trigger the release workflow, which packages binaries with SHA256 checksums.
+
+Exit gates:
+- All CI jobs are green.
+- All comparison fixtures are at acceptable parity (no unlabeled gaps).
+- `CHANGELOG.md` is updated with the version's changes.
+
+### 5. Pre-Commit Gates (Must Pass Before Any PR)
+
+The following commands must pass locally before opening a pull request:
+
+```bash
+cargo fmt --check
+cargo clippy -- -D warnings
+cargo test
+```
+
+Additional validation:
+- Demo validation: load `demo/index.html` via `demo/serve.js` and confirm 0 console errors.
+- Playwright regression: confirm all fixtures load and render correctly in the Rive WASM runtime.
+
+### 6. CI Pipeline Overview
+
+The CI pipeline consists of three jobs:
+
+- **check** job:
+  - `cargo fmt --check`
+  - `cargo clippy -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
+  - `cargo test`
+
+- **playwright** job (depends on `check`):
+  - Runs `tests/playwright/regression.js`
+  - Validates that all fixtures render correctly in the Rive WASM runtime.
+
+- **demo** job (depends on `check`):
+  - Runs `tests/playwright/demo-validation.js` against `demo/serve.js`
+  - Validates that the demo web UI loads with 0 console errors.
 
 ## Binary Format Quick Reference
 
