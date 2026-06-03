@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:,">
     <title>rive-cli Demo Gallery</title>
-    <script src="https://unpkg.com/@rive-app/canvas@2.35.0"></script>
+    <script src="https://unpkg.com/@rive-app/canvas@2.37.8"></script>
     <script src="riv/manifest.js"></script>
     <style>
         :root {
@@ -504,15 +504,68 @@
         const summary = document.getElementById('summary');
         let loadedCount = 0;
 
-        // Render cards
         const riveInstances = {};
         const riveRefInstances = {};
         const riveSources = {};
         const fixturesByName = {};
+        const activeInstances = new Set();
+        const MAX_CONCURRENT_INSTANCES = 8;
+        const loadQueue = [];
+        let isProcessingQueue = false;
 
-        if (fixtures.length === 0) {
-            summary.textContent = 'No fixtures found in manifest. Run node demo/serve.js to regenerate demo/riv/manifest.js';
+        function cleanupInstance(name) {
+            const inst = riveInstances[name];
+            const refInst = riveRefInstances[name];
+            if (inst) {
+                try { inst.cleanup(); } catch (e) {}
+                delete riveInstances[name];
+            }
+            if (refInst) {
+                try { refInst.cleanup(); } catch (e) {}
+                delete riveRefInstances[name];
+            }
+            activeInstances.delete(name);
         }
+
+        function processQueue() {
+            if (isProcessingQueue) return;
+            isProcessingQueue = true;
+            while (loadQueue.length > 0 && activeInstances.size < MAX_CONCURRENT_INSTANCES) {
+                const { fixture, card } = loadQueue.shift();
+                if (card.dataset.loaded === 'true') continue;
+                card.dataset.loaded = 'true';
+                createRiveInstance(fixture);
+            }
+            isProcessingQueue = false;
+        }
+
+        function queueInstance(fixture, card) {
+            if (card.dataset.loaded === 'true') return;
+            loadQueue.push({ fixture, card });
+            processQueue();
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const card = entry.target;
+                const name = card.dataset.fixtureName;
+                if (entry.isIntersecting) {
+                    if (card.dataset.loaded !== 'true') {
+                        queueInstance(fixturesByName[name], card);
+                    }
+                } else {
+                    if (card.dataset.loaded === 'true' && activeInstances.has(name)) {
+                        cleanupInstance(name);
+                        card.dataset.loaded = 'false';
+                        const statusEl = document.getElementById(`status-${name}`);
+                        if (statusEl) {
+                            statusEl.className = 'status loading';
+                            statusEl.textContent = '⟳';
+                        }
+                    }
+                }
+            });
+        }, { rootMargin: '200px' });
 
         fixtures.forEach(fixture => {
             fixturesByName[fixture.name] = fixture;
@@ -551,12 +604,13 @@
 
         function createRiveInstance(fixture, isReplay = false) {
             const name = fixture.name;
+            activeInstances.add(name);
             const canvas = document.getElementById(`canvas-${name}`);
             resizeCanvasForHiDPI(canvas);
             const statusEl = document.getElementById(`status-${name}`);
             const errorEl = document.getElementById(`error-${name}`);
             const options = runtimeOptions(name);
-            
+
             riveInstances[name] = new rive.Rive({
                 src: riveSources[name],
                 canvas: canvas,
@@ -619,10 +673,15 @@
             }
         }
 
+        if (fixtures.length === 0) {
+            summary.textContent = 'No fixtures found in manifest. Run node demo/serve.js to regenerate demo/riv/manifest.js';
+        }
+
         fixtures.forEach(fixture => {
             const card = document.createElement('div');
             const isComparison = Array.isArray(fixture.tags) && fixture.tags.includes('comparison');
             card.className = `card category-${fixture.category}${isComparison ? ' comparison-card' : ''}`;
+            card.dataset.fixtureName = fixture.name;
             card.dataset.category = fixture.category;
             card.dataset.scope = fixture.scope || 'visual';
             card.dataset.tags = (fixture.tags || []).join(',');
@@ -730,7 +789,7 @@
             `;
             gallery.appendChild(card);
             riveSources[fixture.name] = `riv/${fixture.name}.riv`;
-            createRiveInstance(fixture);
+            observer.observe(card);
         });
 
         const visualFixtureCount = fixtures.filter(f => f.scope !== 'nonvisual').length;
@@ -893,10 +952,23 @@
                 const tags = (card.dataset.tags || '').split(',').filter(Boolean);
                 const scopeMatch = selectedScopes.has(scope);
                 const tagMatch = selectedTags.size === 0 || tags.some(tag => selectedTags.has(tag));
-                card.style.display = scopeMatch && tagMatch ? 'flex' : 'none';
+                const shouldShow = scopeMatch && tagMatch;
+                const wasHidden = card.style.display === 'none';
+                card.style.display = shouldShow ? 'flex' : 'none';
+                if (!shouldShow && !wasHidden) {
+                    const name = card.dataset.fixtureName;
+                    if (name && activeInstances.has(name)) {
+                        cleanupInstance(name);
+                        card.dataset.loaded = 'false';
+                        const statusEl = document.getElementById(`status-${name}`);
+                        if (statusEl) {
+                            statusEl.className = 'status loading';
+                            statusEl.textContent = '⟳';
+                        }
+                    }
+                }
             });
         }
-
         document.querySelectorAll('.filter-btn[data-scope]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const scope = btn.dataset.scope;

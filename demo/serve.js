@@ -140,7 +140,6 @@ const FIXTURE_OVERRIDES = {
     tags: ['static', 'comparison'],
     hasReference: true,
     referenceSource: 'riv/reference/trim.riv',
-    gapTypes: []
   },
   comparison_quantize_test: {
     category: 'animated',
@@ -149,7 +148,6 @@ const FIXTURE_OVERRIDES = {
     tags: ['animated', 'comparison'],
     hasReference: true,
     referenceSource: 'riv/reference/quantize_test.riv',
-    gapTypes: []
   },
   multi_artboard: {
     expectation: 'Two artboards with per-artboard animations. Replay checks timeline behavior; Artboard switch checks scoping.',

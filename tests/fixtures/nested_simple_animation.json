@@ -61,15 +61,17 @@
           "name": "InnerInstance",
           "source_artboard": "Inner",
           "x": 100,
-          "y": 100
-        },
-        {
-          "type": "nested_simple_animation",
-          "name": "InnerPlayback",
-          "animation": "outer_idle",
-          "speed": 1.25,
-          "is_playing": true,
-          "mix": 0.75
+          "y": 100,
+          "children": [
+            {
+              "type": "nested_simple_animation",
+              "name": "InnerPlayback",
+              "animation": "outer_idle",
+              "speed": 1.25,
+              "is_playing": true,
+              "mix": 0.75
+            }
+          ]
         }
       ],
       "animations": [

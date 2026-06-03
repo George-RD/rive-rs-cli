@@ -1,5 +1,5 @@
 window.__RIVE_FIXTURE_MANIFEST = {
-  "generatedAt": "2026-02-27T06:30:29.256Z",
+  "generatedAt": "2026-06-03T11:06:32.900Z",
   "fixtures": [
     {
       "name": "animation",
@@ -30,6 +30,16 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": false
     },
     {
+      "name": "asset_extensions",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "asset_extensions fixture loaded.",
+      "replay": false
+    },
+    {
       "name": "assets",
       "category": "nonvisual",
       "scope": "nonvisual",
@@ -38,6 +48,28 @@ window.__RIVE_FIXTURE_MANIFEST = {
       ],
       "expectation": "Asset declaration fixture (image/font/audio metadata). No visual output — assets have no embedded data.",
       "replay": false
+    },
+    {
+      "name": "blend_animation",
+      "category": "interactive",
+      "scope": "visual",
+      "tags": [
+        "interactive",
+        "animated"
+      ],
+      "expectation": "blend_animation fixture loaded.",
+      "stateMachine": "BlendMachine",
+      "animations": [
+        "anim_a",
+        "anim_b"
+      ],
+      "animationsByArtboard": {
+        "BlendDemo": [
+          "anim_a",
+          "anim_b"
+        ]
+      },
+      "replay": true
     },
     {
       "name": "bones",
@@ -75,6 +107,16 @@ window.__RIVE_FIXTURE_MANIFEST = {
         ]
       },
       "replay": true
+    },
+    {
+      "name": "clipping_shape",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "clipping_shape fixture loaded.",
+      "replay": false
     },
     {
       "name": "color_animation",
@@ -143,6 +185,16 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": false
     },
     {
+      "name": "cubic_asymmetric",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "cubic_asymmetric fixture loaded.",
+      "replay": false
+    },
+    {
       "name": "cubic_easing",
       "category": "animated",
       "scope": "visual",
@@ -171,6 +223,54 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": false
     },
     {
+      "name": "data_converters",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "data_converters fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "draw_rules",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "draw_rules fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "effects",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "effects fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "elastic_interpolator",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated"
+      ],
+      "expectation": "elastic_interpolator fixture loaded.",
+      "animations": [
+        "bounce"
+      ],
+      "animationsByArtboard": {
+        "ElasticInterpolator": [
+          "bounce"
+        ]
+      },
+      "replay": true
+    },
+    {
       "name": "empty_artboard",
       "category": "nonvisual",
       "scope": "nonvisual",
@@ -180,6 +280,62 @@ window.__RIVE_FIXTURE_MANIFEST = {
       ],
       "expectation": "Intentionally empty structural fixture; blank canvas is expected.",
       "replay": false
+    },
+    {
+      "name": "event_test",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated"
+      ],
+      "expectation": "event_test fixture loaded.",
+      "animations": [
+        "timeline"
+      ],
+      "animationsByArtboard": {
+        "EventTimeline": [
+          "timeline"
+        ]
+      },
+      "replay": true
+    },
+    {
+      "name": "events_extended",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "events_extended fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "follow_path_constraint",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "follow_path_constraint fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "game_hud",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated"
+      ],
+      "expectation": "game_hud fixture loaded.",
+      "animations": [
+        "drain_health"
+      ],
+      "animationsByArtboard": {
+        "GameHUD": [
+          "drain_health"
+        ]
+      },
+      "replay": true
     },
     {
       "name": "gradients",
@@ -200,6 +356,32 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": true
     },
     {
+      "name": "graphics_misc",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "graphics_misc fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "icon_set",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static",
+        "structure"
+      ],
+      "expectation": "icon_set fixture loaded.",
+      "artboards": [
+        "Home",
+        "Settings",
+        "Profile"
+      ],
+      "replay": false
+    },
+    {
       "name": "image_node",
       "category": "nonvisual",
       "scope": "nonvisual",
@@ -210,6 +392,36 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": false
     },
     {
+      "name": "joystick",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "joystick fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "keyframe_types",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated"
+      ],
+      "expectation": "keyframe_types fixture loaded.",
+      "animations": [
+        "toggle_visibility",
+        "change_text"
+      ],
+      "animationsByArtboard": {
+        "KeyframeTypesDemo": [
+          "toggle_visibility",
+          "change_text"
+        ]
+      },
+      "replay": true
+    },
+    {
       "name": "layout",
       "category": "nonvisual",
       "scope": "nonvisual",
@@ -217,6 +429,16 @@ window.__RIVE_FIXTURE_MANIFEST = {
         "schema"
       ],
       "expectation": "Schema/encoding fixture: validated structurally, not a visual showcase.",
+      "replay": false
+    },
+    {
+      "name": "layout_extensions",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "layout_extensions fixture loaded.",
       "replay": false
     },
     {
@@ -265,6 +487,34 @@ window.__RIVE_FIXTURE_MANIFEST = {
         ]
       },
       "replay": true
+    },
+    {
+      "name": "mascot",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated"
+      ],
+      "expectation": "mascot fixture loaded.",
+      "animations": [
+        "idle_bob"
+      ],
+      "animationsByArtboard": {
+        "RobotMascot": [
+          "idle_bob"
+        ]
+      },
+      "replay": true
+    },
+    {
+      "name": "mesh",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "mesh fixture loaded.",
+      "replay": false
     },
     {
       "name": "minimal",
@@ -319,6 +569,78 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": false
     },
     {
+      "name": "nested_extensions",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated",
+        "structure"
+      ],
+      "expectation": "nested_extensions fixture loaded.",
+      "artboards": [
+        "Component",
+        "Main"
+      ],
+      "animations": [
+        "intro"
+      ],
+      "animationsByArtboard": {
+        "Component": [
+          "intro"
+        ],
+        "Main": [
+          "main_anim"
+        ]
+      },
+      "replay": true
+    },
+    {
+      "name": "nested_simple_animation",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated",
+        "structure"
+      ],
+      "expectation": "nested_simple_animation fixture loaded.",
+      "artboards": [
+        "Inner",
+        "Outer"
+      ],
+      "animations": [
+        "pulse"
+      ],
+      "animationsByArtboard": {
+        "Inner": [
+          "pulse"
+        ],
+        "Outer": [
+          "outer_idle"
+        ]
+      },
+      "replay": true
+    },
+    {
+      "name": "new_constraints",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "new_constraints fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "nslicer",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "nslicer fixture loaded.",
+      "replay": false
+    },
+    {
       "name": "path",
       "category": "static",
       "scope": "visual",
@@ -336,6 +658,26 @@ window.__RIVE_FIXTURE_MANIFEST = {
         "static"
       ],
       "expectation": "points_path fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "polygon_star",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "polygon_star fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "scripting",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "scripting fixture loaded.",
       "replay": false
     },
     {
@@ -409,6 +751,48 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": false
     },
     {
+      "name": "text_modifiers",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "text_modifiers fixture loaded.",
+      "replay": false
+    },
+    {
+      "name": "transition_comparators",
+      "category": "interactive",
+      "scope": "visual",
+      "tags": [
+        "interactive",
+        "animated"
+      ],
+      "expectation": "transition_comparators fixture loaded.",
+      "stateMachine": "Logic",
+      "animations": [
+        "idle",
+        "active"
+      ],
+      "animationsByArtboard": {
+        "ComparatorDemo": [
+          "idle",
+          "active"
+        ]
+      },
+      "replay": true
+    },
+    {
+      "name": "triangle",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "triangle fixture loaded.",
+      "replay": false
+    },
+    {
       "name": "trim_path",
       "category": "animated",
       "scope": "visual",
@@ -425,6 +809,16 @@ window.__RIVE_FIXTURE_MANIFEST = {
         ]
       },
       "replay": true
+    },
+    {
+      "name": "view_model_instances",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "view_model_instances fixture loaded.",
+      "replay": false
     },
     {
       "name": "official_test",

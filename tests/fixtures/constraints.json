@@ -32,60 +32,74 @@
               {
                 "type": "bone",
                 "name": "LowerArm",
-                "length": 40.0
+                "length": 40.0,
+                "children": [
+                  {
+                    "type": "ik_constraint",
+                    "name": "ArmIK",
+                    "target": "Target",
+                    "strength": 1.0,
+                    "invert_direction": false,
+                    "parent_bone_count": 2
+                  }
+                ]
               }
             ]
           }
         ]
       },
       {
-        "type": "ik_constraint",
-        "name": "ArmIK",
-        "target": "Target",
-        "strength": 1.0,
-        "invert_direction": false,
-        "parent_bone_count": 2
-      },
-      {
-        "type": "distance_constraint",
-        "name": "KeepDistance",
-        "target": "Target",
-        "strength": 0.8,
-        "distance": 50.0,
-        "mode_value": 0
-      },
-      {
-        "type": "transform_constraint",
-        "name": "FollowTransform",
-        "target": "Target",
-        "strength": 0.5,
-        "source_space_value": 0,
-        "dest_space_value": 0,
-        "origin_x": 0.0,
-        "origin_y": 0.0
-      },
-      {
-        "type": "translation_constraint",
-        "name": "FollowPosition",
-        "target": "Target",
-        "strength": 1.0,
-        "copy_factor": 0.5,
-        "offset": true,
-        "does_copy": true,
-        "source_space_value": 1,
-        "dest_space_value": 1
-      },
-      {
-        "type": "scale_constraint",
-        "name": "MatchScale",
-        "target": "Target",
-        "strength": 0.7
-      },
-      {
-        "type": "rotation_constraint",
-        "name": "MatchRotation",
-        "target": "Target",
-        "strength": 0.9
+        "type": "shape",
+        "name": "Follower",
+        "x": 450,
+        "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "FollowerPath", "width": 30, "height": 30, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "FollowerFill", "children": [
+            { "type": "solid_color", "name": "Blue", "color": "#0000FF" }
+          ]},
+          {
+            "type": "distance_constraint",
+            "name": "KeepDistance",
+            "target": "Target",
+            "strength": 0.8,
+            "distance": 50.0,
+            "mode_value": 0
+          },
+          {
+            "type": "transform_constraint",
+            "name": "FollowTransform",
+            "target": "Target",
+            "strength": 0.5,
+            "source_space_value": 0,
+            "dest_space_value": 0,
+            "origin_x": 0.0,
+            "origin_y": 0.0
+          },
+          {
+            "type": "translation_constraint",
+            "name": "FollowPosition",
+            "target": "Target",
+            "strength": 1.0,
+            "copy_factor": 0.5,
+            "offset": true,
+            "does_copy": true,
+            "source_space_value": 1,
+            "dest_space_value": 1
+          },
+          {
+            "type": "scale_constraint",
+            "name": "MatchScale",
+            "target": "Target",
+            "strength": 0.7
+          },
+          {
+            "type": "rotation_constraint",
+            "name": "MatchRotation",
+            "target": "Target",
+            "strength": 0.9
+          }
+        ]
       }
     ]
   }
