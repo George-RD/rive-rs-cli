@@ -132,14 +132,13 @@ def run_vision_gate():
     
     if IN_EVAL:
         print("\nUsing eval parallel() for concurrent review...")
-        # In eval mode, use parallel() to fan out workers
-        def review_fixture(fixture):
-            return judge_fixture_standalone(fixture)
-        
-        # Note: parallel() requires callable thunks
-        # We can't easily use it here without the eval runtime
-        # Fall back to sequential for now
-        results = [judge_fixture_standalone(f) for f in FIXTURES]
+        try:
+            # Use eval's parallel() for concurrent processing
+            thunks = [lambda f=f: judge_fixture_standalone(f) for f in FIXTURES]
+            results = parallel(thunks)
+        except NameError:
+            print("parallel() not available, falling back to sequential")
+            results = [judge_fixture_standalone(f) for f in FIXTURES]
     else:
         print("\nRunning standalone sequential review...")
         results = [judge_fixture_standalone(f) for f in FIXTURES]
