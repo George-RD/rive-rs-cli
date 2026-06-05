@@ -94,6 +94,15 @@ export OPENAI_API_KEY=sk-...
 node tests/playwright/vision-model-gate.js
 ```
 
+A multi-provider vision gate orchestrator is available at `scripts/vision_gate_orchestrator.py`. It supports OpenAI GPT-4o, Anthropic Claude 3 Opus, and Google Gemini Pro Vision in parallel. To use:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export ANTHROPIC_API_KEY=sk-ant-...
+export GOOGLE_API_KEY=...
+python3 scripts/vision_gate_orchestrator.py
+```
+
 ### Current Vision Comparison Results
 
 | Fixture | Pixel Diff | Status | Notes |
