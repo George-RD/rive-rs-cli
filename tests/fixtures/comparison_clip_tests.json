@@ -1,0 +1,312 @@
+{
+  "scene_format_version": 1,
+  "artboards": [
+    {
+      "name": "Empty-Shape",
+      "width": 500,
+      "height": 500,
+      "children": [
+        {
+          "type": "shape",
+          "name": "Ellipse-clipper",
+          "x": 209.74123,
+          "y": 231.75682,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "Ellipse",
+              "width": 171.51874,
+              "height": 171.51874
+            },
+            {
+              "type": "fill",
+              "name": "EllipseFill",
+              "is_visible": false,
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "EllipseColor",
+                  "color": "#FF000000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "shape",
+          "name": "Rectangle-clipped",
+          "x": 258.90436,
+          "y": 176.34956,
+          "children": [
+            {
+              "type": "rectangle",
+              "name": "Rectangle",
+              "width": 448.10938,
+              "height": 319.54688
+            },
+            {
+              "type": "fill",
+              "name": "RectFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "RectColor",
+                  "color": "#FF669900"
+                }
+              ]
+            },
+            {
+              "type": "clipping_shape",
+              "name": "Clip1",
+              "source": "Ellipse-clipper"
+            }
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "name": "Timeline 1",
+          "fps": 60,
+          "duration": 840,
+          "loop_type": "loop",
+          "keyframes": []
+        }
+      ],
+      "state_machines": [
+        {
+          "name": "State Machine 1",
+          "layers": [
+            {
+              "states": [
+                { "type": "entry" },
+                { "type": "animation", "animation": "Timeline 1" },
+                { "type": "exit" }
+              ],
+              "transitions": [
+                { "from": 0, "to": 1 },
+                { "from": 1, "to": 2 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "One-Clipping-Shape-Visible-One-Hidden",
+      "width": 500,
+      "height": 500,
+      "children": [
+        {
+          "type": "shape",
+          "name": "Ellipse-clipper-1",
+          "x": 209.74123,
+          "y": 231.75682,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "Ellipse1",
+              "width": 171.51874,
+              "height": 171.51874
+            },
+            {
+              "type": "fill",
+              "name": "Fill1",
+              "is_visible": false,
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "Color1",
+                  "color": "#FF000000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "shape",
+          "name": "Ellipse-clipper-2",
+          "x": 209.74123,
+          "y": 231.75682,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "Ellipse2",
+              "width": 171.51874,
+              "height": 171.51874
+            },
+            {
+              "type": "fill",
+              "name": "Fill2",
+              "is_visible": false,
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "Color2",
+                  "color": "#FF000000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "shape",
+          "name": "Rectangle-clipped",
+          "x": 258.90436,
+          "y": 176.34956,
+          "children": [
+            {
+              "type": "rectangle",
+              "name": "Rectangle",
+              "width": 448.10938,
+              "height": 319.54688
+            },
+            {
+              "type": "fill",
+              "name": "RectFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "RectColor",
+                  "color": "#FF669900"
+                }
+              ]
+            },
+            {
+              "type": "clipping_shape",
+              "name": "Clip1",
+              "source": "Ellipse-clipper-2"
+            },
+            {
+              "type": "clipping_shape",
+              "name": "Clip2",
+              "source": "Ellipse-clipper-1"
+            }
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "name": "Timeline 1",
+          "fps": 60,
+          "duration": 840,
+          "loop_type": "loop",
+          "keyframes": []
+        }
+      ],
+      "state_machines": [
+        {
+          "name": "State Machine 1",
+          "layers": [
+            {
+              "states": [
+                { "type": "entry" },
+                { "type": "animation", "animation": "Timeline 1" },
+                { "type": "exit" }
+              ],
+              "transitions": [
+                { "from": 0, "to": 1 },
+                { "from": 1, "to": 2 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hidden-Path-Visible-Path",
+      "width": 500,
+      "height": 500,
+      "children": [
+        {
+          "type": "shape",
+          "name": "Ellipse-clipper",
+          "x": 209.74123,
+          "y": 231.75682,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "Ellipse1",
+              "width": 171.51874,
+              "height": 171.51874
+            },
+            {
+              "type": "ellipse",
+              "name": "Ellipse2",
+              "width": 171.51874,
+              "height": 171.51874
+            },
+            {
+              "type": "fill",
+              "name": "Fill1",
+              "is_visible": false,
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "Color1",
+                  "color": "#FF000000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "shape",
+          "name": "Rectangle-clipped",
+          "x": 258.90436,
+          "y": 176.34956,
+          "children": [
+            {
+              "type": "rectangle",
+              "name": "Rectangle",
+              "width": 448.10938,
+              "height": 319.54688
+            },
+            {
+              "type": "fill",
+              "name": "RectFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "RectColor",
+                  "color": "#FF669900"
+                }
+              ]
+            },
+            {
+              "type": "clipping_shape",
+              "name": "Clip1",
+              "source": "Ellipse-clipper"
+            }
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "name": "Timeline 1",
+          "fps": 60,
+          "duration": 840,
+          "loop_type": "loop",
+          "keyframes": []
+        }
+      ],
+      "state_machines": [
+        {
+          "name": "State Machine 1",
+          "layers": [
+            {
+              "states": [
+                { "type": "entry" },
+                { "type": "animation", "animation": "Timeline 1" },
+                { "type": "exit" }
+              ],
+              "transitions": [
+                { "from": 0, "to": 1 },
+                { "from": 1, "to": 2 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

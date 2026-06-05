@@ -1,0 +1,457 @@
+{
+  "header": {
+    "major_version": 7,
+    "minor_version": 0,
+    "file_id": 11807
+  },
+  "toc_property_keys": [
+    236,
+    376
+  ],
+  "objects": [
+    {
+      "object_index": 0,
+      "type_key": 23,
+      "type_name": "Backboard",
+      "properties": []
+    },
+    {
+      "object_index": 1,
+      "type_key": 1,
+      "type_name": "Artboard",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 0,
+      "properties": [
+        {
+          "key": 7,
+          "name": "width",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 8,
+          "name": "height",
+          "value": {
+            "Float": 500.0
+          }
+        },
+        {
+          "key": 236,
+          "name": "defaultStateMachineId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 4,
+          "name": "name",
+          "value": {
+            "String": "New Artboard"
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 2,
+      "type_key": 3,
+      "type_name": "Shape",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 1,
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 13,
+          "name": "x",
+          "value": {
+            "Float": 50.039062
+          }
+        },
+        {
+          "key": 14,
+          "name": "y",
+          "value": {
+            "Float": 205.77734
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 3,
+      "type_key": 4,
+      "type_name": "Ellipse",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 2,
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 20,
+          "name": "width",
+          "value": {
+            "Float": 100.0
+          }
+        },
+        {
+          "key": 21,
+          "name": "height",
+          "value": {
+            "Float": 100.0
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 4,
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 3,
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 5
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 5,
+      "type_key": 18,
+      "type_name": "SolidColor",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 4,
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 6
+          }
+        },
+        {
+          "key": 37,
+          "name": "colorValue",
+          "value": {
+            "Color": 4281413937
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 6,
+      "type_key": 20,
+      "type_name": "Fill",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 5,
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 7,
+      "type_key": 20,
+      "type_name": "Fill",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 6,
+      "properties": [
+        {
+          "key": 5,
+          "name": "parentId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 8,
+      "type_key": 31,
+      "type_name": "LinearAnimation",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 7,
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "Timeline 1"
+          }
+        },
+        {
+          "key": 56,
+          "name": "fps",
+          "value": {
+            "UInt": 5
+          }
+        },
+        {
+          "key": 57,
+          "name": "duration",
+          "value": {
+            "UInt": 5
+          }
+        },
+        {
+          "key": 60,
+          "name": "workStart",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 61,
+          "name": "workEnd",
+          "value": {
+            "UInt": 0
+          }
+        },
+        {
+          "key": 376,
+          "name": "quantize",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 9,
+      "type_key": 25,
+      "type_name": "KeyedObject",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 8,
+      "properties": [
+        {
+          "key": 51,
+          "name": "objectId",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 10,
+      "type_key": 26,
+      "type_name": "KeyedProperty",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 9,
+      "properties": [
+        {
+          "key": 53,
+          "name": "propertyKey",
+          "value": {
+            "UInt": 13
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 11,
+      "type_key": 30,
+      "type_name": "KeyFrameDouble",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 10,
+      "properties": [
+        {
+          "key": 68,
+          "name": "interpolationType",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 12,
+      "type_key": 30,
+      "type_name": "KeyFrameDouble",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 11,
+      "properties": [
+        {
+          "key": 67,
+          "name": "frame",
+          "value": {
+            "UInt": 5
+          }
+        },
+        {
+          "key": 68,
+          "name": "interpolationType",
+          "value": {
+            "UInt": 1
+          }
+        },
+        {
+          "key": 70,
+          "name": "value",
+          "value": {
+            "Float": 400.0
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 13,
+      "type_key": 26,
+      "type_name": "KeyedProperty",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 12,
+      "properties": [
+        {
+          "key": 53,
+          "name": "propertyKey",
+          "value": {
+            "UInt": 14
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 14,
+      "type_key": 30,
+      "type_name": "KeyFrameDouble",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 13,
+      "properties": [
+        {
+          "key": 68,
+          "name": "interpolationType",
+          "value": {
+            "UInt": 1
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 15,
+      "type_key": 53,
+      "type_name": "StateMachine",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 14,
+      "properties": [
+        {
+          "key": 55,
+          "name": "name",
+          "value": {
+            "String": "State Machine 1"
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 16,
+      "type_key": 57,
+      "type_name": "StateMachineLayer",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 15,
+      "properties": [
+        {
+          "key": 138,
+          "name": "name",
+          "value": {
+            "String": "Layer 1"
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 17,
+      "type_key": 61,
+      "type_name": "AnimationState",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 16,
+      "properties": [
+        {
+          "key": 149,
+          "name": "animationId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 18,
+      "type_key": 63,
+      "type_name": "EntryState",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 17,
+      "properties": []
+    },
+    {
+      "object_index": 19,
+      "type_key": 65,
+      "type_name": "StateTransition",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 18,
+      "properties": [
+        {
+          "key": 151,
+          "name": "stateToId",
+          "value": {
+            "UInt": 0
+          }
+        }
+      ]
+    },
+    {
+      "object_index": 20,
+      "type_key": 64,
+      "type_name": "ExitState",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 19,
+      "properties": []
+    },
+    {
+      "object_index": 21,
+      "type_key": 62,
+      "type_name": "AnyState",
+      "artboard_index": 0,
+      "artboard_name": "New Artboard",
+      "local_index": 20,
+      "properties": []
+    }
+  ]
+}

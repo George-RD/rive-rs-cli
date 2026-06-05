@@ -1,0 +1,1165 @@
+{
+  "scene_format_version": 1,
+  "artboards": [
+    {
+      "name": "New Artboard",
+      "width": 70.0,
+      "height": 90.0,
+      "children": [
+        {
+          "type": "node",
+          "name": "Root",
+          "y": 59.142258,
+          "children": [
+            {
+              "type": "shape",
+              "name": "Hitbox",
+              "x": -4.5776367e-05,
+              "y": -0.15179443,
+              "children": [
+                {
+                  "type": "rectangle",
+                  "width": 35.423256,
+                  "height": 22.463408,
+                  "corner_radius": 84.97656,
+                  "name": "rectangle_3"
+                },
+                {
+                  "type": "fill",
+                  "is_visible": false,
+                  "name": "fill_8",
+                  "children": [
+                    {
+                      "type": "solid_color",
+                      "color": "#FFFF0000",
+                      "name": "solid_color_3"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "node",
+              "name": "Ctrl_Scale",
+              "scale_x": 0.5678015,
+              "scale_y": 0.5678015,
+              "x": 0.51672363,
+              "y": 1.7080078,
+              "children": [
+                {
+                  "type": "shape",
+                  "scale_x": 1.761179,
+                  "scale_y": 1.761179,
+                  "x": -1.08307e-06,
+                  "y": 1.3127807e-05,
+                  "name": "shape_2",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "width": 26.034662,
+                      "height": 12.736724,
+                      "corner_radius": 15.7734375,
+                      "name": "rectangle_4"
+                    },
+                    {
+                      "type": "fill",
+                      "name": "fill_9",
+                      "is_visible": true,
+                      "children": [
+                        {
+                          "type": "radial_gradient",
+                          "start_y": 15.521271,
+                          "end_x": 16.507965,
+                          "end_y": -1.7321625,
+                          "name": "radial_gradient_4",
+                          "start_x": 0.0,
+                          "children": [
+                            {
+                              "type": "gradient_stop",
+                              "color": "#FF000000",
+                              "name": "gradient_stop_16",
+                              "position": 0.0
+                            },
+                            {
+                              "type": "gradient_stop",
+                              "color": "#FF1A132D",
+                              "position": 1.0,
+                              "name": "gradient_stop_17"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "fill",
+                      "name": "fill_10",
+                      "is_visible": true,
+                      "children": [
+                        {
+                          "type": "radial_gradient",
+                          "start_y": 15.521271,
+                          "end_x": 16.507965,
+                          "end_y": -1.7321625,
+                          "name": "radial_gradient_5",
+                          "start_x": 0.0,
+                          "children": [
+                            {
+                              "type": "gradient_stop",
+                              "color": "#FF000000",
+                              "name": "gradient_stop_18",
+                              "position": 0.0
+                            },
+                            {
+                              "type": "gradient_stop",
+                              "color": "#FFFF5700",
+                              "position": 1.0,
+                              "name": "gradient_stop_19"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "stroke",
+                      "name": "stroke_3",
+                      "thickness": 1.0,
+                      "children": [
+                        {
+                          "type": "linear_gradient",
+                          "start_x": 13.017334,
+                          "start_y": -6.368369,
+                          "end_x": 13.017334,
+                          "end_y": 6.386017,
+                          "name": "linear_gradient_5",
+                          "children": [
+                            {
+                              "type": "gradient_stop",
+                              "color": "#FF473E63",
+                              "name": "gradient_stop_20",
+                              "position": 0.0
+                            },
+                            {
+                              "type": "gradient_stop",
+                              "color": "#FF0B0813",
+                              "position": 1.0,
+                              "name": "gradient_stop_21"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "stroke",
+                      "name": "stroke_4",
+                      "thickness": 1.0,
+                      "children": [
+                        {
+                          "type": "linear_gradient",
+                          "start_x": 13.017334,
+                          "start_y": -6.368369,
+                          "end_x": 13.017334,
+                          "end_y": 6.386017,
+                          "name": "linear_gradient_6",
+                          "children": [
+                            {
+                              "type": "gradient_stop",
+                              "color": "#FFFF8F00",
+                              "name": "gradient_stop_22",
+                              "position": 0.0
+                            },
+                            {
+                              "type": "gradient_stop",
+                              "color": "#00F46809",
+                              "position": 1.0,
+                              "name": "gradient_stop_23"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "node",
+                  "name": "Ctrl_Scale",
+                  "x": -1.08307e-06,
+                  "y": 16.505585,
+                  "children": [
+                    {
+                      "type": "node",
+                      "name": "Bones_Top",
+                      "x": 4.5311584,
+                      "y": -85.484924,
+                      "children": [
+                        {
+                          "type": "root_bone",
+                          "name": "Bone_Center",
+                          "x": -5.441208,
+                          "y": -4.6957397,
+                          "length": 10.0
+                        },
+                        {
+                          "type": "root_bone",
+                          "name": "Bone_Left",
+                          "x": -26.362457,
+                          "y": 4.6957245,
+                          "length": 10.0
+                        },
+                        {
+                          "type": "root_bone",
+                          "name": "Bone_Right",
+                          "x": 14.167847,
+                          "y": 4.6957245,
+                          "length": 10.0
+                        }
+                      ]
+                    },
+                    {
+                      "type": "root_bone",
+                      "name": "Bone_Base",
+                      "x": -0.91004944,
+                      "length": 10.0
+                    },
+                    {
+                      "type": "shape",
+                      "name": "Fire",
+                      "scale_x": 0.82461554,
+                      "scale_y": 0.82461554,
+                      "x": -0.91004944,
+                      "y": -29.983582,
+                      "children": [
+                        {
+                          "type": "points_path",
+                          "x": 19.527328,
+                          "name": "points_path_9",
+                          "children": [
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -10.456258,
+                              "y": -39.625187,
+                              "name": "cubic_detached_vertex_25",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_23"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -2.5919871e-05,
+                              "y": -50.08142,
+                              "name": "cubic_detached_vertex_26",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_24"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -2.5919871e-05,
+                              "y": -50.08142,
+                              "name": "cubic_detached_vertex_27",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_25"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 10.456194,
+                              "y": -39.625187,
+                              "name": "cubic_detached_vertex_28",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_26"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 10.456136,
+                              "y": 6.4582405,
+                              "name": "cubic_detached_vertex_29",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_27"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": -10.4563265,
+                              "y": 6.4582405,
+                              "name": "straight_vertex_15",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_15"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_9",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_15"
+                                },
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_16"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "points_path",
+                          "name": "Path",
+                          "x": -19.527344,
+                          "children": [
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -10.456223,
+                              "y": -40.20217,
+                              "name": "cubic_detached_vertex_30",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_28"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -0.46755174,
+                              "y": -50.19085,
+                              "name": "cubic_detached_vertex_31",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_29"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 4.5385677e-06,
+                              "y": -50.19085,
+                              "name": "cubic_detached_vertex_32",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_30"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 10.456236,
+                              "y": -39.734615,
+                              "name": "cubic_detached_vertex_33",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_31"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": 10.45624,
+                              "y": 6.5190315,
+                              "name": "straight_vertex_16",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_16"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -10.45622,
+                              "y": 6.51904,
+                              "name": "cubic_detached_vertex_34",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_32"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_10",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_17"
+                                },
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_18"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "points_path",
+                          "name": "points_path_10",
+                          "children": [
+                            {
+                              "type": "straight_vertex",
+                              "x": -14.544123,
+                              "y": -60.197075,
+                              "name": "straight_vertex_17",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_17"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": 14.544123,
+                              "y": -60.197075,
+                              "name": "straight_vertex_18",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_18"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": 14.544095,
+                              "y": 6.5190473,
+                              "name": "straight_vertex_19",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_19"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": -14.544148,
+                              "y": 6.5190473,
+                              "name": "straight_vertex_20",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_20"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_11",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_19"
+                                },
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_20"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "points_path",
+                          "name": "points_path_11",
+                          "children": [
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -29.98366,
+                              "y": 6.458233,
+                              "name": "cubic_detached_vertex_35",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_33"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 29.983486,
+                              "y": 6.458233,
+                              "name": "cubic_detached_vertex_36",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_34"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_mirrored_vertex",
+                              "x": 1.1035683,
+                              "y": 29.98356,
+                              "rotation": 3.1415925,
+                              "distance": 28.879951,
+                              "name": "cubic_mirrored_vertex_3",
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_35"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_12",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_21"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "clipping_shape",
+                          "source": "Fire",
+                          "name": "clipping_shape_2"
+                        },
+                        {
+                          "type": "fill",
+                          "name": "fill_11",
+                          "is_visible": true,
+                          "children": [
+                            {
+                              "type": "linear_gradient",
+                              "start_x": 29.983566,
+                              "start_y": 29.983582,
+                              "end_x": 29.983566,
+                              "end_y": -60.197083,
+                              "name": "linear_gradient_7",
+                              "children": [
+                                {
+                                  "type": "gradient_stop",
+                                  "color": "#FFFFD367",
+                                  "name": "gradient_stop_24",
+                                  "position": 0.0
+                                },
+                                {
+                                  "type": "gradient_stop",
+                                  "color": "#00FFD367",
+                                  "position": 1.0,
+                                  "name": "gradient_stop_25"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "shape",
+                      "name": "Fire",
+                      "x": -0.91004944,
+                      "y": -29.983582,
+                      "children": [
+                        {
+                          "type": "points_path",
+                          "x": 19.527328,
+                          "name": "points_path_12",
+                          "children": [
+                            {
+                              "type": "straight_vertex",
+                              "x": -10.456232,
+                              "y": -50.19084,
+                              "name": "straight_vertex_21",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_21"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": 10.456226,
+                              "y": -49.639435,
+                              "name": "straight_vertex_22",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_22"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 10.456232,
+                              "y": 5.230489,
+                              "name": "cubic_detached_vertex_37",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_36"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": -10.456232,
+                              "y": 5.230489,
+                              "name": "straight_vertex_23",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_23"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_13",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_22"
+                                },
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_23"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "points_path",
+                          "x": -19.527344,
+                          "name": "points_path_13",
+                          "children": [
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -10.456233,
+                              "y": -39.734615,
+                              "name": "cubic_detached_vertex_38",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_37"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "y": -50.19085,
+                              "name": "cubic_detached_vertex_39",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_38"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "y": -50.19085,
+                              "name": "cubic_detached_vertex_40",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_39"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 10.456232,
+                              "y": -39.734615,
+                              "name": "cubic_detached_vertex_41",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "in_indices": 2,
+                                  "out_indices": 2,
+                                  "name": "cubic_weight_40"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": 10.456234,
+                              "y": 5.230486,
+                              "name": "straight_vertex_24",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_24"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -10.45623,
+                              "y": 5.230486,
+                              "name": "cubic_detached_vertex_42",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_41"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_14",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_24"
+                                },
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_25"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "points_path",
+                          "name": "points_path_14",
+                          "children": [
+                            {
+                              "type": "straight_vertex",
+                              "x": -14.544123,
+                              "y": -60.197075,
+                              "name": "straight_vertex_25",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_25"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": 14.544123,
+                              "y": -60.197075,
+                              "name": "straight_vertex_26",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_26"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": 14.544125,
+                              "y": 5.375696,
+                              "name": "straight_vertex_27",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_27"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "straight_vertex",
+                              "x": -14.544121,
+                              "y": 5.375696,
+                              "name": "straight_vertex_28",
+                              "children": [
+                                {
+                                  "type": "weight",
+                                  "name": "weight_28"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_15",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_26"
+                                },
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_27"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "points_path",
+                          "name": "points_path_15",
+                          "children": [
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": -29.98361,
+                              "y": 5.2304893,
+                              "name": "cubic_detached_vertex_43",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_42"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_detached_vertex",
+                              "x": 29.983543,
+                              "y": 5.2304893,
+                              "name": "cubic_detached_vertex_44",
+                              "in_x": 0.0,
+                              "in_y": 0.0,
+                              "out_x": 0.0,
+                              "out_y": 0.0,
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_43"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "cubic_mirrored_vertex",
+                              "x": -1.5258789e-05,
+                              "y": 29.983582,
+                              "rotation": 3.1415927,
+                              "distance": 29.983591,
+                              "name": "cubic_mirrored_vertex_4",
+                              "children": [
+                                {
+                                  "type": "cubic_weight",
+                                  "name": "cubic_weight_44"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "skin",
+                              "name": "skin_16",
+                              "children": [
+                                {
+                                  "type": "tendon",
+                                  "name": "tendon_28"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "fill",
+                          "name": "fill_12",
+                          "is_visible": true,
+                          "children": [
+                            {
+                              "type": "linear_gradient",
+                              "start_x": 29.983566,
+                              "start_y": 29.983582,
+                              "end_x": 29.983566,
+                              "end_y": -60.197083,
+                              "name": "linear_gradient_8",
+                              "children": [
+                                {
+                                  "type": "gradient_stop",
+                                  "color": "#FFFFB500",
+                                  "name": "gradient_stop_26",
+                                  "position": 0.0
+                                },
+                                {
+                                  "type": "gradient_stop",
+                                  "color": "#FFF04A00",
+                                  "position": 1.0,
+                                  "name": "gradient_stop_27"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "shape",
+                  "name": "Spark",
+                  "scale_x": 1.761179,
+                  "scale_y": 1.761179,
+                  "x": -0.9100439,
+                  "y": -84.7836,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "width": 8.494059,
+                      "height": 8.494059,
+                      "name": "ellipse_2"
+                    },
+                    {
+                      "type": "fill",
+                      "name": "fill_13",
+                      "is_visible": true,
+                      "children": [
+                        {
+                          "type": "solid_color",
+                          "color": "#FFF04D00",
+                          "name": "solid_color_4"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "shape",
+              "name": "Shadow",
+              "scale_x": 1.761179,
+              "scale_y": 0.20469385,
+              "y": 36.06308,
+              "children": [
+                {
+                  "type": "points_path",
+                  "name": "points_path_16",
+                  "children": [
+                    {
+                      "type": "cubic_detached_vertex",
+                      "y": -30.430883,
+                      "name": "cubic_detached_vertex_45",
+                      "in_x": 0.0,
+                      "in_y": 0.0,
+                      "out_x": 0.0,
+                      "out_y": 0.0
+                    },
+                    {
+                      "type": "cubic_detached_vertex",
+                      "x": 30.430883,
+                      "name": "cubic_detached_vertex_46",
+                      "in_x": 0.0,
+                      "in_y": 0.0,
+                      "out_x": 0.0,
+                      "out_y": 0.0
+                    },
+                    {
+                      "type": "cubic_detached_vertex",
+                      "y": 30.430883,
+                      "name": "cubic_detached_vertex_47",
+                      "in_x": 0.0,
+                      "in_y": 0.0,
+                      "out_x": 0.0,
+                      "out_y": 0.0
+                    },
+                    {
+                      "type": "cubic_detached_vertex",
+                      "x": -30.430883,
+                      "name": "cubic_detached_vertex_48",
+                      "in_x": 0.0,
+                      "in_y": 0.0,
+                      "out_x": 0.0,
+                      "out_y": 0.0
+                    }
+                  ]
+                },
+                {
+                  "type": "scale_constraint",
+                  "name": "scale_constraint_2"
+                },
+                {
+                  "type": "fill",
+                  "name": "fill_14",
+                  "is_visible": true,
+                  "children": [
+                    {
+                      "type": "radial_gradient",
+                      "end_x": 39.451717,
+                      "end_y": 5.9224898e-05,
+                      "name": "radial_gradient_6",
+                      "start_x": 0.0,
+                      "start_y": 0.0,
+                      "children": [
+                        {
+                          "type": "gradient_stop",
+                          "color": "#4DFF7100",
+                          "name": "gradient_stop_28",
+                          "position": 0.0
+                        },
+                        {
+                          "type": "gradient_stop",
+                          "color": "#00FFB400",
+                          "position": 1.0,
+                          "name": "gradient_stop_29"
+                        },
+                        {
+                          "type": "gradient_stop",
+                          "color": "#2BFF6000",
+                          "position": 0.7619204,
+                          "name": "gradient_stop_30"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "animations": [
+        {
+          "name": "Fire",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": []
+        },
+        {
+          "name": "Off",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": []
+        },
+        {
+          "name": "On",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": []
+        },
+        {
+          "name": "OffOn",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": []
+        },
+        {
+          "name": "OnOff",
+          "fps": 60,
+          "duration": 60,
+          "keyframes": []
+        }
+      ],
+      "state_machines": [
+        {
+          "name": "State Machine 1",
+          "layers": []
+        }
+      ],
+      "origin_x": 0.5,
+      "origin_y": -0.11
+    }
+  ]
+}
