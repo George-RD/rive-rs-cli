@@ -8,7 +8,7 @@
       {
         "type": "shape",
         "name": "Shape 1",
-        "x": 50.039062,
+        "x": 205.77734,
         "y": 205.77734,
         "children": [
           {
@@ -24,7 +24,7 @@
               {
                 "type": "solid_color",
                 "name": "Ellipse Color",
-                "color": "#FF313131"
+                "color": "#313131FF"
               }
             ]
           }
@@ -37,7 +37,7 @@
           {
             "type": "solid_color",
             "name": "Background Color",
-            "color": "#000000"
+            "color": "#313131FF"
           }
         ]
       }
@@ -47,20 +47,17 @@
         "name": "Timeline 1",
         "fps": 5,
         "duration": 5,
+        "quantize": 1,
+        "work_start": 0,
+        "work_end": 0,
         "loop_type": "pingpong",
         "keyframes": [
           {
             "object": "Shape 1",
             "property": "x",
             "frames": [
-              {
-                "frame": 0,
-                "value": 50.039062
-              },
-              {
-                "frame": 5,
-                "value": 400.0
-              }
+              { "frame": 0, "value": 205.77734 },
+              { "frame": 5, "value": 400.0 }
             ]
           }
         ]
@@ -72,25 +69,13 @@
         "layers": [
           {
             "states": [
-              {
-                "type": "entry"
-              },
-              {
-                "type": "any"
-              },
-              {
-                "type": "exit"
-              },
-              {
-                "type": "animation",
-                "animation": "Timeline 1"
-              }
+              { "type": "entry" },
+              { "type": "any" },
+              { "type": "exit" },
+              { "type": "animation", "animation": "Timeline 1" }
             ],
             "transitions": [
-              {
-                "from": 0,
-                "to": 3
-              }
+              { "from": 0, "to": 3 }
             ]
           }
         ]

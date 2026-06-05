@@ -11,7 +11,7 @@ pub struct SceneSpec {
     pub artboards: Option<Vec<ArtboardSpec>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct ArtboardSpec {
     pub name: String,
     #[serde(default)]
@@ -20,11 +20,18 @@ pub struct ArtboardSpec {
     pub width: f32,
     #[serde(default)]
     pub height: f32,
+    #[serde(default)]
+    pub origin_x: Option<f32>,
+    #[serde(default)]
+    pub origin_y: Option<f32>,
+    #[serde(default)]
+    pub x: Option<f32>,
+    #[serde(default)]
+    pub y: Option<f32>,
     pub children: Vec<ObjectSpec>,
     pub animations: Option<Vec<AnimationSpec>>,
     pub state_machines: Option<Vec<StateMachineSpec>>,
 }
-
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[allow(clippy::large_enum_variant)]
@@ -126,6 +133,7 @@ pub enum ObjectSpec {
         name: String,
         x: Option<f32>,
         y: Option<f32>,
+        children: Option<Vec<ObjectSpec>>,
     },
     Image {
         name: String,
@@ -1335,13 +1343,17 @@ pub struct InterpolatorSpec {
     pub period: Option<f32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct AnimationSpec {
     pub name: String,
     pub fps: u64,
     pub duration: u64,
     pub speed: Option<f32>,
     pub loop_type: Option<serde_json::Value>,
+    pub quantize: Option<u64>,
+    pub work_start: Option<u64>,
+    pub work_end: Option<u64>,
+    pub enable_work_area: Option<bool>,
     pub interpolators: Option<Vec<InterpolatorSpec>>,
     pub keyframes: Vec<KeyframeGroupSpec>,
 }

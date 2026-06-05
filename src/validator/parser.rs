@@ -265,21 +265,20 @@ mod tests {
         assert_eq!(parsed.objects[1].artboard_name.as_deref(), Some("Test"));
         assert_eq!(parsed.objects[1].local_index, Some(0));
         assert_eq!(parsed.objects[1].properties.len(), 3);
-
-        let width_prop = &parsed.objects[1].properties[0];
-        assert_eq!(width_prop.key, 7);
-        assert_eq!(width_prop.value, PropertyValueRead::Float(500.0));
-
-        let height_prop = &parsed.objects[1].properties[1];
-        assert_eq!(height_prop.key, 8);
-        assert_eq!(height_prop.value, PropertyValueRead::Float(500.0));
-
-        let name_prop = &parsed.objects[1].properties[2];
+        let name_prop = &parsed.objects[1].properties[0];
         assert_eq!(name_prop.key, 4);
         assert_eq!(
             name_prop.value,
             PropertyValueRead::String("Test".to_string())
         );
+
+        let width_prop = &parsed.objects[1].properties[1];
+        assert_eq!(width_prop.key, 7);
+        assert_eq!(width_prop.value, PropertyValueRead::Float(500.0));
+
+        let height_prop = &parsed.objects[1].properties[2];
+        assert_eq!(height_prop.key, 8);
+        assert_eq!(height_prop.value, PropertyValueRead::Float(500.0));
     }
 
     #[test]

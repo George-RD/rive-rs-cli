@@ -85,6 +85,13 @@ impl RiveObject for LinearAnimation {
             });
         }
 
+        if self.quantize != 0 {
+            props.push(Property {
+                key: property_keys::LINEAR_ANIMATION_QUANTIZE,
+                value: PropertyValue::UInt(self.quantize),
+            });
+        }
+
         props
     }
 }

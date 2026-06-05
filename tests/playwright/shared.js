@@ -31,6 +31,8 @@ const FIXTURES = [
   "button_states",
   "blend_animation",
   "clipping_shape",
+  "comparison_clip_tests",
+  "comparison_official_test",
   "comparison_quantize_test",
   "comparison_trim",
   "cubic_asymmetric",
@@ -53,7 +55,6 @@ const FIXTURES = [
   "triangle",
   "view_model_instances",
 ];
-
 function run(command, args, cwd = ROOT) {
   const result = spawnSync(command, args, { cwd, stdio: "inherit" });
   if (result.status !== 0) {

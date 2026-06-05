@@ -102,6 +102,18 @@ pub(crate) fn build_animations(
         if let Some(loop_type) = &animation.loop_type {
             linear.loop_type = parse_loop_type(loop_type)?;
         }
+        if let Some(quantize) = animation.quantize {
+            linear.quantize = quantize;
+        }
+        if let Some(work_start) = animation.work_start {
+            linear.work_start = work_start;
+        }
+        if let Some(work_end) = animation.work_end {
+            linear.work_end = work_end;
+        }
+        if let Some(enable_work_area) = animation.enable_work_area {
+            linear.enable_work_area = if enable_work_area { 1 } else { 0 };
+        }
 
         objects.push(Box::new(linear));
         animation_name_to_index.insert(animation.name.clone(), animation_list_index);

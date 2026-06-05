@@ -413,7 +413,12 @@ pub(crate) fn append_object(
             }));
             name_to_index.insert(generated_name, object_index);
         }
-        ObjectSpec::Node { name, x, y } => {
+        ObjectSpec::Node {
+            name,
+            x,
+            y,
+            children,
+        } => {
             objects.push(Box::new(Node {
                 name: name.clone(),
                 parent_id,
@@ -421,6 +426,20 @@ pub(crate) fn append_object(
                 y: y.unwrap_or(0.0),
             }));
             name_to_index.insert(name.clone(), object_index);
+            if let Some(children) = children {
+                for child in children {
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                    )?;
+                }
+            }
         }
         ObjectSpec::Image {
             name,

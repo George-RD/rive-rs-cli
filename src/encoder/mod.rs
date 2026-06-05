@@ -165,12 +165,12 @@ mod tests {
 
         let mut writer = BinaryWriter::new();
         writer.write_varuint(1);
+        writer.write_varuint(4);
+        writer.write_string("Test");
         writer.write_varuint(7);
         writer.write_float(500.0);
         writer.write_varuint(8);
         writer.write_float(500.0);
-        writer.write_varuint(4);
-        writer.write_string("Test");
         writer.write_varuint(0);
         assert_eq!(result, writer.finish());
     }

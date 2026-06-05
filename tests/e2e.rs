@@ -4223,3 +4223,86 @@ fn test_validate_scripting() {
     );
     cleanup(&output);
 }
+#[test]
+fn test_generate_validate_comparison_trim() {
+    let input = fixture_path("comparison_trim.json");
+    let output = temp_output("comparison_trim");
+    cleanup(&output);
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success(), "generate failed");
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        v.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&v.stderr)
+    );
+    cleanup(&output);
+}
+#[test]
+fn test_generate_validate_comparison_quantize_test() {
+    let input = fixture_path("comparison_quantize_test.json");
+    let output = temp_output("comparison_quantize_test");
+    cleanup(&output);
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success(), "generate failed");
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        v.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&v.stderr)
+    );
+    cleanup(&output);
+}
+#[test]
+fn test_generate_validate_comparison_clip_tests() {
+    let input = fixture_path("comparison_clip_tests.json");
+    let output = temp_output("comparison_clip_tests");
+    cleanup(&output);
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success(), "generate failed");
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        v.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&v.stderr)
+    );
+    cleanup(&output);
+}
+
+#[test]
+fn test_generate_validate_comparison_official_test() {
+    let input = fixture_path("comparison_official_test.json");
+    let output = temp_output("comparison_official_test");
+    cleanup(&output);
+
+    let g = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(g.status.success(), "generate failed");
+
+    let v = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(
+        v.status.success(),
+        "validate failed: {}",
+        String::from_utf8_lossy(&v.stderr)
+    );
+    cleanup(&output);
+}
