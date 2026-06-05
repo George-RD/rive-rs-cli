@@ -13,4 +13,4 @@ data/rive_ledger.db
 PROMPT_*.md
 loop.sh
 retro/
-TODO_REMAINING_TYPES.md
+TODO_REMAINING_TYPES.md__pycache__/
