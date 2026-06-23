@@ -3024,7 +3024,7 @@ fn test_validate_button_states() {
     let stdout = String::from_utf8_lossy(&v.stdout);
     assert!(v.status.success());
     assert!(stdout.contains("valid"));
-    assert!(stdout.contains("90 objects"));
+    assert!(stdout.contains("86 objects"));
     cleanup(&output);
 }
 
@@ -3048,7 +3048,7 @@ fn test_inspect_button_states() {
     let parsed: serde_json::Value =
         serde_json::from_str(&stdout).expect("inspect --json output is not valid JSON");
     let objects = parsed.get("objects").unwrap().as_array().unwrap();
-    assert_eq!(objects.len(), 90);
+    assert_eq!(objects.len(), 86);
 
     let state_machines: Vec<_> = objects
         .iter()

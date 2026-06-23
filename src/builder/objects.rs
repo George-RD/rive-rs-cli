@@ -323,7 +323,10 @@ pub(crate) fn append_object(
             }
         }
         ObjectSpec::SolidColor { name, color } => {
-            let color_value = parse_color(color)?;
+            let color_value = match color {
+                Some(color) => parse_color(color)?,
+                None => 0,
+            };
             objects.push(Box::new(SolidColor::new(
                 name.clone(),
                 parent_id,

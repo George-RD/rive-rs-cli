@@ -106,7 +106,7 @@ pub enum ObjectSpec {
     },
     SolidColor {
         name: String,
-        color: String,
+        color: Option<String>,
     },
     LinearGradient {
         name: String,

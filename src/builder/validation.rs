@@ -812,7 +812,9 @@ pub(crate) fn validate_object_spec(
         }
         ObjectSpec::SolidColor { name, color } => {
             ensure_unique_name(name, object_names)?;
-            parse_color(color)?;
+            if let Some(color) = color {
+                parse_color(color)?;
+            }
         }
         ObjectSpec::LinearGradient { name, children, .. } => {
             ensure_unique_name(name, object_names)?;

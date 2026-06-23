@@ -526,7 +526,7 @@ mod tests {
                             is_visible: None,
                             children: Some(vec![ObjectSpec::SolidColor {
                                 name: "color_1".to_string(),
-                                color: "FFFF0000".to_string(),
+                                color: Some("FFFF0000".to_string()),
                             }]),
                         },
                     ]),
@@ -850,7 +850,7 @@ mod tests {
                 height: 100.0,
                 children: vec![ObjectSpec::SolidColor {
                     name: "bad_color".to_string(),
-                    color: "not-a-color".to_string(),
+                    color: Some("not-a-color".to_string()),
                 }],
                 animations: None,
                 state_machines: None,
@@ -1733,7 +1733,7 @@ mod tests {
                         children: Some(vec![
                             ObjectSpec::SolidColor {
                                 name: "color_1".to_string(),
-                                color: "FF0000FF".to_string(),
+                                color: Some("FF0000FF".to_string()),
                             },
                             ObjectSpec::TrimPath {
                                 name: "trim_1".to_string(),
