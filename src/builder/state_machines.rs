@@ -225,12 +225,10 @@ pub(crate) fn build_state_machines(
             }));
 
             let has_any = layer.states.iter().any(|s| matches!(s, StateSpec::Any));
-
             let mut user_to_final: Vec<usize> = Vec::new();
-            let mut final_idx = if has_any { 0 } else { 1 };
-            for _ in &layer.states {
+            let start = if has_any { 0 } else { 1 };
+            for final_idx in start..start + layer.states.len() {
                 user_to_final.push(final_idx);
-                final_idx += 1;
             }
 
             if !has_any {

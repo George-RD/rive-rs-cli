@@ -251,7 +251,6 @@ pub(crate) fn build_animations(
                 }
             }
         }
-
     }
     Ok(())
 }
