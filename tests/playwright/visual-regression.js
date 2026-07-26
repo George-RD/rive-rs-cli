@@ -4,7 +4,7 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const {
   ROOT,
-  FIXTURES,
+  VISUAL_FIXTURES,
   buildFixtures,
   startServer,
   waitForServer,
@@ -305,7 +305,7 @@ async function main() {
   let hasNewBaselines = false;
 
   try {
-    buildFixtures();
+    buildFixtures(VISUAL_FIXTURES);
     server = startServer(PORT);
     await waitForServer(PORT);
     browser = await chromium.launch({
@@ -313,7 +313,7 @@ async function main() {
       args: ["--disable-gpu", "--deterministic-mode", "--run-all-compositor-stages-before-draw"],
     });
 
-    for (const fixture of FIXTURES) {
+    for (const fixture of VISUAL_FIXTURES) {
       for (const artboard of artboardPlansForFixture(fixture)) {
         for (const frame of shotFramesForFixture(fixture)) {
           const page = await openFixturePage(browser, PORT, fixture, {
@@ -376,7 +376,7 @@ async function main() {
     if (server) {
       server.kill("SIGTERM");
     }
-    cleanupFixtures();
+    cleanupFixtures(VISUAL_FIXTURES);
   }
 
   printSummary(rows);

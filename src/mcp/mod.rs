@@ -189,7 +189,10 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
                     uri: "schema://scene/v1".into(),
                     name: "SceneSpec JSON Schema v1".into(),
                     title: None,
-                    description: Some("JSON Schema for rive-cli scene input format".into()),
+                    description: Some(
+                        "Complete JSON Schema for rive-cli scene input format, generated from the Rust SceneSpec types"
+                            .into(),
+                    ),
                     mime_type: Some("application/json".into()),
                     size: None,
                     icons: None,
@@ -208,10 +211,7 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
         _context: rmcp::service::RequestContext<RoleServer>,
     ) -> impl Future<Output = Result<ReadResourceResult, McpError>> + Send + '_ {
         if request.uri.as_str() == "schema://scene/v1" {
-            let schema = include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/docs/scene.schema.v1.json"
-            ));
+            let schema = crate::builder::scene_schema_json();
             std::future::ready(Ok(ReadResourceResult {
                 contents: vec![ResourceContents::text(schema, "schema://scene/v1")],
             }))

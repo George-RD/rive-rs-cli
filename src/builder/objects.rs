@@ -2876,7 +2876,6 @@ pub(crate) fn append_object(
         }
         ObjectSpec::DraggableConstraint {
             name,
-            target: _,
             strength,
             direction_value,
         } => {
@@ -2893,7 +2892,6 @@ pub(crate) fn append_object(
         }
         ObjectSpec::ScrollConstraint {
             name,
-            target: _,
             strength,
             direction_value,
             snap,
@@ -2953,7 +2951,6 @@ pub(crate) fn append_object(
         }
         ObjectSpec::ScrollBarConstraint {
             name,
-            target: _,
             strength,
             scroll_constraint_id,
             auto_size,
@@ -3042,27 +3039,8 @@ pub(crate) fn append_object(
             }
             objects.push(Box::new(tm));
         }
-        ObjectSpec::NSlicer {
-            name,
-            initial_width,
-            initial_height,
-            width,
-            height,
-            children,
-        } => {
-            let mut ns = crate::objects::nslicer::NSlicer::new(name.clone(), parent_id);
-            if let Some(v) = initial_width {
-                ns.initial_width = *v;
-            }
-            if let Some(v) = initial_height {
-                ns.initial_height = *v;
-            }
-            if let Some(v) = width {
-                ns.width = *v;
-            }
-            if let Some(v) = height {
-                ns.height = *v;
-            }
+        ObjectSpec::NSlicer { name, children } => {
+            let ns = crate::objects::nslicer::NSlicer::new(name.clone(), parent_id);
             objects.push(Box::new(ns));
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
@@ -3114,6 +3092,10 @@ pub(crate) fn append_object(
             name,
             x,
             y,
+            initial_width,
+            initial_height,
+            width,
+            height,
             children,
         } => {
             let mut node = crate::objects::nslicer::NSlicedNode::new(name.clone(), parent_id);
@@ -3122,6 +3104,18 @@ pub(crate) fn append_object(
             }
             if let Some(v) = y {
                 node.y = *v;
+            }
+            if let Some(v) = initial_width {
+                node.initial_width = *v;
+            }
+            if let Some(v) = initial_height {
+                node.initial_height = *v;
+            }
+            if let Some(v) = width {
+                node.width = *v;
+            }
+            if let Some(v) = height {
+                node.height = *v;
             }
             objects.push(Box::new(node));
             name_to_index.insert(name.clone(), object_index);

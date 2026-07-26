@@ -45,16 +45,16 @@
             "children": [
               { "type": "solid_color", "name": "FollowerColor", "color": "#FF3300FF" }
             ]
+          },
+          {
+            "type": "follow_path_constraint",
+            "name": "FollowPath1",
+            "target": "PathShape",
+            "distance": 0.5,
+            "orient": true,
+            "offset": false
           }
         ]
-      },
-      {
-        "type": "follow_path_constraint",
-        "name": "FollowPath1",
-        "target": "PathShape",
-        "distance": 0.5,
-        "orient": true,
-        "offset": false
       }
     ]
   }

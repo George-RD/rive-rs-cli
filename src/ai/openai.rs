@@ -14,7 +14,7 @@ impl OpenAiProvider {
     fn build_system_prompt(&self) -> String {
         let schema = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/docs/scene.schema.v1.json"
+            "/docs/ai/scene-prompt-schema.json"
         ));
         let example = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -22,10 +22,11 @@ impl OpenAiProvider {
         ));
         format!(
             "You are a Rive animation generator. You produce SceneSpec JSON that the rive-cli tool converts to .riv binary files.\n\n\
-             ## Schema\n\n{}\n\n\
+             ## Schema (the object types below are the complete set you may emit)\n\n{}\n\n\
              ## Example\n\n{}\n\n\
              ## Rules\n\
              - Output ONLY valid JSON matching the schema above.\n\
+             - Do NOT invent object types; use only the types defined in the schema above.\n\
              - scene_format_version must be 1.\n\
              - Every object must have a unique name within its artboard.\n\
              - Colors use #RRGGBB format (e.g. \"#FF0000\" for red).\n\

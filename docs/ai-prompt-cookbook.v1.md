@@ -2,22 +2,26 @@
 
 This cookbook defines known-good deterministic templates and expected output traits for prompt-lab regression runs.
 
+The prompt contract itself is `docs/ai/scene-prompt-schema.json`, the curated schema subset embedded in the `ai generate` system prompt. It is a deliberate subset of the full `docs/scene.schema.v1.json`; `ai generate` may only emit the object types it declares.
+
 ## Run Harness
 
+Baselines are not committed. Produce one first with `--write-baseline`, pointing at any path you choose:
+
 ```bash
 cargo run -- ai lab \
   --suite evals/suites/prompt_lab.v1.json \
   --output-dir evals/runs \
-  --write-baseline evals/baselines/prompt_lab.v1.json
+  --write-baseline /tmp/prompt_lab.v1.baseline.json
 ```
 
-Regression check:
+Then check later runs against it with `--baseline`:
 
 ```bash
 cargo run -- ai lab \
   --suite evals/suites/prompt_lab.v1.json \
   --output-dir evals/runs \
-  --baseline evals/baselines/prompt_lab.v1.json
+  --baseline /tmp/prompt_lab.v1.baseline.json
 ```
 
 ## Templates and Expected Traits

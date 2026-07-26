@@ -92,6 +92,10 @@ impl RiveObject for Mesh {
                 key: property_keys::COMPONENT_PARENT_ID,
                 value: PropertyValue::UInt(self.parent_id),
             },
+            Property {
+                key: property_keys::MESH_TRIANGLE_INDEX_BYTES,
+                value: PropertyValue::String(String::new()),
+            },
         ]
     }
 }
@@ -244,7 +248,19 @@ mod tests {
     fn test_mesh_type_key() {
         let m = Mesh::new("m".to_string(), 1);
         assert_eq!(m.type_key(), 109);
-        assert_eq!(m.properties().len(), 2);
+    }
+
+    #[test]
+    fn test_mesh_always_emits_triangle_index_bytes() {
+        let m = Mesh::new("m".to_string(), 1);
+        let props = m.properties();
+        assert_eq!(props.len(), 3);
+        assert_eq!(props[2].key, property_keys::MESH_TRIANGLE_INDEX_BYTES);
+        assert_eq!(
+            props[2].value,
+            PropertyValue::String(String::new()),
+            "the runtime allocates its index buffer from this property; omitting it leaves the buffer null and import returns InvalidObject"
+        );
     }
 
     #[test]

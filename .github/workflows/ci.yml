@@ -20,8 +20,8 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
-      - run: cargo clippy -- -D warnings
-      - run: cargo test
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo test --locked --all-features
 
   playwright:
     needs: [check]
@@ -49,8 +49,12 @@ jobs:
         with:
           node-version: 20
       - run: cargo build
-      - run: npm install --no-save playwright@1.50.1
+      - run: npm install --no-save playwright@1.50.1 wait-on@8.0.1
       - run: npx playwright install --with-deps chromium
-      - run: node demo/serve.js &
-      - run: sleep 15
-      - run: node tests/playwright/demo-validation.js
+      - name: Run demo validation
+        run: |
+          node demo/serve.js &
+          SERVER_PID=$!
+          npx wait-on http://localhost:3021 --timeout 60000
+          node tests/playwright/demo-validation.js
+          kill $SERVER_PID

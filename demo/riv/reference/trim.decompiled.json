@@ -7,13 +7,18 @@
   "toc_property_keys": [],
   "objects": [
     {
+      "object_index": 0,
       "type_key": 23,
       "type_name": "Backboard",
       "properties": []
     },
     {
+      "object_index": 1,
       "type_key": 1,
       "type_name": "Artboard",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 0,
       "properties": [
         {
           "key": 4,
@@ -45,8 +50,12 @@
       ]
     },
     {
+      "object_index": 2,
       "type_key": 2,
       "type_name": "Node",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 1,
       "properties": [
         {
           "key": 4,
@@ -79,8 +88,12 @@
       ]
     },
     {
+      "object_index": 3,
       "type_key": 2,
       "type_name": "Node",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 2,
       "properties": [
         {
           "key": 4,
@@ -113,8 +126,12 @@
       ]
     },
     {
+      "object_index": 4,
       "type_key": 3,
       "type_name": "Shape",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 3,
       "properties": [
         {
           "key": 5,
@@ -126,8 +143,12 @@
       ]
     },
     {
+      "object_index": 5,
       "type_key": 16,
       "type_name": "PointsPath",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 4,
       "properties": [
         {
           "key": 5,
@@ -146,8 +167,12 @@
       ]
     },
     {
+      "object_index": 6,
       "type_key": 5,
       "type_name": "StraightVertex",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 5,
       "properties": [
         {
           "key": 5,
@@ -173,8 +198,12 @@
       ]
     },
     {
+      "object_index": 7,
       "type_key": 5,
       "type_name": "StraightVertex",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 6,
       "properties": [
         {
           "key": 5,
@@ -200,8 +229,12 @@
       ]
     },
     {
+      "object_index": 8,
       "type_key": 5,
       "type_name": "StraightVertex",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 7,
       "properties": [
         {
           "key": 5,
@@ -227,8 +260,12 @@
       ]
     },
     {
+      "object_index": 9,
       "type_key": 5,
       "type_name": "StraightVertex",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 8,
       "properties": [
         {
           "key": 5,
@@ -254,8 +291,12 @@
       ]
     },
     {
+      "object_index": 10,
       "type_key": 18,
       "type_name": "SolidColor",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 9,
       "properties": [
         {
           "key": 5,
@@ -274,8 +315,12 @@
       ]
     },
     {
+      "object_index": 11,
       "type_key": 47,
       "type_name": "TrimPath",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 10,
       "properties": [
         {
           "key": 5,
@@ -294,8 +339,12 @@
       ]
     },
     {
+      "object_index": 12,
       "type_key": 18,
       "type_name": "SolidColor",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 11,
       "properties": [
         {
           "key": 5,
@@ -314,8 +363,12 @@
       ]
     },
     {
+      "object_index": 13,
       "type_key": 20,
       "type_name": "Fill",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 12,
       "properties": [
         {
           "key": 5,
@@ -327,8 +380,12 @@
       ]
     },
     {
+      "object_index": 14,
       "type_key": 24,
       "type_name": "Stroke",
+      "artboard_index": 0,
+      "artboard_name": "work",
+      "local_index": 13,
       "properties": [
         {
           "key": 5,

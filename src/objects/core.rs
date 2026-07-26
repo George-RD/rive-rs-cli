@@ -652,6 +652,7 @@ pub mod property_keys {
     pub const TEXT_STYLE_FEATURE_FEATURE_VALUE: u16 = 357;
     pub const MESH_VERTEX_U: u16 = 215;
     pub const MESH_VERTEX_V: u16 = 216;
+    pub const MESH_TRIANGLE_INDEX_BYTES: u16 = 223;
     pub const FORCED_EDGE_FROM_ID: u16 = 219;
     pub const FORCED_EDGE_TO_ID: u16 = 220;
     pub const NESTED_REMAP_TIME: u16 = 202;
@@ -877,7 +878,8 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::DATA_ENUM_VALUE_VALUE
         | property_keys::BINDABLE_PROPERTY_STRING_VALUE
         | property_keys::TEXT_INPUT_TEXT_VALUE
-        | property_keys::FOLDER_PATH => Some(BackingType::String),
+        | property_keys::FOLDER_PATH
+        | property_keys::MESH_TRIANGLE_INDEX_BYTES => Some(BackingType::String),
         property_keys::LAYOUT_COMPONENT_WIDTH
         | property_keys::LAYOUT_COMPONENT_HEIGHT
         | property_keys::NODE_X_ARTBOARD

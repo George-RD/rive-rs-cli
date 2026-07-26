@@ -4306,3 +4306,92 @@ fn test_generate_validate_comparison_official_test() {
     );
     cleanup(&output);
 }
+
+#[test]
+fn test_generate_asset_extensions() {
+    let _ = generate_and_validate_output("asset_extensions", "coverage");
+}
+
+#[test]
+fn test_generate_effects() {
+    let _ = generate_and_validate_output("effects", "coverage");
+}
+
+#[test]
+fn test_generate_events_extended() {
+    let _ = generate_and_validate_output("events_extended", "coverage");
+}
+
+#[test]
+fn test_generate_graphics_misc() {
+    let _ = generate_and_validate_output("graphics_misc", "coverage");
+}
+
+#[test]
+fn test_generate_layout_extensions() {
+    let _ = generate_and_validate_output("layout_extensions", "coverage");
+}
+
+#[test]
+fn test_generate_mesh() {
+    let _ = generate_and_validate_output("mesh", "coverage");
+}
+
+#[test]
+fn test_generate_nested_extensions() {
+    let _ = generate_and_validate_output("nested_extensions", "coverage");
+}
+
+#[test]
+fn test_generate_new_constraints() {
+    let _ = generate_and_validate_output("new_constraints", "coverage");
+}
+
+#[test]
+fn test_generate_nslicer() {
+    let _ = generate_and_validate_output("nslicer", "coverage");
+}
+
+fn assert_generate_fails_with(fixture: &str, expected_stderr: &str) {
+    let input = fixture_path(&format!("{}.json", fixture));
+    let output = temp_output(fixture);
+    let _guard = CleanupOnDrop(output.clone());
+
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        !result.status.success(),
+        "{} should fail to generate",
+        fixture
+    );
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains(expected_stderr),
+        "{} stderr should contain {:?}, got: {}",
+        fixture,
+        expected_stderr,
+        stderr
+    );
+}
+
+#[test]
+fn test_generate_invalid_bad_values() {
+    assert_generate_fails_with("invalid_bad_values", "width must be non-negative");
+}
+
+#[test]
+fn test_generate_invalid_missing_names() {
+    assert_generate_fails_with("invalid_missing_names", "missing field `name`");
+}
+
+#[test]
+fn test_generate_invalid_missing_version() {
+    assert_generate_fails_with(
+        "invalid_missing_version",
+        "missing field `scene_format_version`",
+    );
+}

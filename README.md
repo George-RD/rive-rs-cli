@@ -71,7 +71,7 @@ Build incrementally, driven by real output at each step:
 
 Each step produces testable `.riv` output. No layer is "done" until its output loads correctly in a Rive runtime.
 
-## Usage (Planned)
+## Usage
 
 ```bash
 # Generate from JSON scene description
@@ -82,10 +82,27 @@ rive-cli validate output.riv
 
 # Inspect a .riv file (dump object tree)
 rive-cli inspect existing.riv
+rive-cli inspect existing.riv --type-name Shape
 
-# Pipe from stdin
-echo '{"artboard": {"width": 500, "height": 500, "children": [...]}}' | rive-cli generate -o output.riv
+# Decompile a .riv file back to an inspect-format dump
+rive-cli decompile existing.riv
+
+# List built-in artboard size presets (global --json applies here)
+rive-cli --list-presets
+rive-cli --json --list-presets
+
+# AI-assisted generation and prompt-lab evaluation
+rive-cli ai generate --prompt "bouncing ball" -o output.riv
+rive-cli ai lab --suite evals/suites/prompt_lab.v1.json
+
+# Machine-readable output: each subcommand takes its own --json
+rive-cli inspect existing.riv --json
+
+# MCP stdio server (requires --features mcp at build time)
+rive-cli --mcp
 ```
+
+`generate` reads its input from a file path; there is no stdin mode.
 
 Scene specs are versioned with `scene_format_version` and currently require `1`.
 
@@ -127,7 +144,8 @@ Fixtures are intentionally high-contrast for screenshot clarity so future visual
 ## Internal Format Notes
 
 - `docs/format-spec.md` tracks encoding behaviors and compatibility constraints discovered during implementation.
-- `docs/scene.schema.v1.json` defines the versioned JSON schema for editor validation and autocompletion.
+- `docs/scene.schema.v1.json` is the complete JSON schema for SceneSpec input, generated from the Rust types in `src/builder/spec.rs`. Regenerate it with `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync`; a unit test fails if the committed file drifts.
+- `docs/ai/scene-prompt-schema.json` is the smaller curated subset embedded in the `ai generate` system prompt.
 
 ## Reference Material
 

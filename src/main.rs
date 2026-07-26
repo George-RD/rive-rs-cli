@@ -1,13 +1,9 @@
-mod ai;
-mod builder;
 mod cli;
-mod encoder;
-#[cfg(feature = "mcp")]
-mod mcp;
-mod objects;
-mod validator;
 
 use clap::Parser;
+#[cfg(feature = "mcp")]
+use rive_cli::mcp;
+use rive_cli::{ai, builder, encoder, objects, validator};
 
 fn main() {
     let cli = cli::Cli::parse();

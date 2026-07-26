@@ -4,6 +4,7 @@ const path = require("node:path");
 const {
   ROOT,
   FIXTURES,
+  KNOWN_RUNTIME_GAPS,
   buildFixtures,
   startServer,
   waitForServer,
@@ -27,6 +28,10 @@ async function main() {
     browser = await chromium.launch({ headless: true });
 
     for (const fixture of FIXTURES) {
+      if (KNOWN_RUNTIME_GAPS.has(fixture)) {
+        console.log(`SKIP ${fixture} (known runtime gap)`);
+        continue;
+      }
       const page = await openFixturePage(browser, PORT, fixture);
       await page.screenshot({ path: path.join(SCREENSHOT_DIR, `${fixture}.png`) });
       await page.close();

@@ -104,7 +104,7 @@ pub fn parse_riv(data: &[u8], filter: &InspectFilter) -> Result<ParsedRiv, Strin
         let mut bit_pos: usize = 32;
 
         for (i, &key) in toc_property_keys.iter().enumerate() {
-            if i % 16 == 0 {
+            if i % crate::encoder::toc::TOC_CODES_PER_WORD == 0 {
                 let bytes = reader.read_bytes(4).ok_or_else(|| {
                     "unexpected end of data reading ToC backing type uint32".to_string()
                 })?;
@@ -433,5 +433,31 @@ mod tests {
                 .iter()
                 .all(|object| object.artboard_name.as_deref() == Some("Écran"))
         );
+    }
+
+    #[test]
+    fn test_parse_official_reference_with_multiword_toc() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("demo")
+            .join("riv")
+            .join("reference")
+            .join("official_test.riv");
+        let data = std::fs::read(&path).expect("read official_test.riv");
+        let parsed = parse_riv(&data, &InspectFilter::default()).expect("parse official_test.riv");
+
+        assert_eq!(
+            parsed.toc_property_keys.len(),
+            8,
+            "official_test.riv declares 8 ToC keys, which spans two uint32 backing-code words"
+        );
+        assert_eq!(
+            parsed.objects[0].type_key, 23,
+            "a misaligned ToC read leaves phantom type-0 objects ahead of the Backboard"
+        );
+        assert!(
+            parsed.objects.iter().all(|object| object.type_key != 0),
+            "type key 0 is the object terminator and can never appear as an object type"
+        );
+        assert_eq!(parsed.objects.len(), 407);
     }
 }

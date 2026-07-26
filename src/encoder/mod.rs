@@ -27,16 +27,13 @@ pub(crate) fn encode_object(object: &dyn RiveObject) -> Vec<u8> {
     writer.write_varuint(0);
     writer.finish()
 }
-
-use crate::objects::core::property_backing_type;
-
 pub fn encode_riv(objects: &[&dyn RiveObject], file_id: u64) -> Vec<u8> {
     let header_bytes = header::encode_header(file_id);
 
     let mut toc_keys: Vec<u16> = Vec::new();
     for obj in objects {
         for prop in obj.properties() {
-            if property_backing_type(prop.key).is_none() && !toc_keys.contains(&prop.key) {
+            if !toc_keys.contains(&prop.key) {
                 toc_keys.push(prop.key);
             }
         }
@@ -89,7 +86,11 @@ mod tests {
         assert_eq!(&result[0..4], &[0x52, 0x49, 0x56, 0x45]);
 
         let header_bytes = header::encode_header(0);
-        let toc_bytes = toc::encode_toc(&[]);
+        let toc_bytes = toc::encode_toc(&[
+            crate::objects::core::property_keys::COMPONENT_NAME,
+            crate::objects::core::property_keys::LAYOUT_COMPONENT_WIDTH,
+            crate::objects::core::property_keys::LAYOUT_COMPONENT_HEIGHT,
+        ]);
         let toc_start = header_bytes.len();
         let toc_end = toc_start + toc_bytes.len();
         assert_eq!(&result[toc_start..toc_end], &toc_bytes);
@@ -140,16 +141,48 @@ mod tests {
     }
 
     #[test]
-    fn test_toc_only_includes_unknown_properties() {
+    fn test_toc_declares_every_property_the_file_uses() {
         let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
         let data = encode_riv(&[&Backboard, &artboard], 0);
         let parsed =
             crate::validator::parse_riv(&data, &crate::validator::InspectFilter::default())
                 .unwrap();
-        for &key in &parsed.toc_property_keys {
+
+        let mut used: Vec<u16> = Vec::new();
+        for object in &parsed.objects {
+            for property in &object.properties {
+                if !used.contains(&property.key) {
+                    used.push(property.key);
+                }
+            }
+        }
+        assert!(!used.is_empty());
+        for key in used {
             assert!(
-                crate::objects::core::property_backing_type(key).is_none(),
-                "known property key {} should not be in ToC",
+                parsed.toc_property_keys.contains(&key),
+                "property key {} is written but absent from the ToC; a runtime that does not know it natively cannot skip it",
+                key
+            );
+        }
+    }
+
+    #[test]
+    fn test_toc_backing_types_match_the_registry() {
+        let artboard = Artboard::new("Test".to_string(), 500.0, 500.0);
+        let data = encode_riv(&[&Backboard, &artboard], 0);
+        let parsed =
+            crate::validator::parse_riv(&data, &crate::validator::InspectFilter::default())
+                .unwrap();
+
+        for (key, backing) in parsed
+            .toc_property_keys
+            .iter()
+            .zip(parsed.toc_backing_types.iter())
+        {
+            assert_eq!(
+                Some(*backing),
+                crate::objects::core::property_backing_type(*key),
+                "ToC backing type for key {} disagrees with the registry",
                 key
             );
         }
