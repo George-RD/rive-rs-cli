@@ -59,7 +59,7 @@ Loads generated `.riv` files in the official `@rive-app/canvas` WASM runtime via
 
 **Fixture lists** (`tests/playwright/shared.js`): `FIXTURES` is every fixture enrolled in runtime regression. `RUNTIME_ONLY_FIXTURES` are the ones with no committed PNG baseline; `VISUAL_FIXTURES` is the complement and is what `visual-regression.js` iterates. `KNOWN_RUNTIME_GAPS` are fixtures the WASM runtime currently rejects; each has a `runtime-rejection` row in `docs/parity.md`, and removing it from the set is the acceptance criterion for closing that row.
 
-**Runtime versions**: the Playwright harness loads the vendored `tests/playwright/rive.min.js`, which reports `@rive-app/canvas` 2.35.2; the demo (`demo/index.html`) loads `@rive-app/canvas@2.37.8` from unpkg. These are separate consumers and are versioned independently.
+**Runtime version**: both consumers are on `@rive-app/canvas` 2.39.1 — the Playwright harness loads the vendored `tests/playwright/rive.js` plus `tests/playwright/rive.wasm`, and the demo (`demo/index.html`) loads the same version from unpkg. Keep them in step; the vendored JS and WASM must always come from the same package version.
 
 **Convention**: bump the runtime version deliberately. When bumping, re-run all fixtures and update baselines if rendering changes.
 

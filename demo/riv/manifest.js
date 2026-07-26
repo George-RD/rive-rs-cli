@@ -1,5 +1,5 @@
 window.__RIVE_FIXTURE_MANIFEST = {
-  "generatedAt": "2026-07-26T08:45:01.664Z",
+  "generatedAt": "2026-07-26T10:05:13.817Z",
   "fixtures": [
     {
       "name": "animation",

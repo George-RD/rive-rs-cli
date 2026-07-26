@@ -217,24 +217,26 @@ function thresholdForShot(fixture, frame) {
     ?? THRESHOLD_PERCENT;
 }
 
-async function advanceFrames(page, frames) {
-  if (frames <= 0) {
-    return;
+const CAPTURE_FPS = 60;
+
+async function seekToFrame(page, frame) {
+  const settled = await page.evaluate(
+    async ({ frameIndex, fps }) => {
+      const instance = window.__VISUAL_RIVE;
+      if (!instance || typeof instance.scrub !== "function") {
+        return false;
+      }
+      instance.pause();
+      instance.scrub(undefined, frameIndex / fps);
+      await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+      return true;
+    },
+    { frameIndex: frame, fps: CAPTURE_FPS },
+  );
+
+  if (!settled) {
+    throw new Error(`runtime does not expose scrub(); cannot capture frame ${frame} deterministically`);
   }
-  await page.evaluate((count) => {
-    return new Promise((resolve) => {
-      let remaining = count;
-      const tick = () => {
-        if (remaining <= 0) {
-          resolve(true);
-          return;
-        }
-        remaining -= 1;
-        window.requestAnimationFrame(tick);
-      };
-      window.requestAnimationFrame(tick);
-    });
-  }, frames);
 }
 
 function sanitizeArtboardName(name) {
@@ -323,17 +325,7 @@ async function main() {
 
           await mountControlledRive(page, fixture, artboard);
 
-          if (frame > 0) {
-            await page.evaluate(() => {
-              if (!window.__VISUAL_RIVE || typeof window.__VISUAL_RIVE.play !== "function") {
-                return false;
-              }
-              window.__VISUAL_RIVE.play();
-              return true;
-            });
-          }
-
-          await advanceFrames(page, frame);
+          await seekToFrame(page, frame);
           const name = baselineName(fixture, frame, artboard);
           const label = artboard ? `${fixture}[${artboard}]@f${frame}` : `${fixture}@f${frame}`;
           const currentPath = path.join(CURRENT_DIR, name);

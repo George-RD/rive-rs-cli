@@ -24,6 +24,10 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - **`tests/fixtures/follow_path_constraint.json`** parented the constraint to the artboard while targeting a sibling, which the runtime rejected as `Dependency cycle!`. The constraint is now a child of the shape it constrains.
 - **`tests/fixtures/nslicer.json`** nested an `Image`/`NSlicer` inside an `NSlicedNode`. These are two mutually exclusive constructs and the combination stalled the runtime. The fixture now exercises each in its own artboard.
 
+- Upgraded the vendored Playwright runtime bundle from `@rive-app/canvas` 2.35.2 to 2.39.1 (`tests/playwright/rive.js` + `rive.wasm`, both from the same package), and pointed the demo at the same version instead of 2.37.8. Pinned Playwright itself to 1.62.0 across CI and release. The bump did not close the two remaining runtime gaps, which refutes the version-lag explanation recorded for them.
+- Visual regression now seeks to an exact animation time with `Rive.scrub()` instead of playing and counting `requestAnimationFrame` ticks. The old approach sampled on wall-clock time, so captures were not reproducible; under 2.39.1 `animation@f30` varied by more than 1% between consecutive runs. Baselines were regenerated once against the deterministic capture and now reproduce exactly.
+- The CI demo job waited 60s for `demo/serve.js`, which regenerates all 63 fixtures before it listens and takes roughly 2.5 minutes. Raised to 300s and added an `EXIT` trap so a failure no longer orphans the server.
+
 ### Changed
 
 - `docs/scene.schema.v1.json` is now generated from the Rust `SceneSpec` types and covers all 202 object types instead of a hand-written subset of 14. A unit test fails if the committed file drifts; regenerate with `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync`. The MCP resource `schema://scene/v1` serves the generated schema.

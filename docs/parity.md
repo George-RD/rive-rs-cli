@@ -58,12 +58,19 @@ This document tracks how closely rive-cli-generated files match official Rive ru
 
 ## Fixture Runtime Gaps
 
-Fixtures the vendored `@rive-app/canvas` runtime (`tests/playwright/rive.min.js`, version 2.35.2) cannot load. They are listed in `KNOWN_RUNTIME_GAPS` in `tests/playwright/shared.js`, so `tests/playwright/regression.js` prints `SKIP <name> (known runtime gap)` instead of failing. Removing a fixture from that set is the acceptance criterion for closing its row.
+Fixtures the vendored `@rive-app/canvas` runtime (`tests/playwright/rive.js`, version 2.39.1) cannot load. They are listed in `KNOWN_RUNTIME_GAPS` in `tests/playwright/shared.js`, so `tests/playwright/regression.js` prints `SKIP <name> (known runtime gap)` instead of failing. Removing a fixture from that set is the acceptance criterion for closing its row.
 
-| Fixture | gapType | Diagnosis |
+**These are unresolved, and the original explanation was wrong.** Both rows were first recorded as version lag: the object types postdated the then-vendored 2.35.2 runtime. Two pieces of evidence refute that.
+
+1. Upgrading the vendored bundle from 2.35.2 to 2.39.1 (current latest) changed nothing. `transition_comparators` still logs `Failed to import object of type 481/483/484/486`, and `scripting` still fails.
+2. An audit of `rive-runtime` main (`e0d4913`, `runtime-v0.1.217`) found every one of these keys present, class-level `runtime: true`, and constructed by `CoreRegistry::makeCoreInstance` — for example `case TransitionValueBooleanComparatorBase::typeKey: return new TransitionValueBooleanComparator();`. None is editor-only, mis-numbered, or an abstract parent. The abstract comparator parent is key 480, which we do not emit.
+
+So the keys are correct and instantiable, and the failure is not a missing core factory entry. `Failed to import object of type <N>` is not the message `src/file.cpp` prints when the factory misses — that one is `Unknown property key ...`. The remaining suspect is therefore the importer rejecting a correctly-constructed object because of where it sits in the hierarchy, which is the same class of defect already found in `follow_path_constraint` and `nslicer`. **That is a hypothesis, not a finding: it has not been reproduced with a corrected hierarchy.** Confirming or refuting it is the next step, and the skips stay until a fixture demonstrably loads.
+
+| Fixture | gapType | Status |
 |---|---|---|
-| scripting | runtime-rejection | Object types 612, 618, 621, 626, 627 (script inputs, added 2025-10-15) and 631 (scripted boolean, added 2025-10-17) postdate the vendored 2.35.2 runtime. It reports `Failed to import object of type <N>` and then `Problem loading file; may be corrupt!`. Not a writer defect; closes when the vendored runtime is upgraded past those additions. |
-| transition_comparators | runtime-rejection | Object types 481, 483, 484, 486 (transition boolean/color/number/string comparators, added 2024-07-26) postdate the vendored 2.35.2 runtime. Since the ToC fix below, the file now **loads successfully** (`onLoad` fires) and the runtime skips the unknown types; it stays listed only because the harness treats the `Failed to import object of type <N>` console lines as errors. |
+| scripting | runtime-rejection | Unresolved. Emits types 603, 611, 612, 618, 621, 626, 627, 629, 631; the runtime imports 603/611/629 and rejects the other six, then fails the load. Cause not established. |
+| transition_comparators | runtime-rejection | Unresolved, but degraded gracefully: since the ToC fix the file **loads** (`onLoad` fires) and the runtime skips types 481/483/484/486. It stays listed only because the harness treats the `Failed to import object of type <N>` console lines as errors. |
 
 ### Fixed in this cycle
 
@@ -159,5 +166,6 @@ python3 scripts/vision_gate_orchestrator.py
 - [ ] Automate decompile-diff measurement in CI
 - [ ] Integrate vision model API for semantic likeness approval
 - [ ] Acquire additional official .riv test files for broader coverage
-- [x] Root-cause the five `runtime-rejection` fixtures (three were writer/fixture defects and are fixed; two are vendored-runtime version limits)
-- [ ] Upgrade the vendored `tests/playwright/rive.min.js` (2.35.2) past the 2024-07 comparator and 2025-10 scripting type additions, then drop `KNOWN_RUNTIME_GAPS`
+- [x] Root-cause three of the five `runtime-rejection` fixtures (`follow_path_constraint`, `mesh`, `nslicer` were writer/fixture defects and are fixed)
+- [x] Upgrade the vendored runtime to `@rive-app/canvas` 2.39.1 — did **not** close the remaining two rows, refuting the version-lag theory
+- [ ] Establish why the importer rejects types 481/483/484/486 and 612/618/621/626/627/631 when `CoreRegistry::makeCoreInstance` constructs all of them; the leading hypothesis is object placement in the fixture hierarchy, unverified
