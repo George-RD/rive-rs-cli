@@ -1,8 +1,9 @@
+use schemars::JsonSchema;
 use serde::Deserialize;
 
 pub(crate) const SCENE_FORMAT_VERSION: u32 = 1;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct SceneSpec {
     pub scene_format_version: u32,
     #[serde(default)]
@@ -11,7 +12,7 @@ pub struct SceneSpec {
     pub artboards: Option<Vec<ArtboardSpec>>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, JsonSchema)]
 pub struct ArtboardSpec {
     pub name: String,
     #[serde(default)]
@@ -32,7 +33,7 @@ pub struct ArtboardSpec {
     pub animations: Option<Vec<AnimationSpec>>,
     pub state_machines: Option<Vec<StateMachineSpec>>,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[allow(clippy::large_enum_variant)]
 pub enum ObjectSpec {
@@ -106,7 +107,7 @@ pub enum ObjectSpec {
     },
     SolidColor {
         name: String,
-        color: String,
+        color: Option<String>,
     },
     LinearGradient {
         name: String,
@@ -833,16 +834,12 @@ pub enum ObjectSpec {
     #[serde(rename = "draggable_constraint")]
     DraggableConstraint {
         name: String,
-        #[allow(dead_code)]
-        target: Option<String>,
         strength: Option<f32>,
         direction_value: Option<u64>,
     },
     #[serde(rename = "scroll_constraint")]
     ScrollConstraint {
         name: String,
-        #[allow(dead_code)]
-        target: Option<String>,
         strength: Option<f32>,
         direction_value: Option<u64>,
         snap: Option<bool>,
@@ -857,8 +854,6 @@ pub enum ObjectSpec {
     #[serde(rename = "scroll_bar_constraint")]
     ScrollBarConstraint {
         name: String,
-        #[allow(dead_code)]
-        target: Option<String>,
         strength: Option<f32>,
         scroll_constraint_id: Option<u64>,
         auto_size: Option<bool>,
@@ -885,10 +880,6 @@ pub enum ObjectSpec {
     #[serde(rename = "nslicer")]
     NSlicer {
         name: String,
-        initial_width: Option<f32>,
-        initial_height: Option<f32>,
-        width: Option<f32>,
-        height: Option<f32>,
         children: Option<Vec<ObjectSpec>>,
     },
     #[serde(rename = "axis_y")]
@@ -908,6 +899,10 @@ pub enum ObjectSpec {
         name: String,
         x: Option<f32>,
         y: Option<f32>,
+        initial_width: Option<f32>,
+        initial_height: Option<f32>,
+        width: Option<f32>,
+        height: Option<f32>,
         children: Option<Vec<ObjectSpec>>,
     },
     #[serde(rename = "view_model_property_number")]
@@ -1329,7 +1324,7 @@ pub enum ObjectSpec {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct InterpolatorSpec {
     pub name: String,
     #[serde(default, rename = "type", alias = "interpolation_type")]
@@ -1343,7 +1338,7 @@ pub struct InterpolatorSpec {
     pub period: Option<f32>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, JsonSchema)]
 pub struct AnimationSpec {
     pub name: String,
     pub fps: u64,
@@ -1358,14 +1353,14 @@ pub struct AnimationSpec {
     pub keyframes: Vec<KeyframeGroupSpec>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct KeyframeGroupSpec {
     pub object: String,
     pub property: String,
     pub frames: Vec<KeyframeSpec>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct KeyframeSpec {
     pub frame: u64,
     pub value: serde_json::Value,
@@ -1373,7 +1368,7 @@ pub struct KeyframeSpec {
     pub interpolator: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct StateMachineSpec {
     pub name: String,
     pub inputs: Option<Vec<InputSpec>>,
@@ -1382,7 +1377,7 @@ pub struct StateMachineSpec {
     pub layers: Vec<LayerSpec>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StateMachineComponentSpec {
     FireEvent {
@@ -1408,14 +1403,14 @@ pub enum StateMachineComponentSpec {
     BlendState1DViewModel,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct StateMachineListenerSpec {
     pub target: String,
     pub listener_type_value: Option<u64>,
     pub actions: Option<Vec<ListenerActionSpec>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[allow(clippy::enum_variant_names)]
 pub enum ListenerActionSpec {
@@ -1456,7 +1451,7 @@ pub(crate) enum InterpolatorDef {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum InputSpec {
     Number { name: String, value: f32 },
@@ -1464,13 +1459,13 @@ pub enum InputSpec {
     Trigger { name: String },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct LayerSpec {
     pub states: Vec<StateSpec>,
     pub transitions: Option<Vec<TransitionSpec>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum StateSpec {
     Entry,
@@ -1492,13 +1487,13 @@ pub enum StateSpec {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BlendStateChildSpec {
     BlendAnimation { animation_id: u64 },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BlendStateDirectChildSpec {
     BlendAnimationDirect {
@@ -1509,7 +1504,7 @@ pub enum BlendStateDirectChildSpec {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum BlendState1DChildSpec {
     #[serde(alias = "blend_animation_1d")]
@@ -1519,7 +1514,7 @@ pub enum BlendState1DChildSpec {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum TextStyleChildSpec {
     TextStyleFeature {
@@ -1528,7 +1523,7 @@ pub enum TextStyleChildSpec {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum TextModifierGroupChildSpec {
     TextModifierRange {
@@ -1550,7 +1545,7 @@ pub enum TextModifierGroupChildSpec {
     },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct TransitionSpec {
     pub from: usize,
     pub to: usize,
@@ -1559,14 +1554,14 @@ pub struct TransitionSpec {
     pub children: Option<Vec<TransitionChildSpec>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct ConditionSpec {
     pub input: String,
     pub op: Option<String>,
     pub value: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 #[allow(clippy::enum_variant_names)]
 pub enum TransitionChildSpec {
@@ -1606,4 +1601,82 @@ pub(crate) enum ParentKind {
     Image,
     NestedArtboard,
     DashPath,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ObjectSpec;
+
+    fn collect_type_consts(value: &serde_json::Value, tags: &mut Vec<String>) {
+        match value {
+            serde_json::Value::Object(map) => {
+                if let Some(serde_json::Value::String(tag)) = map
+                    .get("type")
+                    .and_then(|t| t.as_object())
+                    .and_then(|t| t.get("const"))
+                {
+                    tags.push(tag.clone());
+                }
+                for child in map.values() {
+                    collect_type_consts(child, tags);
+                }
+            }
+            serde_json::Value::Array(items) => {
+                for child in items {
+                    collect_type_consts(child, tags);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn object_variant_tags(schema: &serde_json::Value) -> Vec<String> {
+        let defs = schema
+            .get("$defs")
+            .and_then(|d| d.as_object())
+            .expect("prompt schema has $defs");
+        let variants = defs
+            .get("object")
+            .and_then(|o| o.get("oneOf"))
+            .and_then(|o| o.as_array())
+            .expect("prompt schema has $defs.object.oneOf");
+        let mut tags = Vec::new();
+        for variant in variants {
+            let resolved = match variant.get("$ref").and_then(|r| r.as_str()) {
+                Some(reference) => {
+                    let name = reference
+                        .strip_prefix("#/$defs/")
+                        .expect("object variant $ref points into $defs");
+                    defs.get(name)
+                        .unwrap_or_else(|| panic!("prompt schema has $defs.{}", name))
+                }
+                None => variant,
+            };
+            collect_type_consts(resolved, &mut tags);
+        }
+        tags
+    }
+
+    #[test]
+    fn ai_prompt_schema_types_all_exist() {
+        let raw = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/ai/scene-prompt-schema.json"
+        ));
+        let schema: serde_json::Value = serde_json::from_str(raw).expect("parse prompt schema");
+        let tags = object_variant_tags(&schema);
+        assert!(!tags.is_empty(), "prompt schema declares no object types");
+        for tag in tags {
+            let probe = format!("{{\"type\":\"{}\"}}", tag);
+            let err = serde_json::from_str::<ObjectSpec>(&probe)
+                .err()
+                .map(|e| e.to_string())
+                .unwrap_or_default();
+            assert!(
+                !err.contains("unknown variant"),
+                "prompt schema declares object type '{}' that ObjectSpec does not have",
+                tag
+            );
+        }
+    }
 }

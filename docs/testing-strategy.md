@@ -37,10 +37,13 @@ JSON fixture → cargo run -- generate → .riv file → cargo run -- validate �
 
 Each fixture in `tests/fixtures/` gets at least one e2e test:
 
-- `test_generate_{fixture}` — generates .riv, validates it (required for every fixture)
+- `test_generate_{fixture}` — generates .riv, validates it (required for every valid fixture)
 - `test_inspect_{fixture}` — optional, for select fixtures to verify inspect output structure
+- `test_generate_invalid_{fixture}` — required for every `invalid_*` fixture
 
 **Convention**: every new fixture added to `tests/fixtures/` must have a corresponding e2e test in `tests/e2e.rs`.
+
+**Convention**: a negative test for an `invalid_*` fixture must assert a specific stderr substring, not merely a non-zero exit. An exit-code-only assertion passes for any failure, including failures unrelated to what the fixture is named for.
 
 ### 3. Playwright Runtime Regression (`tests/playwright/regression.js`)
 
@@ -52,9 +55,11 @@ Loads generated `.riv` files in the official `@rive-app/canvas` WASM runtime via
 2. Starts a local HTTP server serving `harness.html` + the `.riv` files
 3. Launches headless Chromium via Playwright
 4. Loads each `.riv` in the Rive canvas runtime
-5. Fails if any runtime error, load failure, or console error occurs
+5. Fails if any runtime error, load failure, or console error occurs, except for names in `KNOWN_RUNTIME_GAPS`, which print `SKIP <name> (known runtime gap)`
 
-**Runtime version**: `@rive-app/canvas@2.35.0` (pinned in `harness.html` CDN link).
+**Fixture lists** (`tests/playwright/shared.js`): `FIXTURES` is every fixture enrolled in runtime regression. `RUNTIME_ONLY_FIXTURES` are the ones with no committed PNG baseline; `VISUAL_FIXTURES` is the complement and is what `visual-regression.js` iterates. `KNOWN_RUNTIME_GAPS` are fixtures the WASM runtime currently rejects; each has a `runtime-rejection` row in `docs/parity.md`, and removing it from the set is the acceptance criterion for closing that row.
+
+**Runtime version**: both consumers are on `@rive-app/canvas` 2.39.1 — the Playwright harness loads the vendored `tests/playwright/rive.js` plus `tests/playwright/rive.wasm`, and the demo (`demo/index.html`) loads the same version from unpkg. Keep them in step; the vendored JS and WASM must always come from the same package version.
 
 **Convention**: bump the runtime version deliberately. When bumping, re-run all fixtures and update baselines if rendering changes.
 
@@ -64,7 +69,7 @@ Pixel-level comparison of rendered frames against committed baseline PNGs.
 
 **How it works**:
 
-1. Loads each fixture in a controlled Rive canvas (manual frame advance, no autoplay)
+1. Loads each fixture in `VISUAL_FIXTURES` in a controlled Rive canvas (manual frame advance, no autoplay)
 2. Captures screenshots at specific frame points (see frame plan below)
 3. Compares against baselines in `tests/playwright/baselines/` using pixel diff
 4. Fails if any fixture exceeds the diff threshold (default 1.0%)
@@ -148,11 +153,11 @@ When adding a new Rive object type to the codebase:
 - [ ] Add validation tests (valid input, invalid input, edge cases)
 - [ ] Create a fixture JSON in `tests/fixtures/`
 - [ ] Add e2e test in `tests/e2e.rs`
-- [ ] Add fixture to `FIXTURES` array in `regression.js` and `visual-regression.js`
+- [ ] Add fixture to `FIXTURES` in `tests/playwright/shared.js` (and to `RUNTIME_ONLY_FIXTURES` if it should not get PNG baselines)
 - [ ] Run Playwright regression — fixture loads without runtime errors
-- [ ] Capture golden-frame baseline: `UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js`
+- [ ] Capture golden-frame baseline: `npx -y -p playwright node tests/playwright/visual-regression.js --update`
 - [ ] Commit baseline PNGs
-- [ ] Update `docs/scene.schema.v1.json` if new JSON fields added
+- [ ] Regenerate the scene schema: `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync` (it is derived from `src/builder/spec.rs`, never hand-edited)
 - [ ] Update `AGENTS.md` with the new type's location and conventions
 
 ## Fuzz and Property Testing

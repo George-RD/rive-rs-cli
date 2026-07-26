@@ -10,6 +10,8 @@ fn backing_bits(backing_type: BackingType) -> u32 {
     }
 }
 
+pub(crate) const TOC_CODES_PER_WORD: usize = 4;
+
 pub(crate) fn encode_toc(property_keys: &[u16]) -> Vec<u8> {
     let mut writer = BinaryWriter::new();
 
@@ -18,23 +20,18 @@ pub(crate) fn encode_toc(property_keys: &[u16]) -> Vec<u8> {
     }
     writer.write_varuint(0);
 
-    if !property_keys.is_empty() {
-        let num_uint32s = property_keys.len().div_ceil(16);
-        for chunk in 0..num_uint32s {
-            let mut val: u32 = 0;
-            for i in 0..16 {
-                let idx = chunk * 16 + i;
-                if idx < property_keys.len() {
-                    let backing = property_backing_type(property_keys[idx])
-                        .unwrap_or_else(|| panic!(
-                            "property key {} has no known backing type — register it in core::property_backing_type()",
-                            property_keys[idx]
-                        ));
-                    val |= backing_bits(backing) << (i * 2);
-                }
-            }
-            writer.write_bytes(&val.to_le_bytes());
+    for chunk in property_keys.chunks(TOC_CODES_PER_WORD) {
+        let mut val: u32 = 0;
+        for (i, &key) in chunk.iter().enumerate() {
+            let backing = property_backing_type(key).unwrap_or_else(|| {
+                panic!(
+                    "property key {} has no known backing type — register it in core::property_backing_type()",
+                    key
+                )
+            });
+            val |= backing_bits(backing) << (i * 2);
         }
+        writer.write_bytes(&val.to_le_bytes());
     }
 
     writer.finish()
@@ -74,5 +71,32 @@ mod tests {
             uint32_bytes[3],
         ]);
         assert_eq!(val & 0xFF, 0b00_11_10_01);
+    }
+
+    #[test]
+    fn test_five_properties_span_two_uint32_words() {
+        let keys = [4u16, 7, 37, 5, 8];
+        let result = encode_toc(&keys);
+        let keys_len = keys.len() + 1;
+        assert_eq!(
+            result.len(),
+            keys_len + 8,
+            "five keys must emit two uint32 words: the runtime reloads a word every {} codes",
+            TOC_CODES_PER_WORD
+        );
+        let second = u32::from_le_bytes([
+            result[keys_len + 4],
+            result[keys_len + 5],
+            result[keys_len + 6],
+            result[keys_len + 7],
+        ]);
+        assert_eq!(second & 0x03, 0b10, "key 8 is float and starts a new word");
+    }
+
+    #[test]
+    fn test_eight_properties_emit_two_words() {
+        let keys = [4u16, 7, 37, 5, 8, 13, 14, 18];
+        let result = encode_toc(&keys);
+        assert_eq!(result.len(), keys.len() + 1 + 8);
     }
 }

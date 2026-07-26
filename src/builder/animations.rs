@@ -13,7 +13,7 @@ use super::parsers::{
     json_value_to_string, json_value_to_u64, parse_loop_type, property_key_for_object,
     validate_discrete_keyframe_interpolation,
 };
-use super::spec::{AnimationSpec, InterpolatorDef};
+use super::spec::{AnimationSpec, InterpolatorDef, KeyframeGroupSpec};
 
 /// Registers named interpolators from all animations into the object list.
 /// Populates `interpolator_name_to_index` and `interpolator_defs` maps.
@@ -118,9 +118,21 @@ pub(crate) fn build_animations(
         objects.push(Box::new(linear));
         animation_name_to_index.insert(animation.name.clone(), animation_list_index);
 
+        // Group keyframe groups by target object so all keyed properties for
+        // the same object share a single KeyedObject, matching the official
+        // Rive encoder's output structure.
+        let mut groups_by_object: std::collections::BTreeMap<String, Vec<&KeyframeGroupSpec>> =
+            std::collections::BTreeMap::new();
         for group in &animation.keyframes {
-            let object_index = *object_name_to_index.get(&group.object).ok_or_else(|| {
-                format!("unknown object referenced in keyframes: '{}'", group.object)
+            groups_by_object
+                .entry(group.object.clone())
+                .or_default()
+                .push(group);
+        }
+
+        for (object_name, groups) in groups_by_object {
+            let object_index = *object_name_to_index.get(&object_name).ok_or_else(|| {
+                format!("unknown object referenced in keyframes: '{}'", object_name)
             })?;
             let keyed_object_id = object_index
                 .checked_sub(artboard_start)
@@ -129,79 +141,48 @@ pub(crate) fn build_animations(
                 object_id: keyed_object_id as u64,
             }));
 
-            let property_key =
-                property_key_for_object(&group.property, objects[object_index].type_key())
-                    .ok_or_else(|| {
-                        format!(
-                            "unknown property referenced in keyframes: '{}'",
-                            group.property
-                        )
-                    })?;
-            objects.push(Box::new(KeyedProperty {
-                property_key: property_key as u64,
-            }));
-
-            for frame in &group.frames {
-                let interp_type = match &frame.interpolation {
-                    Some(name) => interpolation_type_from_name(name)?,
-                    None => 1,
-                };
-                let interp_id = match &frame.interpolator {
-                    Some(name) => {
-                        let idx = *interpolator_name_to_index.get(name).ok_or_else(|| {
-                            format!("unknown interpolator referenced: '{}'", name)
-                        })?;
-                        idx as u64
-                    }
-                    None => u32::MAX as u64,
-                };
-
-                match property_backing_type(property_key) {
-                    Some(BackingType::Color) => {
-                        let color = json_value_to_color(&frame.value).ok_or_else(|| {
+            for group in groups {
+                let property_key =
+                    property_key_for_object(&group.property, objects[object_index].type_key())
+                        .ok_or_else(|| {
                             format!(
-                                "invalid color keyframe value for object '{}' property '{}' at frame {}",
-                                group.object, group.property, frame.frame
+                                "unknown property referenced in keyframes: '{}'",
+                                group.property
                             )
                         })?;
-                        let mut kf = KeyFrameColor::new(frame.frame, color);
-                        kf.interpolation_type = interp_type;
-                        kf.interpolator_id = interp_id;
-                        objects.push(Box::new(kf));
-                    }
-                    Some(BackingType::String) => {
-                        validate_discrete_keyframe_interpolation(
-                            &group.object,
-                            &group.property,
-                            frame.frame,
-                            frame.interpolation.as_deref(),
-                            frame.interpolator.as_deref(),
-                            interp_type,
-                            interp_id,
-                        )?;
-                        let value = json_value_to_string(&frame.value).ok_or_else(|| {
-                            format!(
-                                "invalid string keyframe value for object '{}' property '{}' at frame {}",
-                                group.object, group.property, frame.frame
-                            )
-                        })?;
-                        objects.push(Box::new(KeyFrameString {
-                            frame: frame.frame,
-                            value,
-                        }));
-                    }
-                    Some(BackingType::UInt) => {
-                        if property_key == property_keys::EVENT_TRIGGER {
-                            objects.push(Box::new(KeyFrameCallback { frame: frame.frame }));
-                            continue;
+                objects.push(Box::new(KeyedProperty {
+                    property_key: property_key as u64,
+                }));
+
+                for frame in &group.frames {
+                    let interp_type = match &frame.interpolation {
+                        Some(name) => interpolation_type_from_name(name)?,
+                        None => 1,
+                    };
+                    let interp_id = match &frame.interpolator {
+                        Some(name) => {
+                            let idx = *interpolator_name_to_index.get(name).ok_or_else(|| {
+                                format!("unknown interpolator referenced: '{}'", name)
+                            })?;
+                            idx as u64
                         }
-                        let value = json_value_to_u64(&frame.value).ok_or_else(|| {
-                            format!(
-                                "invalid integer keyframe value for object '{}' property '{}' at frame {}",
-                                group.object, group.property, frame.frame
-                            )
-                        })?;
-                        if is_bool_property(property_key) {
+                        None => u32::MAX as u64,
+                    };
+
+                    match property_backing_type(property_key) {
+                        Some(BackingType::Color) => {
+                            let color = json_value_to_color(&frame.value).ok_or_else(|| {
+                                format!(
+                                    "invalid color keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                )
+                            })?;
+                            let mut kf = KeyFrameColor::new(frame.frame, color);
+                            kf.interpolation_type = interp_type;
+                            kf.interpolator_id = interp_id;
+                            objects.push(Box::new(kf));
+                        }
+                        Some(BackingType::String) => {
                             validate_discrete_keyframe_interpolation(
                                 &group.object,
                                 &group.property,
@@ -211,28 +192,61 @@ pub(crate) fn build_animations(
                                 interp_type,
                                 interp_id,
                             )?;
-                            objects.push(Box::new(KeyFrameBool {
+                            let value = json_value_to_string(&frame.value).ok_or_else(|| {
+                                format!(
+                                    "invalid string keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                )
+                            })?;
+                            objects.push(Box::new(KeyFrameString {
                                 frame: frame.frame,
-                                value: value != 0,
+                                value,
                             }));
-                        } else {
-                            let mut kf = KeyFrameUint::new(frame.frame, value);
+                        }
+                        Some(BackingType::UInt) => {
+                            if property_key == property_keys::EVENT_TRIGGER {
+                                objects.push(Box::new(KeyFrameCallback { frame: frame.frame }));
+                                continue;
+                            }
+                            let value = json_value_to_u64(&frame.value).ok_or_else(|| {
+                                format!(
+                                    "invalid integer keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                )
+                            })?;
+                            if is_bool_property(property_key) {
+                                validate_discrete_keyframe_interpolation(
+                                    &group.object,
+                                    &group.property,
+                                    frame.frame,
+                                    frame.interpolation.as_deref(),
+                                    frame.interpolator.as_deref(),
+                                    interp_type,
+                                    interp_id,
+                                )?;
+                                objects.push(Box::new(KeyFrameBool {
+                                    frame: frame.frame,
+                                    value: value != 0,
+                                }));
+                            } else {
+                                let mut kf = KeyFrameUint::new(frame.frame, value);
+                                kf.interpolation_type = interp_type;
+                                kf.interpolator_id = interp_id;
+                                objects.push(Box::new(kf));
+                            }
+                        }
+                        _ => {
+                            let value = json_value_to_f32(&frame.value).ok_or_else(|| {
+                                format!(
+                                    "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
+                                    group.object, group.property, frame.frame
+                                )
+                            })?;
+                            let mut kf = KeyFrameDouble::new(frame.frame, value);
                             kf.interpolation_type = interp_type;
                             kf.interpolator_id = interp_id;
                             objects.push(Box::new(kf));
                         }
-                    }
-                    _ => {
-                        let value = json_value_to_f32(&frame.value).ok_or_else(|| {
-                            format!(
-                                "invalid numeric keyframe value for object '{}' property '{}' at frame {}",
-                                group.object, group.property, frame.frame
-                            )
-                        })?;
-                        let mut kf = KeyFrameDouble::new(frame.frame, value);
-                        kf.interpolation_type = interp_type;
-                        kf.interpolator_id = interp_id;
-                        objects.push(Box::new(kf));
                     }
                 }
             }

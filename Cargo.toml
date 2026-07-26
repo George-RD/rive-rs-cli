@@ -20,11 +20,11 @@ thiserror = "2"
 ureq = { version = "2", features = ["json"] }
 rmcp = { version = "0.16", optional = true, features = ["server", "transport-io", "macros"] }
 tokio = { version = "1", optional = true, features = ["rt-multi-thread", "macros", "fs"] }
-schemars = { version = "1", optional = true }
+schemars = "1"
 
 [features]
 default = []
-mcp = ["dep:rmcp", "dep:tokio", "dep:schemars"]
+mcp = ["dep:rmcp", "dep:tokio"]
 
 [dev-dependencies]
 proptest = "1"

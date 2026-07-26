@@ -1,4 +1,5 @@
 {
+  "scene_format_version": 1,
   "artboard": {
     "name": "BadValues",
     "width": -500,
@@ -6,17 +7,21 @@
     "children": [
       {
         "type": "shape",
+        "name": "BadShape",
         "children": [
           {
             "type": "ellipse",
+            "name": "BadEllipse",
             "width": 100.0,
             "height": 100.0
           },
           {
             "type": "fill",
+            "name": "BadFill",
             "children": [
               {
                 "type": "solid_color",
+                "name": "BadColor",
                 "color": "FF"
               }
             ]

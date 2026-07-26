@@ -42,12 +42,11 @@ JSON SceneSpec (tests/fixtures/*.json)
 | `src/ai/` | AI-assisted generation, repair, and evaluation |
 | `src/mcp/` | Optional MCP server (`mcp` feature) |
 | `tests/` | E2E CLI tests, JSON fixtures, Playwright runtime regression |
-| `tests/fixtures/` | ~55 JSON scene specs + 3 intentionally invalid fixtures |
+| `tests/fixtures/` | 60 JSON scene specs + 3 intentionally invalid fixtures |
 | `tests/playwright/` | Browser-based runtime and visual regression harness |
 | `docs/` | Format spec, JSON schema, install/release docs, testing strategy, cookbook |
 | `fuzz/` | `cargo-fuzz` target for adversarial parser testing |
-| `specs/` | Domain specs for missing Rive object types (now all implemented) |
-| `scripts/` | Multi-model AI race harness (`run_race.sh`) |
+| `scripts/` | `parity_metric.py` and `vision_gate_orchestrator.py` parity tooling |
 | `demo/` | Node.js demo server and interactive HTML viewer |
 
 ## Development Commands
@@ -59,12 +58,12 @@ cargo build --release
 cargo build --features mcp          # enable MCP server
 
 # Test
-cargo test                          # unit + integration tests
+cargo test --locked --all-features   # unit + integration tests, including the mcp module
 cargo test --test e2e               # e2e tests only
 cargo test test_name                # single test by name
 
 # Lint / Format
-cargo clippy -- -D warnings
+cargo clippy --all-targets --all-features -- -D warnings
 cargo fmt --check
 
 # CLI usage
@@ -93,7 +92,7 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 - **Edition 2024** (requires Rust 1.84+)
 - **No comments or docstrings** — code must be self-documenting
 - **No magic numbers** — use `type_keys::*` and `property_keys::*` constants
-- `#![allow(dead_code, unused_imports)]` in `main.rs` is intentional (incremental build)
+- **Warnings are errors** — `.cargo/config.toml` sets `RUSTFLAGS = ["-D", "warnings"]` locally and CI sets the same
 
 ### Error Handling
 - **No `unwrap()` in library code** — use `Result` + `?` operator
@@ -129,10 +128,11 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 | `src/validator/mod.rs` | `validate_riv()`, `inspect_riv()`, `decompile()` entry points |
 | `src/ai/provider.rs` | `AiProvider` trait + factory |
 | `src/ai/repair.rs` | `RepairEngine` multi-pass auto-fix for generated scenes |
-| `tests/e2e.rs` | ~4020-line integration test suite (100+ tests) |
+| `tests/e2e.rs` | 4,397-line integration test suite (168 tests) |
 | `tests/fixtures/` | JSON scene fixtures for all test layers |
 | `Cargo.toml` | Root manifest: single crate, edition 2024, optional `mcp` feature |
-| `docs/scene.schema.v1.json` | JSON Schema v1 for SceneSpec input |
+| `docs/scene.schema.v1.json` | Complete JSON Schema for SceneSpec input, generated from `src/builder/spec.rs`; regenerate with `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync` |
+| `docs/ai/scene-prompt-schema.json` | Curated schema subset embedded in the `ai generate` system prompt |
 | `docs/format-spec.md` | Binary encoding reference for the `.riv` format |
 
 ## Runtime/Tooling Preferences
@@ -140,7 +140,7 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 - **Language**: Rust (stable, edition 2024)
 - **Package manager**: Cargo
 - **Node.js**: Required for Playwright regression tests and demo server (Node 20+ recommended)
-- **Shell tools**: `jq`, `sqlite3`, `python3` used by `scripts/run_race.sh`
+- **Shell tools**: `python3` used by `scripts/parity_metric.py` and `scripts/vision_gate_orchestrator.py`
 - **CI/CD**: GitHub Actions (`.github/workflows/ci.yml`, `.github/workflows/release.yml`)
 - **Fuzzing**: `cargo-fuzz` + nightly Rust
 - **No pinned Rust toolchain** — uses `dtolnay/rust-toolchain@stable` in CI
@@ -150,16 +150,16 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 ## Testing & QA
 
 ### Layers
-1. **Unit tests**: 31 inline `#[cfg(test)]` blocks across `src/`. Cover object type keys, property emission, encoder primitives, validator parsing, and builder deserialization.
+1. **Unit tests**: 32 inline `#[cfg(test)]` blocks across `src/`, holding 534 tests. Cover object type keys, property emission, encoder primitives, ToC packing against the official reference file, validator parsing, builder deserialization, and scene-schema sync.
 2. **Property tests**: `proptest` roundtrips in `src/encoder/binary_writer.rs` (varuint, float, string, color, bool).
-3. **E2E CLI tests**: `tests/e2e.rs` (~4020 lines, 100+ tests). Spawns `cargo run --` subprocesses for `generate`, `validate`, `inspect`, `decompile` against all 55+ fixtures. Tests magic bytes, exit codes, filter flags, error paths, version warnings, and roundtrips.
+3. **E2E CLI tests**: `tests/e2e.rs` (4,397 lines, 168 tests). Spawns the compiled binary for `generate`, `validate`, `inspect`, `decompile` against all 63 fixtures. Tests magic bytes, exit codes, filter flags, error paths, version warnings, and roundtrips.
 4. **Runtime regression**: Playwright loads each generated `.riv` in `@rive-app/canvas` WASM via headless Chromium. Catches structural issues invisible to the Rust validator.
 5. **Visual regression**: Pixel-level diff against committed PNG baselines (`tests/playwright/baselines/`). 1024×1024 captures, configurable thresholds per fixture/frame.
 6. **Fuzzing**: `fuzz/fuzz_targets/fuzz_parse_riv.rs` feeds random bytes into the parser.
 
 ### Running Tests
 ```bash
-cargo test                          # all Rust tests
+cargo test --locked --all-features   # all Rust tests
 cargo test --test e2e               # CLI integration tests only
 npx -y -p playwright node tests/playwright/regression.js
 cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
@@ -167,8 +167,8 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 
 ### CI Pipeline
 - `cargo fmt --check`
-- `cargo clippy -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
-- `cargo test`
+- `cargo clippy --all-targets --all-features -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
+- `cargo test --locked --all-features`
 - Playwright runtime regression (depends on `check` job)
 - Demo console error validation (depends on `check` job)
 
@@ -182,7 +182,7 @@ Steps:
 1. Add constants: define the new `type_key` and each `property_key` as `u16` constants in `src/objects/core.rs` or the appropriate module.
 2. Add struct: create a Rust struct with fields matching the C++ base class properties.
 3. Implement `RiveObject`: implement `type_key() -> u16` and `properties() -> Vec<Property>` for the struct. Map each field to its property key and backing type.
-4. Add builder dispatch: wire the new type into `src/builder.rs` so the JSON deserializer can construct it from scene specifications.
+4. Add builder dispatch: wire the new type into `src/builder/objects.rs` so the JSON deserializer can construct it from scene specifications.
 5. Add unit tests: add a `#[cfg(test)] mod tests` block in the same file. Cover `type_key()` correctness, `properties()` length and ordering, and round-trip through the encoder.
 6. Add fixture: create a minimal JSON fixture in `tests/fixtures/` that exercises the new object type. Register it in `tests/e2e.rs`.
 7. Run full validation:
@@ -245,7 +245,7 @@ Steps:
 2. Cross-compile: build `--release --locked` for all four targets:
    ```bash
    cargo build --release --locked --target x86_64-unknown-linux-gnu
-   cargo build --release --locked --target x86_64-pc-windows-gnu
+   cargo build --release --locked --target x86_64-pc-windows-msvc
    cargo build --release --locked --target x86_64-apple-darwin
    cargo build --release --locked --target aarch64-apple-darwin
    ```
@@ -263,8 +263,8 @@ The following commands must pass locally before opening a pull request:
 
 ```bash
 cargo fmt --check
-cargo clippy -- -D warnings
-cargo test
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --locked --all-features
 ```
 
 Additional validation:
@@ -277,8 +277,8 @@ The CI pipeline consists of three jobs:
 
 - **check** job:
   - `cargo fmt --check`
-  - `cargo clippy -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
-  - `cargo test`
+  - `cargo clippy --all-targets --all-features -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
+  - `cargo test --locked --all-features`
 
 - **playwright** job (depends on `check`):
   - Runs `tests/playwright/regression.js`
@@ -291,7 +291,7 @@ The CI pipeline consists of three jobs:
 ## Binary Format Quick Reference
 
 - **Header**: `RIVE` (4B) + major(varuint=7) + minor(varuint=0) + fileId(varuint) + ToC
-- **ToC**: property keys (varuint, 0-terminated) + backing bits (2-bit per key, 16 per uint32 LE)
+- **ToC**: property keys (varuint, 0-terminated) + backing bits (2-bit per key, **4 per uint32 LE**, `ceil(n/4)` words — the reader reloads a word every 4 codes; see `docs/format-spec.md`)
 - **Backing types**: uint/bool=0, string=1, float=2, color=3
 - **Object**: typeKey(varuint) + [propKey(varuint) + value]* + 0 terminator
 - **Booleans**: single raw byte, **not** LEB128 varuint
@@ -300,7 +300,8 @@ The CI pipeline consists of three jobs:
 
 - **Never guess property IDs or type keys** — cross-reference with C++ `core_registry.hpp` and `*_base.hpp` files
 - **Never write CoreBoolType as varuint** — booleans encode as single raw byte
-- **Never include known properties in ToC** — only unknown properties; including known ones causes WASM runtime import failures
+- **Never omit a written property key from the ToC** — the ToC must declare every key the file writes. The runtime tries the object's deserializer, then its built-in registry, then the ToC; a key in none of the three aborts the object mid-stream. Declaring a natively-known key is redundant but harmless, and is what lets an older runtime skip object types it does not have.
+- **Never emit an object type the runtime does not have without a complete ToC** — unknown types are skipped gracefully only if their properties are skippable
 - **Never write Artboard parentId** — Artboard is root, no parent reference
 - **Artboard property order**: width(7) → height(8) → name(4)
 - **Never use TrimPath mode_value 0** — valid modes are 1 (sequential) or 2 (synchronized)

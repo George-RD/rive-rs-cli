@@ -54,7 +54,43 @@ const FIXTURES = [
   "text_modifiers",
   "triangle",
   "view_model_instances",
+  "asset_extensions",
+  "constraints",
+  "data_converters",
+  "effects",
+  "events_extended",
+  "follow_path_constraint",
+  "graphics_misc",
+  "layout_extensions",
+  "mesh",
+  "nested_extensions",
+  "new_constraints",
+  "nslicer",
+  "scripting",
+  "transition_comparators",
 ];
+
+const KNOWN_RUNTIME_GAPS = new Set(["scripting", "transition_comparators"]);
+
+const RUNTIME_ONLY_FIXTURES = new Set([
+  "asset_extensions",
+  "constraints",
+  "data_converters",
+  "effects",
+  "events_extended",
+  "follow_path_constraint",
+  "graphics_misc",
+  "layout_extensions",
+  "mesh",
+  "nested_extensions",
+  "new_constraints",
+  "nslicer",
+  "scripting",
+  "transition_comparators",
+]);
+
+const VISUAL_FIXTURES = FIXTURES.filter((fixture) => !RUNTIME_ONLY_FIXTURES.has(fixture));
+
 function run(command, args, cwd = ROOT) {
   const result = spawnSync(command, args, { cwd, stdio: "inherit" });
   if (result.status !== 0) {
@@ -159,6 +195,8 @@ module.exports = {
   HARNESS_DIR,
   OUT_DIR,
   FIXTURES,
+  KNOWN_RUNTIME_GAPS,
+  VISUAL_FIXTURES,
   run,
   waitForServer,
   buildFixtures,

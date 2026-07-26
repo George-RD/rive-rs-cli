@@ -51,22 +51,11 @@ impl RiveObject for NSlicerTileMode {
 pub struct NSlicer {
     pub name: String,
     pub parent_id: u64,
-    pub initial_width: f32,
-    pub initial_height: f32,
-    pub width: f32,
-    pub height: f32,
 }
 
 impl NSlicer {
     pub fn new(name: String, parent_id: u64) -> Self {
-        Self {
-            name,
-            parent_id,
-            initial_width: 0.0,
-            initial_height: 0.0,
-            width: 0.0,
-            height: 0.0,
-        }
+        Self { name, parent_id }
     }
 }
 
@@ -76,7 +65,7 @@ impl RiveObject for NSlicer {
     }
 
     fn properties(&self) -> Vec<Property> {
-        let mut props = vec![
+        vec![
             Property {
                 key: property_keys::COMPONENT_NAME,
                 value: PropertyValue::String(self.name.clone()),
@@ -85,32 +74,7 @@ impl RiveObject for NSlicer {
                 key: property_keys::COMPONENT_PARENT_ID,
                 value: PropertyValue::UInt(self.parent_id),
             },
-        ];
-        if self.initial_width != 0.0 {
-            props.push(Property {
-                key: property_keys::NSLICER_INITIAL_WIDTH,
-                value: PropertyValue::Float(self.initial_width),
-            });
-        }
-        if self.initial_height != 0.0 {
-            props.push(Property {
-                key: property_keys::NSLICER_INITIAL_HEIGHT,
-                value: PropertyValue::Float(self.initial_height),
-            });
-        }
-        if self.width != 0.0 {
-            props.push(Property {
-                key: property_keys::NSLICER_WIDTH,
-                value: PropertyValue::Float(self.width),
-            });
-        }
-        if self.height != 0.0 {
-            props.push(Property {
-                key: property_keys::NSLICER_HEIGHT,
-                value: PropertyValue::Float(self.height),
-            });
-        }
-        props
+        ]
     }
 }
 
@@ -223,6 +187,10 @@ pub struct NSlicedNode {
     pub scale_x: f32,
     pub scale_y: f32,
     pub opacity: f32,
+    pub initial_width: f32,
+    pub initial_height: f32,
+    pub width: f32,
+    pub height: f32,
 }
 
 impl NSlicedNode {
@@ -236,6 +204,10 @@ impl NSlicedNode {
             scale_x: 1.0,
             scale_y: 1.0,
             opacity: 1.0,
+            initial_width: 0.0,
+            initial_height: 0.0,
+            width: 0.0,
+            height: 0.0,
         }
     }
 }
@@ -292,6 +264,30 @@ impl RiveObject for NSlicedNode {
                 value: PropertyValue::Float(self.opacity),
             });
         }
+        if self.initial_width != 0.0 {
+            props.push(Property {
+                key: property_keys::NSLICER_INITIAL_WIDTH,
+                value: PropertyValue::Float(self.initial_width),
+            });
+        }
+        if self.initial_height != 0.0 {
+            props.push(Property {
+                key: property_keys::NSLICER_INITIAL_HEIGHT,
+                value: PropertyValue::Float(self.initial_height),
+            });
+        }
+        if self.width != 0.0 {
+            props.push(Property {
+                key: property_keys::NSLICER_WIDTH,
+                value: PropertyValue::Float(self.width),
+            });
+        }
+        if self.height != 0.0 {
+            props.push(Property {
+                key: property_keys::NSLICER_HEIGHT,
+                value: PropertyValue::Float(self.height),
+            });
+        }
         props
     }
 }
@@ -331,14 +327,29 @@ mod tests {
     }
 
     #[test]
-    fn test_nslicer_with_values() {
-        let mut obj = NSlicer::new("slicer".to_string(), 1);
+    fn test_nslicer_carries_no_size_properties() {
+        let obj = NSlicer::new("slicer".to_string(), 1);
+        let props = obj.properties();
+        assert_eq!(
+            props.len(),
+            2,
+            "NSlicer derives its dimensions from its parent Image; keys 697-700 belong to NSlicedNode"
+        );
+    }
+
+    #[test]
+    fn test_nsliced_node_with_sizes() {
+        let mut obj = NSlicedNode::new("node".to_string(), 1);
         obj.initial_width = 200.0;
         obj.initial_height = 80.0;
         obj.width = 400.0;
         obj.height = 80.0;
         let props = obj.properties();
-        assert_eq!(props.len(), 6);
+        let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
+        assert!(keys.contains(&property_keys::NSLICER_INITIAL_WIDTH));
+        assert!(keys.contains(&property_keys::NSLICER_INITIAL_HEIGHT));
+        assert!(keys.contains(&property_keys::NSLICER_WIDTH));
+        assert!(keys.contains(&property_keys::NSLICER_HEIGHT));
     }
 
     #[test]

@@ -1,5 +1,5 @@
 window.__RIVE_FIXTURE_MANIFEST = {
-  "generatedAt": "2026-06-03T11:06:32.900Z",
+  "generatedAt": "2026-07-26T10:05:13.817Z",
   "fixtures": [
     {
       "name": "animation",
@@ -137,6 +137,66 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": true
     },
     {
+      "name": "comparison_clip_tests",
+      "category": "interactive",
+      "scope": "visual",
+      "tags": [
+        "interactive",
+        "structure",
+        "animated"
+      ],
+      "expectation": "comparison_clip_tests fixture loaded.",
+      "artboards": [
+        "Empty-Shape",
+        "One-Clipping-Shape-Visible-One-Hidden",
+        "Hidden-Path-Visible-Path"
+      ],
+      "stateMachine": "State Machine 1",
+      "animations": [
+        "Timeline 1"
+      ],
+      "animationsByArtboard": {
+        "Empty-Shape": [
+          "Timeline 1"
+        ],
+        "One-Clipping-Shape-Visible-One-Hidden": [
+          "Timeline 1"
+        ],
+        "Hidden-Path-Visible-Path": [
+          "Timeline 1"
+        ]
+      },
+      "replay": true
+    },
+    {
+      "name": "comparison_official_test",
+      "category": "interactive",
+      "scope": "visual",
+      "tags": [
+        "interactive",
+        "animated"
+      ],
+      "expectation": "comparison_official_test fixture loaded.",
+      "stateMachine": "State Machine 1",
+      "animations": [
+        "Fire",
+        "Off",
+        "On",
+        "OffOn",
+        "OnOff"
+      ],
+      "animationsByArtboard": {
+        "New Artboard": [
+          "Fire",
+          "Off",
+          "On",
+          "OffOn",
+          "OnOff"
+        ]
+      },
+      "replay": true
+    },
+    {
       "name": "comparison_quantize_test",
       "category": "animated",
       "scope": "visual",
@@ -156,8 +216,7 @@ window.__RIVE_FIXTURE_MANIFEST = {
       },
       "replay": true,
       "hasReference": true,
-      "referenceSource": "riv/reference/quantize_test.riv",
-      "gapTypes": []
+      "referenceSource": "riv/reference/quantize_test.riv"
     },
     {
       "name": "comparison_trim",
@@ -170,8 +229,7 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "expectation": "Recreation of official trim.riv using PointsPath and StraightVertex. Near-exact match.",
       "replay": false,
       "hasReference": true,
-      "referenceSource": "riv/reference/trim.riv",
-      "gapTypes": []
+      "referenceSource": "riv/reference/trim.riv"
     },
     {
       "name": "constraints",
@@ -635,9 +693,14 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "category": "static",
       "scope": "visual",
       "tags": [
-        "static"
+        "static",
+        "structure"
       ],
       "expectation": "nslicer fixture loaded.",
+      "artboards": [
+        "ImageSlice",
+        "VectorSlice"
+      ],
       "replay": false
     },
     {
