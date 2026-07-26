@@ -48,3 +48,4 @@ This document tracks format behavior validated during `rive-cli` development and
 - `StateMachineLayer` import requires sentinel states to exist: AnyState (`62`), EntryState (`63`), ExitState (`64`)
 - If user spec omits AnyState, builder injects it
 - Transitions must be emitted immediately after their source state
+- A `StateMachineLayer` must contain both an `EntryState` (`63`) and an `ExitState` (`64`). Omitting either sentinel produces a structurally valid file that the Rive runtime rejects during import; `validate` alone does not detect this runtime-level constraint.

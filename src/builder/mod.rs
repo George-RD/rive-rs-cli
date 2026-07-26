@@ -8,6 +8,17 @@ mod validation;
 
 pub use scene::{artboard_presets, build_scene};
 pub use spec::SceneSpec;
+pub fn animatable_properties_for(type_name: &str) -> Vec<&'static str> {
+    parsers::animatable_properties_for_object_type(type_name)
+}
+
+pub fn property_key_for_object(type_name: &str, property_name: &str) -> Option<u16> {
+    parsers::animatable_property_key_for_object_type(type_name, property_name)
+}
+
+pub fn generic_animatable_properties() -> Vec<&'static str> {
+    parsers::generic_animatable_property_names()
+}
 
 pub fn scene_schema() -> serde_json::Value {
     let mut schema = serde_json::to_value(schemars::schema_for!(SceneSpec))

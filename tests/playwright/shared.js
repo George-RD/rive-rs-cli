@@ -6,8 +6,9 @@ const path = require("node:path");
 const ROOT = path.resolve(__dirname, "..", "..");
 const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
+const SHOWCASE_DIR = path.join(ROOT, "showcase");
 
-const FIXTURES = [
+const BASE_FIXTURES = [
   "minimal",
   "shapes",
   "animation",
@@ -70,6 +71,15 @@ const FIXTURES = [
   "transition_comparators",
 ];
 
+const SHOWCASE_FIXTURES = fs
+  .readdirSync(SHOWCASE_DIR, { withFileTypes: true })
+  .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+  .map((entry) => `showcase_${path.basename(entry.name, ".json")}`)
+  .sort();
+
+const FIXTURES = [...BASE_FIXTURES, ...SHOWCASE_FIXTURES];
+const ALL_FIXTURES = FIXTURES;
+
 const KNOWN_RUNTIME_GAPS = new Set(["scripting", "transition_comparators"]);
 
 const RUNTIME_ONLY_FIXTURES = new Set([
@@ -89,7 +99,7 @@ const RUNTIME_ONLY_FIXTURES = new Set([
   "transition_comparators",
 ]);
 
-const VISUAL_FIXTURES = FIXTURES.filter((fixture) => !RUNTIME_ONLY_FIXTURES.has(fixture));
+const VISUAL_FIXTURES = ALL_FIXTURES.filter((fixture) => !RUNTIME_ONLY_FIXTURES.has(fixture));
 
 function run(command, args, cwd = ROOT) {
   const result = spawnSync(command, args, { cwd, stdio: "inherit" });
@@ -108,7 +118,7 @@ async function waitForServer(port, timeoutMs = 5000) {
     try {
       await new Promise((resolve, reject) => {
         const request = http.get(
-          { hostname: "127.0.0.1", port, path: "/harness.html", timeout: 2000 },
+          { hostname: "127.0.0.1", port, path: "/tests/playwright/harness.html", timeout: 2000 },
           (response) => {
             response.resume();
             if (response.statusCode === 200) {
@@ -132,10 +142,17 @@ async function waitForServer(port, timeoutMs = 5000) {
   throw new Error(`server did not start on port ${port}`);
 }
 
-function buildFixtures(fixtures = FIXTURES) {
+function inputForFixture(fixture) {
+  if (fixture.startsWith("showcase_")) {
+    return path.join(SHOWCASE_DIR, `${fixture.slice("showcase_".length)}.json`);
+  }
+  return path.join(ROOT, "tests", "fixtures", `${fixture}.json`);
+}
+
+function buildFixtures(fixtures = ALL_FIXTURES) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   for (const fixture of fixtures) {
-    const input = path.join(ROOT, "tests", "fixtures", `${fixture}.json`);
+    const input = inputForFixture(fixture);
     const output = path.join(OUT_DIR, `${fixture}.riv`);
     run("cargo", ["run", "--quiet", "--", "generate", input, "-o", output]);
     fs.copyFileSync(output, path.join(HARNESS_DIR, `${fixture}.riv`));
@@ -144,12 +161,12 @@ function buildFixtures(fixtures = FIXTURES) {
 
 function startServer(port) {
   return spawn("python3", ["-m", "http.server", String(port), "--bind", "127.0.0.1"], {
-    cwd: HARNESS_DIR,
+    cwd: ROOT,
     stdio: "ignore",
   });
 }
 
-function cleanupFixtures(fixtures = FIXTURES) {
+function cleanupFixtures(fixtures = ALL_FIXTURES) {
   for (const fixture of fixtures) {
     fs.rmSync(path.join(HARNESS_DIR, `${fixture}.riv`), { force: true });
   }
@@ -165,7 +182,7 @@ async function openFixturePage(browser, port, fixture, { artboard, pageOptions }
     }
   });
 
-  let url = `http://127.0.0.1:${port}/harness.html?file=${fixture}.riv`;
+  let url = `http://127.0.0.1:${port}/tests/playwright/harness.html?file=${fixture}.riv`;
   if (artboard) {
     url += `&artboard=${encodeURIComponent(artboard)}`;
   }
@@ -196,6 +213,8 @@ module.exports = {
   OUT_DIR,
   FIXTURES,
   KNOWN_RUNTIME_GAPS,
+  SHOWCASE_FIXTURES,
+  ALL_FIXTURES,
   VISUAL_FIXTURES,
   run,
   waitForServer,

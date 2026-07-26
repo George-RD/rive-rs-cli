@@ -3,10 +3,11 @@ use std::collections::{HashMap, HashSet};
 use crate::objects::core::{BackingType, is_bool_property, property_backing_type, type_keys};
 
 use super::parsers::{
-    condition_op_is_valid, interpolation_type_from_name, json_value_to_color, json_value_to_f32,
-    json_value_to_string, json_value_to_u64, parse_color, parse_fill_rule, parse_loop_type,
-    parse_stroke_cap, parse_stroke_join, parse_trim_mode, property_key_for_object,
-    required_u64_field, validate_discrete_keyframe_interpolation,
+    animatable_properties_for_object_type, condition_op_is_valid, interpolation_type_from_name,
+    invalid_animatable_property_error, json_value_to_color, json_value_to_f32,
+    json_value_to_string, json_value_to_u64, object_type_name_for_key, parse_color,
+    parse_fill_rule, parse_loop_type, parse_stroke_cap, parse_stroke_join, parse_trim_mode,
+    property_key_for_object, required_u64_field, validate_discrete_keyframe_interpolation,
 };
 use super::scene::resolve_artboard_dimensions;
 use super::spec::{
@@ -100,17 +101,41 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
                     interp_names.insert(interp.name.clone());
                 }
             }
-
             for group in &animation.keyframes {
                 let object_type_key = *object_type_keys.get(&group.object).ok_or_else(|| {
                     format!("unknown object referenced in keyframes: '{}'", group.object)
                 })?;
+                let object_type_name = object_type_name_for_key(object_type_key);
+                if let Some(error) = invalid_animatable_property_error(
+                    &group.object,
+                    object_type_name,
+                    &group.property,
+                ) {
+                    return Err(error);
+                }
                 let property_key = property_key_for_object(&group.property, object_type_key)
                     .ok_or_else(|| {
-                        format!(
-                            "unknown property referenced in keyframes: '{}'",
-                            group.property
-                        )
+                        let available = animatable_properties_for_object_type(object_type_name);
+                        if available.is_empty() {
+                            format!(
+                                "keyframe targets '{}' ({}) with property '{}', but nothing on a {} is animatable; run `rive-cli describe {}` to see its fields",
+                                group.object,
+                                object_type_name,
+                                group.property,
+                                object_type_name,
+                                object_type_name
+                            )
+                        } else {
+                            format!(
+                                "keyframe targets '{}' ({}) with property '{}', which a {} does not have; animatable properties for a {} are: {}",
+                                group.object,
+                                object_type_name,
+                                group.property,
+                                object_type_name,
+                                object_type_name,
+                                available.join(", ")
+                            )
+                        }
                     })?;
 
                 for frame in &group.frames {
@@ -307,7 +332,27 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
                 }
             }
 
-            for layer in &state_machine.layers {
+            for (layer_index, layer) in state_machine.layers.iter().enumerate() {
+                let has_entry = layer
+                    .states
+                    .iter()
+                    .any(|state| matches!(state, StateSpec::Entry));
+                if !has_entry {
+                    return Err(format!(
+                        "state machine '{}' layer {} is missing an entry state; add a state with type 'entry'",
+                        state_machine.name, layer_index
+                    ));
+                }
+                let has_exit = layer
+                    .states
+                    .iter()
+                    .any(|state| matches!(state, StateSpec::Exit));
+                if !has_exit {
+                    return Err(format!(
+                        "state machine '{}' layer {} is missing an exit state; add a state with type 'exit'",
+                        state_machine.name, layer_index
+                    ));
+                }
                 for state in &layer.states {
                     match state {
                         StateSpec::Animation { animation }

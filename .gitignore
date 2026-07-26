@@ -1,6 +1,7 @@
 /target
 *.riv
 !demo/riv/reference/*.riv
+!showcase/*.riv
 .DS_Store
 __pycache__/
 evals/runs/

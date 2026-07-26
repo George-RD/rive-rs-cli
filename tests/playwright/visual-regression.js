@@ -5,6 +5,7 @@ const zlib = require("node:zlib");
 const {
   ROOT,
   VISUAL_FIXTURES,
+  SHOWCASE_FIXTURES,
   buildFixtures,
   startServer,
   waitForServer,
@@ -31,6 +32,8 @@ const SHOT_FRAMES = {
   game_hud: [0, 60, 120],
   mascot: [0, 30, 60],
 };
+
+const SHOWCASE_SHOT_FRAMES = new Set(SHOWCASE_FIXTURES);
 
 // Per-fixture or per-fixture+frame threshold overrides (animation non-determinism)
 const THRESHOLD_OVERRIDES = {
@@ -208,6 +211,9 @@ function printSummary(rows) {
 }
 
 function shotFramesForFixture(fixture) {
+  if (SHOWCASE_SHOT_FRAMES.has(fixture)) {
+    return [0, 30, 60];
+  }
   return SHOT_FRAMES[fixture] || [0];
 }
 
@@ -219,19 +225,22 @@ function thresholdForShot(fixture, frame) {
 
 const CAPTURE_FPS = 60;
 
-async function seekToFrame(page, frame) {
+async function seekToFrame(page, frame, animationName) {
+  if (!animationName) {
+    return;
+  }
   const settled = await page.evaluate(
-    async ({ frameIndex, fps }) => {
+    async ({ frameIndex, fps, name }) => {
       const instance = window.__VISUAL_RIVE;
       if (!instance || typeof instance.scrub !== "function") {
         return false;
       }
       instance.pause();
-      instance.scrub(undefined, frameIndex / fps);
+      instance.scrub([name], frameIndex / fps);
       await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
       return true;
     },
-    { frameIndex: frame, fps: CAPTURE_FPS },
+    { frameIndex: frame, fps: CAPTURE_FPS, name: animationName },
   );
 
   if (!settled) {
@@ -250,11 +259,12 @@ async function mountControlledRive(page, fixture, artboard) {
       return { ok: false, error: "missing canvas" };
     }
     originalCanvas.style.display = "none";
+    const animationName = window.__RIVE_INSTANCE?.animationNames?.[0] || null;
 
     const controlledCanvas = document.createElement("canvas");
     controlledCanvas.id = "canvas-controlled";
-    controlledCanvas.style.width = "100%";
-    controlledCanvas.style.height = "100%";
+    controlledCanvas.style.width = originalCanvas.style.width;
+    controlledCanvas.style.height = originalCanvas.style.height;
     controlledCanvas.width = originalCanvas.width;
     controlledCanvas.height = originalCanvas.height;
     originalCanvas.parentElement.appendChild(controlledCanvas);
@@ -271,9 +281,12 @@ async function mountControlledRive(page, fixture, artboard) {
         if (ab) {
           opts.artboard = ab;
         }
+        if (animationName) {
+          opts.animations = [animationName];
+        }
         window.__VISUAL_RIVE = new rive.Rive(opts);
       });
-      return { ok: true, error: "" };
+      return { ok: true, error: "", animationName };
     } catch (error) {
       return { ok: false, error: String(error || "unknown error") };
     }
@@ -282,7 +295,9 @@ async function mountControlledRive(page, fixture, artboard) {
   if (!result.ok) {
     throw new Error(`${fixture}.riv failed to mount controlled runtime: ${result.error}`);
   }
+  return result.animationName;
 }
+
 
 function baselineName(fixture, frame, artboard) {
   if (artboard) {
@@ -323,9 +338,12 @@ async function main() {
             pageOptions: { viewport: { width: 512, height: 512 }, deviceScaleFactor: 2 },
           });
 
-          await mountControlledRive(page, fixture, artboard);
+          const animationName = await mountControlledRive(page, fixture, artboard);
+          if (!animationName && frame === shotFramesForFixture(fixture)[0]) {
+            console.log(`${fixture}${artboard ? `[${artboard}]` : ""}: static capture (no linear animation; frame seeking skipped)`);
+          }
 
-          await seekToFrame(page, frame);
+          await seekToFrame(page, frame, animationName);
           const name = baselineName(fixture, frame, artboard);
           const label = artboard ? `${fixture}[${artboard}]@f${frame}` : `${fixture}@f${frame}`;
           const currentPath = path.join(CURRENT_DIR, name);

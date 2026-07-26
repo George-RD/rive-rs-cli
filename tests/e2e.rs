@@ -3679,6 +3679,58 @@ fn test_generate_missing_input_file() {
 }
 
 #[test]
+fn test_generate_rejects_shape_parametric_width_keyframe() {
+    let input = temp_output("shape_width").with_extension("json");
+    let output = temp_output("shape_width");
+    let _guard = CleanupOnDrop(input.clone());
+    let _output_guard = CleanupOnDrop(output.clone());
+    std::fs::write(
+        &input,
+        r#"{"scene_format_version":1,"artboard":{"name":"Test","width":100,"height":100,"children":[{"type":"shape","name":"Ring","children":[{"type":"ellipse","name":"RingGeometry","width":20,"height":20}]}],"animations":[{"name":"grow","fps":60,"duration":10,"keyframes":[{"object":"Ring","property":"width","frames":[{"frame":0,"value":20}]}]}]}}"#,
+    )
+    .unwrap();
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(!result.status.success());
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(stderr.contains("Ring"));
+    assert!(stderr.contains("(shape)"));
+    assert!(stderr.contains("width"));
+    assert!(stderr.contains("ellipse/rectangle"));
+    assert!(stderr.contains("scale_x"));
+}
+
+#[test]
+fn test_generate_accepts_ellipse_parametric_width_keyframe() {
+    let input = temp_output("ellipse_width").with_extension("json");
+    let output = temp_output("ellipse_width");
+    let _guard = CleanupOnDrop(input.clone());
+    let _output_guard = CleanupOnDrop(output.clone());
+    std::fs::write(
+        &input,
+        r#"{"scene_format_version":1,"artboard":{"name":"Test","width":100,"height":100,"children":[{"type":"shape","name":"Ring","children":[{"type":"ellipse","name":"RingGeometry","width":20,"height":20}]}],"animations":[{"name":"grow","fps":60,"duration":10,"keyframes":[{"object":"RingGeometry","property":"width","frames":[{"frame":0,"value":20},{"frame":9,"value":40}]}]}]}}"#,
+    )
+    .unwrap();
+    let result = cargo_run(&[
+        "generate",
+        input.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        result.status.success(),
+        "generate failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let validate = cargo_run(&["validate", output.to_str().unwrap()]);
+    assert!(validate.status.success());
+}
+
+#[test]
 fn test_generate_malformed_json() {
     let bad_json = temp_output("malformed").with_extension("json");
     std::fs::write(&bad_json, "{ this is not valid json }").unwrap();
@@ -3704,6 +3756,36 @@ fn test_generate_invalid_scene_spec() {
     );
     let stderr = String::from_utf8_lossy(&result.stderr);
     assert!(!stderr.is_empty(), "stderr should have error output");
+}
+
+#[test]
+fn test_generate_rejects_state_machine_layer_without_exit() {
+    let bad_spec = temp_output("missing_exit").with_extension("json");
+    let mut spec: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/state_machine.json"))
+            .expect("state machine fixture should be valid JSON");
+    let states = spec["artboard"]["state_machines"][0]["layers"][0]["states"]
+        .as_array_mut()
+        .expect("fixture should contain layer states");
+    states.retain(|state| state["type"] != "exit");
+    std::fs::write(
+        &bad_spec,
+        serde_json::to_vec_pretty(&spec).expect("mutated fixture should serialize"),
+    )
+    .expect("failed to write temporary fixture");
+    let _guard = CleanupOnDrop(bad_spec.clone());
+
+    let result = cargo_run(&["generate", bad_spec.to_str().unwrap()]);
+    assert!(
+        !result.status.success(),
+        "layer without exit should be rejected"
+    );
+    let stderr = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        stderr.contains("state machine 'Logic' layer 0 is missing an exit state")
+            && stderr.contains("type 'exit'"),
+        "unexpected error: {stderr}"
+    );
 }
 
 #[test]
@@ -4394,4 +4476,160 @@ fn test_generate_invalid_missing_version() {
         "invalid_missing_version",
         "missing field `scene_format_version`",
     );
+}
+
+#[test]
+fn test_new_templates_generate_and_validate() {
+    for template in [
+        "shape", "animated", "gradient", "spinner", "button", "multi",
+    ] {
+        let json = temp_output(&format!("new_{}.json", template));
+        let riv = temp_output(&format!("new_{}.riv", template));
+        cleanup(&json);
+        cleanup(&riv);
+        let generated = cargo_run(&["new", template, "-o", json.to_str().unwrap()]);
+        assert!(
+            generated.status.success(),
+            "new {} failed: {}",
+            template,
+            String::from_utf8_lossy(&generated.stderr)
+        );
+        let encoded = cargo_run(&[
+            "generate",
+            json.to_str().unwrap(),
+            "-o",
+            riv.to_str().unwrap(),
+        ]);
+        assert!(
+            encoded.status.success(),
+            "generate {} failed: {}",
+            template,
+            String::from_utf8_lossy(&encoded.stderr)
+        );
+        let validated = cargo_run(&["validate", riv.to_str().unwrap()]);
+        assert!(
+            validated.status.success(),
+            "validate {} failed: {}",
+            template,
+            String::from_utf8_lossy(&validated.stderr)
+        );
+        cleanup(&json);
+        cleanup(&riv);
+    }
+}
+
+#[test]
+fn test_showcases_generate_and_validate() {
+    let showcase_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("showcase");
+    let mut showcases = std::fs::read_dir(&showcase_dir)
+        .expect("showcase directory should be readable")
+        .map(|entry| {
+            entry
+                .expect("showcase directory entry should be readable")
+                .path()
+        })
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|extension| extension == "json")
+        })
+        .collect::<Vec<_>>();
+    showcases.sort();
+    assert!(
+        !showcases.is_empty(),
+        "showcase directory should contain JSON scenes"
+    );
+
+    for input in showcases {
+        let name = input
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .expect("showcase filename should be valid UTF-8");
+        let output = temp_output(&format!("showcase_{name}"));
+        cleanup(&output);
+        let guard = CleanupOnDrop(output.clone());
+
+        let generate = cargo_run(&[
+            "generate",
+            input.to_str().expect("showcase path should be valid UTF-8"),
+            "-o",
+            output.to_str().expect("output path should be valid UTF-8"),
+        ]);
+        assert!(
+            generate.status.success(),
+            "generate showcase {name} failed: {}",
+            String::from_utf8_lossy(&generate.stderr)
+        );
+
+        let validate = cargo_run(&[
+            "validate",
+            output.to_str().expect("output path should be valid UTF-8"),
+        ]);
+        assert!(
+            validate.status.success(),
+            "validate showcase {name} failed: {}",
+            String::from_utf8_lossy(&validate.stderr)
+        );
+        drop(guard);
+    }
+}
+
+#[test]
+fn test_showcase_riv_files_are_up_to_date() {
+    let showcase_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("showcase");
+    let mut specs = std::fs::read_dir(&showcase_dir)
+        .expect("showcase directory should be readable")
+        .map(|entry| {
+            entry
+                .expect("showcase directory entry should be readable")
+                .path()
+        })
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|extension| extension == "json")
+        })
+        .collect::<Vec<_>>();
+    specs.sort();
+    assert!(
+        !specs.is_empty(),
+        "showcase directory should contain JSON scenes"
+    );
+
+    for input in specs {
+        let name = input
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .expect("showcase filename should be valid UTF-8");
+        let committed = showcase_dir.join(format!("{name}.riv"));
+        assert!(
+            committed.exists(),
+            "showcase {name} has no committed .riv; run `rive-cli generate showcase/{name}.json -o showcase/{name}.riv`"
+        );
+
+        let regenerated = temp_output(&format!("showcase_uptodate_{name}"));
+        cleanup(&regenerated);
+        let guard = CleanupOnDrop(regenerated.clone());
+        let generate = cargo_run(&[
+            "generate",
+            input.to_str().expect("showcase path should be valid UTF-8"),
+            "-o",
+            regenerated
+                .to_str()
+                .expect("output path should be valid UTF-8"),
+        ]);
+        assert!(
+            generate.status.success(),
+            "generate showcase {name} failed: {}",
+            String::from_utf8_lossy(&generate.stderr)
+        );
+
+        let expected =
+            std::fs::read(&committed).expect("committed showcase .riv should be readable");
+        let actual =
+            std::fs::read(&regenerated).expect("regenerated showcase .riv should be readable");
+        assert_eq!(
+            expected, actual,
+            "showcase/{name}.riv is stale; regenerate it with `rive-cli generate showcase/{name}.json -o showcase/{name}.riv`"
+        );
+        drop(guard);
+    }
 }

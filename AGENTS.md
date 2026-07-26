@@ -4,29 +4,32 @@
 
 `rive-cli` is a Rust CLI and library that generates Rive `.riv` binary animation files from JSON scene specifications. It implements the **write side** of the Rive binary format; the read side is open-source. The tool supports programmatic creation of vector animations, state machines, and interactive graphics without the Rive editor.
 
-**Primary commands**: `generate`, `validate`, `inspect`, `decompile`, `ai generate`, `ai lab`.
+**Primary commands**: `generate`, `new`, `validate`, `inspect`, `decompile`, `render`, `schema`, `types`, `describe`, and `ai generate`/`ai lab`.
 
 ## Architecture & Data Flow
 
-The codebase is organized around a linear pipeline from JSON input to binary output, with a validator that reads it back:
+The codebase is organized around JSON scene authoring, binary generation and validation, plus a browser render path:
 
 ```
-JSON SceneSpec (tests/fixtures/*.json)
+JSON SceneSpec
   → serde → SceneSpec (src/builder/spec.rs)
   → build_scene() → Vec<Box<dyn RiveObject>>
-  → encode_riv() → Vec<u8>
-  → .riv file
+  → encode_riv() → .riv file
   → validate_riv() / inspect_riv() (src/validator/mod.rs)
+  → render() → embedded harness + Rive WASM + headless Chromium → PNG/manifest
 ```
 
 **Key layers**:
 
-1. **Object Model** (`src/objects/`): Flat struct hierarchy implementing the `RiveObject` trait. Each struct exposes a `u16` `type_key` and a `properties()` list. Type keys and property keys are constants matching the C++ rive-runtime exactly.
-2. **Builder** (`src/builder/`): JSON deserialization → validation → object tree construction. `scene.rs` orchestrates; `objects.rs` is a ~4200-line dispatch for all ~200 object types.
-3. **Encoder** (`src/encoder/`): Serializes the flat object list into the `.riv` binary format. Writes header (RIVE magic + version), Table of Contents (2-bit backing types), and property stream (LEB128 varuint, f32 LE, raw bool bytes).
-4. **Validator** (`src/validator/`): Reads `.riv` bytes back into a `ParsedRiv` tree. Used for structural checks, inspection, and decompilation.
-5. **AI Subsystem** (`src/ai/`): LLM provider abstraction, auto-repair engine, evaluation suites, and built-in JSON templates.
-6. **MCP Server** (`src/mcp/`): Optional feature-gated Model Context Protocol server exposing generate/validate/inspect/decompile as stdio JSON-RPC tools.
+1. **Object Model** (`src/objects/`): Flat struct hierarchy implementing the `RiveObject` trait.
+2. **Builder** (`src/builder/`): JSON deserialization, discovery metadata, validation, and object tree construction.
+3. **Encoder** (`src/encoder/`): Serializes the flat object list into the `.riv` binary format.
+4. **Validator** (`src/validator/`): Reads `.riv` bytes back for structural checks, inspection, and decompilation.
+5. **Render** (`src/render/`): Serves the embedded harness and runtime assets, drives headless Chromium over CDP, captures PNGs, and computes previews.
+6. **Discovery** (`src/discovery/`): Exposes schema, object types, valid parents, fields, and animatable-property metadata.
+7. **Scaffold** (`src/scaffold/`): Emits known-good starter SceneSpec templates.
+8. **AI Subsystem** (`src/ai/`): LLM provider abstraction, auto-repair engine, evaluation suites, and built-in JSON templates.
+9. **MCP Server** (`src/mcp/`): Optional feature-gated Model Context Protocol server.
 
 **Hierarchy model**: Objects are stored in a flat `Vec<Box<dyn RiveObject>>`. Parent-child relationships are tracked via `parent_id` (artboard-local index, 0-based, excluding Backboard). Each artboard has independent object/animation/interpolator index scopes.
 
@@ -35,18 +38,24 @@ JSON SceneSpec (tests/fixtures/*.json)
 | Directory | Purpose |
 |-----------|---------|
 | `src/` | Main source code |
-| `src/objects/` | Rive object type definitions (~18 files, ~800KB). Core trait, type keys, property keys, and all domain implementations |
-| `src/builder/` | JSON → `Vec<Box<dyn RiveObject>>` pipeline |
+| `src/objects/` | Rive object type definitions and constants |
+| `src/builder/` | JSON → scene object pipeline |
 | `src/encoder/` | `.riv` binary format writer |
 | `src/validator/` | Binary reader, parser, inspector, decompiler |
+| `src/render/` | CDP browser rendering, PNG analysis, coverage previews |
+| `src/discovery/` | Schema, type, and animatable-property discovery |
+| `src/scaffold/` | Known-good SceneSpec templates |
 | `src/ai/` | AI-assisted generation, repair, and evaluation |
 | `src/mcp/` | Optional MCP server (`mcp` feature) |
+| `assets/` | Embedded Rive JavaScript/WASM runtime and render harness |
+| `showcase/` | Six authored SceneSpec gallery examples |
+| `skills/rive-animation/` | Primary AI-agent authoring skill |
 | `tests/` | E2E CLI tests, JSON fixtures, Playwright runtime regression |
-| `tests/fixtures/` | 60 JSON scene specs + 3 intentionally invalid fixtures |
+| `tests/fixtures/` | 63 JSON scene specs, including 3 intentionally invalid fixtures |
 | `tests/playwright/` | Browser-based runtime and visual regression harness |
-| `docs/` | Format spec, JSON schema, install/release docs, testing strategy, cookbook |
+| `docs/` | Format spec, schema, install/release docs, testing strategy, cookbook |
 | `fuzz/` | `cargo-fuzz` target for adversarial parser testing |
-| `scripts/` | `parity_metric.py` and `vision_gate_orchestrator.py` parity tooling |
+| `scripts/` | Parity and vision-gate tooling |
 | `demo/` | Node.js demo server and interactive HTML viewer |
 
 ## Development Commands
@@ -58,29 +67,38 @@ cargo build --release
 cargo build --features mcp          # enable MCP server
 
 # Test
-cargo test --locked --all-features   # unit + integration tests, including the mcp module
-cargo test --test e2e               # e2e tests only
-cargo test test_name                # single test by name
+cargo test --lib                    # 557 library tests
+cargo test --test e2e               # 172 CLI end-to-end tests
 
 # Lint / Format
 cargo clippy --all-targets --all-features -- -D warnings
 cargo fmt --check
 
-# CLI usage
-cargo run -- generate input.json -o out.riv
-cargo run -- validate out.riv
-cargo run -- inspect out.riv
-cargo run -- inspect out.riv --json
-cargo run -- inspect out.riv --type-name Shape
-cargo run -- decompile out.riv
-cargo run -- ai generate --prompt "bouncing ball" -o out.riv
-cargo run -- ai lab --suite evals/suites/<suite>.json
-cargo run -- --list-presets         # artboard size presets
+rive-cli new --list
+rive-cli schema
+rive-cli types
+rive-cli describe ellipse
+rive-cli generate input.json -o out.riv
+rive-cli validate out.riv
+rive-cli render out.riv --frames 0,15,30 --preview -o renders/
+rive-cli --list-presets
+rive-cli ai generate --prompt "bouncing ball" -o out.riv
+rive-cli ai lab --suite evals/suites/<suite>.json
+```
 
+`render` requires a discoverable Chrome/Chromium executable. Set `$RIVE_CHROME` or pass `--browser PATH` for a non-standard location. It drives the embedded Rive runtime over CDP directly from Rust.
+
+```bash
+cargo run -- generate tests/fixtures/your_fixture.json -o /tmp/out.riv
+cargo run -- validate /tmp/out.riv
+cargo run -- render /tmp/out.riv --preview
+```
+
+```bash
 # Playwright regression (requires Node.js)
 npx -y -p playwright node tests/playwright/regression.js
 npx -y -p playwright node tests/playwright/visual-regression.js
-npx -y -p playwright node tests/playwright/visual-regression.js --update
+UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js
 
 # Fuzzing (requires nightly)
 cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
@@ -103,8 +121,7 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 - **Trait-based object model**: Every Rive runtime type implements `RiveObject` (`src/objects/core.rs`). Two required methods: `type_key() -> u16` and `properties() -> Vec<Property>`.
 - **Validate-first builder**: `src/builder/validation.rs` checks structural correctness (unique names, valid refs, no cycles) before object construction.
 - **Flat vector with local indices**: Objects are emitted as a flat `Vec<Box<dyn RiveObject>>`. `parent_id` is artboard-local (`parent_global - artboard_start`). Never use global indices across artboards.
-- **Backing type registry**: `property_backing_type()` in `src/objects/core.rs` maps property keys to `UInt`/`String`/`Float`/`Color`. The encoder uses this for ToC generation and value serialization. Only unknown properties go into the ToC.
-- **Feature-gated MCP**: `src/mcp/` compiles only with `--features mcp`, adding `rmcp` + `tokio` + `schemars`.
+- **Backing type registry**: `property_backing_type()` in `src/objects/core.rs` maps property keys to `UInt`/`String`/`Float`/`Color`. The encoder uses this for ToC generation and value serialization. Every written property must be declared in the ToC.
 
 ### Testing Patterns
 - Inline unit tests in `#[cfg(test)] mod tests` blocks within source files
@@ -116,10 +133,13 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 | File | Role |
 |------|------|
 | `src/main.rs` | Binary entry point; CLI dispatch |
-| `src/lib.rs` | Library root; exports `objects`, `builder`, `encoder`, `validator`, `ai`, `mcp` |
-| `src/cli/mod.rs` | clap derive-based argument parsing |
-| `src/objects/core.rs` | `RiveObject` trait, `PropertyValue`, `BackingType`, type_keys/property_keys constants, backing type lookup |
-| `src/objects/mod.rs` | Re-exports all 18 object submodules |
+| `src/lib.rs` | Library root; exports `objects`, `builder`, `encoder`, `validator`, `render`, `discovery`, `scaffold`, `ai`, `mcp` |
+| `src/cli/mod.rs` | clap derive-based argument parsing and command dispatch |
+| `src/render/` | CDP rendering and image analysis |
+| `src/discovery/mod.rs` | Schema, type, and animatable-property metadata |
+| `src/scaffold/mod.rs` | Starter SceneSpec templates |
+| `assets/` | Embedded render harness and Rive JS/WASM runtime |
+| `showcase/` | Authored SceneSpec gallery |
 | `src/builder/scene.rs` | `build_scene()` orchestrator; artboard presets |
 | `src/builder/objects.rs` | ~4200-line dispatch creating each object type from `ObjectSpec` |
 | `src/builder/spec.rs` | `SceneSpec` and all sub-spec types (JSON input schema) |
@@ -128,8 +148,8 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 | `src/validator/mod.rs` | `validate_riv()`, `inspect_riv()`, `decompile()` entry points |
 | `src/ai/provider.rs` | `AiProvider` trait + factory |
 | `src/ai/repair.rs` | `RepairEngine` multi-pass auto-fix for generated scenes |
-| `tests/e2e.rs` | 4,397-line integration test suite (168 tests) |
-| `tests/fixtures/` | JSON scene fixtures for all test layers |
+| `tests/e2e.rs` | Integration test suite (174 tests) |
+| `tests/fixtures/` | 63 JSON scene fixtures |
 | `Cargo.toml` | Root manifest: single crate, edition 2024, optional `mcp` feature |
 | `docs/scene.schema.v1.json` | Complete JSON Schema for SceneSpec input, generated from `src/builder/spec.rs`; regenerate with `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync` |
 | `docs/ai/scene-prompt-schema.json` | Curated schema subset embedded in the `ai generate` system prompt |
@@ -150,12 +170,13 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 ## Testing & QA
 
 ### Layers
-1. **Unit tests**: 32 inline `#[cfg(test)]` blocks across `src/`, holding 534 tests. Cover object type keys, property emission, encoder primitives, ToC packing against the official reference file, validator parsing, builder deserialization, and scene-schema sync.
+1. **Unit tests**: 32 inline `#[cfg(test)]` blocks across `src/`, holding 557 tests. Cover object type keys, property emission, encoder primitives, ToC packing against the official reference file, validator parsing, builder deserialization, render image analysis, and scene-schema sync.
 2. **Property tests**: `proptest` roundtrips in `src/encoder/binary_writer.rs` (varuint, float, string, color, bool).
-3. **E2E CLI tests**: `tests/e2e.rs` (4,397 lines, 168 tests). Spawns the compiled binary for `generate`, `validate`, `inspect`, `decompile` against all 63 fixtures. Tests magic bytes, exit codes, filter flags, error paths, version warnings, and roundtrips.
-4. **Runtime regression**: Playwright loads each generated `.riv` in `@rive-app/canvas` WASM via headless Chromium. Catches structural issues invisible to the Rust validator.
-5. **Visual regression**: Pixel-level diff against committed PNG baselines (`tests/playwright/baselines/`). 1024×1024 captures, configurable thresholds per fixture/frame.
-6. **Fuzzing**: `fuzz/fuzz_targets/fuzz_parse_riv.rs` feeds random bytes into the parser.
+3. **E2E CLI tests**: `tests/e2e.rs` (174 tests). Spawns the compiled binary for `generate`, `validate`, `inspect`, and `decompile` against all 63 fixtures.
+4. **Runtime regression**: Playwright loads generated `.riv` files in `@rive-app/canvas` WASM via headless Chromium.
+5. **Visual regression**: Pixel-level diff against 64 committed PNG baselines in `tests/playwright/baselines/`.
+6. **CLI render verification**: `render` drives headless Chromium directly over CDP, captures deterministic PNG frames, writes a manifest, and `--preview` reports coverage, dominant colour, and bounds.
+7. **Fuzzing**: `fuzz/fuzz_targets/fuzz_parse_riv.rs` feeds random bytes into the parser.
 
 ### Running Tests
 ```bash
@@ -304,9 +325,8 @@ The CI pipeline consists of three jobs:
 - **Never emit an object type the runtime does not have without a complete ToC** — unknown types are skipped gracefully only if their properties are skippable
 - **Never write Artboard parentId** — Artboard is root, no parent reference
 - **Artboard property order**: width(7) → height(8) → name(4)
-- **Never use TrimPath mode_value 0** — valid modes are 1 (sequential) or 2 (synchronized)
-- **TrimPath parent must be a ShapePaint (Stroke/Fill), NOT a Shape**
-- **Never use global object indices across artboards** — parent_id must be artboard-local
+- **Never create a state-machine layer without both an entry and an exit state** — the runtime rejects the whole file, even when `validate` reports it valid.
+- **Never keyframe a property the target object does not own** — `width` and `height` belong to parametric geometry, while fills and strokes expose `is_visible`, not `opacity` or `thickness`.
 
 ## Key References
 

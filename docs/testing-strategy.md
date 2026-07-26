@@ -52,16 +52,16 @@ Loads generated `.riv` files in the official `@rive-app/canvas` WASM runtime via
 **How it works**:
 
 1. Generates `.riv` from each fixture JSON via `cargo run -- generate`
-2. Starts a local HTTP server serving `harness.html` + the `.riv` files
+2. Starts a local HTTP server serving the harness and `.riv` files
 3. Launches headless Chromium via Playwright
 4. Loads each `.riv` in the Rive canvas runtime
-5. Fails if any runtime error, load failure, or console error occurs, except for names in `KNOWN_RUNTIME_GAPS`, which print `SKIP <name> (known runtime gap)`
+5. Fails on runtime errors, load failures, or console errors, except names in `KNOWN_RUNTIME_GAPS`
 
-**Fixture lists** (`tests/playwright/shared.js`): `FIXTURES` is every fixture enrolled in runtime regression. `RUNTIME_ONLY_FIXTURES` are the ones with no committed PNG baseline; `VISUAL_FIXTURES` is the complement and is what `visual-regression.js` iterates. `KNOWN_RUNTIME_GAPS` are fixtures the WASM runtime currently rejects; each has a `runtime-rejection` row in `docs/parity.md`, and removing it from the set is the acceptance criterion for closing that row.
+The harness explicitly sets the canvas backing-store dimensions before capture. This matters: the old harness left the backing store at the browser default of 300×150 and merely upscaled it to the 1024×1024 screenshot.
 
-**Runtime version**: both consumers are on `@rive-app/canvas` 2.39.1 — the Playwright harness loads the vendored `tests/playwright/rive.js` plus `tests/playwright/rive.wasm`, and the demo (`demo/index.html`) loads the same version from unpkg. Keep them in step; the vendored JS and WASM must always come from the same package version.
+**Fixture lists** (`tests/playwright/shared.js`): `FIXTURES` is every fixture enrolled in runtime regression. `RUNTIME_ONLY_FIXTURES` have no committed PNG baseline; `VISUAL_FIXTURES` is the complement. `KNOWN_RUNTIME_GAPS` are documented in `docs/parity.md`.
 
-**Convention**: bump the runtime version deliberately. When bumping, re-run all fixtures and update baselines if rendering changes.
+**Runtime version**: both consumers use `@rive-app/canvas` 2.39.1, and the vendored JS/WASM pair must come from the same package version.
 
 ### 4. Golden-Frame Visual Regression (`tests/playwright/visual-regression.js`)
 
@@ -69,21 +69,23 @@ Pixel-level comparison of rendered frames against committed baseline PNGs.
 
 **How it works**:
 
-1. Loads each fixture in `VISUAL_FIXTURES` in a controlled Rive canvas (manual frame advance, no autoplay)
-2. Captures screenshots at specific frame points (see frame plan below)
-3. Compares against baselines in `tests/playwright/baselines/` using pixel diff
-4. Fails if any fixture exceeds the diff threshold (default 1.0%)
+1. Loads each fixture in a controlled Rive canvas with autoplay disabled
+2. Seeks each planned frame with `Rive.scrub([animationName], seconds)`
+3. Resolves the runtime animation frame, then captures the correctly sized canvas
+4. Compares against baselines in `tests/playwright/baselines/`
+
+The previous claim that frame capture was deterministic was false: `scrub(undefined, t)` is a silent no-op in `@rive-app/canvas` 2.39.1 because the runtime maps an undefined animation list to an empty list. The harness now passes the mounted animation name explicitly. The previous 300×150 backing-store bug was fixed as described above. Baselines were regenerated after both corrections.
 
 **Frame capture plan** (`shotPlanForFixture()`):
 
 | Fixture category | Frames captured | Why |
 |------------------|-----------------|-----|
-| Static (minimal, shapes, path, trim_path, artboard_preset) | f0 only | No animation — single frame is sufficient |
-| Linear animation | f0, f30, f60 | Start, midpoint, end — catches timing and interpolation errors |
-| Cubic easing | f0, f15, f30, f45, f60 | Dense 5-frame sampling catches easing curve shape and control point errors |
-| Multi-artboard | f0, f30 | Captures opacity fade-in animation between frames |
-| Nested artboard | f0 only | Static embedding — expand when nested animations are supported |
-| State machine | f0 only | Animations have no keyframes; expand when simulated input triggers are added |
+| Static | f0 only | No animation |
+| Linear animation | f0, f30, f60 | Start, midpoint, end |
+| Cubic easing | f0, f15, f30, f45, f60 | Easing curve shape |
+| Multi-artboard | f0, f30 | Opacity fade and X slide |
+| Nested artboard | f0 only | Static embedding |
+| State machine | f0 only | Static initial state |
 
 **Updating baselines**:
 
@@ -91,11 +93,16 @@ Pixel-level comparison of rendered frames against committed baseline PNGs.
 UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js
 ```
 
-This overwrites `tests/playwright/baselines/*.png` with current renders. Commit the updated baselines after visual review.
+**Resolution**: 512×512 logical viewport with `deviceScaleFactor: 2`, producing 1024×1024 PNGs.
 
-**Resolution**: 512×512 logical viewport with `deviceScaleFactor: 2`, producing 1024×1024 pixel screenshots. This ensures crisp rendering on Retina/HiDPI displays and catches sub-pixel anti-aliasing issues.
+**Diff threshold**: 1.0% of pixels by default, configurable with `VISUAL_DIFF_THRESHOLD`.
 
-**Diff threshold**: 1.0% of pixels (configurable via `VISUAL_DIFF_THRESHOLD` env var). Static frames (f0 of non-animated fixtures) consistently diff at 0.0000%. Animated frames show 0.2-0.5% jitter due to `requestAnimationFrame` timing non-determinism — the Rive runtime advances based on real-time deltas, so captured animation positions shift by 1-2 pixels between runs. The 1.0% threshold accommodates this while still catching real regressions (a broken animation would show 30%+ diff). Some fixtures override this per-shot: `multi_artboard` f30 at 5% (opacity fade timing), `loop_animation` at 5% (2x speed amplifies timing jitter), `color_animation` f30/f60 at 20% (full-fill color shifts amplify small timing diffs).
+### 5. CLI Render Verification (`src/render/`)
+
+`rive-cli render` exercises the same embedded Rive JS/WASM runtime through headless Chromium over CDP, without Node or Playwright. It captures one or more animation or state-machine frames as PNGs and writes `manifest.json`; `--contact-sheet` writes a filmstrip, and `--preview` writes ASCII coverage maps plus dominant colour, distinct-colour count, blank status, and non-background bounds. Frame time is derived from `frame / fps`, so repeated renders of the same input are byte-identical.
+
+Render verification is intentionally separate from Playwright visual baselines: it is a user-facing smoke test and an agent-facing inspection path, while Playwright remains the committed pixel-regression gate.
+
 
 ## Fixture Corpus
 

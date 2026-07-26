@@ -225,15 +225,6 @@ pub(crate) fn build_state_machines(
             }));
 
             let has_any = layer.states.iter().any(|s| matches!(s, StateSpec::Any));
-            let mut user_to_final: Vec<usize> = Vec::new();
-            let start = if has_any { 0 } else { 1 };
-            for final_idx in start..start + layer.states.len() {
-                user_to_final.push(final_idx);
-            }
-
-            if !has_any {
-                objects.push(Box::new(AnyState));
-            }
 
             for (user_idx, state) in layer.states.iter().enumerate() {
                 match state {
@@ -289,13 +280,7 @@ pub(crate) fn build_state_machines(
                         if transition.from != user_idx {
                             continue;
                         }
-                        let state_to_id = *user_to_final.get(transition.to).ok_or_else(|| {
-                            format!(
-                                "transition target index {} out of bounds (layer has {} states)",
-                                transition.to,
-                                user_to_final.len()
-                            )
-                        })? as u64;
+                        let state_to_id = transition.to as u64;
                         let mut state_transition = StateTransition::new(state_to_id);
                         if let Some(duration) = transition.duration {
                             state_transition.duration = duration;
@@ -382,6 +367,9 @@ pub(crate) fn build_state_machines(
                         }
                     }
                 }
+            }
+            if !has_any {
+                objects.push(Box::new(AnyState));
             }
         }
     }

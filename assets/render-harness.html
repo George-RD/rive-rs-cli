@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>rive-cli render harness</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+      }
+      #stage {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <script src="/rive.js"></script>
+    <script>
+      window.addEventListener("error", function (event) {
+        window.__riveHarnessError = String(event.message || event.error);
+      });
+      window.addEventListener("unhandledrejection", function (event) {
+        window.__riveHarnessError = String(event.reason);
+      });
+    </script>
+    <script>
+      (function () {
+        if (!window.rive || !window.rive.Rive) {
+          window.__riveHarnessError = "the Rive runtime script did not load";
+          return;
+        }
+        const RuntimeLoader = window.rive.RuntimeLoader;
+        const Rive = window.rive.Rive;
+        RuntimeLoader.setWasmUrl("/rive.wasm");
+
+        const canvas = document.getElementById("stage");
+        const CLOCK_ORIGIN_MS = 1000;
+
+        let instance = null;
+        let sceneBuffer = null;
+        let settings = null;
+        let mode = "static";
+        let selected = null;
+        let stepsAdvanced = 0;
+
+        function nextPaint() {
+          return new Promise(function (resolve) {
+            requestAnimationFrame(function () {
+              requestAnimationFrame(resolve);
+            });
+          });
+        }
+
+        function applyCanvasSize(options) {
+          canvas.width = options.width * options.scale;
+          canvas.height = options.height * options.scale;
+          canvas.style.width = options.width + "px";
+          canvas.style.height = options.height + "px";
+          const background = options.background || "transparent";
+          document.body.style.background = background;
+          canvas.style.background = background;
+        }
+
+        function build(options) {
+          return new Promise(function (resolve, reject) {
+            let built = null;
+            let ready = false;
+            const params = {
+              buffer: sceneBuffer,
+              canvas: canvas,
+              autoplay: false,
+              onLoad: function () {
+                ready = true;
+                if (built) {
+                  resolve(built);
+                }
+              },
+              onLoadError: function (error) {
+                reject(new Error(describeError(error)));
+              },
+            };
+            if (options.artboard) {
+              params.artboard = options.artboard;
+            }
+            if (options.animations) {
+              params.animations = options.animations;
+            }
+            if (options.stateMachines) {
+              params.stateMachines = options.stateMachines;
+            }
+            built = new Rive(params);
+            if (ready) {
+              resolve(built);
+            }
+          });
+        }
+
+        function describeError(error) {
+          if (!error) {
+            return "unknown Rive load error";
+          }
+          if (typeof error === "string") {
+            return error;
+          }
+          if (error.message) {
+            return error.message;
+          }
+          if (error.data) {
+            return typeof error.data === "string"
+              ? error.data
+              : JSON.stringify(error.data);
+          }
+          try {
+            return JSON.stringify(error);
+          } catch (failure) {
+            return String(error);
+          }
+        }
+
+        function nameList(value) {
+          return Array.isArray(value) ? value.slice() : [];
+        }
+
+        const INPUT_KIND_BY_TYPE = {
+          56: "number",
+          58: "trigger",
+          59: "bool",
+        };
+        const INPUT_VALUE_HINT = {
+          number: "<number>",
+          trigger: "trigger",
+          bool: "true or false",
+        };
+
+        function applyInputs(requested) {
+          if (requested.length === 0) {
+            return null;
+          }
+          const available = instance.stateMachineInputs(selected) || [];
+          const byName = {};
+          available.forEach(function (input) {
+            byName[input.name] = input;
+          });
+          for (const wanted of requested) {
+            const input = byName[wanted.name];
+            if (!input) {
+              return (
+                "state machine input '" +
+                wanted.name +
+                "' not found; available: " +
+                (Object.keys(byName).join(", ") || "(none)")
+              );
+            }
+            const actual = INPUT_KIND_BY_TYPE[input.type];
+            if (!actual) {
+              return (
+                "state machine input '" +
+                wanted.name +
+                "' has an unsupported runtime type " +
+                input.type
+              );
+            }
+            if (actual !== wanted.kind) {
+              return (
+                "state machine input '" +
+                wanted.name +
+                "' is a " +
+                actual +
+                " input, but was given a " +
+                wanted.kind +
+                " value; use " +
+                wanted.name +
+                "=" +
+                INPUT_VALUE_HINT[actual]
+              );
+            }
+            if (actual === "trigger") {
+              input.fire();
+            } else {
+              input.value = wanted.value;
+            }
+          }
+          return null;
+        }
+
+        window.riveLoad = async function (options) {
+          settings = options;
+          const response = await fetch("/scene.riv");
+          if (!response.ok) {
+            throw new Error("could not fetch scene bytes");
+          }
+          sceneBuffer = await response.arrayBuffer();
+          applyCanvasSize(options);
+
+          instance = await build({ artboard: options.artboard });
+          const animations = nameList(instance.animationNames);
+          const stateMachines = nameList(instance.stateMachineNames);
+          const artboard = instance.activeArtboard || "";
+
+          if (options.stateMachine) {
+            if (stateMachines.indexOf(options.stateMachine) === -1) {
+              return {
+                error:
+                  "state machine '" +
+                  options.stateMachine +
+                  "' not found; available: " +
+                  (stateMachines.join(", ") || "(none)"),
+                artboard: artboard,
+                animations: animations,
+                stateMachines: stateMachines,
+              };
+            }
+            mode = "stateMachine";
+            selected = options.stateMachine;
+            instance = await build({
+              artboard: options.artboard,
+              stateMachines: [selected],
+            });
+            const rejected = applyInputs(options.inputs || []);
+            if (rejected) {
+              return {
+                error: rejected,
+                artboard: artboard,
+                animations: animations,
+                stateMachines: stateMachines,
+              };
+            }
+            startStateMachine();
+          } else {
+            if (
+              options.animation &&
+              animations.indexOf(options.animation) === -1
+            ) {
+              return {
+                error:
+                  "animation '" +
+                  options.animation +
+                  "' not found; available: " +
+                  (animations.join(", ") || "(none)"),
+                artboard: artboard,
+                animations: animations,
+                stateMachines: stateMachines,
+              };
+            }
+            selected = options.animation || animations[0] || null;
+            mode = selected ? "animation" : "static";
+            if (selected) {
+              instance = await build({
+                artboard: options.artboard,
+                animations: [selected],
+              });
+              instance.pause();
+            }
+          }
+
+          return {
+            artboard: artboard,
+            animations: animations,
+            stateMachines: stateMachines,
+            selected: selected,
+            mode: mode,
+          };
+        };
+
+        function detachScheduledFrame() {
+          if (instance.frameRequestId) {
+            cancelAnimationFrame(instance.frameRequestId);
+            instance.frameRequestId = null;
+          }
+        }
+
+        function stepTo(timeMs) {
+          instance.draw(timeMs);
+          if (
+            instance.runtime &&
+            typeof instance.runtime.resolveAnimationFrame === "function"
+          ) {
+            instance.runtime.resolveAnimationFrame();
+          }
+          detachScheduledFrame();
+        }
+
+        function startStateMachine() {
+          instance.play([selected]);
+          detachScheduledFrame();
+          instance.lastRenderTime = 0;
+          stepTo(CLOCK_ORIGIN_MS);
+          stepsAdvanced = 0;
+        }
+
+        async function rebuildStateMachine() {
+          instance = await build({
+            artboard: settings.artboard,
+            stateMachines: [selected],
+          });
+          applyInputs(settings.inputs || []);
+          startStateMachine();
+        }
+
+        window.riveSeek = async function (seconds) {
+          if (mode === "animation") {
+            instance.scrub([selected], seconds);
+          } else if (mode === "stateMachine") {
+            const stepMs = 1000 / settings.fps;
+            const target = Math.max(0, Math.round(seconds * settings.fps));
+            if (target < stepsAdvanced) {
+              await rebuildStateMachine();
+            }
+            while (stepsAdvanced < target) {
+              stepsAdvanced += 1;
+              stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
+            }
+          } else {
+            instance.drawFrame();
+          }
+          await nextPaint();
+          detachScheduledFrame();
+          return true;
+        };
+      })();
+    </script>
+  </body>
+</html>

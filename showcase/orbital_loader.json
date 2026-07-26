@@ -1,0 +1,315 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Orbital Loader",
+    "width": 600,
+    "height": 600,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Outer Halo",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Outer Halo Geometry",
+            "width": 472,
+            "height": 472,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Outer Halo Stroke",
+            "thickness": 2,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Outer Halo Ink",
+                "color": "#26304B"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Main Sweep",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Main Sweep Geometry",
+            "width": 420,
+            "height": 420,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Main Sweep Stroke",
+            "thickness": 14,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Main Sweep Gradient",
+                "start_x": 80,
+                "start_y": 100,
+                "end_x": 520,
+                "end_y": 500,
+                "children": [
+                  { "type": "gradient_stop", "name": "Sweep Violet", "color": "#8B5CF6", "position": 0.0 },
+                  { "type": "gradient_stop", "name": "Sweep Cyan", "color": "#22D3EE", "position": 0.48 },
+                  { "type": "gradient_stop", "name": "Sweep Lime", "color": "#B7F34A", "position": 1.0 }
+                ]
+              },
+              {
+                "type": "trim_path",
+                "name": "Main Sweep Trim",
+                "start": 0.04,
+                "end": 0.58,
+                "offset": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Satellite Sweep",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Satellite Sweep Geometry",
+            "width": 420,
+            "height": 420,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Satellite Sweep Stroke",
+            "thickness": 5,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Satellite Sweep Ink",
+                "color": "#F6C75B"
+              },
+              {
+                "type": "trim_path",
+                "name": "Satellite Sweep Trim",
+                "start": 0.66,
+                "end": 0.79,
+                "offset": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Inner Orbit",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Inner Orbit Geometry",
+            "width": 276,
+            "height": 276,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Inner Orbit Stroke",
+            "thickness": 7,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Inner Orbit Gradient",
+                "start_x": 190,
+                "start_y": 410,
+                "end_x": 410,
+                "end_y": 190,
+                "children": [
+                  { "type": "gradient_stop", "name": "Inner Blue", "color": "#3B82F6", "position": 0.0 },
+                  { "type": "gradient_stop", "name": "Inner Violet", "color": "#C084FC", "position": 1.0 }
+                ]
+              },
+              {
+                "type": "trim_path",
+                "name": "Inner Orbit Trim",
+                "start": 0.14,
+                "end": 0.82,
+                "offset": 0.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Core Halo",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Core Halo Geometry",
+            "width": 126,
+            "height": 126,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Core Halo Fill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Core Halo Ink",
+                "color": "#273C7A66"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Core Dot",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Core Dot Geometry",
+            "width": 54,
+            "height": 54,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Core Dot Fill",
+            "children": [
+              {
+                "type": "radial_gradient",
+                "name": "Core Dot Gradient",
+                "start_x": 286,
+                "start_y": 286,
+                "end_x": 327,
+                "end_y": 327,
+                "children": [
+                  { "type": "gradient_stop", "name": "Core White", "color": "#F2FBFF", "position": 0.0 },
+                  { "type": "gradient_stop", "name": "Core Cyan", "color": "#41D8F5", "position": 0.45 },
+                  { "type": "gradient_stop", "name": "Core Blue", "color": "#3562E8", "position": 1.0 }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "orbital_loop",
+        "fps": 60,
+        "duration": 120,
+        "loop_type": "loop",
+        "interpolators": [
+          { "name": "orbital_ease", "x1": 0.42, "y1": 0.0, "x2": 0.58, "y2": 1.0 },
+          { "name": "pulse_ease", "x1": 0.32, "y1": 0.0, "x2": 0.68, "y2": 1.0 }
+        ],
+        "keyframes": [
+          {
+            "object": "Main Sweep Trim",
+            "property": "trim_offset",
+            "frames": [
+              { "frame": 0, "value": 0.0, "interpolation": "cubic", "interpolator": "orbital_ease" },
+              { "frame": 120, "value": 1.0 }
+            ]
+          },
+          {
+            "object": "Satellite Sweep Trim",
+            "property": "trim_offset",
+            "frames": [
+              { "frame": 0, "value": 0.0, "interpolation": "cubic", "interpolator": "orbital_ease" },
+              { "frame": 120, "value": -1.0 }
+            ]
+          },
+          {
+            "object": "Inner Orbit",
+            "property": "rotation",
+            "frames": [
+              { "frame": 0, "value": 0.0, "interpolation": "cubic", "interpolator": "orbital_ease" },
+              { "frame": 120, "value": -6.283185307 }
+            ]
+          },
+          {
+            "object": "Core Dot",
+            "property": "scale_x",
+            "frames": [
+              { "frame": 0, "value": 1.0, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 30, "value": 1.22, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 60, "value": 1.0, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 90, "value": 0.88, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 120, "value": 1.0 }
+            ]
+          },
+          {
+            "object": "Core Dot",
+            "property": "scale_y",
+            "frames": [
+              { "frame": 0, "value": 1.0, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 30, "value": 1.22, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 60, "value": 1.0, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 90, "value": 0.88, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 120, "value": 1.0 }
+            ]
+          },
+          {
+            "object": "Core Halo",
+            "property": "scale_x",
+            "frames": [
+              { "frame": 0, "value": 0.94, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 60, "value": 1.16, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 120, "value": 0.94 }
+            ]
+          },
+          {
+            "object": "Core Halo",
+            "property": "scale_y",
+            "frames": [
+              { "frame": 0, "value": 0.94, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 60, "value": 1.16, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 120, "value": 0.94 }
+            ]
+          },
+          {
+            "object": "Core Halo",
+            "property": "opacity",
+            "frames": [
+              { "frame": 0, "value": 0.55, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 60, "value": 1.0, "interpolation": "cubic", "interpolator": "pulse_ease" },
+              { "frame": 120, "value": 0.55 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,126 +1,47 @@
 # AI Agent Skills for rive-cli
 
-This directory contains skill definitions and configuration for AI agents to work with the rive-cli Rive animation compiler.
+The primary authoring skill is [`rive-animation/SKILL.md`](rive-animation/SKILL.md). It is the authoritative, tool-driven workflow for creating, validating, and rendering Rive animations. It tells an agent to scaffold a known-good SceneSpec, discover types and animatable properties from the CLI, generate and validate the `.riv`, then render frames with `--preview`.
 
-## Overview
+## Install and use
 
-| File | Purpose |
-|------|---------|
-| `opencode/rive-animation.md` | OpenCode skill for generating Rive animations |
-| `claude-code/commands/rive-generate.md` | Claude Code slash command for generating .riv files |
-| `claude-code/commands/rive-inspect.md` | Claude Code slash command for inspecting .riv files |
-| `claude-code/commands/rive-validate.md` | Claude Code slash command for validating .riv files |
-| `claude-code/mcp-config.json` | MCP server configuration for Claude Code/Claude Desktop |
-
-## OpenCode Installation
-
-Copy or symlink the skill file to your OpenCode skills directory:
+Copy or symlink the primary skill into the skills directory used by your agent:
 
 ```bash
-# macOS/Linux
-cp skills/opencode/rive-animation.md ~/.config/opencode/skills/
-
-# Or create a symlink for easier updates
-ln -s /path/to/rive-rs-cli/skills/opencode/rive-animation.md ~/.config/opencode/skills/
+cp skills/rive-animation/SKILL.md ~/.config/opencode/skills/rive-animation.md
+ln -s /path/to/rive-rs-cli/skills/rive-animation/SKILL.md ~/.config/opencode/skills/rive-animation.md
 ```
 
-Then reference the skill in your agent configuration or prompts.
+For another agent host, place the file in that host's skill/instructions directory, or reference it directly from the repository. No generated configuration is required. The skill assumes `rive-cli` is on `PATH`; otherwise use the built binary at `target/release/rive-cli`.
 
-## Claude Code Installation
-
-### Slash Commands
-
-Copy the command files to your Claude Code commands directory:
+The six JSON scenes in [`../showcase/`](../showcase/) are examples authored with this workflow. The CLI remains the source of truth for the schema:
 
 ```bash
-# macOS
+rive-cli new --list
+rive-cli types
+rive-cli describe ellipse
+rive-cli schema
+```
+
+## Legacy integrations
+
+The former OpenCode file `opencode/rive-animation.md` was removed because its animation table contradicted the CLI's authoritative resolver. In particular, `stroke.thickness` and trim `start`/`end`/`offset` are not accepted keyframe properties.
+
+The Claude Code slash-command files remain available for users who want command aliases for generate, inspect, and validate:
+
+```bash
 mkdir -p ~/.claude/commands
 cp skills/claude-code/commands/*.md ~/.claude/commands/
-
-# Or create symlinks
-ln -s /path/to/rive-rs-cli/skills/claude-code/commands/rive-generate.md ~/.claude/commands/
-ln -s /path/to/rive-rs-cli/skills/claude-code/commands/rive-inspect.md ~/.claude/commands/
-ln -s /path/to/rive-rs-cli/skills/claude-code/commands/rive-validate.md ~/.claude/commands/
 ```
 
-### MCP Server Configuration
+The optional MCP configuration template is `claude-code/mcp-config.json`; enable it with a build that includes the `mcp` feature.
 
-Add the MCP server config to your Claude Code or Claude Desktop settings:
+## Schema reference
 
-**Claude Code (project-level):**
+All authoring tools use `docs/scene.schema.v1.json` as the generated SceneSpec contract. Scene specs require `"scene_format_version": 1`.
 
-Create or edit `.claude/mcp-config.json` in your project root:
+## See also
 
-```json
-{
-  "mcpServers": {
-    "rive-cli": {
-      "command": "cargo",
-      "args": ["run", "--features", "mcp", "--", "--mcp"],
-      "cwd": "/path/to/rive-rs-cli"
-    }
-  }
-}
-```
-
-**Claude Desktop:**
-
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
-
-```json
-{
-  "mcpServers": {
-    "rive-cli": {
-      "command": "cargo",
-      "args": ["run", "--features", "mcp", "--", "--mcp"],
-      "cwd": "/path/to/rive-rs-cli"
-    }
-  }
-}
-```
-
-Update the `cwd` path to point to your rive-rs-cli installation.
-
-## Usage
-
-### OpenCode
-
-Once installed, the skill enables your agent to:
-
-- Generate SceneSpec JSON for Rive animations
-- Understand the object hierarchy (artboard → shape → path/paint)
-- Follow anti-patterns that prevent runtime failures
-- Reference the schema at `docs/scene.schema.v1.json`
-
-### Claude Code Slash Commands
-
-After installation, these commands become available:
-
-- `/rive-generate "a red circle that pulses"` — Generate a .riv file from description
-- `/rive-inspect output.riv` — Inspect the object tree of a .riv file
-- `/rive-validate output.riv` — Validate a .riv file for structural correctness
-
-## File Structure
-
-```text
-skills/
-├── README.md                              # This file
-├── opencode/
-│   └── rive-animation.md                  # OpenCode skill definition
-└── claude-code/
-    ├── commands/
-    │   ├── rive-generate.md               # Generate command
-    │   ├── rive-inspect.md                # Inspect command
-    │   └── rive-validate.md               # Validate command
-    └── mcp-config.json                    # MCP server config template
-```
-
-## Schema Reference
-
-All skills reference `docs/scene.schema.v1.json` as the authoritative schema for SceneSpec JSON. The schema is versioned; always use `"scene_format_version": 1`.
-
-## See Also
-
-- Main project: `../AGENTS.md` — Project knowledge base
-- Schema: `../docs/scene.schema.v1.json` — JSON schema reference
-- CLI usage: `cargo run -- --help`
+- Main project: [`../AGENTS.md`](../AGENTS.md)
+- Schema: [`../docs/scene.schema.v1.json`](../docs/scene.schema.v1.json)
+- Primary skill: [`rive-animation/SKILL.md`](rive-animation/SKILL.md)
+- CLI usage: `rive-cli --help`

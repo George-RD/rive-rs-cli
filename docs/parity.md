@@ -58,7 +58,7 @@ This document tracks how closely rive-cli-generated files match official Rive ru
 
 ## Fixture Runtime Gaps
 
-Fixtures the vendored `@rive-app/canvas` runtime (`tests/playwright/rive.js`, version 2.39.1) cannot load. They are listed in `KNOWN_RUNTIME_GAPS` in `tests/playwright/shared.js`, so `tests/playwright/regression.js` prints `SKIP <name> (known runtime gap)` instead of failing. Removing a fixture from that set is the acceptance criterion for closing its row.
+Fixtures the vendored `@rive-app/canvas` runtime (`assets/rive.js`, version 2.39.1) cannot load. They are listed in `KNOWN_RUNTIME_GAPS` in `tests/playwright/shared.js`, so `tests/playwright/regression.js` prints `SKIP <name> (known runtime gap)` instead of failing. Removing a fixture from that set is the acceptance criterion for closing its row.
 
 **These are unresolved, and the original explanation was wrong.** Both rows were first recorded as version lag: the object types postdated the then-vendored 2.35.2 runtime. Two pieces of evidence refute that.
 
