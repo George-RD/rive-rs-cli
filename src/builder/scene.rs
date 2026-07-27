@@ -154,7 +154,7 @@ pub fn build_scene(
     spec: &SceneSpec,
     base_dir: Option<&Path>,
 ) -> Result<Vec<Box<dyn RiveObject>>, String> {
-    validate_scene_spec(spec)?;
+    let spec_indexes = validate_scene_spec(spec)?;
 
     let artboard_specs = resolve_artboards(spec)?;
     let mut artboard_name_to_index: HashMap<String, usize> = HashMap::new();
@@ -183,12 +183,12 @@ pub fn build_scene(
             }
         }
     }
-    let ctx = SceneContext {
-        asset_ids: &asset_ids,
-        asset_kinds: &asset_kinds,
-    };
-
-    for artboard_spec in &artboard_specs {
+    for (artboard_spec, spec_index) in artboard_specs.iter().zip(&spec_indexes) {
+        let ctx = SceneContext {
+            asset_ids: &asset_ids,
+            asset_kinds: &asset_kinds,
+            type_keys: &spec_index.type_keys,
+        };
         let artboard_start = objects.len();
         let (artboard_width, artboard_height) = resolve_artboard_dimensions(artboard_spec)?;
 

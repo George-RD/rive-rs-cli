@@ -5068,3 +5068,19 @@ fn test_scheduled_input_failures_fail_the_render() {
     );
     let _ = std::fs::remove_dir_all(&out);
 }
+
+#[test]
+fn test_style_reference_must_name_a_text_style() {
+    let stderr = generate_scene_expecting_failure(
+        r#"{"scene_format_version":1,"artboard":{"name":"A","width":200,"height":200,"children":[
+           {"type":"node","name":"Decoy","x":10,"y":10},
+           {"type":"text","name":"T","align_value":1,"sizing_value":0,"children":[
+             {"type":"text_style","name":"S","font_size":20},
+             {"type":"text_value_run","name":"R","text":"hi","style":"Decoy"}]}]}}"#,
+        "style_kind",
+    );
+    assert!(
+        stderr.contains("references 'Decoy', which is not a text_style"),
+        "unexpected error: {stderr}"
+    );
+}

@@ -11,6 +11,20 @@ use thiserror::Error;
 const RIVE_JS: &[u8] = include_bytes!("../../assets/rive.js");
 const RIVE_WASM: &[u8] = include_bytes!("../../assets/rive.wasm");
 const HARNESS: &[u8] = include_bytes!("../../assets/render-harness.html");
+const HARNESS_SOURCE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/assets/render-harness.html");
+const HARNESS_OVERRIDE_VAR: &str = "RIVE_HARNESS";
+
+fn harness() -> Vec<u8> {
+    let candidate = match std::env::var_os(HARNESS_OVERRIDE_VAR) {
+        Some(path) => PathBuf::from(path),
+        None if cfg!(debug_assertions) => PathBuf::from(HARNESS_SOURCE),
+        None => return HARNESS.to_vec(),
+    };
+    match fs::read(&candidate) {
+        Ok(bytes) => bytes,
+        Err(_) => HARNESS.to_vec(),
+    }
+}
 
 const READY_POLL_ATTEMPTS: u32 = 300;
 const READY_POLL_INTERVAL: Duration = Duration::from_millis(100);
@@ -171,7 +185,7 @@ pub fn render(options: &RenderOptions) -> Result<RenderManifest, RenderError> {
         .as_deref()
         .map(parse_background)
         .transpose()?;
-    let server = server::AssetServer::start(HARNESS, RIVE_JS, RIVE_WASM, options.riv.clone())?;
+    let server = server::AssetServer::start(harness(), RIVE_JS, RIVE_WASM, options.riv.clone())?;
     let browser_path = chrome::discover(options.browser.as_deref())?;
     let mut browser = chrome::Chrome::launch(&browser_path, options.scale)?;
     let session = browser.session.clone();

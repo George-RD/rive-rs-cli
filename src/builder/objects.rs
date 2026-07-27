@@ -8,7 +8,7 @@ use crate::objects::constraints::{
     DistanceConstraint, FollowPathConstraint, IKConstraint, RotationConstraint, ScaleConstraint,
     TransformConstraint, TranslationConstraint,
 };
-use crate::objects::core::RiveObject;
+use crate::objects::core::{RiveObject, type_keys};
 use crate::objects::data_binding::{
     self, BindablePropertyArtboard, BindablePropertyBoolean, BindablePropertyColor,
     BindablePropertyEnum, BindablePropertyId, BindablePropertyInteger, BindablePropertyList,
@@ -41,6 +41,7 @@ use super::parsers::{
     parse_color, parse_fill_rule, parse_stroke_cap, parse_stroke_join, parse_trim_mode,
     required_u64_field,
 };
+use super::references::{self, Namespace};
 use super::spec::{ObjectSpec, TextModifierGroupChildSpec};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,6 +64,7 @@ impl FileAssetKind {
 pub(crate) struct SceneContext<'a> {
     pub asset_ids: &'a HashMap<String, (u64, FileAssetKind)>,
     pub asset_kinds: &'a [FileAssetKind],
+    pub type_keys: &'a HashMap<String, u16>,
 }
 
 fn resolve_asset_ordinal(
@@ -71,38 +73,35 @@ fn resolve_asset_ordinal(
     explicit: Option<u64>,
     expected: FileAssetKind,
     ctx: &SceneContext<'_>,
+    fields: (&str, &str),
 ) -> Result<Option<u64>, String> {
-    match (asset_name, explicit) {
-        (Some(_), Some(_)) => Err(format!(
-            "'{owner}' sets both an asset name and an asset index; use one or the other"
-        )),
-        (Some(asset_name), None) => {
-            let (ordinal, kind) = ctx.asset_ids.get(asset_name).copied().ok_or_else(|| {
-                format!("'{owner}' references asset '{asset_name}', which no artboard declares")
-            })?;
-            if kind != expected {
-                return Err(format!(
-                    "'{}' references asset '{}', which is a {}; it must be a {}",
-                    owner,
-                    asset_name,
-                    kind.label(),
-                    expected.label()
-                ));
-            }
-            Ok(Some(ordinal))
-        }
-        (None, Some(ordinal)) => match ctx.asset_kinds.get(ordinal as usize) {
-            Some(kind) if *kind != expected => Err(format!(
-                "'{}' references asset index {}, which is a {}; it must be a {}",
-                owner,
-                ordinal,
+    let lookup = |name: &str| ctx.asset_ids.get(name).map(|(ordinal, _)| *ordinal);
+    let check = |ordinal: u64| match ctx.asset_kinds.get(ordinal as usize) {
+        Some(kind) if *kind != expected => {
+            let subject = match asset_name {
+                Some(name) => format!("asset '{name}'"),
+                None => format!("asset index {ordinal}"),
+            };
+            Err(format!(
+                "references {subject}, which is a {}; it must be a {}",
                 kind.label(),
                 expected.label()
-            )),
-            _ => Ok(Some(ordinal)),
+            ))
+        }
+        _ => Ok(()),
+    };
+    references::resolve(
+        owner,
+        &Namespace {
+            kind: "asset",
+            name_field: fields.0,
+            index_field: fields.1,
+            lookup: &lookup,
+            check: Some(&check),
         },
-        (None, None) => Ok(None),
-    }
+        asset_name,
+        explicit,
+    )
 }
 
 pub(crate) fn file_asset(spec: &ObjectSpec) -> Option<(&str, FileAssetKind)> {
@@ -693,6 +692,7 @@ pub(crate) fn append_object(
                 *asset_id,
                 FileAssetKind::Image,
                 ctx,
+                ("asset", "asset_id"),
             )?
             .unwrap_or(0);
             let mut image = Image::new(name.clone(), parent_id, resolved_asset_id);
@@ -1783,6 +1783,7 @@ pub(crate) fn append_object(
                 *font_asset_id,
                 FileAssetKind::Font,
                 ctx,
+                ("font_asset", "font_asset_id"),
             )? {
                 style.font_asset_id = v;
             }
@@ -1811,27 +1812,35 @@ pub(crate) fn append_object(
             style,
         } => {
             let mut run = TextValueRun::new(name.clone(), parent_id, text.clone());
-            match (style, style_id) {
-                (Some(_), Some(_)) => {
-                    return Err(format!(
-                        "text_value_run '{name}' sets both 'style' and 'style_id'; use one or the other"
-                    ));
-                }
-                (Some(style_name), None) => {
-                    let style_index = name_to_index.get(style_name).ok_or_else(|| {
-                        format!(
-                            "text_value_run '{name}' references text style '{style_name}', which is not defined before it"
-                        )
-                    })?;
-                    run.style_id = style_index
-                        .checked_sub(artboard_start)
-                        .ok_or("internal error: style index precedes artboard start".to_string())?
-                        as u64;
-                }
-                (None, Some(v)) => {
-                    run.style_id = *v;
-                }
-                (None, None) => {}
+            let lookup = |style_name: &str| {
+                name_to_index
+                    .get(style_name)
+                    .and_then(|index| index.checked_sub(artboard_start))
+                    .map(|local| local as u64)
+            };
+            let check = |_: u64| match style
+                .as_deref()
+                .and_then(|style_name| ctx.type_keys.get(style_name))
+            {
+                Some(&type_key) if type_key != type_keys::TEXT_STYLE_PAINT => Err(format!(
+                    "references '{}', which is not a text_style",
+                    style.as_deref().unwrap_or_default()
+                )),
+                _ => Ok(()),
+            };
+            if let Some(resolved) = references::resolve(
+                name,
+                &Namespace {
+                    kind: "text style",
+                    name_field: "style",
+                    index_field: "style_id",
+                    lookup: &lookup,
+                    check: Some(&check),
+                },
+                style.as_deref(),
+                *style_id,
+            )? {
+                run.style_id = resolved;
             }
             objects.push(Box::new(run));
             name_to_index.insert(name.clone(), object_index);

@@ -22,6 +22,7 @@ use crate::objects::state_machine::{
 use super::parsers::{
     input_is_trigger, json_value_to_f32, parse_color, parse_condition_op, parse_listener_type,
 };
+use super::references::{self, Namespace};
 use super::spec::{
     BlendState1DChildSpec, BlendStateChildSpec, BlendStateDirectChildSpec, InputSpec,
     ListenerActionSpec, StateMachineComponentSpec, StateMachineSpec, StateSpec,
@@ -281,12 +282,18 @@ pub(crate) fn build_state_machines(
                         input,
                         children,
                     } => {
-                        let input_id = resolve_reference(
+                        let lookup = |name: &str| input_name_to_index.get(name).map(|i| *i as u64);
+                        let input_id = references::require(
                             "blend_state1d",
-                            "input",
+                            &Namespace {
+                                kind: "input",
+                                name_field: "input",
+                                index_field: "input_id",
+                                lookup: &lookup,
+                                check: None,
+                            },
                             input.as_deref(),
                             *input_id,
-                            &input_name_to_index,
                         )?;
                         objects.push(Box::new(BlendState1DInput { input_id }));
                         if let Some(children) = children {
@@ -437,38 +444,24 @@ fn append_blend_state_1d_child(
         animation,
         value,
     } = spec;
-    let animation_id = resolve_reference(
+    let lookup = |name: &str| animation_name_to_index.get(name).map(|i| *i as u64);
+    let animation_id = references::require(
         "blend_animation1_d",
-        "animation",
+        &Namespace {
+            kind: "animation",
+            name_field: "animation",
+            index_field: "animation_id",
+            lookup: &lookup,
+            check: None,
+        },
         animation.as_deref(),
         *animation_id,
-        animation_name_to_index,
     )?;
     objects.push(Box::new(BlendAnimation1D {
         animation_id,
         value: value.unwrap_or(0.0),
     }));
     Ok(())
-}
-
-fn resolve_reference(
-    owner: &str,
-    kind: &str,
-    name: Option<&str>,
-    explicit: Option<u64>,
-    index: &HashMap<String, usize>,
-) -> Result<u64, String> {
-    match (name, explicit) {
-        (Some(_), Some(_)) => Err(format!(
-            "{owner} sets both '{kind}' and '{kind}_id'; use one or the other"
-        )),
-        (Some(name), None) => index
-            .get(name)
-            .map(|resolved| *resolved as u64)
-            .ok_or_else(|| format!("{owner} references {kind} '{name}', which is not defined")),
-        (None, Some(explicit)) => Ok(explicit),
-        (None, None) => Err(format!("{owner} needs a '{kind}' or '{kind}_id'")),
-    }
 }
 
 fn append_transition_child(
