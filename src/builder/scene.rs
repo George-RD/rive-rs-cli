@@ -8,7 +8,7 @@ use crate::objects::core::RiveObject;
 
 use super::animations::{build_animations, register_interpolators};
 use super::objects::{
-    SceneContext, append_file_asset, append_object, file_asset_name, is_file_asset,
+    FileAssetKind, SceneContext, append_file_asset, append_object, file_asset, is_file_asset,
 };
 use super::spec::{InterpolatorDef, SceneSpec};
 use super::state_machines::build_state_machines;
@@ -165,17 +165,19 @@ pub fn build_scene(
 
     objects.push(Box::new(Backboard));
 
-    let mut asset_ids: HashMap<String, u64> = HashMap::new();
+    let mut asset_ids: HashMap<String, (u64, FileAssetKind)> = HashMap::new();
+    let mut asset_kinds: Vec<FileAssetKind> = Vec::new();
     let mut next_asset_ordinal: u64 = 0;
     for artboard_spec in &artboard_specs {
         for child in &artboard_spec.children {
-            if let Some(asset_name) = file_asset_name(child) {
+            if let Some((asset_name, asset_kind)) = file_asset(child) {
                 if asset_ids.contains_key(asset_name) {
                     return Err(format!(
                         "asset '{asset_name}' is declared more than once; Rive stores assets at file scope, so their names must be unique across every artboard"
                     ));
                 }
-                asset_ids.insert(asset_name.to_owned(), next_asset_ordinal);
+                asset_ids.insert(asset_name.to_owned(), (next_asset_ordinal, asset_kind));
+                asset_kinds.push(asset_kind);
                 next_asset_ordinal += 1;
                 append_file_asset(child, &mut objects, base_dir)?;
             }
@@ -183,6 +185,7 @@ pub fn build_scene(
     }
     let ctx = SceneContext {
         asset_ids: &asset_ids,
+        asset_kinds: &asset_kinds,
     };
 
     for artboard_spec in &artboard_specs {

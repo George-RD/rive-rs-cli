@@ -391,13 +391,29 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
                             )?;
                         }
                         StateSpec::BlendState1d {
-                            input_id, children, ..
+                            input_id,
+                            input,
+                            children,
                         } => {
-                            if let Some(input_id) = input_id {
-                                validate_number_input(
-                                    *input_id,
+                            let resolved_input = match (input, input_id) {
+                                (Some(_), Some(_)) => {
+                                    return Err(format!(
+                                        "blend_state1d in state machine '{}' sets both 'input' and 'input_id'; use one or the other",
+                                        state_machine.name
+                                    ));
+                                }
+                                (Some(name), None) => Some(input_index_by_name(
+                                    name,
                                     state_machine.inputs.as_deref(),
-                                    "blend_state_1d input_id",
+                                    state_machine.name.as_str(),
+                                )?),
+                                (None, explicit) => *explicit,
+                            };
+                            if let Some(input_id) = resolved_input {
+                                validate_number_input(
+                                    input_id,
+                                    state_machine.inputs.as_deref(),
+                                    "blend_state_1d input",
                                     state_machine.name.as_str(),
                                 )?;
                             }
@@ -2353,6 +2369,28 @@ fn validate_index(
         ));
     }
     Ok(())
+}
+
+fn input_index_by_name(
+    name: &str,
+    inputs: Option<&[InputSpec]>,
+    state_machine_name: &str,
+) -> Result<u64, String> {
+    inputs
+        .unwrap_or(&[])
+        .iter()
+        .position(|input| match input {
+            InputSpec::Bool { name: n, .. }
+            | InputSpec::Number { name: n, .. }
+            | InputSpec::Trigger { name: n, .. } => n == name,
+        })
+        .map(|index| index as u64)
+        .ok_or_else(|| {
+            format!(
+                "blend_state1d references input '{}', which state machine '{}' does not declare",
+                name, state_machine_name
+            )
+        })
 }
 
 fn validate_number_input(

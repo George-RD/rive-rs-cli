@@ -386,7 +386,10 @@
             while (stepsAdvanced < target) {
               const previousMs = CLOCK_ORIGIN_MS + stepsAdvanced * stepMs;
               stepsAdvanced += 1;
-              applyScheduled(stepsAdvanced, previousMs);
+              const rejected = applyScheduled(stepsAdvanced, previousMs);
+              if (rejected) {
+                throw new Error(rejected);
+              }
               stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
             }
           } else {

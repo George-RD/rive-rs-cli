@@ -318,12 +318,14 @@ Both work, but only with **embedded asset bytes**.
 
 - Declare `font_asset` / `image_asset` as a **direct child of an artboard**. Assets live at file scope,
   so the tool hoists them ahead of every artboard and their names must be unique across the whole scene.
-- `source` is a path **relative to the scene JSON file's own directory**; absolute paths are rejected so
-  scenes stay portable. A licensed subset font ships at `assets/fonts/Inter-Bold-Subset.ttf` and a texture
-  at `assets/textures/aurora.png`.
+- `source` is a path **relative to the scene JSON file's own directory**. Absolute paths are rejected, and
+  the resolved file must stay inside the project that owns the scene, so `../assets/...` is fine but
+  escaping the repository is not. A licensed subset font ships at `assets/fonts/Inter-Bold-Subset.ttf` and
+  a texture at `assets/textures/aurora.png`.
 - Reference assets **by name**: `image` takes `asset`, `text_style` takes `font_asset`, and
   `text_value_run` takes `style`. The numeric `asset_id` / `font_asset_id` / `style_id` forms still exist
-  but require hand-computed indices — do not use them.
+  but require hand-computed indices — do not use them. A reference to an asset of the wrong kind (an
+  `image` naming a `font_asset`, say) is rejected at generate time.
 - A `text_style` needs a `fill` child or the glyphs draw nothing. Its other legal children are
   `stroke`, `text_style_feature` and `text_style_axis`.
 - `text` has no `x`/`y` of its own. Wrap it in a `node` and position that.

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Component, Path, PathBuf};
 
 use crate::objects::artboard::NestedArtboard;
 use crate::objects::assets::{self, AudioAsset, FileAssetContents, FontAsset, ImageAsset};
@@ -43,14 +43,33 @@ use super::parsers::{
 };
 use super::spec::{ObjectSpec, TextModifierGroupChildSpec};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum FileAssetKind {
+    Image,
+    Font,
+    Audio,
+}
+
+impl FileAssetKind {
+    fn label(self) -> &'static str {
+        match self {
+            FileAssetKind::Image => "image_asset",
+            FileAssetKind::Font => "font_asset",
+            FileAssetKind::Audio => "audio_asset",
+        }
+    }
+}
+
 pub(crate) struct SceneContext<'a> {
-    pub asset_ids: &'a HashMap<String, u64>,
+    pub asset_ids: &'a HashMap<String, (u64, FileAssetKind)>,
+    pub asset_kinds: &'a [FileAssetKind],
 }
 
 fn resolve_asset_ordinal(
     owner: &str,
     asset_name: Option<&str>,
     explicit: Option<u64>,
+    expected: FileAssetKind,
     ctx: &SceneContext<'_>,
 ) -> Result<Option<u64>, String> {
     match (asset_name, explicit) {
@@ -58,29 +77,45 @@ fn resolve_asset_ordinal(
             "'{owner}' sets both an asset name and an asset index; use one or the other"
         )),
         (Some(asset_name), None) => {
-            ctx.asset_ids
-                .get(asset_name)
-                .copied()
-                .map(Some)
-                .ok_or_else(|| {
-                    format!("'{owner}' references asset '{asset_name}', which no artboard declares")
-                })
+            let (ordinal, kind) = ctx.asset_ids.get(asset_name).copied().ok_or_else(|| {
+                format!("'{owner}' references asset '{asset_name}', which no artboard declares")
+            })?;
+            if kind != expected {
+                return Err(format!(
+                    "'{}' references asset '{}', which is a {}; it must be a {}",
+                    owner,
+                    asset_name,
+                    kind.label(),
+                    expected.label()
+                ));
+            }
+            Ok(Some(ordinal))
         }
-        (None, explicit) => Ok(explicit),
+        (None, Some(ordinal)) => match ctx.asset_kinds.get(ordinal as usize) {
+            Some(kind) if *kind != expected => Err(format!(
+                "'{}' references asset index {}, which is a {}; it must be a {}",
+                owner,
+                ordinal,
+                kind.label(),
+                expected.label()
+            )),
+            _ => Ok(Some(ordinal)),
+        },
+        (None, None) => Ok(None),
     }
 }
 
-pub(crate) fn file_asset_name(spec: &ObjectSpec) -> Option<&str> {
+pub(crate) fn file_asset(spec: &ObjectSpec) -> Option<(&str, FileAssetKind)> {
     match spec {
-        ObjectSpec::ImageAsset { name, .. }
-        | ObjectSpec::FontAsset { name, .. }
-        | ObjectSpec::AudioAsset { name, .. } => Some(name),
+        ObjectSpec::ImageAsset { name, .. } => Some((name, FileAssetKind::Image)),
+        ObjectSpec::FontAsset { name, .. } => Some((name, FileAssetKind::Font)),
+        ObjectSpec::AudioAsset { name, .. } => Some((name, FileAssetKind::Audio)),
         _ => None,
     }
 }
 
 pub(crate) fn is_file_asset(spec: &ObjectSpec) -> bool {
-    file_asset_name(spec).is_some()
+    file_asset(spec).is_some()
 }
 
 pub(crate) fn append_file_asset(
@@ -140,6 +175,38 @@ pub(crate) fn append_file_asset(
     }
 }
 
+const PROJECT_MARKERS: [&str; 3] = ["Cargo.toml", ".git", "package.json"];
+
+fn asset_root(base_dir: &Path) -> PathBuf {
+    let start = std::path::absolute(base_dir).unwrap_or_else(|_| base_dir.to_path_buf());
+    let mut cursor = normalise(&start);
+    loop {
+        if PROJECT_MARKERS
+            .iter()
+            .any(|marker| cursor.join(marker).exists())
+        {
+            return cursor;
+        }
+        if !cursor.pop() {
+            return normalise(&start);
+        }
+    }
+}
+
+fn normalise(path: &Path) -> PathBuf {
+    let mut out = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::ParentDir => {
+                out.pop();
+            }
+            Component::CurDir => {}
+            other => out.push(other),
+        }
+    }
+    out
+}
+
 fn append_asset_contents(
     asset_name: &str,
     source: Option<&str>,
@@ -162,7 +229,27 @@ fn append_asset_contents(
     }
     let path = base_dir.join(relative);
     let resolved = std::path::absolute(&path).unwrap_or_else(|_| path.clone());
-    let bytes = std::fs::read(&path).map_err(|error| {
+    let root = asset_root(base_dir);
+    let canonical_path = path.canonicalize().map_err(|error| {
+        format!(
+            "asset '{}' source '{}' could not be read from {}: {}",
+            asset_name,
+            source,
+            resolved.display(),
+            error
+        )
+    })?;
+    let canonical_root = root.canonicalize().unwrap_or_else(|_| normalise(&root));
+    if !canonical_path.starts_with(&canonical_root) {
+        return Err(format!(
+            "asset '{}' source '{}' resolves to {}, outside the project rooted at {}",
+            asset_name,
+            source,
+            canonical_path.display(),
+            canonical_root.display()
+        ));
+    }
+    let bytes = std::fs::read(&canonical_path).map_err(|error| {
         format!(
             "asset '{}' source '{}' could not be read from {}: {}",
             asset_name,
@@ -600,8 +687,14 @@ pub(crate) fn append_object(
             y,
             children,
         } => {
-            let resolved_asset_id =
-                resolve_asset_ordinal(name, asset.as_deref(), *asset_id, ctx)?.unwrap_or(0);
+            let resolved_asset_id = resolve_asset_ordinal(
+                name,
+                asset.as_deref(),
+                *asset_id,
+                FileAssetKind::Image,
+                ctx,
+            )?
+            .unwrap_or(0);
             let mut image = Image::new(name.clone(), parent_id, resolved_asset_id);
             if let Some(v) = x {
                 image.x = *v;
@@ -1684,9 +1777,13 @@ pub(crate) fn append_object(
             if let Some(v) = letter_spacing {
                 style.letter_spacing = *v;
             }
-            if let Some(v) =
-                resolve_asset_ordinal(name, font_asset.as_deref(), *font_asset_id, ctx)?
-            {
+            if let Some(v) = resolve_asset_ordinal(
+                name,
+                font_asset.as_deref(),
+                *font_asset_id,
+                FileAssetKind::Font,
+                ctx,
+            )? {
                 style.font_asset_id = v;
             }
             objects.push(Box::new(style));

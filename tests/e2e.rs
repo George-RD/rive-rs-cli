@@ -4959,3 +4959,112 @@ fn test_pointer_requires_a_state_machine() {
     );
     let _ = std::fs::remove_dir_all(&out);
 }
+
+fn generate_scene_expecting_failure(scene: &str, tag: &str) -> String {
+    let dir = std::env::temp_dir().join(format!("rive_reject_{}_{}", tag, std::process::id()));
+    std::fs::create_dir_all(&dir).expect("temp dir");
+    let path = dir.join("scene.json");
+    std::fs::write(&path, scene).expect("write scene");
+    let output = dir.join("out.riv");
+    let result = cargo_run(&[
+        "generate",
+        path.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    assert!(
+        !result.status.success(),
+        "expected generate to reject the scene"
+    );
+    let stderr = String::from_utf8_lossy(&result.stderr).into_owned();
+    let _ = std::fs::remove_dir_all(&dir);
+    stderr
+}
+
+#[test]
+fn test_asset_references_must_match_the_asset_kind() {
+    let named = generate_scene_expecting_failure(
+        r#"{"scene_format_version":1,"artboard":{"name":"A","width":100,"height":100,"children":[
+           {"type":"font_asset","name":"F"},
+           {"type":"image","name":"Sprite","asset":"F","x":50,"y":50}]}}"#,
+        "named_kind",
+    );
+    assert!(
+        named.contains("which is a font_asset; it must be a image_asset"),
+        "unexpected error: {named}"
+    );
+
+    let numeric = generate_scene_expecting_failure(
+        r#"{"scene_format_version":1,"artboard":{"name":"A","width":100,"height":100,"children":[
+           {"type":"font_asset","name":"F"},
+           {"type":"image","name":"Sprite","asset_id":0,"x":50,"y":50}]}}"#,
+        "numeric_kind",
+    );
+    assert!(
+        numeric.contains("references asset index 0, which is a font_asset"),
+        "unexpected error: {numeric}"
+    );
+}
+
+#[test]
+fn test_asset_source_may_not_escape_the_project() {
+    let stderr = generate_scene_expecting_failure(
+        r#"{"scene_format_version":1,"artboard":{"name":"A","width":100,"height":100,"children":[
+           {"type":"font_asset","name":"F","source":"../../../../../../etc/hosts"}]}}"#,
+        "escape",
+    );
+    assert!(
+        stderr.contains("outside the project rooted at"),
+        "unexpected error: {stderr}"
+    );
+}
+
+#[test]
+fn test_named_blend_input_must_be_a_number() {
+    let stderr = generate_scene_expecting_failure(
+        r#"{"scene_format_version":1,"artboard":{"name":"A","width":100,"height":100,
+           "children":[{"type":"shape","name":"S","x":50,"y":50,"children":[
+             {"type":"ellipse","name":"G","width":10,"height":10}]}],
+           "animations":[{"name":"a","fps":60,"duration":10,"keyframes":[
+             {"object":"S","property":"rotation","frames":[{"frame":0,"value":0},{"frame":9,"value":1}]}]}],
+           "state_machines":[{"name":"M","inputs":[{"type":"bool","name":"flag","value":false}],
+             "layers":[{"states":[{"type":"entry"},
+               {"type":"blend_state1d","input":"flag","children":[
+                 {"type":"blend_animation1_d","animation":"a","value":0}]},
+               {"type":"exit"}],
+              "transitions":[{"from":0,"to":1}]}]}]}}"#,
+        "blend_input",
+    );
+    assert!(
+        stderr.contains("must reference a number input, found bool"),
+        "unexpected error: {stderr}"
+    );
+}
+
+#[test]
+fn test_scheduled_input_failures_fail_the_render() {
+    let (riv, _guard) = generate_and_validate_output("pointer_interaction", "sched_reject");
+    let out = std::env::temp_dir().join(format!("rive_sched_reject_{}", std::process::id()));
+    let result = cargo_run(&[
+        "render",
+        riv.to_str().unwrap(),
+        "--state-machine",
+        "PointerMachine",
+        "--input",
+        "nope=true@10",
+        "--frames",
+        "0,20",
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    let stderr = String::from_utf8_lossy(&result.stderr).into_owned();
+    assert!(
+        !result.status.success(),
+        "a scheduled input naming an unknown input must fail the render"
+    );
+    assert!(
+        stderr.contains("state machine input 'nope' not found"),
+        "unexpected error: {stderr}"
+    );
+    let _ = std::fs::remove_dir_all(&out);
+}

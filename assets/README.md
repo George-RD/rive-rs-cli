@@ -14,5 +14,11 @@ Runtime and fixture assets shipped with `rive-cli`.
 
 `font_asset` and `image_asset` accept a `source` path. It is resolved relative to the
 directory containing the scene JSON, so a fixture in `tests/fixtures/` reaches this
-directory with `../../assets/fonts/Inter-Bold-Subset.ttf`. Absolute paths are rejected
-so scenes stay portable. The referenced bytes are embedded in the generated `.riv`.
+directory with `../../assets/fonts/Inter-Bold-Subset.ttf`. The referenced bytes are
+embedded in the generated `.riv`.
+
+Two rules keep `source` honest. Absolute paths are rejected, so scenes stay portable.
+The resolved path is canonicalised and must stay inside the project that owns the scene
+— the nearest ancestor holding `Cargo.toml`, `.git` or `package.json` — so neither `..`
+nor a symlink can pull an arbitrary file into a `.riv`. Embedding is refused outright on
+surfaces with no scene file on disk, such as the MCP server.
