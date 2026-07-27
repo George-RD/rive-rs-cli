@@ -241,6 +241,54 @@ const PARAMETRIC_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
     ("height", property_keys::PARAMETRIC_PATH_HEIGHT),
 ];
 
+const STRAIGHT_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    ("radius", property_keys::STRAIGHT_VERTEX_RADIUS),
+];
+
+const CUBIC_MIRRORED_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    ("rotation", property_keys::CUBIC_MIRRORED_VERTEX_ROTATION),
+    ("distance", property_keys::CUBIC_MIRRORED_VERTEX_DISTANCE),
+];
+
+const CUBIC_DETACHED_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    (
+        "in_rotation",
+        property_keys::CUBIC_DETACHED_VERTEX_IN_ROTATION,
+    ),
+    (
+        "in_distance",
+        property_keys::CUBIC_DETACHED_VERTEX_IN_DISTANCE,
+    ),
+    (
+        "out_rotation",
+        property_keys::CUBIC_DETACHED_VERTEX_OUT_ROTATION,
+    ),
+    (
+        "out_distance",
+        property_keys::CUBIC_DETACHED_VERTEX_OUT_DISTANCE,
+    ),
+];
+
+const CUBIC_ASYMMETRIC_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    ("rotation", property_keys::CUBIC_ASYMMETRIC_VERTEX_ROTATION),
+    (
+        "in_distance",
+        property_keys::CUBIC_ASYMMETRIC_VERTEX_IN_DISTANCE,
+    ),
+    (
+        "out_distance",
+        property_keys::CUBIC_ASYMMETRIC_VERTEX_OUT_DISTANCE,
+    ),
+];
+
 const SOLID_COLOR_ANIMATABLE_PROPERTIES: &[(&str, u16)] =
     &[("color", property_keys::SOLID_COLOR_VALUE)];
 const GRADIENT_STOP_ANIMATABLE_PROPERTIES: &[(&str, u16)] =
@@ -329,6 +377,43 @@ fn is_parametric_type(type_name: &str) -> bool {
     )
 }
 
+fn vertex_animatable_properties(type_name: &str) -> Option<&'static [(&'static str, u16)]> {
+    match type_name {
+        "straight_vertex" => Some(STRAIGHT_VERTEX_ANIMATABLE_PROPERTIES),
+        "cubic_mirrored_vertex" => Some(CUBIC_MIRRORED_VERTEX_ANIMATABLE_PROPERTIES),
+        "cubic_detached_vertex" => Some(CUBIC_DETACHED_VERTEX_ANIMATABLE_PROPERTIES),
+        "cubic_asymmetric_vertex" => Some(CUBIC_ASYMMETRIC_VERTEX_ANIMATABLE_PROPERTIES),
+        _ => None,
+    }
+}
+
+const LISTENER_TYPES: &[(&str, u64)] = &[
+    ("enter", 0),
+    ("exit", 1),
+    ("down", 2),
+    ("up", 3),
+    ("move", 4),
+    ("event", 5),
+    ("click", 6),
+];
+
+pub(crate) fn parse_listener_type(name: &str) -> Result<u64, String> {
+    LISTENER_TYPES
+        .iter()
+        .find_map(|(listener, value)| (*listener == name).then_some(*value))
+        .ok_or_else(|| {
+            format!(
+                "unknown listener_type '{}'; expected one of {}",
+                name,
+                LISTENER_TYPES
+                    .iter()
+                    .map(|(listener, _)| *listener)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        })
+}
+
 pub(crate) fn animatable_properties_for_object_type(type_name: &str) -> Vec<&'static str> {
     let mut properties = match type_name {
         "text_style" => property_names(TEXT_STYLE_ANIMATABLE_PROPERTIES),
@@ -369,7 +454,9 @@ pub(crate) fn animatable_properties_for_object_type(type_name: &str) -> Vec<&'st
         | "nested_artboard_layout"
         | "root_bone"
         | "n_sliced_node" => transform_property_names(),
-        _ => Vec::new(),
+        _ => vertex_animatable_properties(type_name)
+            .map(property_names)
+            .unwrap_or_default(),
     };
     let mut seen = HashSet::new();
     properties.retain(|name| seen.insert(*name));
@@ -413,14 +500,17 @@ pub(crate) fn animatable_property_key_for_object_type(
             property_key_from(PARAMETRIC_ANIMATABLE_PROPERTIES, property_name)
                 .or_else(|| property_key_from(TRANSFORM_ANIMATABLE_PROPERTIES, property_name))
         }
-        _ => property_key_from_name(property_name),
+        _ => match vertex_animatable_properties(type_name) {
+            Some(properties) => property_key_from(properties, property_name),
+            None => property_key_from_name(property_name),
+        },
     }
 }
 pub(crate) fn object_type_name_for_key(object_type_key: u16) -> &'static str {
     match object_type_key {
         type_keys::TEXT => "text",
         type_keys::LAYOUT_COMPONENT => "layout_component",
-        type_keys::TEXT_STYLE => "text_style",
+        type_keys::TEXT_STYLE_PAINT => "text_style",
         type_keys::TEXT_MODIFIER_GROUP => "text_modifier_group",
         type_keys::TEXT_VALUE_RUN => "text_value_run",
         type_keys::CLIPPING_SHAPE => "clipping_shape",
@@ -441,6 +531,10 @@ pub(crate) fn object_type_name_for_key(object_type_key: u16) -> &'static str {
         type_keys::SHAPE => "shape",
         type_keys::NODE => "node",
         type_keys::IMAGE => "image",
+        type_keys::STRAIGHT_VERTEX => "straight_vertex",
+        type_keys::CUBIC_MIRRORED_VERTEX => "cubic_mirrored_vertex",
+        type_keys::CUBIC_DETACHED_VERTEX => "cubic_detached_vertex",
+        type_keys::CUBIC_ASYMMETRIC_VERTEX => "cubic_asymmetric_vertex",
         _ => "object",
     }
 }

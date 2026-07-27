@@ -58,11 +58,17 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
         ));
     }
 
-    let mut image_assets_seen: u64 = 0;
+    let file_asset_count = parsed
+        .objects
+        .iter()
+        .filter(|obj| {
+            matches!(
+                obj.type_key,
+                type_keys::IMAGE_ASSET | type_keys::FONT_ASSET | type_keys::AUDIO_ASSET
+            )
+        })
+        .count() as u64;
     for (idx, obj) in parsed.objects.iter().enumerate() {
-        if obj.type_key == type_keys::IMAGE_ASSET {
-            image_assets_seen += 1;
-        }
         if obj.type_key == type_keys::IMAGE {
             let asset_id = obj
                 .properties
@@ -74,10 +80,10 @@ pub fn validate_riv(data: &[u8]) -> Result<ValidationReport, String> {
                 });
 
             match asset_id {
-                Some(v) if v < image_assets_seen => {}
+                Some(v) if v < file_asset_count => {}
                 Some(v) => errors.push(format!(
-                    "image object at index {} references image asset index {} but only {} image asset(s) were defined before it",
-                    idx, v, image_assets_seen
+                    "image object at index {} references asset index {} but the file declares {} asset(s)",
+                    idx, v, file_asset_count
                 )),
                 None => errors.push(format!(
                     "image object at index {} is missing image asset reference property {}",
@@ -140,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_riv_image_reference_requires_asset_before_image() {
+    fn test_validate_riv_image_reference_requires_declared_asset() {
         let backboard = Backboard;
         let artboard = Artboard::new("Main".to_string(), 500.0, 500.0);
         let image = Image::new("Hero".to_string(), 0, 0);
@@ -152,7 +158,7 @@ mod tests {
             report
                 .errors
                 .iter()
-                .any(|e| e.contains("references image asset index")),
+                .any(|e| e.contains("references asset index")),
             "expected image asset reference error, got: {:?}",
             report.errors
         );

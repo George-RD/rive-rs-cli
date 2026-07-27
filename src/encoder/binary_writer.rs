@@ -41,6 +41,11 @@ impl BinaryWriter {
         self.buffer.extend_from_slice(bytes);
     }
 
+    pub fn write_byte_array(&mut self, bytes: &[u8]) {
+        self.write_varuint(bytes.len() as u64);
+        self.buffer.extend_from_slice(bytes);
+    }
+
     pub fn write_color(&mut self, value: u32) {
         let bytes = value.to_le_bytes();
         self.buffer.extend_from_slice(&bytes);

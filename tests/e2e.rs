@@ -2464,7 +2464,7 @@ fn test_inspect_json_constraints() {
 }
 
 const TEXT_TYPE_KEY: u64 = 134;
-const TEXT_STYLE_TYPE_KEY: u64 = 573;
+const TEXT_STYLE_TYPE_KEY: u64 = 137;
 const TEXT_VALUE_RUN_TYPE_KEY: u64 = 135;
 const IMAGE_TYPE_KEY: u64 = 100;
 const IMAGE_ASSET_TYPE_KEY: u64 = 105;
@@ -3410,7 +3410,12 @@ fn test_generate_validate_inspect_blend_animation() {
     let parsed = generate_and_inspect_json("blend_animation");
     let objects = json_objects(&parsed);
 
-    find_object_by_type(objects, "BlendState1D");
+    assert!(
+        !objects
+            .iter()
+            .any(|object| object["type_name"] == "BlendState1D"),
+        "the abstract BlendState1D base must not be emitted alongside BlendState1DInput"
+    );
     let blend_state_input = find_object_by_type(objects, "BlendState1DInput");
     assert_eq!(uint_property(blend_state_input, "inputId"), 0);
 
@@ -3554,12 +3559,23 @@ fn test_generate_validate_inspect_text_modifiers() {
     let parsed = generate_and_inspect_json("text_modifiers");
     let objects = json_objects(&parsed);
 
-    let text_style = find_object_by_type(objects, "TextStyle");
+    let text_style = find_object_by_type(objects, "TextStylePaint");
     assert_eq!(string_property(text_style, "name"), "BaseStyle");
     assert_eq!(float_property(text_style, "fontSize"), 32.0);
 
+    let style_local_index = objects
+        .iter()
+        .position(|object| object["type_name"] == "TextStylePaint")
+        .and_then(|index| {
+            objects
+                .iter()
+                .position(|object| object["type_name"] == "Artboard")
+                .map(|artboard| (index - artboard) as u64)
+        })
+        .expect("text style and artboard present");
+
     let style_feature = find_object_by_type(objects, "TextStyleFeature");
-    assert_eq!(uint_property(style_feature, "parentId"), 2);
+    assert_eq!(uint_property(style_feature, "parentId"), style_local_index);
     assert_eq!(uint_property(style_feature, "tag"), 1818847073);
     assert_eq!(uint_property(style_feature, "featureValue"), 1);
 
@@ -3568,12 +3584,23 @@ fn test_generate_validate_inspect_text_modifiers() {
     assert_eq!(uint_property(modifier_group, "modifierFlags"), 1);
     assert_eq!(float_property(modifier_group, "y"), 10.0);
 
+    let group_local_index = objects
+        .iter()
+        .position(|object| object["type_name"] == "TextModifierGroup")
+        .and_then(|index| {
+            objects
+                .iter()
+                .position(|object| object["type_name"] == "Artboard")
+                .map(|artboard| (index - artboard) as u64)
+        })
+        .expect("modifier group and artboard present");
+
     let modifier_range = find_object_by_type(objects, "TextModifierRange");
-    assert_eq!(uint_property(modifier_range, "parentId"), 5);
+    assert_eq!(uint_property(modifier_range, "parentId"), group_local_index);
     assert_eq!(float_property(modifier_range, "falloffTo"), 1.0);
 
     let variation = find_object_by_type(objects, "TextVariationModifier");
-    assert_eq!(uint_property(variation, "parentId"), 5);
+    assert_eq!(uint_property(variation, "parentId"), group_local_index);
     assert_eq!(uint_property(variation, "axisTag"), 2003265652);
     assert_eq!(float_property(variation, "axisValue"), 700.0);
 }
@@ -4632,4 +4659,303 @@ fn test_showcase_riv_files_are_up_to_date() {
         );
         drop(guard);
     }
+}
+
+#[test]
+fn test_vertex_morph_keyframes_target_vertex_property_keys() {
+    const VERTEX_X_KEY: u64 = 24;
+    const VERTEX_Y_KEY: u64 = 25;
+    const STRAIGHT_VERTEX_RADIUS_KEY: u64 = 26;
+    const CUBIC_DETACHED_IN_ROTATION_KEY: u64 = 84;
+    const CUBIC_DETACHED_OUT_DISTANCE_KEY: u64 = 87;
+    const NODE_X_KEY: u64 = 13;
+    const NODE_Y_KEY: u64 = 14;
+    const KEYED_PROPERTY_KEY_NAME: &str = "propertyKey";
+
+    let parsed = generate_and_inspect_json("vertex_morph");
+    let keyed: Vec<u64> = json_objects(&parsed)
+        .iter()
+        .filter(|object| object["type_name"] == "KeyedProperty")
+        .flat_map(json_properties)
+        .filter(|property| property["name"] == KEYED_PROPERTY_KEY_NAME)
+        .filter_map(|property| property["value"]["UInt"].as_u64())
+        .collect();
+
+    for expected in [
+        VERTEX_X_KEY,
+        VERTEX_Y_KEY,
+        STRAIGHT_VERTEX_RADIUS_KEY,
+        CUBIC_DETACHED_IN_ROTATION_KEY,
+        CUBIC_DETACHED_OUT_DISTANCE_KEY,
+    ] {
+        assert!(
+            keyed.contains(&expected),
+            "vertex keyframes should target property key {expected}, got {keyed:?}"
+        );
+    }
+
+    for forbidden in [NODE_X_KEY, NODE_Y_KEY] {
+        assert!(
+            !keyed.contains(&forbidden),
+            "vertex x/y keyframes must not fall back to node key {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn test_embedded_assets_carry_real_bytes_at_file_scope() {
+    const FILE_ASSET_CONTENTS_TYPE_KEY: u64 = 106;
+    const ARTBOARD_TYPE_KEY_LOCAL: u64 = 1;
+    const FONT_ASSET_TYPE_KEY: u64 = 141;
+    const IMAGE_ASSET_TYPE_KEY: u64 = 105;
+
+    let parsed = generate_and_inspect_json("embedded_assets");
+    let objects = json_objects(&parsed);
+
+    let type_at = |index: usize| objects[index]["type_key"].as_u64().expect("type key");
+    let artboard_index = objects
+        .iter()
+        .position(|object| object["type_key"] == ARTBOARD_TYPE_KEY_LOCAL)
+        .expect("artboard present");
+
+    let contents: Vec<usize> = objects
+        .iter()
+        .enumerate()
+        .filter(|(_, object)| object["type_key"] == FILE_ASSET_CONTENTS_TYPE_KEY)
+        .map(|(index, _)| index)
+        .collect();
+    assert_eq!(
+        contents.len(),
+        2,
+        "font and image contents should be present"
+    );
+
+    for index in contents {
+        assert!(
+            index < artboard_index,
+            "asset contents must precede the artboard, got index {index}"
+        );
+        assert!(
+            matches!(
+                type_at(index - 1),
+                FONT_ASSET_TYPE_KEY | IMAGE_ASSET_TYPE_KEY
+            ),
+            "contents at {index} must immediately follow its asset"
+        );
+        let length = json_properties(&objects[index])
+            .iter()
+            .find_map(|property| property["value"]["Bytes"]["length"].as_u64())
+            .expect("contents should carry a byte length");
+        assert!(length > 0, "embedded asset should not be empty");
+    }
+}
+
+#[test]
+fn test_embedded_assets_resolve_references_by_name() {
+    const IMAGE_TYPE_KEY: u64 = 100;
+    const TEXT_STYLE_PAINT_TYPE_KEY: u64 = 137;
+    const TEXT_VALUE_RUN_TYPE_KEY_LOCAL: u64 = 135;
+
+    let parsed = generate_and_inspect_json("embedded_assets");
+    let objects = json_objects(&parsed);
+    let find = |type_key: u64| {
+        objects
+            .iter()
+            .find(|object| object["type_key"] == type_key)
+            .expect("object present")
+    };
+    let uint = |object: &serde_json::Value, name: &str| {
+        json_properties(object)
+            .iter()
+            .find(|property| property["name"] == name)
+            .and_then(|property| property["value"]["UInt"].as_u64())
+            .unwrap_or_else(|| panic!("missing {name}"))
+    };
+
+    assert_eq!(
+        uint(find(TEXT_STYLE_PAINT_TYPE_KEY), "fontAssetId"),
+        0,
+        "font asset declared first should resolve to ordinal 0"
+    );
+    assert_eq!(
+        uint(find(IMAGE_TYPE_KEY), "assetId"),
+        1,
+        "image asset declared second should resolve to ordinal 1"
+    );
+    let style_index = objects
+        .iter()
+        .position(|object| object["type_key"] == TEXT_STYLE_PAINT_TYPE_KEY)
+        .expect("text style present");
+    let artboard_index = objects
+        .iter()
+        .position(|object| object["type_key"] == 1)
+        .expect("artboard present");
+    assert_eq!(
+        uint(find(TEXT_VALUE_RUN_TYPE_KEY_LOCAL), "styleId"),
+        (style_index - artboard_index) as u64,
+        "style reference should resolve to the artboard-local style index"
+    );
+}
+
+#[test]
+fn test_asset_source_errors_are_actionable() {
+    let dir = std::env::temp_dir().join(format!("rive_asset_src_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("temp dir");
+    let scene = dir.join("scene.json");
+    let output = dir.join("out.riv");
+
+    let write_scene = |source: &str| {
+        std::fs::write(
+            &scene,
+            format!(
+                r#"{{"scene_format_version":1,"artboard":{{"name":"A","width":10,"height":10,
+                   "children":[{{"type":"font_asset","name":"F","source":"{source}"}}]}}}}"#
+            ),
+        )
+        .expect("write scene");
+    };
+
+    write_scene("missing.ttf");
+    let missing = cargo_run(&[
+        "generate",
+        scene.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    let stderr = String::from_utf8_lossy(&missing.stderr).into_owned();
+    assert!(!missing.status.success(), "missing source should fail");
+    assert!(
+        stderr.contains("could not be read") && stderr.contains("missing.ttf"),
+        "unexpected error: {stderr}"
+    );
+
+    write_scene("/etc/hosts");
+    let absolute = cargo_run(&[
+        "generate",
+        scene.to_str().unwrap(),
+        "-o",
+        output.to_str().unwrap(),
+    ]);
+    let stderr = String::from_utf8_lossy(&absolute.stderr).into_owned();
+    assert!(!absolute.status.success(), "absolute source should fail");
+    assert!(
+        stderr.contains("must be relative to the scene file's directory"),
+        "unexpected error: {stderr}"
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+fn render_interaction(
+    riv: &std::path::Path,
+    out: &std::path::Path,
+    extra: &[&str],
+) -> Vec<Vec<u8>> {
+    let mut args: Vec<&str> = vec![
+        "render",
+        riv.to_str().unwrap(),
+        "--state-machine",
+        "PointerMachine",
+        "--frames",
+        "0,9,20",
+        "-o",
+        out.to_str().unwrap(),
+    ];
+    args.extend_from_slice(extra);
+    let result = cargo_run(&args);
+    assert!(
+        result.status.success(),
+        "render failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    ["frame_00000.png", "frame_00009.png", "frame_00020.png"]
+        .iter()
+        .map(|name| std::fs::read(out.join(name)).expect("frame should exist"))
+        .collect()
+}
+
+#[test]
+fn test_pointer_and_scheduled_input_change_the_render() {
+    let (riv, _guard) = generate_and_validate_output("pointer_interaction", "interaction");
+    let root = std::env::temp_dir().join(format!("rive_interaction_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+
+    let plain = render_interaction(&riv, &root.join("plain"), &[]);
+    let pointer = render_interaction(
+        &riv,
+        &root.join("pointer"),
+        &["--pointer", "down:160,160@10"],
+    );
+    let scheduled = render_interaction(
+        &riv,
+        &root.join("scheduled"),
+        &["--input", "engaged=true@10"],
+    );
+    let repeat = render_interaction(
+        &riv,
+        &root.join("repeat"),
+        &["--pointer", "down:160,160@10"],
+    );
+    let outside = render_interaction(&riv, &root.join("outside"), &["--pointer", "down:8,8@10"]);
+
+    assert_eq!(
+        plain[1], pointer[1],
+        "frame 9 precedes the scheduled pointer and must be unchanged"
+    );
+    assert_ne!(
+        plain[2], pointer[2],
+        "a pointer down inside the listener target must change frame 20"
+    );
+    assert_eq!(
+        pointer, repeat,
+        "the same pointer sequence must render byte-identically"
+    );
+    assert_eq!(
+        plain, outside,
+        "a pointer down outside the listener target must not change any frame"
+    );
+    assert_eq!(
+        plain[1], scheduled[1],
+        "frame 9 precedes the scheduled input and must be unchanged"
+    );
+    assert_ne!(
+        plain[2], scheduled[2],
+        "a scheduled input must change frames after its frame"
+    );
+
+    let manifest: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(root.join("pointer").join("manifest.json")).expect("manifest"),
+    )
+    .expect("manifest json");
+    assert_eq!(manifest["applied_pointers"][0]["event"], "down");
+    assert_eq!(manifest["applied_pointers"][0]["frame"], 10);
+
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[test]
+fn test_pointer_requires_a_state_machine() {
+    let (riv, _guard) = generate_and_validate_output("pointer_interaction", "pointer_guard");
+    let out = std::env::temp_dir().join(format!("rive_pointer_guard_{}", std::process::id()));
+    let result = cargo_run(&[
+        "render",
+        riv.to_str().unwrap(),
+        "--pointer",
+        "down:1,1@0",
+        "--frames",
+        "0",
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    assert!(
+        !result.status.success(),
+        "pointer without --state-machine should fail"
+    );
+    assert!(
+        String::from_utf8_lossy(&result.stderr)
+            .contains("--pointer only applies when --state-machine is given"),
+        "unexpected error: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let _ = std::fs::remove_dir_all(&out);
 }

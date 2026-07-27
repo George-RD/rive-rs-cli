@@ -1,0 +1,220 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "VertexMorph",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Blob",
+        "x": 200,
+        "y": 160,
+        "children": [
+          {
+            "type": "points_path",
+            "name": "BlobPath",
+            "is_closed": true,
+            "children": [
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobTop",
+                "x": 0,
+                "y": -70,
+                "in_rotation": 3.14159265,
+                "in_distance": 40,
+                "out_rotation": 0,
+                "out_distance": 40
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobRight",
+                "x": 70,
+                "y": 0,
+                "in_rotation": -1.57079633,
+                "in_distance": 40,
+                "out_rotation": 1.57079633,
+                "out_distance": 40
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobBottom",
+                "x": 0,
+                "y": 70,
+                "in_rotation": 0,
+                "in_distance": 40,
+                "out_rotation": 3.14159265,
+                "out_distance": 40
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobLeft",
+                "x": -70,
+                "y": 0,
+                "in_rotation": 1.57079633,
+                "in_distance": 40,
+                "out_rotation": -1.57079633,
+                "out_distance": 40
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "BlobFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "BlobInk",
+                "color": "#22D3EE"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Wedge",
+        "x": 200,
+        "y": 310,
+        "children": [
+          {
+            "type": "points_path",
+            "name": "WedgePath",
+            "is_closed": true,
+            "children": [
+              {
+                "type": "straight_vertex",
+                "name": "WedgeApex",
+                "x": 0,
+                "y": -50,
+                "radius": 0
+              },
+              {
+                "type": "straight_vertex",
+                "name": "WedgeRight",
+                "x": 60,
+                "y": 40,
+                "radius": 0
+              },
+              {
+                "type": "straight_vertex",
+                "name": "WedgeLeft",
+                "x": -60,
+                "y": 40,
+                "radius": 0
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "WedgeFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "WedgeInk",
+                "color": "#B7F34A"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "morph",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "pingpong",
+        "interpolators": [
+          {
+            "name": "morph_ease",
+            "x1": 0.33,
+            "y1": 0.0,
+            "x2": 0.67,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "BlobTop",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -70,
+                "interpolation": "cubic",
+                "interpolator": "morph_ease"
+              },
+              { "frame": 30, "value": -140 }
+            ]
+          },
+          {
+            "object": "BlobRight",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 70,
+                "interpolation": "cubic",
+                "interpolator": "morph_ease"
+              },
+              { "frame": 30, "value": 150 }
+            ]
+          },
+          {
+            "object": "BlobRight",
+            "property": "out_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 40,
+                "interpolation": "cubic",
+                "interpolator": "morph_ease"
+              },
+              { "frame": 30, "value": 110 }
+            ]
+          },
+          {
+            "object": "BlobLeft",
+            "property": "in_rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.57079633,
+                "interpolation": "cubic",
+                "interpolator": "morph_ease"
+              },
+              { "frame": 30, "value": 2.61799388 }
+            ]
+          },
+          {
+            "object": "WedgeApex",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -50,
+                "interpolation": "cubic",
+                "interpolator": "morph_ease"
+              },
+              { "frame": 30, "value": -20 }
+            ]
+          },
+          {
+            "object": "WedgeRight",
+            "property": "radius",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0,
+                "interpolation": "cubic",
+                "interpolator": "morph_ease"
+              },
+              { "frame": 30, "value": 30 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

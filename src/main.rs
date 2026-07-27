@@ -120,7 +120,11 @@ fn main() {
                 eprintln!("error parsing JSON: {}", e);
                 std::process::exit(1);
             });
-            let scene = builder::build_scene(&spec).unwrap_or_else(|e| {
+            let base_dir = input
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .unwrap_or_else(|| std::path::Path::new("."));
+            let scene = builder::build_scene(&spec, Some(base_dir)).unwrap_or_else(|e| {
                 if json {
                     json_error(
                         "generate",
@@ -359,6 +363,7 @@ fn main() {
             animation,
             state_machine,
             inputs,
+            pointers,
             artboard,
             width,
             height,
@@ -397,6 +402,7 @@ fn main() {
                 animation,
                 state_machine,
                 inputs,
+                pointers,
                 artboard,
                 width,
                 height,

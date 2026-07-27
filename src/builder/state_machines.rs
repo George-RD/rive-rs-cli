@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use crate::objects::core::RiveObject;
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
-    BlendState1D, BlendState1DInput, BlendState1DViewModel, BlendStateDirect, EntryState,
-    ExitState, ListenerAlignTarget, ListenerBoolChange, ListenerFireEvent, ListenerNumberChange,
+    BlendState1DInput, BlendState1DViewModel, BlendStateDirect, EntryState, ExitState,
+    ListenerAlignTarget, ListenerBoolChange, ListenerFireEvent, ListenerNumberChange,
     ListenerTriggerChange, ListenerViewModelChange, StateMachine, StateMachineBool,
     StateMachineComponentNestedArtboard, StateMachineFireAction, StateMachineFireEvent,
     StateMachineFireTrigger, StateMachineLayer, StateMachineListener, StateMachineNestedInput,
@@ -19,7 +19,9 @@ use crate::objects::state_machine::{
     TransitionViewModelCondition,
 };
 
-use super::parsers::{input_is_trigger, json_value_to_f32, parse_color, parse_condition_op};
+use super::parsers::{
+    input_is_trigger, json_value_to_f32, parse_color, parse_condition_op, parse_listener_type,
+};
 use super::spec::{
     BlendState1DChildSpec, BlendStateChildSpec, BlendStateDirectChildSpec, InputSpec,
     ListenerActionSpec, StateMachineComponentSpec, StateMachineSpec, StateSpec,
@@ -121,9 +123,23 @@ pub(crate) fn build_state_machines(
                             listener.target
                         )
                     })? as u64;
+                let listener_type_value = match (
+                    &listener.listener_type,
+                    listener.listener_type_value,
+                ) {
+                    (Some(_), Some(_)) => {
+                        return Err(format!(
+                            "state machine listener on '{}' sets both 'listener_type' and 'listener_type_value'; use one or the other",
+                            listener.target
+                        ));
+                    }
+                    (Some(name), None) => parse_listener_type(name)?,
+                    (None, Some(value)) => value,
+                    (None, None) => 0,
+                };
                 objects.push(Box::new(StateMachineListener {
                     target_id: listener_target_id,
-                    listener_type_value: listener.listener_type_value.unwrap_or(0),
+                    listener_type_value,
                 }));
 
                 if let Some(actions) = &listener.actions {
@@ -260,16 +276,26 @@ pub(crate) fn build_state_machines(
                             }
                         }
                     }
-                    StateSpec::BlendState1d { input_id, children } => {
-                        objects.push(Box::new(BlendState1D));
-                        if let Some(input_id) = input_id {
-                            objects.push(Box::new(BlendState1DInput {
-                                input_id: *input_id,
-                            }));
-                        }
+                    StateSpec::BlendState1d {
+                        input_id,
+                        input,
+                        children,
+                    } => {
+                        let input_id = resolve_reference(
+                            "blend_state1d",
+                            "input",
+                            input.as_deref(),
+                            *input_id,
+                            &input_name_to_index,
+                        )?;
+                        objects.push(Box::new(BlendState1DInput { input_id }));
                         if let Some(children) = children {
                             for child in children {
-                                append_blend_state_1d_child(child, objects);
+                                append_blend_state_1d_child(
+                                    child,
+                                    animation_name_to_index,
+                                    objects,
+                                )?;
                             }
                         }
                     }
@@ -403,16 +429,46 @@ fn append_blend_state_direct_child(
 
 fn append_blend_state_1d_child(
     spec: &BlendState1DChildSpec,
+    animation_name_to_index: &HashMap<String, usize>,
     objects: &mut Vec<Box<dyn RiveObject>>,
-) {
+) -> Result<(), String> {
     let BlendState1DChildSpec::BlendAnimation1D {
         animation_id,
+        animation,
         value,
     } = spec;
+    let animation_id = resolve_reference(
+        "blend_animation1_d",
+        "animation",
+        animation.as_deref(),
+        *animation_id,
+        animation_name_to_index,
+    )?;
     objects.push(Box::new(BlendAnimation1D {
-        animation_id: *animation_id,
+        animation_id,
         value: value.unwrap_or(0.0),
     }));
+    Ok(())
+}
+
+fn resolve_reference(
+    owner: &str,
+    kind: &str,
+    name: Option<&str>,
+    explicit: Option<u64>,
+    index: &HashMap<String, usize>,
+) -> Result<u64, String> {
+    match (name, explicit) {
+        (Some(_), Some(_)) => Err(format!(
+            "{owner} sets both '{kind}' and '{kind}_id'; use one or the other"
+        )),
+        (Some(name), None) => index
+            .get(name)
+            .map(|resolved| *resolved as u64)
+            .ok_or_else(|| format!("{owner} references {kind} '{name}', which is not defined")),
+        (None, Some(explicit)) => Ok(explicit),
+        (None, None) => Err(format!("{owner} needs a '{kind}' or '{kind}_id'")),
+    }
 }
 
 fn append_transition_child(

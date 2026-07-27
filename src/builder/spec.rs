@@ -138,7 +138,10 @@ pub enum ObjectSpec {
     },
     Image {
         name: String,
-        asset_id: u64,
+        #[serde(default)]
+        asset_id: Option<u64>,
+        #[serde(default)]
+        asset: Option<String>,
         x: Option<f32>,
         y: Option<f32>,
         children: Option<Vec<ObjectSpec>>,
@@ -430,22 +433,30 @@ pub enum ObjectSpec {
         line_height: Option<f32>,
         letter_spacing: Option<f32>,
         font_asset_id: Option<u64>,
-        children: Option<Vec<TextStyleChildSpec>>,
+        #[serde(default)]
+        font_asset: Option<String>,
+        children: Option<Vec<ObjectSpec>>,
     },
     TextValueRun {
         name: String,
         text: String,
         style_id: Option<u64>,
+        #[serde(default)]
+        style: Option<String>,
     },
     ImageAsset {
         name: String,
         asset_id: Option<u64>,
         cdn_base_url: Option<String>,
+        #[serde(default)]
+        source: Option<String>,
     },
     FontAsset {
         name: String,
         asset_id: Option<u64>,
         cdn_base_url: Option<String>,
+        #[serde(default)]
+        source: Option<String>,
     },
     AudioAsset {
         name: String,
@@ -1076,10 +1087,6 @@ pub enum ObjectSpec {
         flags: u64,
         converter_id: Option<u64>,
     },
-    TextStylePaint {
-        name: String,
-        children: Option<Vec<ObjectSpec>>,
-    },
     TextStyleAxis {
         tag: Option<u64>,
         axis_value: Option<f32>,
@@ -1407,6 +1414,8 @@ pub enum StateMachineComponentSpec {
 pub struct StateMachineListenerSpec {
     pub target: String,
     pub listener_type_value: Option<u64>,
+    #[serde(default)]
+    pub listener_type: Option<String>,
     pub actions: Option<Vec<ListenerActionSpec>>,
 }
 
@@ -1483,6 +1492,8 @@ pub enum StateSpec {
     #[serde(alias = "blend_state_1d")]
     BlendState1d {
         input_id: Option<u64>,
+        #[serde(default)]
+        input: Option<String>,
         children: Option<Vec<BlendState1DChildSpec>>,
     },
 }
@@ -1509,17 +1520,11 @@ pub enum BlendStateDirectChildSpec {
 pub enum BlendState1DChildSpec {
     #[serde(alias = "blend_animation_1d")]
     BlendAnimation1D {
-        animation_id: u64,
+        #[serde(default)]
+        animation_id: Option<u64>,
+        #[serde(default)]
+        animation: Option<String>,
         value: Option<f32>,
-    },
-}
-
-#[derive(Debug, Deserialize, JsonSchema)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum TextStyleChildSpec {
-    TextStyleFeature {
-        tag: Option<u64>,
-        feature_value: Option<u64>,
     },
 }
 
@@ -1593,6 +1598,7 @@ pub(crate) enum ParentKind {
     Gradient,
     Bone,
     Text,
+    TextStyle,
     LayoutComponent,
     ViewModel,
     Mesh,

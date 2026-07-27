@@ -130,7 +130,7 @@ impl TextStyle {
 
 impl RiveObject for TextStyle {
     fn type_key(&self) -> u16 {
-        type_keys::TEXT_STYLE
+        type_keys::TEXT_STYLE_PAINT
     }
 
     fn properties(&self) -> Vec<Property> {
@@ -497,29 +497,6 @@ impl RiveObject for TextStyleFeature {
             });
         }
         props
-    }
-}
-
-pub struct TextStylePaint {
-    pub name: String,
-    pub parent_id: u64,
-}
-
-impl RiveObject for TextStylePaint {
-    fn type_key(&self) -> u16 {
-        type_keys::TEXT_STYLE_PAINT
-    }
-    fn properties(&self) -> Vec<Property> {
-        vec![
-            Property {
-                key: property_keys::COMPONENT_NAME,
-                value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
-            },
-        ]
     }
 }
 
@@ -926,7 +903,7 @@ mod tests {
     #[test]
     fn test_text_style_type_key() {
         let style = TextStyle::new("style1".to_string(), 0);
-        assert_eq!(style.type_key(), type_keys::TEXT_STYLE);
+        assert_eq!(style.type_key(), type_keys::TEXT_STYLE_PAINT);
     }
 
     #[test]

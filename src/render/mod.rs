@@ -44,6 +44,7 @@ pub struct RenderOptions {
     pub animation: Option<String>,
     pub state_machine: Option<String>,
     pub inputs: Vec<String>,
+    pub pointers: Vec<String>,
     pub artboard: Option<String>,
     pub width: u32,
     pub height: u32,
@@ -78,6 +79,10 @@ pub struct RenderManifest {
     pub scale: u32,
     pub fps: f64,
     pub frames: Vec<RenderedFrame>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub applied_inputs: Vec<Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub applied_pointers: Vec<Value>,
     pub contact_sheet: Option<String>,
 }
 
@@ -285,6 +290,8 @@ pub fn render(options: &RenderOptions) -> Result<RenderManifest, RenderError> {
         scale: options.scale,
         fps: options.fps,
         frames,
+        applied_inputs: scene.applied_inputs,
+        applied_pointers: scene.applied_pointers,
         contact_sheet,
     };
     fs::write(
@@ -301,6 +308,8 @@ struct LoadedScene {
     state_machines: Vec<String>,
     selected_animation: Option<String>,
     selected_state_machine: Option<String>,
+    applied_inputs: Vec<Value>,
+    applied_pointers: Vec<Value>,
 }
 
 fn wait_for_document(browser: &mut chrome::Chrome, session: &str) -> Result<(), RenderError> {
@@ -371,20 +380,33 @@ fn set_capture_background(
     Ok(())
 }
 
+fn split_frame_suffix(entry: &str, body: &str) -> Result<(String, Option<u32>), RenderError> {
+    let Some((head, frame)) = body.rsplit_once('@') else {
+        return Ok((body.to_string(), None));
+    };
+    let frame: u32 = frame.trim().parse().map_err(|_| {
+        RenderError::message(format!(
+            "invalid frame suffix in '{entry}': '{frame}' is not a non-negative frame index"
+        ))
+    })?;
+    Ok((head.to_string(), Some(frame)))
+}
+
 fn parse_input(entry: &str) -> Result<Value, RenderError> {
     let (name, raw) = entry.split_once('=').ok_or_else(|| {
         RenderError::message(format!(
-            "invalid --input '{entry}': expected NAME=VALUE, e.g. isHovered=true or press=trigger"
+            "invalid --input '{entry}': expected NAME=VALUE[@FRAME], e.g. isHovered=true or press=trigger@30"
         ))
     })?;
     let name = name.trim();
+    let (raw, frame) = split_frame_suffix(entry, raw.trim())?;
     let raw = raw.trim();
     if name.is_empty() {
         return Err(RenderError::message(format!(
             "invalid --input '{entry}': the input name is empty"
         )));
     }
-    let value = match raw {
+    let mut value = match raw {
         "true" => json!({ "name": name, "kind": "bool", "value": true }),
         "false" => json!({ "name": name, "kind": "bool", "value": false }),
         "trigger" => json!({ "name": name, "kind": "trigger" }),
@@ -402,7 +424,59 @@ fn parse_input(entry: &str) -> Result<Value, RenderError> {
             json!({ "name": name, "kind": "number", "value": number })
         }
     };
+    value["frame"] = match frame {
+        Some(frame) => json!(frame),
+        None => Value::Null,
+    };
     Ok(value)
+}
+
+const POINTER_EVENTS: [&str; 5] = ["down", "up", "move", "enter", "exit"];
+
+fn parse_pointer(entry: &str) -> Result<Value, RenderError> {
+    let (event, rest) = entry.split_once(':').ok_or_else(|| {
+        RenderError::message(format!(
+            "invalid --pointer '{entry}': expected EVENT:X,Y@FRAME, e.g. down:120,90@10"
+        ))
+    })?;
+    let event = event.trim();
+    if !POINTER_EVENTS.contains(&event) {
+        return Err(RenderError::message(format!(
+            "invalid --pointer '{entry}': '{event}' is not one of {}",
+            POINTER_EVENTS.join(", ")
+        )));
+    }
+    let (coords, frame) = split_frame_suffix(entry, rest.trim())?;
+    let Some(frame) = frame else {
+        return Err(RenderError::message(format!(
+            "invalid --pointer '{entry}': a frame is required, e.g. {event}:120,90@10"
+        )));
+    };
+    let (x, y) = coords.split_once(',').ok_or_else(|| {
+        RenderError::message(format!(
+            "invalid --pointer '{entry}': expected artboard coordinates X,Y"
+        ))
+    })?;
+    let parse_coord = |raw: &str, axis: &str| -> Result<f64, RenderError> {
+        let value: f64 = raw.trim().parse().map_err(|_| {
+            RenderError::message(format!(
+                "invalid --pointer '{entry}': {axis} coordinate '{}' is not a number",
+                raw.trim()
+            ))
+        })?;
+        if !value.is_finite() {
+            return Err(RenderError::message(format!(
+                "invalid --pointer '{entry}': {axis} coordinate is not finite"
+            )));
+        }
+        Ok(value)
+    };
+    Ok(json!({
+        "event": event,
+        "x": parse_coord(x, "x")?,
+        "y": parse_coord(y, "y")?,
+        "frame": frame,
+    }))
 }
 
 fn load_scene(
@@ -416,9 +490,19 @@ fn load_scene(
         .iter()
         .map(|entry| parse_input(entry))
         .collect::<Result<Vec<_>, _>>()?;
+    let pointers = options
+        .pointers
+        .iter()
+        .map(|entry| parse_pointer(entry))
+        .collect::<Result<Vec<_>, _>>()?;
     if !inputs.is_empty() && options.state_machine.is_none() {
         return Err(RenderError::message(
             "--input only applies when --state-machine is given",
+        ));
+    }
+    if !pointers.is_empty() && options.state_machine.is_none() {
+        return Err(RenderError::message(
+            "--pointer only applies when --state-machine is given",
         ));
     }
     let request = json!({
@@ -430,6 +514,7 @@ fn load_scene(
         "animation": options.animation,
         "stateMachine": options.state_machine,
         "inputs": inputs,
+        "pointers": pointers,
         "background": background,
     });
     let evaluated = browser.call(
@@ -475,6 +560,8 @@ fn load_scene(
             selected.clone()
         },
         selected_state_machine: if is_state_machine { selected } else { None },
+        applied_inputs: inputs,
+        applied_pointers: pointers,
     })
 }
 
@@ -535,6 +622,27 @@ pub fn render_manifest_text(manifest: &RenderManifest) -> String {
             frame.filename,
             frame.distinct_colors,
             if frame.blank { "  BLANK" } else { "" }
+        ));
+    }
+    for input in &manifest.applied_inputs {
+        let name = input["name"].as_str().unwrap_or("?");
+        let when = match input["frame"].as_u64() {
+            Some(frame) => format!("frame {frame}"),
+            None => "before playback".to_string(),
+        };
+        let value = match input["kind"].as_str() {
+            Some("trigger") => "trigger".to_string(),
+            _ => input["value"].to_string(),
+        };
+        text.push_str(&format!("  input {name} = {value} @ {when}\n"));
+    }
+    for pointer in &manifest.applied_pointers {
+        text.push_str(&format!(
+            "  pointer {} at {},{} @ frame {}\n",
+            pointer["event"].as_str().unwrap_or("?"),
+            pointer["x"],
+            pointer["y"],
+            pointer["frame"]
         ));
     }
     if let Some(sheet) = &manifest.contact_sheet {
@@ -608,6 +716,45 @@ mod tests {
         assert!(parse_input("bad=NaN").is_err());
         assert!(parse_input("bad=inf").is_err());
         assert!(parse_input("bad=-inf").is_err());
+    }
+
+    #[test]
+    fn parses_scheduled_state_machine_inputs() {
+        assert_eq!(parse_input("isOn=true").unwrap()["frame"], Value::Null);
+        let scheduled = parse_input("press=trigger@30").unwrap();
+        assert_eq!(scheduled["kind"], "trigger");
+        assert_eq!(scheduled["frame"], 30);
+        assert_eq!(parse_input("level=0.5@0").unwrap()["frame"], 0);
+    }
+
+    #[test]
+    fn rejects_malformed_input_frame_suffixes() {
+        assert!(parse_input("x=true@").is_err());
+        assert!(parse_input("x=true@-1").is_err());
+        assert!(parse_input("x=true@abc").is_err());
+    }
+
+    #[test]
+    fn parses_pointer_events() {
+        let pointer = parse_pointer("down:120,90@10").unwrap();
+        assert_eq!(pointer["event"], "down");
+        assert_eq!(pointer["x"], 120.0);
+        assert_eq!(pointer["y"], 90.0);
+        assert_eq!(pointer["frame"], 10);
+        assert_eq!(parse_pointer("move:-4.5,0.25@3").unwrap()["x"], -4.5);
+        for event in POINTER_EVENTS {
+            assert!(parse_pointer(&format!("{event}:1,2@0")).is_ok());
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_pointer_events() {
+        assert!(parse_pointer("down 120,90@10").is_err());
+        assert!(parse_pointer("wiggle:1,2@0").is_err());
+        assert!(parse_pointer("down:1,2").is_err());
+        assert!(parse_pointer("down:1@0").is_err());
+        assert!(parse_pointer("down:a,2@0").is_err());
+        assert!(parse_pointer("down:1,2@x").is_err());
     }
 
     #[test]

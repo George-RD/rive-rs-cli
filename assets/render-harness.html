@@ -136,6 +136,80 @@
           bool: "true or false",
         };
 
+        const MOUSE_EVENT_BY_POINTER = {
+          down: "mousedown",
+          up: "mouseup",
+          move: "mousemove",
+          enter: "mouseover",
+          exit: "mouseout",
+        };
+
+        function artboardToClient(x, y) {
+          const rect = canvas.getBoundingClientRect();
+          const bounds = instance.bounds;
+          const artboardWidth = bounds.maxX - bounds.minX;
+          const artboardHeight = bounds.maxY - bounds.minY;
+          const fit = Math.min(
+            rect.width / artboardWidth,
+            rect.height / artboardHeight
+          );
+          return {
+            clientX:
+              rect.left +
+              (rect.width - artboardWidth * fit) / 2 +
+              (x - bounds.minX) * fit,
+            clientY:
+              rect.top +
+              (rect.height - artboardHeight * fit) / 2 +
+              (y - bounds.minY) * fit,
+          };
+        }
+
+        function dispatchPointer(pointer) {
+          const type = MOUSE_EVENT_BY_POINTER[pointer.event];
+          if (!type) {
+            return;
+          }
+          const point = artboardToClient(pointer.x, pointer.y);
+          canvas.dispatchEvent(
+            new MouseEvent(type, {
+              bubbles: true,
+              cancelable: true,
+              clientX: point.clientX,
+              clientY: point.clientY,
+              button: 0,
+              buttons: type === "mousedown" ? 1 : 0,
+            })
+          );
+        }
+
+        function eventsForFrame(frame) {
+          return {
+            inputs: (settings.inputs || []).filter(function (input) {
+              const scheduled =
+                input.frame === null || input.frame === undefined ? 0 : input.frame;
+              return scheduled === frame;
+            }),
+            pointers: (settings.pointers || []).filter(function (pointer) {
+              return pointer.frame === frame;
+            }),
+          };
+        }
+
+        function applyScheduled(frame, clockMs) {
+          const due = eventsForFrame(frame);
+          if (due.inputs.length === 0 && due.pointers.length === 0) {
+            return null;
+          }
+          let rejected = null;
+          if (due.inputs.length > 0) {
+            rejected = applyInputs(due.inputs);
+          }
+          due.pointers.forEach(dispatchPointer);
+          stepTo(clockMs);
+          return rejected;
+        }
+
         function applyInputs(requested) {
           if (requested.length === 0) {
             return null;
@@ -220,7 +294,7 @@
               artboard: options.artboard,
               stateMachines: [selected],
             });
-            const rejected = applyInputs(options.inputs || []);
+            const rejected = startStateMachine();
             if (rejected) {
               return {
                 error: rejected,
@@ -229,7 +303,6 @@
                 stateMachines: stateMachines,
               };
             }
-            startStateMachine();
           } else {
             if (
               options.animation &&
@@ -288,8 +361,9 @@
           instance.play([selected]);
           detachScheduledFrame();
           instance.lastRenderTime = 0;
-          stepTo(CLOCK_ORIGIN_MS);
           stepsAdvanced = 0;
+          stepTo(CLOCK_ORIGIN_MS);
+          return applyScheduled(0, CLOCK_ORIGIN_MS);
         }
 
         async function rebuildStateMachine() {
@@ -297,7 +371,6 @@
             artboard: settings.artboard,
             stateMachines: [selected],
           });
-          applyInputs(settings.inputs || []);
           startStateMachine();
         }
 
@@ -311,7 +384,9 @@
               await rebuildStateMachine();
             }
             while (stepsAdvanced < target) {
+              const previousMs = CLOCK_ORIGIN_MS + stepsAdvanced * stepMs;
               stepsAdvanced += 1;
+              applyScheduled(stepsAdvanced, previousMs);
               stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
             }
           } else {

@@ -65,7 +65,7 @@ impl RiveMcpServer {
                 None,
             )
         })?;
-        let scene = crate::builder::build_scene(&spec).map_err(|e| {
+        let scene = crate::builder::build_scene(&spec, None).map_err(|e| {
             McpError::new(
                 ErrorCode::INVALID_PARAMS,
                 format!("invalid scene: {}", e),

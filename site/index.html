@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rive-cli — Rive animations, compiled from JSON</title>
+    <meta
+      name="description"
+      content="rive-cli compiles JSON scene specifications into Rive .riv binaries, then renders and verifies them without an editor. Every animation on this page is a .riv file this tool produced."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-art">
+        <canvas
+          class="scene"
+          data-riv="wordmark"
+          data-animation="wordmark"
+          width="600"
+          height="600"
+          aria-label="Animated rive-cli wordmark"
+        ></canvas>
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">rive-cli</p>
+        <h1>Rive animations, compiled from JSON.</h1>
+        <p class="lede">
+          A command-line compiler for the Rive binary format. Write a scene as JSON, get a
+          <code>.riv</code>. Then render it, measure it, and prove it works — no editor, no runtime
+          in the loop you cannot inspect.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#gallery">See what it makes</a>
+          <a class="button" href="#verify">See how it is proved</a>
+        </div>
+      </div>
+    </header>
+
+    <section class="claim">
+      <p>
+        <strong>Every animation on this page is a <code>.riv</code> file this tool produced.</strong>
+        Not a video, not a GIF — the same committed binaries the test suite loads, playing live in the
+        Rive WebAssembly runtime in your browser. Six of them were authored end to end by an AI agent
+        given nothing but one skill file and one binary; four more were added to demonstrate embedded
+        fonts, path morphing, embedded imagery and pointer-driven state machines. All ten clear the same
+        measured gate on every commit.
+      </p>
+    </section>
+
+    <section id="gallery" class="gallery">
+      <h2>The gallery</h2>
+      <p class="section-note">
+        Each scene plays its committed <code>.riv</code>. Open the source to see the JSON it was compiled
+        from.
+      </p>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section id="verify" class="verify">
+      <h2>How it is verified</h2>
+      <p class="section-note">
+        The compiler is only half of it. An agent cannot look at a picture, so the tool measures its own
+        output: distinct colours, a dominant-colour ratio, a content bounding box, and an ASCII coverage
+        map. This transcript is copied verbatim from a real run.
+      </p>
+      <pre class="terminal" id="transcript">loading…</pre>
+      <p class="section-note">
+        Three layers guard every scene on this page: <code>generate</code> and <code>validate</code> in the
+        Rust integration suite, a real-runtime load in headless Chromium, and pixel baselines at three
+        frames each. Interaction is proved separately by rendering the same frames with and without a
+        pointer event and requiring the frames before it to be byte-identical.
+      </p>
+    </section>
+
+    <section id="install" class="install">
+      <h2>Quickstart</h2>
+      <pre class="terminal">$ cargo install --path .
+$ rive-cli new spinner &gt; scene.json
+$ rive-cli generate scene.json -o scene.riv
+$ rive-cli validate scene.riv
+$ rive-cli render scene.riv --frames 0,30,60 --preview -o frames/</pre>
+      <p class="section-note">
+        <code>rive-cli describe &lt;type&gt;</code> reports the fields, valid parents and animatable
+        properties of any of the ~200 object types, and <code>rive-cli schema</code> emits the full JSON
+        Schema for a scene.
+      </p>
+    </section>
+
+    <footer>
+      <p>
+        <a href="https://github.com/George-RD/rive-rs-cli">Source</a> ·
+        Rive runtime vendored from <code>@rive-app/canvas</code> 2.39.1 ·
+        Wordmark set in Inter (SIL OFL)
+      </p>
+    </footer>
+
+    <script src="assets/rive.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>

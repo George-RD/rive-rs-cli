@@ -76,7 +76,8 @@ Render options:
 | `--fps FPS` | Frames per second used to convert indices to time |
 | `--animation NAME` | Linear animation to scrub |
 | `--state-machine NAME` | State machine to advance instead of an animation |
-| `--input NAME=VALUE` | Repeatable state-machine bool, number, or `trigger` input |
+| `--input NAME=VALUE[@FRAME]` | Repeatable state-machine bool, number, or `trigger` input. `@FRAME` applies it when the stepper reaches that frame |
+| `--pointer EVENT:X,Y@FRAME` | Repeatable pointer event (`down`, `up`, `move`, `enter`, `exit`) in artboard coordinates, dispatched through Rive's own listener handling |
 | `--artboard NAME` | Artboard to render |
 | `--width PX`, `--height PX`, `--scale RATIO` | Logical dimensions and device-pixel multiplier |
 | `--background COLOR` | Background behind the artboard, for example `#202024` |
@@ -85,7 +86,9 @@ Render options:
 | `--browser PATH` | Override browser discovery |
 | `--json` | Emit the render manifest as JSON |
 
-Each frame in `manifest.json` records its PNG path, distinct-colour count, and `blank` flag. Identical inputs produce byte-identical PNGs.
+Each frame in `manifest.json` records its PNG path, distinct-colour count, and `blank` flag, and the manifest also records the inputs and pointer events that were applied. Identical inputs produce byte-identical PNGs.
+
+`--input` and `--pointer` both require `--state-machine`. Interaction is proved the same way animation is: render the same frames with and without the flag and require the frames before the scheduled frame to be byte-identical.
 
 ### Other commands
 
@@ -101,7 +104,13 @@ rive-cli ai lab --suite evals/suites/prompt_lab.v1.json
 
 Read [`skills/rive-animation/SKILL.md`](skills/rive-animation/SKILL.md) before authoring a scene. It describes the scaffold → discover → generate → validate → render loop and the runtime constraints that structural validation alone cannot catch.
 
-The six authored scenes in [`showcase/`](showcase/) are a gallery of working examples produced using that workflow. Use `rive-cli describe <type>` rather than guessing fields or animation properties.
+The ten scenes in [`showcase/`](showcase/) are a gallery of working examples: six basics authored end to end by a fresh-context agent, and four advanced scenes covering embedded fonts, path morphing, embedded imagery and pointer-driven state machines. Use `rive-cli describe <type>` rather than guessing fields or animation properties.
+
+## Site and promo
+
+[`site/`](site/) is a dependency-free page that plays the committed `showcase/*.riv` live in the vendored Rive runtime — the animations on it are the tool's own output, not recordings. Preview it with `node site/serve.js`; `.github/workflows/pages.yml` publishes it, and `node tests/playwright/site-validation.js` asserts every scene paints, the interactive controls change the render, and the console is clean.
+
+[`promo/`](promo/) is a Remotion composition assembled from PNG sequences that `rive-cli render` produced, so every frame in the video is a frame the test suite verifies. See [`promo/README.md`](promo/README.md) to rebuild it.
 
 ## SceneSpec
 

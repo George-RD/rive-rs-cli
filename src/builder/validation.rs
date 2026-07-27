@@ -13,7 +13,7 @@ use super::scene::resolve_artboard_dimensions;
 use super::spec::{
     ArtboardSpec, BlendState1DChildSpec, BlendStateChildSpec, BlendStateDirectChildSpec, InputSpec,
     ListenerActionSpec, ObjectSpec, ParentKind, SCENE_FORMAT_VERSION, SceneSpec, StateSpec,
-    TextModifierGroupChildSpec, TextStyleChildSpec, TransitionChildSpec,
+    TextModifierGroupChildSpec, TransitionChildSpec,
 };
 
 pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
@@ -65,8 +65,10 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
 
     let mut object_names: HashSet<String> = HashSet::new();
     let mut object_type_keys: HashMap<String, u16> = HashMap::new();
+    let mut ambiguous_names: HashSet<String> = HashSet::new();
     for child in &artboard_spec.children {
         validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
+        collect_ambiguous_names(child, &mut HashSet::new(), &mut ambiguous_names);
         collect_object_type_key(child, &mut object_type_keys);
     }
     validate_image_asset_references(&artboard_spec.children)?;
@@ -102,6 +104,12 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
                 }
             }
             for group in &animation.keyframes {
+                if ambiguous_names.contains(&group.object) {
+                    return Err(format!(
+                        "keyframes target '{}', but more than one object in artboard '{}' has that name; give each object a unique name",
+                        group.object, artboard_spec.name
+                    ));
+                }
                 let object_type_key = *object_type_keys.get(&group.object).ok_or_else(|| {
                     format!("unknown object referenced in keyframes: '{}'", group.object)
                 })?;
@@ -382,7 +390,9 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
                                 state_machine.name.as_str(),
                             )?;
                         }
-                        StateSpec::BlendState1d { input_id, children } => {
+                        StateSpec::BlendState1d {
+                            input_id, children, ..
+                        } => {
                             if let Some(input_id) = input_id {
                                 validate_number_input(
                                     *input_id,
@@ -580,7 +590,6 @@ pub(crate) fn validate_object_spec(
                         | ObjectSpec::DataEnum { name, .. }
                         | ObjectSpec::DataEnumCustom { name, .. }
                         | ObjectSpec::DataEnumSystem { name, .. }
-                        | ObjectSpec::TextStylePaint { name, .. }
                         | ObjectSpec::TextTargetModifier { name, .. }
                         | ObjectSpec::TextFollowPathModifier { name, .. }
                         | ObjectSpec::TextInput { name, .. }
@@ -1123,7 +1132,19 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_text_style_child_spec(child);
+                    if !matches!(
+                        child,
+                        ObjectSpec::Fill { .. }
+                            | ObjectSpec::Stroke { .. }
+                            | ObjectSpec::TextStyleFeature { .. }
+                            | ObjectSpec::TextStyleAxis { .. }
+                    ) {
+                        return Err(format!(
+                            "text_style '{}' may only contain fill, stroke, text_style_feature or text_style_axis children",
+                            name
+                        ));
+                    }
+                    validate_object_spec(child, object_names, &ParentKind::TextStyle)?;
                 }
             }
         }
@@ -1236,7 +1257,11 @@ pub(crate) fn validate_object_spec(
             );
         }
         ObjectSpec::TextStyleFeature { .. } => {
-            return Err("text_style_feature must be nested under text_style.children".to_string());
+            if !matches!(parent_kind, ParentKind::TextStyle) {
+                return Err(
+                    "text_style_feature must be nested under text_style.children".to_string(),
+                );
+            }
         }
         ObjectSpec::TextModifierGroup { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
@@ -1454,14 +1479,6 @@ pub(crate) fn validate_object_spec(
         | ObjectSpec::BindablePropertyId { .. }
         | ObjectSpec::BindablePropertyArtboard { .. } => {}
         ObjectSpec::DataBindPath { .. } => {}
-        ObjectSpec::TextStylePaint { name, children } => {
-            ensure_unique_name(name, object_names)?;
-            if let Some(children) = children {
-                for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
-                }
-            }
-        }
         ObjectSpec::TextStyleAxis { .. } => {}
         ObjectSpec::TextTargetModifier { name, .. } => {
             ensure_unique_name(name, object_names)?;
@@ -1549,6 +1566,33 @@ pub(crate) fn validate_object_spec(
     Ok(())
 }
 
+fn collect_ambiguous_names(
+    spec: &ObjectSpec,
+    seen: &mut HashSet<String>,
+    ambiguous: &mut HashSet<String>,
+) {
+    let mut names: HashMap<String, u16> = HashMap::new();
+    collect_object_type_key_named(spec, &mut names, seen, ambiguous);
+}
+
+fn collect_object_type_key_named(
+    spec: &ObjectSpec,
+    names: &mut HashMap<String, u16>,
+    seen: &mut HashSet<String>,
+    ambiguous: &mut HashSet<String>,
+) {
+    let before: HashSet<String> = names.keys().cloned().collect();
+    collect_object_type_key(spec, names);
+    for name in names.keys() {
+        if before.contains(name) {
+            continue;
+        }
+        if !seen.insert(name.clone()) {
+            ambiguous.insert(name.clone());
+        }
+    }
+}
+
 pub(crate) fn collect_object_type_key(
     spec: &ObjectSpec,
     object_type_keys: &mut HashMap<String, u16>,
@@ -1625,11 +1669,21 @@ pub(crate) fn collect_object_type_key(
                 object_type_keys.insert(name.clone(), type_keys::GRADIENT_STOP);
             }
         }
-        ObjectSpec::Node { name, .. } => {
+        ObjectSpec::Node { name, children, .. } => {
             object_type_keys.insert(name.clone(), type_keys::NODE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
         }
-        ObjectSpec::Image { name, .. } => {
+        ObjectSpec::Image { name, children, .. } => {
             object_type_keys.insert(name.clone(), type_keys::IMAGE);
+            if let Some(children) = children {
+                for child in children {
+                    collect_object_type_key(child, object_type_keys);
+                }
+            }
         }
         ObjectSpec::Path { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::PATH);
@@ -1754,7 +1808,7 @@ pub(crate) fn collect_object_type_key(
             }
         }
         ObjectSpec::TextStyle { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE);
+            object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE_PAINT);
         }
         ObjectSpec::TextValueRun { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::TEXT_VALUE_RUN);
@@ -2056,14 +2110,6 @@ pub(crate) fn collect_object_type_key(
         }
         ObjectSpec::DataEnumSystem { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::DATA_ENUM_SYSTEM);
-        }
-        ObjectSpec::TextStylePaint { name, children } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE_PAINT);
-            if let Some(children) = children {
-                for child in children {
-                    collect_object_type_key(child, object_type_keys);
-                }
-            }
         }
         ObjectSpec::TextTargetModifier { name, .. } => {
             object_type_keys.insert(name.clone(), type_keys::TEXT_TARGET_MODIFIER);
@@ -2391,12 +2437,14 @@ fn validate_blend_state_1d_children(
 ) -> Result<(), String> {
     for child in children {
         let BlendState1DChildSpec::BlendAnimation1D { animation_id, .. } = child;
-        validate_index(
-            *animation_id,
-            animation_count,
-            "blend_animation_1d animation_id",
-            state_machine_name,
-        )?;
+        if let Some(animation_id) = animation_id {
+            validate_index(
+                *animation_id,
+                animation_count,
+                "blend_animation_1d animation_id",
+                state_machine_name,
+            )?;
+        }
     }
     Ok(())
 }
@@ -2436,16 +2484,20 @@ fn ensure_unique_name(name: &str, object_names: &mut HashSet<String>) -> Result<
 }
 
 fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String> {
-    fn walk(spec: &ObjectSpec, image_assets_seen: &mut u64) -> Result<(), String> {
+    fn walk(spec: &ObjectSpec, asset_count: u64, counting: bool) -> Result<(), String> {
         match spec {
-            ObjectSpec::ImageAsset { .. } => {
-                *image_assets_seen += 1;
-            }
-            ObjectSpec::Image { name, asset_id, .. } => {
-                if *asset_id >= *image_assets_seen {
+            ObjectSpec::ImageAsset { .. }
+            | ObjectSpec::FontAsset { .. }
+            | ObjectSpec::AudioAsset { .. } => {}
+            ObjectSpec::Image {
+                name,
+                asset_id: Some(asset_id),
+                ..
+            } => {
+                if !counting && *asset_id >= asset_count {
                     return Err(format!(
-                        "image '{}' references image asset index {} but only {} image asset(s) were defined before it",
-                        name, asset_id, image_assets_seen
+                        "image '{}' references asset index {} but the scene declares {} asset(s)",
+                        name, asset_id, asset_count
                     ));
                 }
             }
@@ -2465,7 +2517,7 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
             | ObjectSpec::DrawRules { children, .. } => {
                 if let Some(children) = children {
                     for child in children {
-                        walk(child, image_assets_seen)?;
+                        walk(child, asset_count, counting)?;
                     }
                 }
             }
@@ -2474,17 +2526,45 @@ fn validate_image_asset_references(children: &[ObjectSpec]) -> Result<(), String
         Ok(())
     }
 
-    let mut image_assets_seen = 0;
+    fn count(spec: &ObjectSpec, total: &mut u64) {
+        match spec {
+            ObjectSpec::ImageAsset { .. }
+            | ObjectSpec::FontAsset { .. }
+            | ObjectSpec::AudioAsset { .. } => {
+                *total += 1;
+            }
+            ObjectSpec::Shape { children, .. }
+            | ObjectSpec::Solo { children, .. }
+            | ObjectSpec::Fill { children, .. }
+            | ObjectSpec::Stroke { children, .. }
+            | ObjectSpec::Event { children, .. }
+            | ObjectSpec::PointsPath { children, .. }
+            | ObjectSpec::LinearGradient { children, .. }
+            | ObjectSpec::RadialGradient { children, .. }
+            | ObjectSpec::Bone { children, .. }
+            | ObjectSpec::RootBone { children, .. }
+            | ObjectSpec::Text { children, .. }
+            | ObjectSpec::LayoutComponent { children, .. }
+            | ObjectSpec::ViewModel { children, .. }
+            | ObjectSpec::DrawRules { children, .. } => {
+                if let Some(children) = children {
+                    for child in children {
+                        count(child, total);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let mut asset_count = 0;
     for child in children {
-        walk(child, &mut image_assets_seen)?;
+        count(child, &mut asset_count);
+    }
+    for child in children {
+        walk(child, asset_count, false)?;
     }
     Ok(())
-}
-
-fn validate_text_style_child_spec(spec: &TextStyleChildSpec) {
-    match spec {
-        TextStyleChildSpec::TextStyleFeature { .. } => {}
-    }
 }
 
 fn validate_text_modifier_group_child_spec(spec: &TextModifierGroupChildSpec) {

@@ -37,14 +37,24 @@
       {
         "name": "InputMachine",
         "inputs": [
-          { "type": "bool", "name": "is_active", "value": false },
-          { "type": "trigger", "name": "tap_trigger" },
-          { "type": "number", "name": "speed", "value": 1.0 }
+          {
+            "type": "bool",
+            "name": "is_active",
+            "value": false
+          },
+          {
+            "type": "trigger",
+            "name": "tap_trigger"
+          },
+          {
+            "type": "number",
+            "name": "speed",
+            "value": 1.0
+          }
         ],
         "listeners": [
           {
             "target": "TapTarget",
-            "listener_type_value": 1,
             "actions": [
               {
                 "type": "bool_change",
@@ -60,14 +70,19 @@
                 "input": "speed",
                 "value": 2.5
               }
-            ]
+            ],
+            "listener_type": "down"
           }
         ],
         "layers": [
           {
             "states": [
-              { "type": "entry" },
-              { "type": "exit" }
+              {
+                "type": "entry"
+              },
+              {
+                "type": "exit"
+              }
             ]
           }
         ]

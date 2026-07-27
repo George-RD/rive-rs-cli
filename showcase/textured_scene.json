@@ -1,0 +1,722 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Textured Scene",
+    "width": 600,
+    "height": 600,
+    "children": [
+      {
+        "type": "image_asset",
+        "name": "Aurora Texture",
+        "source": "../assets/textures/aurora.png"
+      },
+      {
+        "type": "shape",
+        "name": "Mist",
+        "x": 260,
+        "y": 470,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Mist Geometry",
+            "width": 360,
+            "height": 110,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Mist Fill",
+            "children": [
+              {
+                "type": "radial_gradient",
+                "name": "Mist Gradient",
+                "start_x": 0,
+                "start_y": 0,
+                "end_x": 200,
+                "end_y": 55,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Mist Core",
+                    "color": "#CFE9FF",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Mist Edge",
+                    "color": "#00CFE9FF",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Near Ridge",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "points_path",
+            "name": "Near Ridge Path",
+            "is_closed": true,
+            "children": [
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Near Ridge V0",
+                "x": -258.0,
+                "y": 63.96,
+                "in_rotation": 0.0,
+                "in_distance": 78.0,
+                "out_rotation": 0.0,
+                "out_distance": 78.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Near Ridge V1",
+                "x": -132.0,
+                "y": 6.24,
+                "in_rotation": 0.0,
+                "in_distance": 72.0,
+                "out_rotation": 0.0,
+                "out_distance": 72.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Near Ridge V2",
+                "x": 6.0,
+                "y": 57.72,
+                "in_rotation": 0.0,
+                "in_distance": 78.0,
+                "out_rotation": 0.0,
+                "out_distance": 78.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Near Ridge V3",
+                "x": 138.0,
+                "y": -3.12,
+                "in_rotation": 0.0,
+                "in_distance": 72.0,
+                "out_rotation": 0.0,
+                "out_distance": 72.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Near Ridge V4",
+                "x": 258.0,
+                "y": 54.6,
+                "in_rotation": 0.0,
+                "in_distance": 72.0,
+                "out_rotation": 0.0,
+                "out_distance": 72.0
+              },
+              {
+                "type": "straight_vertex",
+                "name": "Near Ridge BR",
+                "x": 258.0,
+                "y": 258
+              },
+              {
+                "type": "straight_vertex",
+                "name": "Near Ridge BL",
+                "x": -258.0,
+                "y": 258
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "Near Ridge Fill",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Near Ridge Gradient",
+                "start_x": 0,
+                "start_y": 82,
+                "end_x": 0,
+                "end_y": 258,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Near Ridge Top",
+                    "color": "#101A33",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Near Ridge Bottom",
+                    "color": "#050912",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Beam",
+        "x": 300,
+        "y": 214,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Beam Geometry",
+            "width": 250,
+            "height": 250,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Beam Stroke",
+            "thickness": 2,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Beam Ink",
+                "color": "#FDE68A"
+              },
+              {
+                "type": "trim_path",
+                "name": "Beam Trim",
+                "start": 0.0,
+                "end": 0.12,
+                "offset": 0.0,
+                "mode": "sequential"
+              },
+              {
+                "type": "dash_path",
+                "name": "Beam Dashes",
+                "offset": 0.0,
+                "children": [
+                  {
+                    "type": "dash",
+                    "name": "Beam Dash",
+                    "length": 14,
+                    "length_is_percentage": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Far Ridge",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "points_path",
+            "name": "Far Ridge Path",
+            "is_closed": true,
+            "children": [
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Far Ridge V0",
+                "x": -258.0,
+                "y": -15.6,
+                "in_rotation": 0.0,
+                "in_distance": 72.0,
+                "out_rotation": 0.0,
+                "out_distance": 72.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Far Ridge V1",
+                "x": -114.0,
+                "y": -74.88,
+                "in_rotation": 0.0,
+                "in_distance": 66.0,
+                "out_rotation": 0.0,
+                "out_distance": 66.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Far Ridge V2",
+                "x": 24.0,
+                "y": -26.52,
+                "in_rotation": 0.0,
+                "in_distance": 72.0,
+                "out_rotation": 0.0,
+                "out_distance": 72.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Far Ridge V3",
+                "x": 150.0,
+                "y": -85.8,
+                "in_rotation": 0.0,
+                "in_distance": 66.0,
+                "out_rotation": 0.0,
+                "out_distance": 66.0
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "Far Ridge V4",
+                "x": 258.0,
+                "y": -31.2,
+                "in_rotation": 0.0,
+                "in_distance": 66.0,
+                "out_rotation": 0.0,
+                "out_distance": 66.0
+              },
+              {
+                "type": "straight_vertex",
+                "name": "Far Ridge BR",
+                "x": 258.0,
+                "y": 258
+              },
+              {
+                "type": "straight_vertex",
+                "name": "Far Ridge BL",
+                "x": -258.0,
+                "y": 258
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "Far Ridge Fill",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Far Ridge Gradient",
+                "start_x": 0,
+                "start_y": -20,
+                "end_x": 0,
+                "end_y": 258,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Far Ridge Top",
+                    "color": "#233A63",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Far Ridge Bottom",
+                    "color": "#111C34",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Sun Halo",
+        "x": 300,
+        "y": 214,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Sun Halo Geometry",
+            "width": 210,
+            "height": 210,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Sun Halo Fill",
+            "children": [
+              {
+                "type": "radial_gradient",
+                "name": "Sun Halo Gradient",
+                "opacity": 0.55,
+                "start_x": 0,
+                "start_y": 0,
+                "end_x": 125,
+                "end_y": 125,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Halo Core",
+                    "color": "#FFE9A8",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Halo Fade",
+                    "color": "#00FFE9A8",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Sun",
+        "x": 300,
+        "y": 214,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Sun Geometry",
+            "width": 96,
+            "height": 96,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Sun Core",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Sun Core Ink",
+                "color": "#FDE68A"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "name": "Sky",
+        "asset": "Aurora Texture",
+        "x": 292,
+        "y": 246
+      }
+    ],
+    "animations": [
+      {
+        "name": "scene",
+        "fps": 60,
+        "duration": 240,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "drift",
+            "x1": 0.42,
+            "y1": 0.0,
+            "x2": 0.58,
+            "y2": 1.0
+          },
+          {
+            "name": "rise",
+            "x1": 0.3,
+            "y1": 0.0,
+            "x2": 0.7,
+            "y2": 1.0
+          },
+          {
+            "name": "linear_drift",
+            "x1": 0.0,
+            "y1": 0.0,
+            "x2": 1.0,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Sky",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.92,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 240,
+                "value": 1.92
+              }
+            ]
+          },
+          {
+            "object": "Sky",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.92,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 240,
+                "value": 1.92
+              }
+            ]
+          },
+          {
+            "object": "Sky",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 296.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 120,
+                "value": 304.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 240,
+                "value": 296.0
+              }
+            ]
+          },
+          {
+            "object": "Sky",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 302.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 120,
+                "value": 296.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 240,
+                "value": 302.0
+              }
+            ]
+          },
+          {
+            "object": "Far Ridge",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 288.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 120,
+                "value": 312.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 240,
+                "value": 288.0
+              }
+            ]
+          },
+          {
+            "object": "Near Ridge",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 314.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 120,
+                "value": 286.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 240,
+                "value": 314.0
+              }
+            ]
+          },
+          {
+            "object": "Sun",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 214.0,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 120,
+                "value": 176.0,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 240,
+                "value": 214.0
+              }
+            ]
+          },
+          {
+            "object": "Sun Core Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#FDE68A",
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 120,
+                "value": "#FFF7DB",
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 240,
+                "value": "#FDE68A"
+              }
+            ]
+          },
+          {
+            "object": "Sun Halo",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 120,
+                "value": 1.22,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 240,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Sun Halo",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 120,
+                "value": 1.22,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 240,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Sun Halo",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.55,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 120,
+                "value": 0.95,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 240,
+                "value": 0.55
+              }
+            ]
+          },
+          {
+            "object": "Beam Trim",
+            "property": "trim_offset",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "linear_drift"
+              },
+              {
+                "frame": 240,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Mist",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.35,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 120,
+                "value": 0.7,
+                "interpolation": "cubic",
+                "interpolator": "rise"
+              },
+              {
+                "frame": 240,
+                "value": 0.35
+              }
+            ]
+          },
+          {
+            "object": "Mist",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 276.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 120,
+                "value": 324.0,
+                "interpolation": "cubic",
+                "interpolator": "drift"
+              },
+              {
+                "frame": 240,
+                "value": 276.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

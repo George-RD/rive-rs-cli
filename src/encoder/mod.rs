@@ -10,18 +10,19 @@ pub(crate) fn encode_object(object: &dyn RiveObject) -> Vec<u8> {
     writer.write_varuint(object.type_key() as u64);
     for prop in object.properties() {
         writer.write_varuint(prop.key as u64);
-        match prop.value {
+        match &prop.value {
             PropertyValue::UInt(v) => {
                 if is_bool_property(prop.key) {
-                    writer.write_bool(v != 0);
+                    writer.write_bool(*v != 0);
                 } else {
-                    writer.write_varuint(v);
+                    writer.write_varuint(*v);
                 }
             }
-            PropertyValue::Bool(v) => writer.write_bool(v),
-            PropertyValue::String(s) => writer.write_string(&s),
-            PropertyValue::Float(f) => writer.write_float(f),
-            PropertyValue::Color(c) => writer.write_color(c),
+            PropertyValue::Bool(v) => writer.write_bool(*v),
+            PropertyValue::String(s) => writer.write_string(s),
+            PropertyValue::Float(f) => writer.write_float(*f),
+            PropertyValue::Color(c) => writer.write_color(*c),
+            PropertyValue::Bytes(b) => writer.write_byte_array(b),
         }
     }
     writer.write_varuint(0);

@@ -9,3 +9,9 @@ evals/runs/
 .codex/
 .opencode/skills/*.local.md
 .playwright-cli/
+
+# promo render artefacts (regenerate with promo/render-sequences.sh)
+promo/public/seq/
+promo/out/
+promo/node_modules/
+target/site/

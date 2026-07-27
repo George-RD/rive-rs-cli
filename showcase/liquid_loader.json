@@ -1,0 +1,918 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Liquid Loader",
+    "width": 600,
+    "height": 600,
+    "children": [
+      {
+        "type": "node",
+        "name": "Satellite Orbit",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "shape",
+            "name": "Satellite",
+            "x": 0,
+            "y": -108,
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "Satellite Geometry",
+                "width": 26,
+                "height": 26,
+                "origin_x": 0.5,
+                "origin_y": 0.5
+              },
+              {
+                "type": "fill",
+                "name": "Satellite Fill",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "Satellite Ink",
+                    "color": "#B7F34A"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Core",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Core Geometry",
+            "width": 54,
+            "height": 54,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Core Fill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Core Ink",
+                "color": "#F0F7FF"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Blob",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "points_path",
+            "name": "Blob Path",
+            "is_closed": true,
+            "children": [
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobV0",
+                "x": 148.0,
+                "y": 0.0,
+                "in_rotation": -1.5708,
+                "in_distance": 81.4,
+                "out_rotation": 1.5708,
+                "out_distance": 81.4
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobV1",
+                "x": 74.0,
+                "y": 128.17,
+                "in_rotation": -0.5236,
+                "in_distance": 81.4,
+                "out_rotation": 2.618,
+                "out_distance": 81.4
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobV2",
+                "x": -74.0,
+                "y": 128.17,
+                "in_rotation": 0.5236,
+                "in_distance": 81.4,
+                "out_rotation": 3.6652,
+                "out_distance": 81.4
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobV3",
+                "x": -148.0,
+                "y": 0.0,
+                "in_rotation": 1.5708,
+                "in_distance": 81.4,
+                "out_rotation": 4.7124,
+                "out_distance": 81.4
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobV4",
+                "x": -74.0,
+                "y": -128.17,
+                "in_rotation": 2.618,
+                "in_distance": 81.4,
+                "out_rotation": 5.7596,
+                "out_distance": 81.4
+              },
+              {
+                "type": "cubic_detached_vertex",
+                "name": "BlobV5",
+                "x": 74.0,
+                "y": -128.17,
+                "in_rotation": 3.6652,
+                "in_distance": 81.4,
+                "out_rotation": 6.8068,
+                "out_distance": 81.4
+              }
+            ]
+          },
+          {
+            "type": "fill",
+            "name": "Blob Fill",
+            "children": [
+              {
+                "type": "radial_gradient",
+                "name": "Blob Gradient",
+                "start_x": -40,
+                "start_y": -70,
+                "end_x": 190,
+                "end_y": 190,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Blob Cyan",
+                    "color": "#22D3EE",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Blob Indigo",
+                    "color": "#6366F1",
+                    "position": 0.55
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Blob Violet",
+                    "color": "#7E22CE",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "stroke",
+            "name": "Blob Rim",
+            "thickness": 3,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Blob Rim Ink",
+                "color": "#9CE9FF"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Halo",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Halo Geometry",
+            "width": 250,
+            "height": 250,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Halo Stroke",
+            "thickness": 8,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Halo Gradient",
+                "start_x": -125,
+                "start_y": -125,
+                "end_x": 125,
+                "end_y": 125,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Halo Lime",
+                    "color": "#B7F34A",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Halo Cyan",
+                    "color": "#22D3EE",
+                    "position": 1.0
+                  }
+                ]
+              },
+              {
+                "type": "trim_path",
+                "name": "Halo Trim",
+                "start": 0.0,
+                "end": 0.34,
+                "offset": 0.0,
+                "mode": "sequential"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "liquid",
+        "fps": 60,
+        "duration": 120,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "liquid_ease",
+            "x1": 0.45,
+            "y1": 0.05,
+            "x2": 0.55,
+            "y2": 0.95
+          },
+          {
+            "name": "pulse_ease",
+            "x1": 0.34,
+            "y1": 0.0,
+            "x2": 0.66,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "BlobV0",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 148.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 114.52,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 148.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV0",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 18.48,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 0.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV0",
+            "property": "out_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 85.84,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV0",
+            "property": "in_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 51.04,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV1",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 74.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 61.88,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 74.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV1",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 128.17,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 162.62,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 128.17
+              }
+            ]
+          },
+          {
+            "object": "BlobV1",
+            "property": "out_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 128.76,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV1",
+            "property": "in_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 76.56,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV2",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -74.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": -80.84,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": -74.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV2",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 128.17,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 99.24,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 128.17
+              }
+            ]
+          },
+          {
+            "object": "BlobV2",
+            "property": "out_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 94.72,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV2",
+            "property": "in_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 56.32,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV3",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -148.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": -114.52,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": -148.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV3",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": -18.48,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 0.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV3",
+            "property": "out_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 85.84,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV3",
+            "property": "in_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 51.04,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV4",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -74.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": -61.88,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": -74.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV4",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -128.17,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": -162.62,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": -128.17
+              }
+            ]
+          },
+          {
+            "object": "BlobV4",
+            "property": "out_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 128.76,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV4",
+            "property": "in_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 76.56,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV5",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 74.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 80.84,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 74.0
+              }
+            ]
+          },
+          {
+            "object": "BlobV5",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -128.17,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": -99.24,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": -128.17
+              }
+            ]
+          },
+          {
+            "object": "BlobV5",
+            "property": "out_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 94.72,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "BlobV5",
+            "property": "in_distance",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 81.4,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 60,
+                "value": 56.32,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 81.4
+              }
+            ]
+          },
+          {
+            "object": "Blob",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 1.0471976
+              }
+            ]
+          },
+          {
+            "object": "Halo Trim",
+            "property": "trim_offset",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Satellite Orbit",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "liquid_ease"
+              },
+              {
+                "frame": 120,
+                "value": -6.2831853
+              }
+            ]
+          },
+          {
+            "object": "Core",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "pulse_ease"
+              },
+              {
+                "frame": 60,
+                "value": 1.35,
+                "interpolation": "cubic",
+                "interpolator": "pulse_ease"
+              },
+              {
+                "frame": 120,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Core",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "pulse_ease"
+              },
+              {
+                "frame": 60,
+                "value": 1.35,
+                "interpolation": "cubic",
+                "interpolator": "pulse_ease"
+              },
+              {
+                "frame": 120,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Core Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#F0F7FF",
+                "interpolation": "cubic",
+                "interpolator": "pulse_ease"
+              },
+              {
+                "frame": 60,
+                "value": "#B7F34A",
+                "interpolation": "cubic",
+                "interpolator": "pulse_ease"
+              },
+              {
+                "frame": 120,
+                "value": "#F0F7FF"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

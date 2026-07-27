@@ -1,0 +1,797 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Control Panel",
+    "width": 600,
+    "height": 600,
+    "children": [
+      {
+        "type": "node",
+        "name": "Sweep Orbit",
+        "x": 300,
+        "y": 214,
+        "children": [
+          {
+            "type": "shape",
+            "name": "Sweep Dot",
+            "x": 0,
+            "y": -140,
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "Sweep Dot Geometry",
+                "width": 16,
+                "height": 16,
+                "origin_x": 0.5,
+                "origin_y": 0.5
+              },
+              {
+                "type": "fill",
+                "name": "Sweep Dot Fill",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "Sweep Dot Ink",
+                    "color": "#7DD3FC"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Knob",
+        "x": 300,
+        "y": 214,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Knob Geometry",
+            "width": 96,
+            "height": 96,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Knob Fill",
+            "children": [
+              {
+                "type": "radial_gradient",
+                "name": "Knob Gradient",
+                "start_x": -24,
+                "start_y": -30,
+                "end_x": 52,
+                "end_y": 52,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Knob Light",
+                    "color": "#F8FAFC",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Knob Dark",
+                    "color": "#94A3B8",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Dial",
+        "x": 300,
+        "y": 214,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Dial Geometry",
+            "width": 232,
+            "height": 232,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Dial Stroke",
+            "thickness": 20,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Dial Gradient",
+                "start_x": -116,
+                "start_y": 116,
+                "end_x": 116,
+                "end_y": -116,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Dial Cyan",
+                    "color": "#22D3EE",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Dial Lime",
+                    "color": "#B7F34A",
+                    "position": 0.6
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Dial Amber",
+                    "color": "#FBBF24",
+                    "position": 1.0
+                  }
+                ]
+              },
+              {
+                "type": "trim_path",
+                "name": "Dial Trim",
+                "start": 0.0,
+                "end": 0.02,
+                "offset": 0.13,
+                "mode": "sequential"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Dial Track",
+        "x": 300,
+        "y": 214,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Dial Track Geometry",
+            "width": 232,
+            "height": 232,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Dial Track Stroke",
+            "thickness": 20,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Dial Track Ink",
+                "color": "#1E2740"
+              },
+              {
+                "type": "trim_path",
+                "name": "Dial Track Trim",
+                "start": 0.0,
+                "end": 0.74,
+                "offset": 0.13,
+                "mode": "sequential"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Button Glow",
+        "x": 300,
+        "y": 452,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "Button Glow Geometry",
+            "width": 348,
+            "height": 108,
+            "corner_radius": 54,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Button Glow Stroke",
+            "thickness": 3,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Button Glow Ink",
+                "color": "#38BDF8"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Button",
+        "x": 300,
+        "y": 452,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "Button Geometry",
+            "width": 320,
+            "height": 84,
+            "corner_radius": 42,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Button Fill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Button Fill Ink",
+                "color": "#2563EB"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Plate",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "Plate Geometry",
+            "width": 520,
+            "height": 540,
+            "corner_radius": 40,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Plate Fill",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Plate Gradient",
+                "start_x": -260,
+                "start_y": -270,
+                "end_x": 260,
+                "end_y": 270,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Plate Top",
+                    "color": "#18213B",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Plate Bottom",
+                    "color": "#0D1424",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "level_low",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "ease",
+            "x1": 0.4,
+            "y1": 0.0,
+            "x2": 0.6,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Dial Trim",
+            "property": "trim_end",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.02,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 0.02
+              }
+            ]
+          },
+          {
+            "object": "Knob",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -2.2689,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": -2.2689
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "level_high",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "ease",
+            "x1": 0.4,
+            "y1": 0.0,
+            "x2": 0.6,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Dial Trim",
+            "property": "trim_end",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.74,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 0.74
+              }
+            ]
+          },
+          {
+            "object": "Knob",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 2.2689,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 2.2689
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "button_idle",
+        "fps": 60,
+        "duration": 120,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "ease",
+            "x1": 0.4,
+            "y1": 0.0,
+            "x2": 0.6,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Button Fill Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#2563EB",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": "#3B82F6",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": "#2563EB"
+              }
+            ]
+          },
+          {
+            "object": "Button",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 1.02,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Button",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 1.02,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Button Glow Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#38BDF8",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": "#A5F3FC",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": "#38BDF8"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "button_pressed",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "ease",
+            "x1": 0.4,
+            "y1": 0.0,
+            "x2": 0.6,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Button Fill Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#F97316",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": "#F97316"
+              }
+            ]
+          },
+          {
+            "object": "Button",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.9,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 0.9
+              }
+            ]
+          },
+          {
+            "object": "Button",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.86,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 0.86
+              }
+            ]
+          },
+          {
+            "object": "Button Glow Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#FDE68A",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": "#FDE68A"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "ambient",
+        "fps": 60,
+        "duration": 120,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "ease",
+            "x1": 0.4,
+            "y1": 0.0,
+            "x2": 0.6,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Sweep Orbit",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": 6.2831853
+              }
+            ]
+          },
+          {
+            "object": "Sweep Dot Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#7DD3FC",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": "#B7F34A",
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": "#7DD3FC"
+              }
+            ]
+          },
+          {
+            "object": "Sweep Dot",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.8,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 1.5,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": 0.8
+              }
+            ]
+          },
+          {
+            "object": "Sweep Dot",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.8,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 60,
+                "value": 1.5,
+                "interpolation": "cubic",
+                "interpolator": "ease"
+              },
+              {
+                "frame": 120,
+                "value": 0.8
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "state_machines": [
+      {
+        "name": "Panel",
+        "inputs": [
+          {
+            "type": "bool",
+            "name": "pressed",
+            "value": false
+          },
+          {
+            "type": "number",
+            "name": "level",
+            "value": 0.0
+          }
+        ],
+        "listeners": [
+          {
+            "target": "Button",
+            "listener_type": "down",
+            "actions": [
+              {
+                "type": "bool_change",
+                "input": "pressed",
+                "value": true
+              }
+            ]
+          }
+        ],
+        "layers": [
+          {
+            "states": [
+              {
+                "type": "entry"
+              },
+              {
+                "type": "animation",
+                "animation": "button_idle"
+              },
+              {
+                "type": "animation",
+                "animation": "button_pressed"
+              },
+              {
+                "type": "exit"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 0,
+                "to": 1
+              },
+              {
+                "from": 1,
+                "to": 2,
+                "duration": 8,
+                "conditions": [
+                  {
+                    "input": "pressed",
+                    "op": "==",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "states": [
+              {
+                "type": "entry"
+              },
+              {
+                "type": "blend_state1d",
+                "input": "level",
+                "children": [
+                  {
+                    "type": "blend_animation1_d",
+                    "animation": "level_low",
+                    "value": 0.0
+                  },
+                  {
+                    "type": "blend_animation1_d",
+                    "animation": "level_high",
+                    "value": 100.0
+                  }
+                ]
+              },
+              {
+                "type": "exit"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 0,
+                "to": 1
+              }
+            ]
+          },
+          {
+            "states": [
+              {
+                "type": "entry"
+              },
+              {
+                "type": "animation",
+                "animation": "ambient"
+              },
+              {
+                "type": "exit"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 0,
+                "to": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

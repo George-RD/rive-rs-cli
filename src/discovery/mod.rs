@@ -287,7 +287,6 @@ fn category_for(name: &str) -> &'static str {
         | "dash_path"
         | "dash"
         | "feather"
-        | "text_style_paint"
         | "scripted_path_effect" => "paint",
         name if name.contains("animation") || name.starts_with("nested_") => "animation",
         "input"
@@ -383,7 +382,6 @@ fn summary_for(name: &str) -> String {
         "text_style" => "Defines typography and layout for text.",
         "text_value_run" => "Supplies editable text content for a text object.",
         "text_modifier_group" => "Groups modifiers that alter text layout or glyphs.",
-        "text_style_paint" => "Applies paint styling to text.",
         "bone" => "Defines a transformable bone in a skeletal hierarchy.",
         "root_bone" => "Defines the root of a skeletal hierarchy.",
         "skin" => "Binds mesh geometry to a bone hierarchy.",
@@ -603,7 +601,7 @@ fn bone_example(name: &str) -> Option<Vec<Value>> {
 
 fn validated_example(scene: &Value) -> Option<String> {
     let spec: crate::builder::SceneSpec = serde_json::from_value(scene.clone()).ok()?;
-    crate::builder::build_scene(&spec).ok()?;
+    crate::builder::build_scene(&spec, None).ok()?;
     serde_json::to_string_pretty(scene).ok()
 }
 
@@ -787,7 +785,7 @@ mod tests {
             with_examples += 1;
             let spec: builder::SceneSpec = serde_json::from_str(&description.example)
                 .unwrap_or_else(|error| panic!("{} example JSON failed: {}", info.name, error));
-            builder::build_scene(&spec)
+            builder::build_scene(&spec, None)
                 .unwrap_or_else(|error| panic!("{} example failed: {}", info.name, error));
         }
         assert!(

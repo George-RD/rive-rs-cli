@@ -69,6 +69,9 @@ const BASE_FIXTURES = [
   "nslicer",
   "scripting",
   "transition_comparators",
+  "vertex_morph",
+  "embedded_assets",
+  "pointer_interaction",
 ];
 
 const SHOWCASE_FIXTURES = fs

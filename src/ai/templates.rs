@@ -350,7 +350,7 @@ mod tests {
         for name in list_templates() {
             let json = get_template(name).unwrap();
             let spec: SceneSpec = serde_json::from_value(json).unwrap();
-            let scene = build_scene(&spec).unwrap();
+            let scene = build_scene(&spec, None).unwrap();
             assert!(
                 !scene.is_empty(),
                 "template '{}' produced empty scene",

@@ -164,10 +164,17 @@ pub enum Command {
 
         #[arg(
             long = "input",
-            value_name = "NAME=VALUE",
-            help = "Set a state machine input before rendering: bool (true/false), number, or 'trigger'. Repeatable."
+            value_name = "NAME=VALUE[@FRAME]",
+            help = "Set a state machine input: bool (true/false), number, or 'trigger'. Append @FRAME to apply it when the stepper reaches that frame, e.g. press=trigger@30. Repeatable."
         )]
         inputs: Vec<String>,
+
+        #[arg(
+            long = "pointer",
+            value_name = "EVENT:X,Y@FRAME",
+            help = "Dispatch a pointer event in artboard coordinates at a frame, e.g. down:120,90@10. EVENT is down, up, move, enter or exit. Requires --state-machine. Repeatable."
+        )]
+        pointers: Vec<String>,
 
         #[arg(long, help = "Artboard name (defaults to the default artboard)")]
         artboard: Option<String>,

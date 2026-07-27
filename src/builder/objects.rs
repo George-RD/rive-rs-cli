@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::path::Path;
 
 use crate::objects::artboard::NestedArtboard;
-use crate::objects::assets::{self, AudioAsset, FontAsset, ImageAsset};
+use crate::objects::assets::{self, AudioAsset, FileAssetContents, FontAsset, ImageAsset};
 use crate::objects::bones::{Bone, CubicWeight, RootBone, Skin, Tendon, Weight};
 use crate::objects::constraints::{
     DistanceConstraint, FollowPathConstraint, IKConstraint, RotationConstraint, ScaleConstraint,
@@ -33,15 +34,154 @@ use crate::objects::state_machine::{self, Event, NestedSimpleAnimation, NestedSt
 use crate::objects::text::{
     self, Text, TextFollowPathModifier, TextInput, TextInputCursor, TextInputDrawable,
     TextInputSelectedText, TextInputSelection, TextModifierGroup, TextModifierRange, TextStyle,
-    TextStyleAxis, TextStyleFeature, TextStylePaint, TextTargetModifier, TextValueRun,
-    TextVariationModifier,
+    TextStyleAxis, TextStyleFeature, TextTargetModifier, TextValueRun, TextVariationModifier,
 };
 
 use super::parsers::{
     parse_color, parse_fill_rule, parse_stroke_cap, parse_stroke_join, parse_trim_mode,
     required_u64_field,
 };
-use super::spec::{ObjectSpec, TextModifierGroupChildSpec, TextStyleChildSpec};
+use super::spec::{ObjectSpec, TextModifierGroupChildSpec};
+
+pub(crate) struct SceneContext<'a> {
+    pub asset_ids: &'a HashMap<String, u64>,
+}
+
+fn resolve_asset_ordinal(
+    owner: &str,
+    asset_name: Option<&str>,
+    explicit: Option<u64>,
+    ctx: &SceneContext<'_>,
+) -> Result<Option<u64>, String> {
+    match (asset_name, explicit) {
+        (Some(_), Some(_)) => Err(format!(
+            "'{owner}' sets both an asset name and an asset index; use one or the other"
+        )),
+        (Some(asset_name), None) => {
+            ctx.asset_ids
+                .get(asset_name)
+                .copied()
+                .map(Some)
+                .ok_or_else(|| {
+                    format!("'{owner}' references asset '{asset_name}', which no artboard declares")
+                })
+        }
+        (None, explicit) => Ok(explicit),
+    }
+}
+
+pub(crate) fn file_asset_name(spec: &ObjectSpec) -> Option<&str> {
+    match spec {
+        ObjectSpec::ImageAsset { name, .. }
+        | ObjectSpec::FontAsset { name, .. }
+        | ObjectSpec::AudioAsset { name, .. } => Some(name),
+        _ => None,
+    }
+}
+
+pub(crate) fn is_file_asset(spec: &ObjectSpec) -> bool {
+    file_asset_name(spec).is_some()
+}
+
+pub(crate) fn append_file_asset(
+    spec: &ObjectSpec,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+    base_dir: Option<&Path>,
+) -> Result<(), String> {
+    match spec {
+        ObjectSpec::ImageAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+            source,
+        } => {
+            let mut asset = ImageAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            append_asset_contents(name, source.as_deref(), base_dir, objects)
+        }
+        ObjectSpec::FontAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+            source,
+        } => {
+            let mut asset = FontAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            append_asset_contents(name, source.as_deref(), base_dir, objects)
+        }
+        ObjectSpec::AudioAsset {
+            name,
+            asset_id,
+            cdn_base_url,
+        } => {
+            let mut asset = AudioAsset::new(name.clone());
+            if let Some(v) = asset_id {
+                asset.asset_id = *v;
+            }
+            if let Some(v) = cdn_base_url {
+                asset.cdn_base_url = v.clone();
+            }
+            objects.push(Box::new(asset));
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
+fn append_asset_contents(
+    asset_name: &str,
+    source: Option<&str>,
+    base_dir: Option<&Path>,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) -> Result<(), String> {
+    let Some(source) = source else {
+        return Ok(());
+    };
+    let Some(base_dir) = base_dir else {
+        return Err(format!(
+            "asset '{asset_name}' sets 'source', but embedding asset files is only supported when generating from a scene file on disk"
+        ));
+    };
+    let relative = Path::new(source);
+    if relative.is_absolute() {
+        return Err(format!(
+            "asset '{asset_name}' source '{source}' must be relative to the scene file's directory so the scene stays portable"
+        ));
+    }
+    let path = base_dir.join(relative);
+    let resolved = std::path::absolute(&path).unwrap_or_else(|_| path.clone());
+    let bytes = std::fs::read(&path).map_err(|error| {
+        format!(
+            "asset '{}' source '{}' could not be read from {}: {}",
+            asset_name,
+            source,
+            resolved.display(),
+            error
+        )
+    })?;
+    if bytes.is_empty() {
+        return Err(format!(
+            "asset '{}' source '{}' is empty at {}",
+            asset_name,
+            source,
+            resolved.display()
+        ));
+    }
+    objects.push(Box::new(FileAssetContents::new(bytes)));
+    Ok(())
+}
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn append_object(
@@ -53,6 +193,7 @@ pub(crate) fn append_object(
     artboard_name_to_index: &HashMap<String, usize>,
     current_artboard_name: &str,
     animation_name_to_index: &HashMap<String, usize>,
+    ctx: &SceneContext<'_>,
 ) -> Result<(), String> {
     let object_index = objects.len();
     let parent_id = parent_index
@@ -87,6 +228,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -124,6 +266,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -283,6 +426,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -318,6 +462,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -363,6 +508,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -396,6 +542,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -440,6 +587,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -447,11 +595,14 @@ pub(crate) fn append_object(
         ObjectSpec::Image {
             name,
             asset_id,
+            asset,
             x,
             y,
             children,
         } => {
-            let mut image = Image::new(name.clone(), parent_id, *asset_id);
+            let resolved_asset_id =
+                resolve_asset_ordinal(name, asset.as_deref(), *asset_id, ctx)?.unwrap_or(0);
+            let mut image = Image::new(name.clone(), parent_id, resolved_asset_id);
             if let Some(v) = x {
                 image.x = *v;
             }
@@ -471,6 +622,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -511,6 +663,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -647,6 +800,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -705,6 +859,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -731,6 +886,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -765,6 +921,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -811,6 +968,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -1346,6 +1504,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -1501,6 +1660,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -1511,6 +1671,7 @@ pub(crate) fn append_object(
             line_height,
             letter_spacing,
             font_asset_id,
+            font_asset,
             children,
         } => {
             let mut style = TextStyle::new(name.clone(), parent_id);
@@ -1523,18 +1684,26 @@ pub(crate) fn append_object(
             if let Some(v) = letter_spacing {
                 style.letter_spacing = *v;
             }
-            if let Some(v) = font_asset_id {
-                style.font_asset_id = *v;
+            if let Some(v) =
+                resolve_asset_ordinal(name, font_asset.as_deref(), *font_asset_id, ctx)?
+            {
+                style.font_asset_id = v;
             }
             objects.push(Box::new(style));
             name_to_index.insert(name.clone(), object_index);
-            let child_parent_id = object_index
-                .checked_sub(artboard_start)
-                .ok_or("internal error: parent index precedes artboard start".to_string())?
-                as u64;
             if let Some(children) = children {
                 for child in children {
-                    append_text_style_child(child, child_parent_id, objects);
+                    append_object(
+                        child,
+                        object_index,
+                        artboard_start,
+                        objects,
+                        name_to_index,
+                        artboard_name_to_index,
+                        current_artboard_name,
+                        animation_name_to_index,
+                        ctx,
+                    )?;
                 }
             }
         }
@@ -1542,58 +1711,40 @@ pub(crate) fn append_object(
             name,
             text,
             style_id,
+            style,
         } => {
             let mut run = TextValueRun::new(name.clone(), parent_id, text.clone());
-            if let Some(v) = style_id {
-                run.style_id = *v;
+            match (style, style_id) {
+                (Some(_), Some(_)) => {
+                    return Err(format!(
+                        "text_value_run '{name}' sets both 'style' and 'style_id'; use one or the other"
+                    ));
+                }
+                (Some(style_name), None) => {
+                    let style_index = name_to_index.get(style_name).ok_or_else(|| {
+                        format!(
+                            "text_value_run '{name}' references text style '{style_name}', which is not defined before it"
+                        )
+                    })?;
+                    run.style_id = style_index
+                        .checked_sub(artboard_start)
+                        .ok_or("internal error: style index precedes artboard start".to_string())?
+                        as u64;
+                }
+                (None, Some(v)) => {
+                    run.style_id = *v;
+                }
+                (None, None) => {}
             }
             objects.push(Box::new(run));
             name_to_index.insert(name.clone(), object_index);
         }
-        ObjectSpec::ImageAsset {
-            name,
-            asset_id,
-            cdn_base_url,
-        } => {
-            let mut asset = ImageAsset::new(name.clone());
-            if let Some(v) = asset_id {
-                asset.asset_id = *v;
-            }
-            if let Some(v) = cdn_base_url {
-                asset.cdn_base_url = v.clone();
-            }
-            objects.push(Box::new(asset));
-            name_to_index.insert(name.clone(), object_index);
-        }
-        ObjectSpec::FontAsset {
-            name,
-            asset_id,
-            cdn_base_url,
-        } => {
-            let mut asset = FontAsset::new(name.clone());
-            if let Some(v) = asset_id {
-                asset.asset_id = *v;
-            }
-            if let Some(v) = cdn_base_url {
-                asset.cdn_base_url = v.clone();
-            }
-            objects.push(Box::new(asset));
-            name_to_index.insert(name.clone(), object_index);
-        }
-        ObjectSpec::AudioAsset {
-            name,
-            asset_id,
-            cdn_base_url,
-        } => {
-            let mut asset = AudioAsset::new(name.clone());
-            if let Some(v) = asset_id {
-                asset.asset_id = *v;
-            }
-            if let Some(v) = cdn_base_url {
-                asset.cdn_base_url = v.clone();
-            }
-            objects.push(Box::new(asset));
-            name_to_index.insert(name.clone(), object_index);
+        ObjectSpec::ImageAsset { name, .. }
+        | ObjectSpec::FontAsset { name, .. }
+        | ObjectSpec::AudioAsset { name, .. } => {
+            return Err(format!(
+                "asset '{name}' must be a direct child of an artboard; Rive stores assets at file scope, not inside the object tree"
+            ));
         }
         ObjectSpec::LayoutComponent {
             name,
@@ -1637,6 +1788,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -1811,6 +1963,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2202,6 +2355,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2275,6 +2429,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2301,6 +2456,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2388,6 +2544,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2415,6 +2572,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2445,6 +2603,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2471,6 +2630,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2501,6 +2661,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2570,6 +2731,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2621,6 +2783,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2810,6 +2973,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2870,6 +3034,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -2945,6 +3110,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3054,6 +3220,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3130,6 +3297,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3151,6 +3319,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3172,6 +3341,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3193,6 +3363,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3214,6 +3385,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3240,6 +3412,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3266,6 +3439,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3292,6 +3466,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3318,6 +3493,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3344,6 +3520,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3365,6 +3542,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3386,6 +3564,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3412,6 +3591,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3440,6 +3620,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3470,6 +3651,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3538,6 +3720,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3559,6 +3742,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3639,27 +3823,6 @@ pub(crate) fn append_object(
                 dbp.converter_id = *v;
             }
             objects.push(Box::new(dbp));
-        }
-        ObjectSpec::TextStylePaint { name, children } => {
-            objects.push(Box::new(TextStylePaint {
-                name: name.clone(),
-                parent_id,
-            }));
-            name_to_index.insert(name.clone(), object_index);
-            if let Some(children) = children {
-                for child in children {
-                    append_object(
-                        child,
-                        object_index,
-                        artboard_start,
-                        objects,
-                        name_to_index,
-                        artboard_name_to_index,
-                        current_artboard_name,
-                        animation_name_to_index,
-                    )?;
-                }
-            }
         }
         ObjectSpec::TextStyleAxis { tag, axis_value } => {
             objects.push(Box::new(TextStyleAxis {
@@ -3757,6 +3920,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3778,6 +3942,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3799,6 +3964,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3820,6 +3986,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3841,6 +4008,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3862,6 +4030,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -3909,6 +4078,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -4036,6 +4206,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -4148,6 +4319,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -4184,6 +4356,7 @@ pub(crate) fn append_object(
                         artboard_name_to_index,
                         current_artboard_name,
                         animation_name_to_index,
+                        ctx,
                     )?;
                 }
             }
@@ -4275,22 +4448,6 @@ pub(crate) fn append_object(
         }
     }
     Ok(())
-}
-
-pub(crate) fn append_text_style_child(
-    spec: &TextStyleChildSpec,
-    parent_id: u64,
-    objects: &mut Vec<Box<dyn RiveObject>>,
-) {
-    match spec {
-        TextStyleChildSpec::TextStyleFeature { tag, feature_value } => {
-            objects.push(Box::new(TextStyleFeature {
-                parent_id,
-                tag: tag.unwrap_or(0),
-                feature_value: feature_value.unwrap_or(0),
-            }));
-        }
-    }
 }
 
 pub(crate) fn append_text_modifier_group_child(

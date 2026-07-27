@@ -31,6 +31,7 @@ const SHOT_FRAMES = {
   loop_animation: [0, 30],
   game_hud: [0, 60, 120],
   mascot: [0, 30, 60],
+  vertex_morph: [0, 15, 30],
 };
 
 const SHOWCASE_SHOT_FRAMES = new Set(SHOWCASE_FIXTURES);

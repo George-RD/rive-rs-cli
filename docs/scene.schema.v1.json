@@ -166,10 +166,21 @@
       "oneOf": [
         {
           "properties": {
+            "animation": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "animation_id": {
+              "default": null,
               "format": "uint64",
               "minimum": 0,
-              "type": "integer"
+              "type": [
+                "integer",
+                "null"
+              ]
             },
             "type": {
               "const": "blend_animation1_d",
@@ -184,8 +195,7 @@
             }
           },
           "required": [
-            "type",
-            "animation_id"
+            "type"
           ],
           "type": "object"
         }
@@ -1173,10 +1183,21 @@
         },
         {
           "properties": {
+            "asset": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "asset_id": {
+              "default": null,
               "format": "uint64",
               "minimum": 0,
-              "type": "integer"
+              "type": [
+                "integer",
+                "null"
+              ]
             },
             "children": {
               "items": {
@@ -1211,8 +1232,7 @@
           },
           "required": [
             "type",
-            "name",
-            "asset_id"
+            "name"
           ],
           "type": "object"
         },
@@ -2832,10 +2852,17 @@
           "properties": {
             "children": {
               "items": {
-                "$ref": "#/$defs/TextStyleChildSpec"
+                "$ref": "#/$defs/ObjectSpec"
               },
               "type": [
                 "array",
+                "null"
+              ]
+            },
+            "font_asset": {
+              "default": null,
+              "type": [
+                "string",
                 "null"
               ]
             },
@@ -2887,6 +2914,13 @@
             "name": {
               "type": "string"
             },
+            "style": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "style_id": {
               "format": "uint64",
               "minimum": 0,
@@ -2929,6 +2963,13 @@
             "name": {
               "type": "string"
             },
+            "source": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "type": {
               "const": "image_asset",
               "type": "string"
@@ -2958,6 +2999,13 @@
             },
             "name": {
               "type": "string"
+            },
+            "source": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "type": {
               "const": "font_asset",
@@ -6525,31 +6573,6 @@
         },
         {
           "properties": {
-            "children": {
-              "items": {
-                "$ref": "#/$defs/ObjectSpec"
-              },
-              "type": [
-                "array",
-                "null"
-              ]
-            },
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "const": "text_style_paint",
-              "type": "string"
-            }
-          },
-          "required": [
-            "type",
-            "name"
-          ],
-          "type": "object"
-        },
-        {
-          "properties": {
             "axis_value": {
               "format": "float",
               "type": [
@@ -7976,6 +7999,13 @@
             "null"
           ]
         },
+        "listener_type": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "listener_type_value": {
           "format": "uint64",
           "minimum": 0,
@@ -8145,6 +8175,13 @@
                 "null"
               ]
             },
+            "input": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "input_id": {
               "format": "uint64",
               "minimum": 0,
@@ -8278,38 +8315,6 @@
             },
             "type": {
               "const": "text_variation_modifier",
-              "type": "string"
-            }
-          },
-          "required": [
-            "type"
-          ],
-          "type": "object"
-        }
-      ]
-    },
-    "TextStyleChildSpec": {
-      "oneOf": [
-        {
-          "properties": {
-            "feature_value": {
-              "format": "uint64",
-              "minimum": 0,
-              "type": [
-                "integer",
-                "null"
-              ]
-            },
-            "tag": {
-              "format": "uint64",
-              "minimum": 0,
-              "type": [
-                "integer",
-                "null"
-              ]
-            },
-            "type": {
-              "const": "text_style_feature",
               "type": "string"
             }
           },

@@ -170,6 +170,10 @@ will accept for that type — the two cannot disagree, so trust it over any list
 | `trim_path` | `trim_start`, `trim_end`, `trim_offset` |
 | `fill`, `stroke` | `is_visible` |
 | `text_style` | `font_size`, `line_height`, `letter_spacing` |
+| `straight_vertex` | `x`, `y`, `radius` |
+| `cubic_detached_vertex` | `x`, `y`, `in_rotation`, `in_distance`, `out_rotation`, `out_distance` |
+| `cubic_mirrored_vertex` | `x`, `y`, `rotation`, `distance` |
+| `cubic_asymmetric_vertex` | `x`, `y`, `rotation`, `in_distance`, `out_distance` |
 
 The traps this table exists to prevent:
 
@@ -221,6 +225,16 @@ but remember the rule when hand-writing layers.
 
 `from`/`to` are indices into that layer's `states` array. `duration` is the blend time in milliseconds.
 
+Two hard constraints on transitions, both measured and both invisible to `validate`:
+
+1. **Never pair `A -> B` on `x == true` with `B -> A` on `x == false`.** The runtime falls back to `A` a
+   few frames after reaching `B`, even while the input stays true. Drive the return edge from a separate
+   input, or make the state change one-way.
+2. **Never give both edges of a cycle `duration: 0`.** The layer logs `exceeded max iterations` and stops
+   transitioning at all. Give condition-driven transitions a non-zero `duration`.
+
+Both are recorded in `docs/parity.md`.
+
 Verify interactive behaviour by driving inputs and rendering each state. `--input` is repeatable and takes
 three value forms: `true`/`false` for a bool, a number for a number input, and the literal word `trigger`
 to fire a trigger (NOT `true` — a trigger is fired, not set):
@@ -234,6 +248,32 @@ rive-cli render out.riv --state-machine Logic --input level=0.75 --input isOn=tr
 
 The directories must differ. If they are identical your conditions are not firing — check that the input
 names match exactly and that the transition `from`/`to` indices point at the states you meant.
+
+### Driving interaction over time
+
+Append `@FRAME` to schedule an input instead of applying it before playback, and use `--pointer` to send a
+real pointer event through Rive's own listener handling. Both are recorded in `manifest.json`.
+
+```bash
+rive-cli render out.riv --state-machine Logic --input press=trigger@30 --frames 0,29,31,45 -o timed/
+rive-cli render out.riv --state-machine Logic --pointer down:120,90@10 --frames 0,9,20 -o tapped/
+```
+
+`--pointer` is `EVENT:X,Y@FRAME` where `EVENT` is `down`, `up`, `move`, `enter` or `exit` and `X,Y` are
+**artboard** coordinates. The frame is required, and both flags need `--state-machine`.
+
+A listener needs `"listener_type"`: `enter`, `exit`, `down`, `up`, `move`, `event` or `click`. It defaults
+to `enter`, so a tap target with no `listener_type` will never respond to `--pointer down`.
+
+```json
+"listeners": [
+  { "target": "TapTarget", "listener_type": "down",
+    "actions": [ { "type": "bool_change", "input": "isOn", "value": true } ] }
+]
+```
+
+Prove interaction the same way you prove animation: render the same frames with and without the flag and
+confirm the frames **before** the scheduled frame are identical while later ones differ.
 
 ## Colors and gradients
 
@@ -266,12 +306,40 @@ Strong, proven ground for showcase work:
 
 Avoid in showcase work — these compile but render **blank**:
 
-- **Text.** Requires an embedded font, which this tool cannot embed. `text` objects render as nothing.
-  Draw letterforms as vector paths instead, or omit text.
-- **Images / raster assets.** No asset bytes can be embedded, so images render as nothing.
 - **Scripting** objects and extended **transition comparators** — known runtime gaps.
 - **Bones / skinning** — they serialise, but no fixture demonstrates actual mesh deformation.
   Build characters from separate animated shapes instead.
+- **`feather`** — the vendored canvas runtime ignores it entirely. Fake soft edges with a stack of
+  low-opacity strokes or a radial gradient instead.
+
+## Text and images
+
+Both work, but only with **embedded asset bytes**.
+
+- Declare `font_asset` / `image_asset` as a **direct child of an artboard**. Assets live at file scope,
+  so the tool hoists them ahead of every artboard and their names must be unique across the whole scene.
+- `source` is a path **relative to the scene JSON file's own directory**; absolute paths are rejected so
+  scenes stay portable. A licensed subset font ships at `assets/fonts/Inter-Bold-Subset.ttf` and a texture
+  at `assets/textures/aurora.png`.
+- Reference assets **by name**: `image` takes `asset`, `text_style` takes `font_asset`, and
+  `text_value_run` takes `style`. The numeric `asset_id` / `font_asset_id` / `style_id` forms still exist
+  but require hand-computed indices — do not use them.
+- A `text_style` needs a `fill` child or the glyphs draw nothing. Its other legal children are
+  `stroke`, `text_style_feature` and `text_style_axis`.
+- `text` has no `x`/`y` of its own. Wrap it in a `node` and position that.
+- `sizing_value: 0` is auto-width. Leave it at `0` unless you also set `width`; auto-height with no width
+  wraps to one glyph per line.
+
+```json
+{ "type": "font_asset", "name": "Display", "source": "../assets/fonts/Inter-Bold-Subset.ttf" }
+```
+
+## Path morphing
+
+Vertices are animatable, which is the way to get organic, non-affine motion. On `straight_vertex`
+keyframe `x`, `y`, `radius`; on `cubic_detached_vertex` also `in_rotation`, `in_distance`,
+`out_rotation`, `out_distance`. Keyframe the vertices of a closed `points_path` and the silhouette
+itself changes — confirm it with `--preview`, whose bounding box must move, not just the pixels.
 
 ## Composition and draw order
 

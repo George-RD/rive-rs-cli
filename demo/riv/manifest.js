@@ -1,5 +1,5 @@
 window.__RIVE_FIXTURE_MANIFEST = {
-  "generatedAt": "2026-07-26T18:11:07.297Z",
+  "generatedAt": "2026-07-26T22:25:32.246Z",
   "fixtures": [
     {
       "name": "animation",
@@ -327,6 +327,16 @@ window.__RIVE_FIXTURE_MANIFEST = {
         ]
       },
       "replay": true
+    },
+    {
+      "name": "embedded_assets",
+      "category": "static",
+      "scope": "visual",
+      "tags": [
+        "static"
+      ],
+      "expectation": "embedded_assets fixture loaded.",
+      "replay": false
     },
     {
       "name": "empty_artboard",
@@ -714,6 +724,28 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "replay": false
     },
     {
+      "name": "pointer_interaction",
+      "category": "interactive",
+      "scope": "visual",
+      "tags": [
+        "interactive",
+        "animated"
+      ],
+      "expectation": "pointer_interaction fixture loaded.",
+      "stateMachine": "PointerMachine",
+      "animations": [
+        "resting",
+        "engaged"
+      ],
+      "animationsByArtboard": {
+        "PointerDemo": [
+          "resting",
+          "engaged"
+        ]
+      },
+      "replay": true
+    },
+    {
       "name": "points_path",
       "category": "static",
       "scope": "visual",
@@ -869,6 +901,24 @@ window.__RIVE_FIXTURE_MANIFEST = {
       "animationsByArtboard": {
         "TrimDemo": [
           "trim_sweep"
+        ]
+      },
+      "replay": true
+    },
+    {
+      "name": "vertex_morph",
+      "category": "animated",
+      "scope": "visual",
+      "tags": [
+        "animated"
+      ],
+      "expectation": "vertex_morph fixture loaded.",
+      "animations": [
+        "morph"
+      ],
+      "animationsByArtboard": {
+        "VertexMorph": [
+          "morph"
         ]
       },
       "replay": true

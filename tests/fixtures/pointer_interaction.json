@@ -1,0 +1,202 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "PointerDemo",
+    "width": 320,
+    "height": 320,
+    "children": [
+      {
+        "type": "shape",
+        "name": "HitTarget",
+        "x": 160,
+        "y": 160,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "HitTargetGeometry",
+            "width": 200,
+            "height": 200,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "HitTargetFill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "HitTargetInk",
+                "color": "#2563EB"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "resting",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "keyframes": [
+          {
+            "object": "HitTargetInk",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#2563EB"
+              },
+              {
+                "frame": 59,
+                "value": "#2563EB"
+              }
+            ]
+          },
+          {
+            "object": "HitTarget",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0
+              },
+              {
+                "frame": 59,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "HitTarget",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0
+              },
+              {
+                "frame": 59,
+                "value": 1.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "engaged",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "keyframes": [
+          {
+            "object": "HitTargetInk",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#F97316"
+              },
+              {
+                "frame": 59,
+                "value": "#F97316"
+              }
+            ]
+          },
+          {
+            "object": "HitTarget",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.55
+              },
+              {
+                "frame": 59,
+                "value": 0.55
+              }
+            ]
+          },
+          {
+            "object": "HitTarget",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.55
+              },
+              {
+                "frame": 59,
+                "value": 0.55
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "state_machines": [
+      {
+        "name": "PointerMachine",
+        "inputs": [
+          {
+            "type": "bool",
+            "name": "engaged",
+            "value": false
+          }
+        ],
+        "listeners": [
+          {
+            "target": "HitTarget",
+            "actions": [
+              {
+                "type": "bool_change",
+                "input": "engaged",
+                "value": true
+              }
+            ],
+            "listener_type": "down"
+          }
+        ],
+        "layers": [
+          {
+            "states": [
+              {
+                "type": "entry"
+              },
+              {
+                "type": "animation",
+                "animation": "resting"
+              },
+              {
+                "type": "animation",
+                "animation": "engaged"
+              },
+              {
+                "type": "exit"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 0,
+                "to": 1
+              },
+              {
+                "from": 1,
+                "to": 2,
+                "duration": 6,
+                "conditions": [
+                  {
+                    "input": "engaged",
+                    "op": "==",
+                    "value": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::path::Path;
 
 use serde::Serialize;
 
@@ -6,7 +7,9 @@ use crate::objects::artboard::{Artboard, Backboard};
 use crate::objects::core::RiveObject;
 
 use super::animations::{build_animations, register_interpolators};
-use super::objects::append_object;
+use super::objects::{
+    SceneContext, append_file_asset, append_object, file_asset_name, is_file_asset,
+};
 use super::spec::{InterpolatorDef, SceneSpec};
 use super::state_machines::build_state_machines;
 use super::validation::validate_scene_spec;
@@ -17,8 +20,7 @@ pub use super::spec::{
     AnimationSpec, ArtboardSpec, BlendState1DChildSpec, BlendStateChildSpec,
     BlendStateDirectChildSpec, ConditionSpec, InputSpec, InterpolatorSpec, KeyframeGroupSpec,
     KeyframeSpec, LayerSpec, ListenerActionSpec, ObjectSpec, StateMachineListenerSpec,
-    StateMachineSpec, StateSpec, TextModifierGroupChildSpec, TextStyleChildSpec,
-    TransitionChildSpec, TransitionSpec,
+    StateMachineSpec, StateSpec, TextModifierGroupChildSpec, TransitionChildSpec, TransitionSpec,
 };
 
 // Re-export parser functions for test visibility via `use super::*`.
@@ -148,7 +150,10 @@ pub(crate) fn resolve_artboards(spec: &SceneSpec) -> Result<Vec<&ArtboardSpec>, 
     }
 }
 
-pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String> {
+pub fn build_scene(
+    spec: &SceneSpec,
+    base_dir: Option<&Path>,
+) -> Result<Vec<Box<dyn RiveObject>>, String> {
     validate_scene_spec(spec)?;
 
     let artboard_specs = resolve_artboards(spec)?;
@@ -159,6 +164,26 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
     let mut objects: Vec<Box<dyn RiveObject>> = Vec::new();
 
     objects.push(Box::new(Backboard));
+
+    let mut asset_ids: HashMap<String, u64> = HashMap::new();
+    let mut next_asset_ordinal: u64 = 0;
+    for artboard_spec in &artboard_specs {
+        for child in &artboard_spec.children {
+            if let Some(asset_name) = file_asset_name(child) {
+                if asset_ids.contains_key(asset_name) {
+                    return Err(format!(
+                        "asset '{asset_name}' is declared more than once; Rive stores assets at file scope, so their names must be unique across every artboard"
+                    ));
+                }
+                asset_ids.insert(asset_name.to_owned(), next_asset_ordinal);
+                next_asset_ordinal += 1;
+                append_file_asset(child, &mut objects, base_dir)?;
+            }
+        }
+    }
+    let ctx = SceneContext {
+        asset_ids: &asset_ids,
+    };
 
     for artboard_spec in &artboard_specs {
         let artboard_start = objects.len();
@@ -199,6 +224,9 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
         }
 
         for child in &artboard_spec.children {
+            if is_file_asset(child) {
+                continue;
+            }
             append_object(
                 child,
                 artboard_start,
@@ -208,6 +236,7 @@ pub fn build_scene(spec: &SceneSpec) -> Result<Vec<Box<dyn RiveObject>>, String>
                 &artboard_name_to_index,
                 &artboard_spec.name,
                 &animation_name_to_index,
+                &ctx,
             )?;
         }
 
@@ -305,7 +334,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected zero dimensions error"),
             Err(err) => err,
         };
@@ -332,7 +361,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects.len(), 2);
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
@@ -383,7 +412,7 @@ mod tests {
             ]),
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
         assert_eq!(objects[2].type_key(), type_keys::SHAPE);
@@ -411,7 +440,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected scene format version error"),
             Err(err) => err,
         };
@@ -486,7 +515,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects.len(), 2);
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
@@ -541,7 +570,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects.len(), 6);
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
@@ -639,7 +668,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
         assert_eq!(objects[2].type_key(), type_keys::SHAPE);
@@ -724,7 +753,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert!(objects.iter().any(|o| o.type_key() == type_keys::SOLO));
         assert!(
             objects
@@ -764,6 +793,7 @@ mod tests {
                     listeners: Some(vec![StateMachineListenerSpec {
                         target: "Target".to_string(),
                         listener_type_value: Some(1),
+                        listener_type: None,
                         actions: Some(vec![ListenerActionSpec::BoolChange {
                             input: "is_on".to_string(),
                             value: Some(serde_json::json!(true)),
@@ -783,7 +813,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert!(
             objects
                 .iter()
@@ -831,7 +861,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert!(
             objects
                 .iter()
@@ -862,7 +892,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected invalid color error"),
             Err(err) => err,
         };
@@ -870,7 +900,7 @@ mod tests {
     }
 
     #[test]
-    fn test_text_style_children_reject_invalid_variant_during_deserialization() {
+    fn test_text_style_children_reject_invalid_child_type() {
         let spec = serde_json::json!({
             "scene_format_version": 1,
             "artboard": {
@@ -893,8 +923,16 @@ mod tests {
             }
         });
 
-        let err = serde_json::from_value::<SceneSpec>(spec).expect_err("expected parse failure");
-        assert!(err.to_string().contains("unknown variant `image`"));
+        let spec: SceneSpec = serde_json::from_value(spec).expect("scene should deserialize");
+        let err = match build_scene(&spec, None) {
+            Ok(_) => panic!("expected text_style child rejection"),
+            Err(err) => err,
+        };
+        assert!(
+            err.contains("may only contain fill, stroke, text_style_feature or text_style_axis"),
+            "unexpected error: {}",
+            err
+        );
     }
 
     #[test]
@@ -932,7 +970,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected out-of-bounds transition error"),
             Err(err) => err,
         };
@@ -975,8 +1013,10 @@ mod tests {
                             StateSpec::Entry,
                             StateSpec::BlendState1d {
                                 input_id: Some(0),
+                                input: None,
                                 children: Some(vec![BlendState1DChildSpec::BlendAnimation1D {
-                                    animation_id: 0,
+                                    animation_id: Some(0),
+                                    animation: None,
                                     value: Some(0.0),
                                 }]),
                             },
@@ -993,7 +1033,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected non-number blend input error"),
             Err(err) => err,
         };
@@ -1039,7 +1079,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected invalid transition view model condition error"),
             Err(err) => err,
         };
@@ -1088,7 +1128,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected invalid condition operator error"),
             Err(err) => err,
         };
@@ -1117,7 +1157,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected missing view model reference error"),
             Err(err) => err,
         };
@@ -1170,7 +1210,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected bool interpolation error"),
             Err(err) => err,
         };
@@ -1201,6 +1241,7 @@ mod tests {
                         name: "Run".to_string(),
                         text: "Hello".to_string(),
                         style_id: None,
+                        style: None,
                     }]),
                 }],
                 animations: Some(vec![AnimationSpec {
@@ -1234,7 +1275,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected string interpolation error"),
             Err(err) => err,
         };
@@ -1272,15 +1313,15 @@ mod tests {
             Some(property_keys::LAYOUT_COMPONENT_HEIGHT)
         );
         assert_eq!(
-            property_key_for_object("font_size", type_keys::TEXT_STYLE),
+            property_key_for_object("font_size", type_keys::TEXT_STYLE_PAINT),
             Some(property_keys::TEXT_STYLE_FONT_SIZE)
         );
         assert_eq!(
-            property_key_for_object("line_height", type_keys::TEXT_STYLE),
+            property_key_for_object("line_height", type_keys::TEXT_STYLE_PAINT),
             Some(property_keys::TEXT_STYLE_LINE_HEIGHT)
         );
         assert_eq!(
-            property_key_for_object("letter_spacing", type_keys::TEXT_STYLE),
+            property_key_for_object("letter_spacing", type_keys::TEXT_STYLE_PAINT),
             Some(property_keys::TEXT_STYLE_LETTER_SPACING)
         );
         assert_eq!(
@@ -1348,7 +1389,7 @@ mod tests {
             }),
             artboards: None,
         };
-        let err = match build_scene(&text_modifier_range) {
+        let err = match build_scene(&text_modifier_range, None) {
             Ok(_) => panic!("expected standalone text_modifier_range error"),
             Err(err) => err,
         };
@@ -1374,7 +1415,7 @@ mod tests {
             }),
             artboards: None,
         };
-        let err = match build_scene(&text_variation_modifier) {
+        let err = match build_scene(&text_variation_modifier, None) {
             Ok(_) => panic!("expected standalone text_variation_modifier error"),
             Err(err) => err,
         };
@@ -1400,7 +1441,7 @@ mod tests {
             }),
             artboards: None,
         };
-        let err = match build_scene(&text_style_feature) {
+        let err = match build_scene(&text_style_feature, None) {
             Ok(_) => panic!("expected standalone text_style_feature error"),
             Err(err) => err,
         };
@@ -1430,7 +1471,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects[2].type_key(), type_keys::PATH);
         let path_flags = objects[2]
             .properties()
@@ -1485,7 +1526,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects[3].type_key(), type_keys::POINTS_PATH);
         assert_eq!(objects[4].type_key(), type_keys::STRAIGHT_VERTEX);
         assert_eq!(objects[5].type_key(), type_keys::STRAIGHT_VERTEX);
@@ -1527,7 +1568,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert!(objects.len() >= 4);
     }
 
@@ -1701,7 +1742,7 @@ mod tests {
             artboards: None,
         };
 
-        match build_scene(&spec) {
+        match build_scene(&spec, None) {
             Err(err) => assert!(
                 err.contains("must be a child of a fill or stroke"),
                 "unexpected error: {}",
@@ -1755,7 +1796,7 @@ mod tests {
             artboards: None,
         };
 
-        build_scene(&spec).unwrap();
+        build_scene(&spec, None).unwrap();
     }
 
     #[test]
@@ -1788,7 +1829,7 @@ mod tests {
             artboards: None,
         };
 
-        match build_scene(&spec) {
+        match build_scene(&spec, None) {
             Err(err) => assert!(
                 err.contains("must be a child of a fill or stroke"),
                 "unexpected error: {}",
@@ -1839,7 +1880,7 @@ mod tests {
             artboards: None,
         };
 
-        build_scene(&spec).unwrap();
+        build_scene(&spec, None).unwrap();
     }
 
     #[test]
@@ -1866,7 +1907,7 @@ mod tests {
             artboards: None,
         };
 
-        match build_scene(&spec) {
+        match build_scene(&spec, None) {
             Err(err) => assert!(
                 err.contains("must be a child of a dash_path"),
                 "unexpected error: {}",
@@ -1908,7 +1949,7 @@ mod tests {
             artboards: None,
         };
 
-        match build_scene(&spec) {
+        match build_scene(&spec, None) {
             Err(err) => assert!(
                 err.contains("must be a child of a fill or stroke"),
                 "unexpected error: {}",
@@ -1955,11 +1996,11 @@ mod tests {
             artboards: None,
         };
 
-        build_scene(&spec).unwrap();
+        build_scene(&spec, None).unwrap();
     }
 
     #[test]
-    fn test_image_reference_requires_preceding_asset() {
+    fn test_image_reference_requires_declared_asset() {
         let spec = SceneSpec {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
@@ -1969,7 +2010,8 @@ mod tests {
                 height: 100.0,
                 children: vec![ObjectSpec::Image {
                     name: "sprite_1".to_string(),
-                    asset_id: 0,
+                    asset_id: Some(0),
+                    asset: None,
                     x: Some(10.0),
                     y: Some(20.0),
                     children: None,
@@ -1984,9 +2026,9 @@ mod tests {
             artboards: None,
         };
 
-        match build_scene(&spec) {
+        match build_scene(&spec, None) {
             Err(err) => assert!(
-                err.contains("references image asset index"),
+                err.contains("references asset index"),
                 "unexpected error: {}",
                 err
             ),
@@ -1995,7 +2037,7 @@ mod tests {
     }
 
     #[test]
-    fn test_image_reference_accepts_preceding_asset() {
+    fn test_image_reference_accepts_declared_asset() {
         let spec = SceneSpec {
             scene_format_version: 1,
             artboard: Some(ArtboardSpec {
@@ -2008,10 +2050,12 @@ mod tests {
                         name: "img_asset".to_string(),
                         asset_id: Some(100),
                         cdn_base_url: None,
+                        source: None,
                     },
                     ObjectSpec::Image {
                         name: "sprite_1".to_string(),
-                        asset_id: 0,
+                        asset_id: Some(0),
+                        asset: None,
                         x: Some(10.0),
                         y: Some(20.0),
                         children: None,
@@ -2027,7 +2071,7 @@ mod tests {
             artboards: None,
         };
 
-        build_scene(&spec).unwrap();
+        build_scene(&spec, None).unwrap();
     }
 
     #[test]
@@ -2088,7 +2132,7 @@ mod tests {
             ]),
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
 
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
@@ -2168,7 +2212,7 @@ mod tests {
             ]),
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
         assert_eq!(objects[2].type_key(), type_keys::NESTED_ARTBOARD);
@@ -2214,7 +2258,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected unknown source artboard error"),
             Err(err) => err,
         };
@@ -2249,7 +2293,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected self-reference error"),
             Err(err) => err,
         };
@@ -2303,7 +2347,7 @@ mod tests {
             ]),
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected indirect cycle error"),
             Err(err) => err,
         };
@@ -2342,7 +2386,7 @@ mod tests {
             }]),
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected error"),
             Err(e) => e,
         };
@@ -2357,7 +2401,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected error"),
             Err(e) => e,
         };
@@ -2372,7 +2416,7 @@ mod tests {
             artboards: Some(vec![]),
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected error"),
             Err(e) => e,
         };
@@ -2414,7 +2458,7 @@ mod tests {
             ]),
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected error"),
             Err(e) => e,
         };
@@ -2507,7 +2551,7 @@ mod tests {
             ]),
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
 
         let keyed_obj = objects
             .iter()
@@ -2648,7 +2692,7 @@ mod tests {
             ]),
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
 
         let keyed_objects: Vec<_> = objects
             .iter()
@@ -2698,7 +2742,7 @@ mod tests {
         assert_eq!(abs[0].name, "X");
         assert_eq!(abs[1].name, "Y");
 
-        let objects = build_scene(&scene).unwrap();
+        let objects = build_scene(&scene, None).unwrap();
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
         assert_eq!(objects[2].type_key(), type_keys::ARTBOARD);
@@ -2720,7 +2764,7 @@ mod tests {
         assert!(scene.artboard.is_some());
         assert!(scene.artboards.is_none());
 
-        let objects = build_scene(&scene).unwrap();
+        let objects = build_scene(&scene, None).unwrap();
         assert_eq!(objects.len(), 2);
         assert_eq!(objects[0].type_key(), type_keys::BACKBOARD);
         assert_eq!(objects[1].type_key(), type_keys::ARTBOARD);
@@ -2746,7 +2790,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         let artboard_props = objects[1].properties();
         let width = artboard_props
             .iter()
@@ -2787,7 +2831,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         let artboard_props = objects[1].properties();
         let width = artboard_props
             .iter()
@@ -2825,7 +2869,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected unknown preset error"),
             Err(err) => err,
         };
@@ -2852,7 +2896,7 @@ mod tests {
             artboards: None,
         };
 
-        let err = match build_scene(&spec) {
+        let err = match build_scene(&spec, None) {
             Ok(_) => panic!("expected missing dimensions error"),
             Err(err) => err,
         };
@@ -2904,7 +2948,7 @@ mod tests {
             ]),
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         assert_eq!(objects.len(), 5);
     }
 
@@ -2954,7 +2998,7 @@ mod tests {
             artboards: None,
         };
 
-        let objects = build_scene(&spec).unwrap();
+        let objects = build_scene(&spec, None).unwrap();
         let keyed_property = objects
             .iter()
             .find(|object| object.type_key() == type_keys::KEYED_PROPERTY)
