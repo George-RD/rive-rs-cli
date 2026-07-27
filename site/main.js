@@ -111,7 +111,7 @@ function buildCard(rung) {
     buildSide(
       "Compiled from our JSON",
       rung.reproduction,
-      `${rung.title} reproduction animation`,
+      `${rung.title} compiled animation`,
       rung
     )
   );
