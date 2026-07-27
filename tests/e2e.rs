@@ -5070,17 +5070,45 @@ fn test_scheduled_input_failures_fail_the_render() {
 }
 
 #[test]
-fn test_style_reference_must_name_a_text_style() {
-    let stderr = generate_scene_expecting_failure(
+fn test_style_reference_must_resolve_to_a_text_style() {
+    let named = generate_scene_expecting_failure(
         r#"{"scene_format_version":1,"artboard":{"name":"A","width":200,"height":200,"children":[
            {"type":"node","name":"Decoy","x":10,"y":10},
            {"type":"text","name":"T","align_value":1,"sizing_value":0,"children":[
              {"type":"text_style","name":"S","font_size":20},
              {"type":"text_value_run","name":"R","text":"hi","style":"Decoy"}]}]}}"#,
-        "style_kind",
+        "style_kind_named",
     );
     assert!(
-        stderr.contains("references 'Decoy', which is not a text_style"),
+        named.contains("references 'Decoy', which is not a text_style"),
+        "unexpected error: {named}"
+    );
+
+    let numeric = generate_scene_expecting_failure(
+        r#"{"scene_format_version":1,"artboard":{"name":"A","width":200,"height":200,"children":[
+           {"type":"node","name":"Decoy","x":10,"y":10},
+           {"type":"text","name":"T","align_value":1,"sizing_value":0,"children":[
+             {"type":"text_style","name":"S","font_size":20},
+             {"type":"text_value_run","name":"R","text":"hi","style_id":0}]}]}}"#,
+        "style_kind_numeric",
+    );
+    assert!(
+        numeric.contains("references artboard object 0, which is not a text_style"),
+        "unexpected error: {numeric}"
+    );
+}
+
+#[test]
+fn test_asset_reference_index_must_exist() {
+    let stderr = generate_scene_expecting_failure(
+        r#"{"scene_format_version":1,"artboard":{"name":"A","width":100,"height":100,"children":[
+           {"type":"font_asset","name":"F"},
+           {"type":"text","name":"T","align_value":1,"sizing_value":0,"children":[
+             {"type":"text_style","name":"S","font_size":20,"font_asset_id":9}]}]}}"#,
+        "asset_bounds",
+    );
+    assert!(
+        stderr.contains("but the scene declares 1 asset(s)"),
         "unexpected error: {stderr}"
     );
 }

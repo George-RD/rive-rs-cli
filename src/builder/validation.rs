@@ -16,7 +16,7 @@ use super::spec::{
     TextModifierGroupChildSpec, TransitionChildSpec,
 };
 
-pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<Vec<SpecIndex>, String> {
+pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
     if spec.scene_format_version != SCENE_FORMAT_VERSION {
         return Err(format!(
             "unsupported scene_format_version {} (expected {})",
@@ -27,13 +27,12 @@ pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<Vec<SpecIndex>, St
     let artboard_specs = super::scene::resolve_artboards(spec)?;
 
     let mut artboard_names: HashSet<String> = HashSet::new();
-    let mut indexes: Vec<SpecIndex> = Vec::new();
     for artboard_spec in &artboard_specs {
         if artboard_names.contains(&artboard_spec.name) {
             return Err(format!("duplicate artboard name '{}'", artboard_spec.name));
         }
         artboard_names.insert(artboard_spec.name.clone());
-        indexes.push(validate_artboard_spec(artboard_spec)?);
+        validate_artboard_spec(artboard_spec)?;
     }
 
     let mut artboard_deps: HashMap<String, Vec<String>> = HashMap::new();
@@ -45,10 +44,10 @@ pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<Vec<SpecIndex>, St
     }
     detect_artboard_cycles(&artboard_deps)?;
 
-    Ok(indexes)
+    Ok(())
 }
 
-pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<SpecIndex, String> {
+pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
     if artboard_spec.width < 0.0 {
         return Err(format!(
             "artboard '{}' width must be non-negative",
@@ -479,7 +478,7 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<Spe
         }
     }
 
-    Ok(spec_index)
+    Ok(())
 }
 
 pub(crate) fn validate_object_spec(

@@ -64,7 +64,6 @@ impl FileAssetKind {
 pub(crate) struct SceneContext<'a> {
     pub asset_ids: &'a HashMap<String, (u64, FileAssetKind)>,
     pub asset_kinds: &'a [FileAssetKind],
-    pub type_keys: &'a HashMap<String, u16>,
 }
 
 fn resolve_asset_ordinal(
@@ -76,19 +75,23 @@ fn resolve_asset_ordinal(
     fields: (&str, &str),
 ) -> Result<Option<u64>, String> {
     let lookup = |name: &str| ctx.asset_ids.get(name).map(|(ordinal, _)| *ordinal);
-    let check = |ordinal: u64| match ctx.asset_kinds.get(ordinal as usize) {
-        Some(kind) if *kind != expected => {
-            let subject = match asset_name {
-                Some(name) => format!("asset '{name}'"),
-                None => format!("asset index {ordinal}"),
-            };
-            Err(format!(
+    let check = |ordinal: u64| {
+        let subject = match asset_name {
+            Some(name) => format!("asset '{name}'"),
+            None => format!("asset index {ordinal}"),
+        };
+        match ctx.asset_kinds.get(ordinal as usize) {
+            Some(kind) if *kind != expected => Err(format!(
                 "references {subject}, which is a {}; it must be a {}",
                 kind.label(),
                 expected.label()
-            ))
+            )),
+            Some(_) => Ok(()),
+            None => Err(format!(
+                "references {subject}, but the scene declares {} asset(s)",
+                ctx.asset_kinds.len()
+            )),
         }
-        _ => Ok(()),
     };
     references::resolve(
         owner,
@@ -1818,15 +1821,21 @@ pub(crate) fn append_object(
                     .and_then(|index| index.checked_sub(artboard_start))
                     .map(|local| local as u64)
             };
-            let check = |_: u64| match style
-                .as_deref()
-                .and_then(|style_name| ctx.type_keys.get(style_name))
-            {
-                Some(&type_key) if type_key != type_keys::TEXT_STYLE_PAINT => Err(format!(
-                    "references '{}', which is not a text_style",
-                    style.as_deref().unwrap_or_default()
-                )),
-                _ => Ok(()),
+            let check = |local: u64| {
+                let subject = match style.as_deref() {
+                    Some(style_name) => format!("'{style_name}'"),
+                    None => format!("artboard object {local}"),
+                };
+                match objects
+                    .get(artboard_start + local as usize)
+                    .map(|object| object.type_key())
+                {
+                    Some(type_keys::TEXT_STYLE_PAINT) => Ok(()),
+                    Some(_) => Err(format!("references {subject}, which is not a text_style")),
+                    None => Err(format!(
+                        "references {subject}, which is not defined before it"
+                    )),
+                }
             };
             if let Some(resolved) = references::resolve(
                 name,

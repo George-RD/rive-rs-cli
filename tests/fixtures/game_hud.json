@@ -97,14 +97,13 @@
             "name": "ScoreStyle",
             "font_size": 28.0,
             "line_height": 1.2,
-            "letter_spacing": 1.0,
-            "font_asset_id": 1
+            "letter_spacing": 1.0
           },
           {
             "type": "text_value_run",
             "name": "ScoreRun",
             "text": "SCORE: 0",
-            "style_id": 0
+            "style": "ScoreStyle"
           }
         ]
       },
@@ -186,9 +185,18 @@
             "object": "HealthBarRect",
             "property": "width",
             "frames": [
-              { "frame": 0, "value": 196.0 },
-              { "frame": 90, "value": 98.0 },
-              { "frame": 179, "value": 20.0 }
+              {
+                "frame": 0,
+                "value": 196.0
+              },
+              {
+                "frame": 90,
+                "value": 98.0
+              },
+              {
+                "frame": 179,
+                "value": 20.0
+              }
             ]
           }
         ]
