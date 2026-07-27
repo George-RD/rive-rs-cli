@@ -453,9 +453,8 @@ mod tests {
     #[test]
     fn test_parse_official_reference_with_multiword_toc() {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("demo")
-            .join("riv")
-            .join("reference")
+            .join("parity")
+            .join("official")
             .join("official_test.riv");
         let data = std::fs::read(&path).expect("read official_test.riv");
         let parsed = parse_riv(&data, &InspectFilter::default()).expect("parse official_test.riv");
@@ -474,5 +473,29 @@ mod tests {
             "type key 0 is the object terminator and can never appear as an object type"
         );
         assert_eq!(parsed.objects.len(), 407);
+    }
+
+    #[test]
+    fn test_artboard_x_and_y_resolve_to_named_properties() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("parity")
+            .join("official")
+            .join("trim.riv");
+        let data = std::fs::read(&path).expect("read trim.riv");
+        let parsed = parse_riv(&data, &InspectFilter::default()).expect("parse trim.riv");
+        let artboard = parsed
+            .objects
+            .iter()
+            .find(|object| object.type_key == 1)
+            .expect("trim.riv contains an artboard");
+        let named: Vec<(&str, &PropertyValueRead)> = artboard
+            .properties
+            .iter()
+            .filter_map(|property| Some((property.name.as_deref()?, &property.value)))
+            .collect();
+        assert!(
+            named.contains(&("xArtboard", &PropertyValueRead::Float(600.0))),
+            "artboard property key 9 must decompile as a named value, got {named:?}"
+        );
     }
 }

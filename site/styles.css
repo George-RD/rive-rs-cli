@@ -157,7 +157,7 @@ code {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr));
   gap: 22px;
   margin-top: 28px;
 }
@@ -182,6 +182,88 @@ code {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.card .stage.compare {
+  aspect-ratio: auto;
+  height: 320px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+.side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.side + .side {
+  border-left: 1px solid var(--line);
+}
+
+.side-label {
+  margin: 0;
+  padding: 8px 10px 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.side .scene {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
+}
+
+.metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  font-size: 13.5px;
+}
+
+.metrics dt {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.metrics dd {
+  margin: 0;
+  font-family: var(--mono);
+}
+
+.deltas {
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+
+.deltas th,
+.deltas td {
+  text-align: left;
+  padding: 2px 14px 2px 0;
+  color: var(--ink-dim);
+}
+
+.deltas th {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.delta-none {
+  font-family: var(--mono);
+  font-size: 12.5px;
 }
 
 .card-body {
@@ -219,6 +301,7 @@ code {
   background: rgba(183, 243, 74, 0.08);
   border-radius: 999px;
   padding: 2px 9px;
+  overflow-wrap: anywhere;
 }
 
 .tag.basics {

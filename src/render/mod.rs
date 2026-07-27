@@ -1,5 +1,5 @@
 mod chrome;
-mod image;
+pub mod image;
 mod server;
 
 use base64::Engine;

@@ -14,7 +14,7 @@ This document tracks format behavior validated during `rive-cli` development and
 - Property keys are written as a varuint sequence, terminated by `0`
 - Backing types are packed in 2-bit fields in little-endian `u32` words
 - **One `u32` holds only 4 properties.** The reader loads a fresh `u32` once it has consumed 4 codes (bit positions 0, 2, 4, 6) and never reads the upper 24 bits: see `rive-runtime/include/rive/runtime_header.hpp:87-104`, where `currentBit` starts at 8 and resets on reload. A file therefore carries `ceil(key_count / 4)` words.
-- The official format page states "property count / 4 bytes", i.e. 16 codes per word. That contradicts the runtime implementation and is wrong for any file with more than 4 ToC keys. Verified against `demo/riv/reference/official_test.riv` (8 ToC keys): decoding 4-per-word puts Backboard (`23`) as the first object, decoding 16-per-word leaves the header 4 bytes short and yields two phantom `type=0` objects.
+- The official format page states "property count / 4 bytes", i.e. 16 codes per word. That contradicts the runtime implementation and is wrong for any file with more than 4 ToC keys. Verified against `parity/official/official_test.riv` (8 ToC keys): decoding 4-per-word puts Backboard (`23`) as the first object, decoding 16-per-word leaves the header 4 bytes short and yields two phantom `type=0` objects.
 - Backing bits:
   - `0` = uint/bool
   - `1` = string/bytes (both are varuint length + payload, and share field id 1)

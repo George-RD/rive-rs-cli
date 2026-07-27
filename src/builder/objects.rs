@@ -295,6 +295,10 @@ pub(crate) fn append_object(
             name,
             x,
             y,
+            rotation,
+            scale_x,
+            scale_y,
+            hidden,
             children,
         } => {
             let mut shape = Shape::new(name.clone(), parent_id);
@@ -303,6 +307,18 @@ pub(crate) fn append_object(
             }
             if let Some(y) = y {
                 shape.y = *y;
+            }
+            if let Some(rotation) = rotation {
+                shape.rotation = *rotation;
+            }
+            if let Some(scale_x) = scale_x {
+                shape.scale_x = *scale_x;
+            }
+            if let Some(scale_y) = scale_y {
+                shape.scale_y = *scale_y;
+            }
+            if let Some(true) = hidden {
+                shape.hidden = true;
             }
             objects.push(Box::new(shape));
             name_to_index.insert(name.clone(), object_index);
@@ -378,12 +394,32 @@ pub(crate) fn append_object(
         }
         ObjectSpec::Ellipse {
             name,
+            x,
+            y,
+            rotation,
+            scale_x,
+            scale_y,
             width,
             height,
             origin_x,
             origin_y,
         } => {
             let mut ellipse = Ellipse::new(name.clone(), parent_id, *width, *height);
+            if let Some(v) = x {
+                ellipse.x = *v;
+            }
+            if let Some(v) = y {
+                ellipse.y = *v;
+            }
+            if let Some(v) = rotation {
+                ellipse.rotation = *v;
+            }
+            if let Some(v) = scale_x {
+                ellipse.scale_x = *v;
+            }
+            if let Some(v) = scale_y {
+                ellipse.scale_y = *v;
+            }
             if let Some(origin_x) = origin_x {
                 ellipse.origin_x = *origin_x;
             }
@@ -395,6 +431,11 @@ pub(crate) fn append_object(
         }
         ObjectSpec::Rectangle {
             name,
+            x,
+            y,
+            rotation,
+            scale_x,
+            scale_y,
             width,
             height,
             corner_radius,
@@ -402,6 +443,21 @@ pub(crate) fn append_object(
             origin_y,
         } => {
             let mut rectangle = Rectangle::new(name.clone(), parent_id, *width, *height);
+            if let Some(v) = x {
+                rectangle.x = *v;
+            }
+            if let Some(v) = y {
+                rectangle.y = *v;
+            }
+            if let Some(v) = rotation {
+                rectangle.rotation = *v;
+            }
+            if let Some(v) = scale_x {
+                rectangle.scale_x = *v;
+            }
+            if let Some(v) = scale_y {
+                rectangle.scale_y = *v;
+            }
             if let Some(origin_x) = origin_x {
                 rectangle.origin_x = *origin_x;
             }
@@ -420,12 +476,32 @@ pub(crate) fn append_object(
         }
         ObjectSpec::Triangle {
             name,
+            x,
+            y,
+            rotation,
+            scale_x,
+            scale_y,
             width,
             height,
             origin_x,
             origin_y,
         } => {
             let mut triangle = Triangle::new(name.clone(), parent_id, *width, *height);
+            if let Some(v) = x {
+                triangle.x = *v;
+            }
+            if let Some(v) = y {
+                triangle.y = *v;
+            }
+            if let Some(v) = rotation {
+                triangle.rotation = *v;
+            }
+            if let Some(v) = scale_x {
+                triangle.scale_x = *v;
+            }
+            if let Some(v) = scale_y {
+                triangle.scale_y = *v;
+            }
             if let Some(origin_x) = origin_x {
                 triangle.origin_x = *origin_x;
             }
@@ -437,6 +513,11 @@ pub(crate) fn append_object(
         }
         ObjectSpec::Polygon {
             name,
+            x,
+            y,
+            rotation,
+            scale_x,
+            scale_y,
             width,
             height,
             origin_x,
@@ -445,6 +526,21 @@ pub(crate) fn append_object(
             corner_radius,
         } => {
             let mut polygon = Polygon::new(name.clone(), parent_id, *width, *height);
+            if let Some(v) = x {
+                polygon.x = *v;
+            }
+            if let Some(v) = y {
+                polygon.y = *v;
+            }
+            if let Some(v) = rotation {
+                polygon.rotation = *v;
+            }
+            if let Some(v) = scale_x {
+                polygon.scale_x = *v;
+            }
+            if let Some(v) = scale_y {
+                polygon.scale_y = *v;
+            }
             if let Some(origin_x) = origin_x {
                 polygon.origin_x = *origin_x;
             }
@@ -462,6 +558,11 @@ pub(crate) fn append_object(
         }
         ObjectSpec::Star {
             name,
+            x,
+            y,
+            rotation,
+            scale_x,
+            scale_y,
             width,
             height,
             origin_x,
@@ -471,6 +572,21 @@ pub(crate) fn append_object(
             inner_radius,
         } => {
             let mut star = Star::new(name.clone(), parent_id, *width, *height);
+            if let Some(v) = x {
+                star.x = *v;
+            }
+            if let Some(v) = y {
+                star.y = *v;
+            }
+            if let Some(v) = rotation {
+                star.rotation = *v;
+            }
+            if let Some(v) = scale_x {
+                star.scale_x = *v;
+            }
+            if let Some(v) = scale_y {
+                star.scale_y = *v;
+            }
             if let Some(origin_x) = origin_x {
                 star.polygon.origin_x = *origin_x;
             }
@@ -526,6 +642,7 @@ pub(crate) fn append_object(
             cap,
             join,
             is_visible,
+            transform_affects_stroke,
             children,
         } => {
             let mut stroke = Stroke::new(name.clone(), parent_id, thickness.unwrap_or(1.0));
@@ -537,6 +654,9 @@ pub(crate) fn append_object(
             }
             if let Some(false) = is_visible {
                 stroke.is_visible = 0;
+            }
+            if let Some(false) = transform_affects_stroke {
+                stroke.transform_affects = 0;
             }
             objects.push(Box::new(stroke));
             name_to_index.insert(name.clone(), object_index);
@@ -656,6 +776,9 @@ pub(crate) fn append_object(
             name,
             x,
             y,
+            rotation,
+            scale_x,
+            scale_y,
             children,
         } => {
             objects.push(Box::new(Node {
@@ -663,6 +786,9 @@ pub(crate) fn append_object(
                 parent_id,
                 x: x.unwrap_or(0.0),
                 y: y.unwrap_or(0.0),
+                rotation: rotation.unwrap_or(0.0),
+                scale_x: scale_x.unwrap_or(1.0),
+                scale_y: scale_y.unwrap_or(1.0),
             }));
             name_to_index.insert(name.clone(), object_index);
             if let Some(children) = children {
@@ -1704,6 +1830,8 @@ pub(crate) fn append_object(
         }
         ObjectSpec::Text {
             name,
+            x,
+            y,
             align_value,
             sizing_value,
             overflow_value,
@@ -1716,6 +1844,12 @@ pub(crate) fn append_object(
             children,
         } => {
             let mut text = Text::new(name.clone(), parent_id);
+            if let Some(v) = x {
+                text.x = *v;
+            }
+            if let Some(v) = y {
+                text.y = *v;
+            }
             if let Some(v) = align_value {
                 text.align_value = *v;
             }

@@ -18,9 +18,10 @@ function discoverFixtures() {
 
 const DEMO_DIR = path.join(__dirname);
 const RIV_DIR = path.join(DEMO_DIR, 'riv');
-const REFERENCE_DIR = path.join(RIV_DIR, 'reference');
+const REFERENCE_URL_PREFIX = '/riv/reference/';
 const FIXTURES_DIR = path.join(__dirname, '..', 'tests', 'fixtures');
-const OFFICIAL_FIRE_SOURCE = '/tmp/rive-runtime/renderer/webgpu_player/rivs/fire_button.riv';
+const OFFICIAL_DIR = path.join(__dirname, '..', 'parity', 'official');
+const OFFICIAL_FIRE_SOURCE = path.join(OFFICIAL_DIR, 'fire_button.riv');
 const OFFICIAL_FIRE_TARGET = path.join(RIV_DIR, 'official_test.riv');
 const MANIFEST_JS_TARGET = path.join(RIV_DIR, 'manifest.js');
 
@@ -241,7 +242,7 @@ function inferFixtureMetadata(fixtureName, spec) {
     replay: category === 'animated' || hasAnimations
   };
 
-  const refPath = path.join(REFERENCE_DIR, `${fixtureName}.riv`);
+  const refPath = path.join(OFFICIAL_DIR, `${fixtureName}.riv`);
   if (fs.existsSync(refPath)) {
     metadata.hasReference = true;
     metadata.referenceSource = `riv/reference/${fixtureName}.riv`;
@@ -272,7 +273,7 @@ function generateManifest(generatedFixtures, includeOfficialTest) {
       name: 'official_test',
       ...FIXTURE_OVERRIDES.official_test
     };
-    const refPath = path.join(REFERENCE_DIR, 'official_test.riv');
+    const refPath = path.join(OFFICIAL_DIR, 'official_test.riv');
       if (fs.existsSync(refPath)) {
       officialTestMetadata.hasReference = true;
       officialTestMetadata.referenceSource = 'riv/reference/official_test.riv';
@@ -299,9 +300,7 @@ if (buildResult.status !== 0) {
 if (!fs.existsSync(RIV_DIR)) {
 fs.mkdirSync(RIV_DIR, { recursive: true });
 }
-if (!fs.existsSync(REFERENCE_DIR)) {
-  fs.mkdirSync(REFERENCE_DIR, { recursive: true });
-}
+
 
 // 3. Generate .riv files
 console.log('Generating .riv files...');
@@ -338,7 +337,7 @@ if (!fs.existsSync(OFFICIAL_FIRE_TARGET) && fs.existsSync(OFFICIAL_FIRE_SOURCE))
 }
 
 if (!fs.existsSync(OFFICIAL_FIRE_TARGET)) {
-  console.warn('Warning: official_test.riv missing. Add /tmp/rive-runtime/renderer/webgpu_player/rivs/fire_button.riv or place demo/riv/official_test.riv manually.');
+  console.warn(`Warning: official_test.riv missing. Add ${OFFICIAL_FIRE_SOURCE} or place demo/riv/official_test.riv manually.`);
 }
 
 const manifest = generateManifest(generatedFixtures, fs.existsSync(OFFICIAL_FIRE_TARGET));
@@ -363,10 +362,37 @@ const server = http.createServer((req, res) => {
   console.log(`${req.method} ${req.url}`);
   
   // Handle root path
-  let filePath = req.url === '/' ? path.join(DEMO_DIR, 'index.html') : path.join(DEMO_DIR, req.url);
-  
-  // Prevent directory traversal
-  if (!filePath.startsWith(DEMO_DIR)) {
+  if (req.url.startsWith(REFERENCE_URL_PREFIX)) {
+    const name = path.basename(req.url.slice(REFERENCE_URL_PREFIX.length).split('?')[0]);
+    const referencePath = path.join(OFFICIAL_DIR, name);
+    let referenceStat;
+    try {
+      referenceStat = fs.statSync(referencePath);
+    } catch {
+      res.writeHead(404);
+      res.end('Not Found');
+      return;
+    }
+    if (!referenceStat.isFile() || path.extname(name) !== '.riv') {
+      res.writeHead(404);
+      res.end('Not Found');
+      return;
+    }
+    try {
+      const referenceContents = fs.readFileSync(referencePath);
+      res.writeHead(200, { 'Content-Type': MIME_TYPES['.riv'] });
+      res.end(referenceContents);
+    } catch {
+      res.writeHead(500);
+      res.end('Could not read reference');
+    }
+    return;
+  }
+
+  const requestPath = req.url.split('?')[0];
+  const filePath = path.resolve(DEMO_DIR, `.${requestPath}`);
+  const relativePath = path.relative(DEMO_DIR, filePath);
+  if (relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
     res.writeHead(403);
     res.end('Forbidden');
     return;

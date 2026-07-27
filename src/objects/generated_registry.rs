@@ -344,6 +344,8 @@ pub fn property_name(key: u16) -> Option<&'static str> {
         5 => Some("parentId"),
         7 => Some("width"),
         8 => Some("height"),
+        9 => Some("xArtboard"),
+        10 => Some("yArtboard"),
         11 => Some("originX"),
         12 => Some("originY"),
         13 => Some("x"),

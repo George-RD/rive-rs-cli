@@ -69,7 +69,7 @@ impl Stroke {
             cap: 0,
             join: 0,
             is_visible: 1,
-            transform_affects: 0,
+            transform_affects: 1,
         }
     }
 }
@@ -114,7 +114,7 @@ impl RiveObject for Stroke {
                 value: PropertyValue::UInt(self.is_visible),
             });
         }
-        if self.transform_affects != 0 {
+        if self.transform_affects != 1 {
             props.push(Property {
                 key: property_keys::STROKE_TRANSFORM_AFFECTS,
                 value: PropertyValue::UInt(self.transform_affects),

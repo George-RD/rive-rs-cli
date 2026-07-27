@@ -5112,3 +5112,144 @@ fn test_asset_reference_index_must_exist() {
         "unexpected error: {stderr}"
     );
 }
+
+fn official_path(name: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("parity")
+        .join("official")
+        .join(name)
+}
+
+#[test]
+fn test_compare_reports_a_perfect_match_against_itself() {
+    let trim = official_path("trim.riv");
+    let trim = trim.to_str().expect("trim.riv path is valid UTF-8");
+    let result = cargo_run(&[
+        "compare",
+        trim,
+        trim,
+        "--frames",
+        "0",
+        "--background",
+        "#0B0E17",
+    ]);
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        result.status.success(),
+        "compare failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(
+        stdout.contains("every type name appears the same number of times in both files"),
+        "unexpected structural report: {stdout}"
+    );
+    assert!(
+        stdout.contains("max pixel difference   0.0000%"),
+        "unexpected verdict: {stdout}"
+    );
+}
+
+#[test]
+fn test_compare_reports_differences_and_still_succeeds_without_a_threshold() {
+    let result = cargo_run(&[
+        "compare",
+        official_path("trim.riv")
+            .to_str()
+            .expect("trim.riv path is valid UTF-8"),
+        official_path("coffee_loader.riv")
+            .to_str()
+            .expect("coffee_loader.riv path is valid UTF-8"),
+        "--frames",
+        "0",
+        "--background",
+        "#0B0E17",
+    ]);
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    assert!(
+        result.status.success(),
+        "compare must succeed without --max-pixel-diff: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(
+        stdout.contains("KeyFrameDouble"),
+        "expected a populated type delta table: {stdout}"
+    );
+    assert!(
+        !stdout.contains("max pixel difference   0.0000%"),
+        "two different files must not report an identical render: {stdout}"
+    );
+}
+
+#[test]
+fn test_compare_exit_code_is_gated_on_max_pixel_diff() {
+    let result = cargo_run(&[
+        "compare",
+        official_path("trim.riv")
+            .to_str()
+            .expect("trim.riv path is valid UTF-8"),
+        official_path("coffee_loader.riv")
+            .to_str()
+            .expect("coffee_loader.riv path is valid UTF-8"),
+        "--frames",
+        "0",
+        "--max-pixel-diff",
+        "1",
+    ]);
+    assert!(
+        !result.status.success(),
+        "a maximum pixel difference above the threshold must exit non-zero"
+    );
+    assert!(
+        String::from_utf8_lossy(&result.stderr).contains("exceeds the 1.0000% threshold"),
+        "unexpected stderr: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
+#[test]
+fn test_compare_json_threshold_failure_is_structured() {
+    let result = cargo_run(&[
+        "compare",
+        official_path("trim.riv")
+            .to_str()
+            .expect("trim.riv path is valid UTF-8"),
+        official_path("coffee_loader.riv")
+            .to_str()
+            .expect("coffee_loader.riv path is valid UTF-8"),
+        "--frames",
+        "0",
+        "--max-pixel-diff",
+        "1",
+        "--json",
+    ]);
+    assert!(!result.status.success());
+    let error: serde_json::Value =
+        serde_json::from_slice(&result.stderr).expect("threshold failure must be JSON");
+    assert_eq!(error["ok"], false);
+    assert_eq!(error["code"], "pixel-diff-threshold");
+    assert_eq!(error["reference_object_count"], 15);
+    assert_eq!(error["max_pixel_diff_threshold"], 1.0);
+}
+
+#[test]
+fn test_compare_rejects_invalid_pixel_threshold() {
+    let result = cargo_run(&[
+        "compare",
+        official_path("trim.riv")
+            .to_str()
+            .expect("trim.riv path is valid UTF-8"),
+        official_path("trim.riv")
+            .to_str()
+            .expect("trim.riv path is valid UTF-8"),
+        "--frames",
+        "0",
+        "--max-pixel-diff",
+        "101",
+        "--json",
+    ]);
+    assert!(!result.status.success());
+    let error: serde_json::Value =
+        serde_json::from_slice(&result.stderr).expect("invalid threshold must be JSON");
+    assert_eq!(error["ok"], false);
+    assert_eq!(error["code"], "usage");
+}

@@ -43,6 +43,7 @@
         },
         {
           "key": 9,
+          "name": "xArtboard",
           "value": {
             "Float": 600.0
           }

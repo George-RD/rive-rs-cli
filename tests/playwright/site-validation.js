@@ -1,11 +1,12 @@
 const { chromium } = require("playwright");
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const PORT = Number(process.env.SITE_PORT || 8771);
-const EXPECTED_SCENES = 11;
+const EXPECTED_SCENES = 5;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -81,28 +82,20 @@ async function waitForServer(port, timeoutMs = 20000) {
     const blank = painted.filter((entry) => entry.painted === 0);
     const transcript = await page.textContent("#transcript");
 
-    const snapshot = async () =>
-      page.evaluate(() => {
-        const canvas = Array.from(document.querySelectorAll("canvas.scene")).find(
-          (node) => node.getAttribute("aria-label") === "Control Panel animation"
-        );
-        const context = canvas.getContext("2d");
-        const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
-        let sum = 0;
-        for (let i = 0; i < data.length; i += 40) sum += data[i];
-        return sum;
-      });
-
-    const cardFor = (label) =>
-      page.locator(".card", { has: page.locator(`canvas[aria-label="${label}"]`) });
-    const panel = cardFor("Control Panel animation");
-    const before = await snapshot();
-    await panel.locator('input[type="range"]').fill("100");
-    await wait(1200);
-    const afterLevel = await snapshot();
-    await panel.getByRole("button", { name: "Press button" }).click();
-    await wait(400);
-    const afterPress = await snapshot();
+    const reported = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".card")).map((card) => ({
+        title: card.querySelector("h3").textContent,
+        canvases: card.querySelectorAll("canvas.scene").length,
+        maxPixelDifference: card.querySelector(".metrics dd").textContent,
+      }))
+    );
+    const expected = JSON.parse(
+      fs.readFileSync(path.join(ROOT, "parity", "results.json"), "utf8")
+    ).map((rung) => ({
+      title: rung.title,
+      canvases: 2,
+      maxPixelDifference: `${rung.max_pixel_difference.toFixed(4)}%`,
+    }));
 
     for (const entry of painted) {
       const pct = ((entry.painted / entry.total) * 100).toFixed(1);
@@ -118,12 +111,10 @@ async function waitForServer(port, timeoutMs = 20000) {
       process.stdout.write("verification transcript did not load\n");
       failed = true;
     }
-    if (afterLevel === before) {
-      process.stdout.write("the level slider did not change the control panel render\n");
-      failed = true;
-    }
-    if (afterPress === afterLevel) {
-      process.stdout.write("pressing the button did not change the control panel render\n");
+    if (JSON.stringify(reported) !== JSON.stringify(expected)) {
+      process.stdout.write(
+        `the gallery does not report the measured parity results\n  page:     ${JSON.stringify(reported)}\n  expected: ${JSON.stringify(expected)}\n`
+      );
       failed = true;
     }
     if (errors.length > 0) {

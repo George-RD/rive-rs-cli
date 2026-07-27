@@ -1,0 +1,1669 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "New Artboard",
+    "width": 63.828125,
+    "height": 63.828125,
+    "x": 600.0,
+    "y": 1.0,
+    "origin_x": 0.5,
+    "origin_y": 0.5,
+    "children": [
+      {
+        "type": "node",
+        "name": "Loader",
+        "y": 12.804399,
+        "children": [
+          {
+            "type": "shape",
+            "name": "Drop",
+            "x": -0.7919922,
+            "y": -17.807098,
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "Drop_Ellipse",
+                "width": 6.5377584,
+                "height": 6.5377584
+              },
+              {
+                "type": "fill",
+                "name": "Drop_Fill",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "Drop_Color",
+                    "color": "#323036"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "node",
+            "name": "Cup",
+            "scale_x": 0.46961826,
+            "scale_y": 0.46961826,
+            "x": 1.5258789e-05,
+            "y": 16.215485,
+            "children": [
+              {
+                "type": "node",
+                "name": "Smoke_A",
+                "scale_x": 2.129389,
+                "scale_y": 2.129389,
+                "x": -1.6864877,
+                "y": -72.44732,
+                "children": [
+                  {
+                    "type": "shape",
+                    "name": "Smoke_A_Shape",
+                    "scale_x": 0.625113,
+                    "scale_y": 0.625113,
+                    "children": [
+                      {
+                        "type": "points_path",
+                        "name": "Smoke_A_Path",
+                        "children": [
+                          {
+                            "type": "cubic_mirrored_vertex",
+                            "name": "Smoke_A_V1",
+                            "rotation": -1.5707964,
+                            "distance": 20.0
+                          },
+                          {
+                            "type": "cubic_mirrored_vertex",
+                            "name": "Smoke_A_V2",
+                            "x": 17.571869,
+                            "y": -38.418884,
+                            "rotation": -1.5707964,
+                            "distance": 20.0
+                          }
+                        ]
+                      },
+                      {
+                        "type": "stroke",
+                        "name": "Smoke_A_Stroke",
+                        "thickness": 6.0,
+                        "cap": 1,
+                        "transform_affects_stroke": false,
+                        "children": [
+                          {
+                            "type": "solid_color",
+                            "name": "Smoke_A_Color",
+                            "color": "#323036"
+                          },
+                          {
+                            "type": "trim_path",
+                            "name": "Smoke_A_Trim",
+                            "start": 1.0,
+                            "mode": 2
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "shape",
+                "name": "Loader_Fill",
+                "rotation": -1.5707964,
+                "scale_x": 2.129389,
+                "scale_y": 2.319246,
+                "x": -0.0036997178,
+                "y": -0.002243088,
+                "children": [
+                  {
+                    "type": "rectangle",
+                    "name": "Loader_Rect",
+                    "width": 15.807251,
+                    "height": 20.992496,
+                    "x": 7.9036255,
+                    "corner_radius": 2.3125
+                  },
+                  {
+                    "type": "fill",
+                    "name": "Loader_Fill_Paint",
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "Loader_Color",
+                        "color": "#323036"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "node",
+                "name": "Smoke_B",
+                "x": -0.003667226,
+                "y": -70.67075,
+                "children": [
+                  {
+                    "type": "shape",
+                    "name": "Smoke_B_Shape",
+                    "children": [
+                      {
+                        "type": "points_path",
+                        "name": "Smoke_B_Path",
+                        "path_flags": 1,
+                        "children": [
+                          {
+                            "type": "cubic_mirrored_vertex",
+                            "name": "Smoke_B_V1",
+                            "rotation": -1.5707964,
+                            "distance": 20.0
+                          },
+                          {
+                            "type": "cubic_mirrored_vertex",
+                            "name": "Smoke_B_V2",
+                            "x": 17.571869,
+                            "y": -38.418884,
+                            "rotation": -1.5707964,
+                            "distance": 20.0
+                          }
+                        ]
+                      },
+                      {
+                        "type": "stroke",
+                        "name": "Smoke_B_Stroke",
+                        "thickness": 10.0,
+                        "cap": 1,
+                        "children": [
+                          {
+                            "type": "solid_color",
+                            "name": "Smoke_B_Color",
+                            "color": "#323036"
+                          }
+                        ]
+                      }
+                    ],
+                    "hidden": true
+                  }
+                ]
+              },
+              {
+                "type": "shape",
+                "name": "Clipping",
+                "x": -0.003667226,
+                "y": -27.172098,
+                "children": [
+                  {
+                    "type": "node",
+                    "name": "Central_clipping",
+                    "children": [
+                      {
+                        "type": "rectangle",
+                        "name": "Central_clipping_Rect",
+                        "width": 50.0,
+                        "height": 54.33976
+                      }
+                    ]
+                  },
+                  {
+                    "type": "rectangle",
+                    "name": "Clipping_left",
+                    "scale_x": 0.6664547,
+                    "x": 41.661377,
+                    "width": 50.0,
+                    "height": 54.33976
+                  },
+                  {
+                    "type": "rectangle",
+                    "name": "Clipping_right",
+                    "scale_x": 0.6664547,
+                    "x": -41.66136,
+                    "width": 50.0,
+                    "height": 54.33976
+                  },
+                  {
+                    "type": "fill",
+                    "name": "Clipping_Fill",
+                    "is_visible": false,
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "Clipping_Color",
+                        "color": "#FF0000"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "node",
+                "name": "Handle_ctrl",
+                "x": -0.003667226,
+                "y": -27.172098,
+                "children": [
+                  {
+                    "type": "shape",
+                    "name": "Handles",
+                    "scale_x": 0.4513098,
+                    "scale_y": 0.4513098,
+                    "x": 27.20285,
+                    "y": -19.712936,
+                    "children": [
+                      {
+                        "type": "points_path",
+                        "name": "Handles_Path",
+                        "children": [
+                          {
+                            "type": "straight_vertex",
+                            "name": "Handles_V1"
+                          },
+                          {
+                            "type": "straight_vertex",
+                            "name": "Handles_V2",
+                            "x": 37.80898,
+                            "y": 2.726756e-06,
+                            "radius": 22.022797
+                          },
+                          {
+                            "type": "straight_vertex",
+                            "name": "Handles_V3",
+                            "x": 37.80898,
+                            "y": 68.02247,
+                            "radius": 22.022797
+                          },
+                          {
+                            "type": "straight_vertex",
+                            "name": "Handles_V4",
+                            "y": 68.02249
+                          }
+                        ]
+                      },
+                      {
+                        "type": "stroke",
+                        "name": "Handles_Stroke",
+                        "thickness": 4.0,
+                        "cap": 1,
+                        "join": 1,
+                        "transform_affects_stroke": false,
+                        "children": [
+                          {
+                            "type": "solid_color",
+                            "name": "Handles_Color",
+                            "color": "#323036"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "clipping_shape",
+                    "name": "Handles_Clip",
+                    "source": "Clipping"
+                  }
+                ]
+              },
+              {
+                "type": "shape",
+                "name": "Cup_body",
+                "x": -0.003667226,
+                "y": -27.172098,
+                "children": [
+                  {
+                    "type": "points_path",
+                    "name": "Cup_body_Path",
+                    "is_closed": true,
+                    "children": [
+                      {
+                        "type": "straight_vertex",
+                        "name": "Cup_V1",
+                        "x": -25.0,
+                        "y": -27.16988,
+                        "radius": 2.0
+                      },
+                      {
+                        "type": "straight_vertex",
+                        "name": "Cup_V2",
+                        "x": 25.0,
+                        "y": -27.16988,
+                        "radius": 2.0
+                      },
+                      {
+                        "type": "straight_vertex",
+                        "name": "Cup_V3",
+                        "x": 25.0,
+                        "y": 27.16988,
+                        "radius": 10.0
+                      },
+                      {
+                        "type": "straight_vertex",
+                        "name": "Cup_V4",
+                        "x": -25.0,
+                        "y": 27.16988,
+                        "radius": 10.0
+                      }
+                    ]
+                  },
+                  {
+                    "type": "stroke",
+                    "name": "Cup_body_Stroke",
+                    "thickness": 4.0,
+                    "transform_affects_stroke": false,
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "Cup_body_Color",
+                        "color": "#323036"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "Drop_out",
+        "fps": 60,
+        "duration": 60,
+        "interpolators": [
+          {
+            "name": "e51",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e52",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e53",
+            "type": "cubic"
+          },
+          {
+            "name": "e54",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e55",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e56",
+            "type": "cubic",
+            "x2": 0.31374794
+          },
+          {
+            "name": "e57",
+            "type": "cubic",
+            "x1": 0.16737634,
+            "y1": 0.4294807
+          },
+          {
+            "name": "e58",
+            "type": "cubic",
+            "x1": 0.119908914,
+            "y1": 0.4662454
+          },
+          {
+            "name": "e59",
+            "type": "cubic",
+            "x1": 0.15636107,
+            "y1": 0.30634192
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Drop",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "linear"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Drop_in",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "Drop",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -7.7570753,
+                "interpolation": "cubic",
+                "interpolator": "e51"
+              },
+              {
+                "frame": 16,
+                "value": -29.463041,
+                "interpolation": "cubic",
+                "interpolator": "e52"
+              },
+              {
+                "frame": 31,
+                "value": -7.76,
+                "interpolation": "linear"
+              }
+            ]
+          },
+          {
+            "object": "Drop",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "hold"
+              },
+              {
+                "frame": 31,
+                "value": 0.0,
+                "interpolation": "linear"
+              }
+            ]
+          }
+        ],
+        "interpolators": [
+          {
+            "name": "e51",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e52",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e53",
+            "type": "cubic"
+          },
+          {
+            "name": "e54",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e55",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e56",
+            "type": "cubic",
+            "x2": 0.31374794
+          },
+          {
+            "name": "e57",
+            "type": "cubic",
+            "x1": 0.16737634,
+            "y1": 0.4294807
+          },
+          {
+            "name": "e58",
+            "type": "cubic",
+            "x1": 0.119908914,
+            "y1": 0.4662454
+          },
+          {
+            "name": "e59",
+            "type": "cubic",
+            "x1": 0.15636107,
+            "y1": 0.30634192
+          }
+        ]
+      },
+      {
+        "name": "Smoke",
+        "fps": 60,
+        "duration": 360,
+        "loop_type": 1,
+        "work_start": 60,
+        "work_end": 300,
+        "enable_work_area": true,
+        "keyframes": [
+          {
+            "object": "Smoke_A_V1",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 60,
+                "value": -6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 120,
+                "value": 6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 180,
+                "value": -6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 240,
+                "value": 6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 300,
+                "value": -6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_A_V1",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 26,
+                "value": -1.040335,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 86,
+                "value": -2.093814,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 146,
+                "value": -1.0403384,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 206,
+                "value": -2.0938191,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 266,
+                "value": -1.0403384,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 326,
+                "value": -2.0938191,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_A_V2",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 60,
+                "value": 10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 120,
+                "value": -10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 180,
+                "value": 10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 240,
+                "value": -10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 300,
+                "value": 10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_A_V2",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 26,
+                "value": -2.2868888,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 86,
+                "value": -1.0190048,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 146,
+                "value": -2.2868874,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 206,
+                "value": -1.0190104,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 266,
+                "value": -2.2868874,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 326,
+                "value": -1.0190104,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          }
+        ],
+        "interpolators": [
+          {
+            "name": "e51",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e52",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e53",
+            "type": "cubic"
+          },
+          {
+            "name": "e54",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e55",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e56",
+            "type": "cubic",
+            "x2": 0.31374794
+          },
+          {
+            "name": "e57",
+            "type": "cubic",
+            "x1": 0.16737634,
+            "y1": 0.4294807
+          },
+          {
+            "name": "e58",
+            "type": "cubic",
+            "x1": 0.119908914,
+            "y1": 0.4662454
+          },
+          {
+            "name": "e59",
+            "type": "cubic",
+            "x1": 0.15636107,
+            "y1": 0.30634192
+          }
+        ]
+      },
+      {
+        "name": "Stop",
+        "fps": 60,
+        "duration": 240,
+        "keyframes": [
+          {
+            "object": "Drop",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -7.7570753,
+                "interpolation": "cubic",
+                "interpolator": "e54"
+              },
+              {
+                "frame": 15,
+                "value": -29.463041,
+                "interpolation": "cubic",
+                "interpolator": "e55"
+              },
+              {
+                "frame": 33,
+                "value": 4.363463,
+                "interpolation": "linear"
+              }
+            ]
+          },
+          {
+            "object": "Drop",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "hold"
+              },
+              {
+                "frame": 29,
+                "value": 0.0,
+                "interpolation": "linear"
+              }
+            ]
+          },
+          {
+            "object": "Cup",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.46961826,
+                "interpolation": "cubic",
+                "interpolator": "e56"
+              },
+              {
+                "frame": 3,
+                "value": 0.5153531,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 11,
+                "value": 0.4301607,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 21,
+                "value": 0.49075535,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 30,
+                "value": 0.46961826,
+                "interpolation": "cubic",
+                "interpolator": "e57"
+              },
+              {
+                "frame": 36,
+                "value": 0.5100079,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 46,
+                "value": 0.4632912,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 56,
+                "value": 0.46961826,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Cup",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.46961826,
+                "interpolation": "cubic",
+                "interpolator": "e56"
+              },
+              {
+                "frame": 3,
+                "value": 0.42306405,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 11,
+                "value": 0.5579697,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 21,
+                "value": 0.45411783,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 30,
+                "value": 0.46961826,
+                "interpolation": "cubic",
+                "interpolator": "e57"
+              },
+              {
+                "frame": 36,
+                "value": 0.43738294,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 46,
+                "value": 0.48532683,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 56,
+                "value": 0.46961826,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_B_V1",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": -6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_B_V2",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Central_clipping",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "hold"
+              }
+            ]
+          },
+          {
+            "object": "Handle_ctrl",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_A_Trim",
+            "property": "trim_start",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "e59"
+              },
+              {
+                "frame": 30,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "e58"
+              },
+              {
+                "frame": 74,
+                "value": 1.0,
+                "interpolation": "linear"
+              }
+            ]
+          }
+        ],
+        "interpolators": [
+          {
+            "name": "e51",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e52",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e53",
+            "type": "cubic"
+          },
+          {
+            "name": "e54",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e55",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e56",
+            "type": "cubic",
+            "x2": 0.31374794
+          },
+          {
+            "name": "e57",
+            "type": "cubic",
+            "x1": 0.16737634,
+            "y1": 0.4294807
+          },
+          {
+            "name": "e58",
+            "type": "cubic",
+            "x1": 0.119908914,
+            "y1": 0.4662454
+          },
+          {
+            "name": "e59",
+            "type": "cubic",
+            "x1": 0.15636107,
+            "y1": 0.30634192
+          }
+        ]
+      },
+      {
+        "name": "Loader_100",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "Loader_Rect",
+            "property": "width",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 25.424438,
+                "interpolation": "linear"
+              }
+            ]
+          }
+        ],
+        "interpolators": [
+          {
+            "name": "e51",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e52",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e53",
+            "type": "cubic"
+          },
+          {
+            "name": "e54",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e55",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e56",
+            "type": "cubic",
+            "x2": 0.31374794
+          },
+          {
+            "name": "e57",
+            "type": "cubic",
+            "x1": 0.16737634,
+            "y1": 0.4294807
+          },
+          {
+            "name": "e58",
+            "type": "cubic",
+            "x1": 0.119908914,
+            "y1": 0.4662454
+          },
+          {
+            "name": "e59",
+            "type": "cubic",
+            "x1": 0.15636107,
+            "y1": 0.30634192
+          }
+        ]
+      },
+      {
+        "name": "Loader_0",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "Loader_Rect",
+            "property": "width",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "linear"
+              }
+            ]
+          }
+        ],
+        "interpolators": [
+          {
+            "name": "e51",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e52",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e53",
+            "type": "cubic"
+          },
+          {
+            "name": "e54",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e55",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e56",
+            "type": "cubic",
+            "x2": 0.31374794
+          },
+          {
+            "name": "e57",
+            "type": "cubic",
+            "x1": 0.16737634,
+            "y1": 0.4294807
+          },
+          {
+            "name": "e58",
+            "type": "cubic",
+            "x1": 0.119908914,
+            "y1": 0.4662454
+          },
+          {
+            "name": "e59",
+            "type": "cubic",
+            "x1": 0.15636107,
+            "y1": 0.30634192
+          }
+        ]
+      },
+      {
+        "name": "Cup",
+        "fps": 60,
+        "duration": 360,
+        "loop_type": 1,
+        "work_start": 60,
+        "work_end": 300,
+        "enable_work_area": true,
+        "keyframes": [
+          {
+            "object": "Drop",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 60,
+                "value": 0.0,
+                "interpolation": "linear"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_B_V1",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 60,
+                "value": -6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 120,
+                "value": 6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 180,
+                "value": -6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 240,
+                "value": 6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 300,
+                "value": -6.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_B_V1",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 26,
+                "value": -1.040335,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 86,
+                "value": -2.093814,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 146,
+                "value": -1.0403384,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 206,
+                "value": -2.0938191,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 266,
+                "value": -1.0403384,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 326,
+                "value": -2.0938191,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_B_V2",
+            "property": "x",
+            "frames": [
+              {
+                "frame": 60,
+                "value": 10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 120,
+                "value": -10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 180,
+                "value": 10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 240,
+                "value": -10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 300,
+                "value": 10.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_B_V2",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 26,
+                "value": -2.2868888,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 86,
+                "value": -1.0190048,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 146,
+                "value": -2.2868874,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 206,
+                "value": -1.0190104,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 266,
+                "value": -2.2868874,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 326,
+                "value": -1.0190104,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Central_clipping",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 60,
+                "value": 0.0,
+                "interpolation": "hold"
+              },
+              {
+                "frame": 180,
+                "value": 53.874756,
+                "interpolation": "hold"
+              },
+              {
+                "frame": 300,
+                "value": 0.0,
+                "interpolation": "hold"
+              }
+            ]
+          },
+          {
+            "object": "Handle_ctrl",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 60,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 180,
+                "value": -1.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              },
+              {
+                "frame": 300,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "e53"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_A_Trim",
+            "property": "trim_start",
+            "frames": [
+              {
+                "frame": 60,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "e59"
+              }
+            ]
+          },
+          {
+            "object": "Smoke_A_Trim",
+            "property": "trim_end",
+            "frames": [
+              {
+                "frame": 60,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "e59"
+              }
+            ]
+          }
+        ],
+        "interpolators": [
+          {
+            "name": "e51",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e52",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e53",
+            "type": "cubic"
+          },
+          {
+            "name": "e54",
+            "type": "cubic",
+            "x1": 0.13725562,
+            "y1": 0.6467601
+          },
+          {
+            "name": "e55",
+            "type": "cubic",
+            "x2": 0.84326863,
+            "y2": 0.45576745
+          },
+          {
+            "name": "e56",
+            "type": "cubic",
+            "x2": 0.31374794
+          },
+          {
+            "name": "e57",
+            "type": "cubic",
+            "x1": 0.16737634,
+            "y1": 0.4294807
+          },
+          {
+            "name": "e58",
+            "type": "cubic",
+            "x1": 0.119908914,
+            "y1": 0.4662454
+          },
+          {
+            "name": "e59",
+            "type": "cubic",
+            "x1": 0.15636107,
+            "y1": 0.30634192
+          }
+        ]
+      }
+    ],
+    "state_machines": [
+      {
+        "name": "State Machine 1",
+        "inputs": [
+          {
+            "type": "number",
+            "name": "numLoader",
+            "value": 2.0
+          }
+        ],
+        "layers": [
+          {
+            "states": [
+              {
+                "type": "any"
+              },
+              {
+                "type": "entry"
+              },
+              {
+                "type": "exit"
+              },
+              {
+                "type": "animation",
+                "animation": "Loader_0"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 1,
+                "to": 3
+              }
+            ]
+          },
+          {
+            "states": [
+              {
+                "type": "any"
+              },
+              {
+                "type": "blend_state1d",
+                "input": "numLoader",
+                "children": [
+                  {
+                    "type": "blend_animation_1d",
+                    "animation": "Loader_0"
+                  },
+                  {
+                    "type": "blend_animation_1d",
+                    "animation": "Loader_100",
+                    "value": 100.0
+                  }
+                ]
+              },
+              {
+                "type": "exit"
+              },
+              {
+                "type": "entry"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 3,
+                "to": 1
+              }
+            ]
+          },
+          {
+            "states": [
+              {
+                "type": "exit"
+              },
+              {
+                "type": "animation",
+                "animation": "Stop"
+              },
+              {
+                "type": "animation",
+                "animation": "Cup"
+              },
+              {
+                "type": "entry"
+              },
+              {
+                "type": "any"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 1,
+                "to": 2,
+                "duration": 200,
+                "conditions": [
+                  {
+                    "input": "numLoader",
+                    "op": ">",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "from": 2,
+                "to": 1,
+                "duration": 200,
+                "conditions": [
+                  {
+                    "input": "numLoader",
+                    "op": ">=",
+                    "value": 100
+                  }
+                ]
+              },
+              {
+                "from": 3,
+                "to": 2
+              }
+            ]
+          },
+          {
+            "states": [
+              {
+                "type": "entry"
+              },
+              {
+                "type": "exit"
+              },
+              {
+                "type": "any"
+              },
+              {
+                "type": "animation",
+                "animation": "Smoke"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 0,
+                "to": 3
+              }
+            ]
+          },
+          {
+            "states": [
+              {
+                "type": "any"
+              },
+              {
+                "type": "animation",
+                "animation": "Drop_in"
+              },
+              {
+                "type": "entry"
+              },
+              {
+                "type": "animation",
+                "animation": "Drop_out"
+              },
+              {
+                "type": "exit"
+              }
+            ],
+            "transitions": [
+              {
+                "from": 1,
+                "to": 3,
+                "conditions": [
+                  {
+                    "input": "numLoader",
+                    "op": ">",
+                    "value": 0
+                  }
+                ]
+              },
+              {
+                "from": 2,
+                "to": 3
+              },
+              {
+                "from": 3,
+                "to": 1,
+                "conditions": [
+                  {
+                    "input": "numLoader",
+                    "op": ">=",
+                    "value": 100
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

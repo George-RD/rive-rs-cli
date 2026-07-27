@@ -614,8 +614,35 @@
                 "null"
               ]
             },
+            "hidden": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
             "name": {
               "type": "string"
+            },
+            "rotation": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "type": {
               "const": "shape",
@@ -710,6 +737,27 @@
                 "null"
               ]
             },
+            "rotation": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
             "type": {
               "const": "ellipse",
               "type": "string"
@@ -717,6 +765,20 @@
             "width": {
               "format": "float",
               "type": "number"
+            },
+            "x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "required": [
@@ -757,6 +819,27 @@
                 "null"
               ]
             },
+            "rotation": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
             "type": {
               "const": "rectangle",
               "type": "string"
@@ -764,6 +847,20 @@
             "width": {
               "format": "float",
               "type": "number"
+            },
+            "x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "required": [
@@ -797,6 +894,27 @@
                 "null"
               ]
             },
+            "rotation": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
             "type": {
               "const": "triangle",
               "type": "string"
@@ -804,6 +922,20 @@
             "width": {
               "format": "float",
               "type": "number"
+            },
+            "x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "required": [
@@ -852,6 +984,27 @@
                 "null"
               ]
             },
+            "rotation": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
             "type": {
               "const": "polygon",
               "type": "string"
@@ -859,6 +1012,20 @@
             "width": {
               "format": "float",
               "type": "number"
+            },
+            "x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "required": [
@@ -914,6 +1081,27 @@
                 "null"
               ]
             },
+            "rotation": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
             "type": {
               "const": "star",
               "type": "string"
@@ -921,6 +1109,20 @@
             "width": {
               "format": "float",
               "type": "number"
+            },
+            "x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
             }
           },
           "required": [
@@ -989,6 +1191,12 @@
               "format": "float",
               "type": [
                 "number",
+                "null"
+              ]
+            },
+            "transform_affects_stroke": {
+              "type": [
+                "boolean",
                 "null"
               ]
             },
@@ -1155,6 +1363,27 @@
             },
             "name": {
               "type": "string"
+            },
+            "rotation": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "scale_y": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
             },
             "type": {
               "const": "node",
@@ -2835,6 +3064,20 @@
               "type": "string"
             },
             "width": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "x": {
+              "format": "float",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "y": {
               "format": "float",
               "type": [
                 "number",

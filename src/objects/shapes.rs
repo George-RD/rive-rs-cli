@@ -4,11 +4,17 @@ use super::core::{Property, PropertyValue, RiveObject, property_keys, type_keys}
 pub use super::base::*;
 pub use super::paint::*;
 
+const DRAWABLE_FLAG_HIDDEN: u64 = 1;
+
 pub struct Shape {
     pub name: String,
     pub parent_id: u64,
     pub x: f32,
     pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub hidden: bool,
 }
 
 impl Shape {
@@ -18,6 +24,10 @@ impl Shape {
             parent_id,
             x: 0.0,
             y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            hidden: false,
         }
     }
 }
@@ -50,6 +60,30 @@ impl RiveObject for Shape {
                 value: PropertyValue::Float(self.y),
             });
         }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_X,
+                value: PropertyValue::Float(self.scale_x),
+            });
+        }
+        if self.scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_Y,
+                value: PropertyValue::Float(self.scale_y),
+            });
+        }
+        if self.hidden {
+            props.push(Property {
+                key: property_keys::DRAWABLE_FLAGS,
+                value: PropertyValue::UInt(DRAWABLE_FLAG_HIDDEN),
+            });
+        }
         props
     }
 }
@@ -57,6 +91,11 @@ impl RiveObject for Shape {
 pub struct Ellipse {
     pub name: String,
     pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
     pub width: f32,
     pub height: f32,
     pub origin_x: f32,
@@ -68,6 +107,11 @@ impl Ellipse {
         Ellipse {
             name,
             parent_id,
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
             width,
             height,
             origin_x: 0.0,
@@ -91,15 +135,45 @@ impl RiveObject for Ellipse {
                 key: property_keys::COMPONENT_PARENT_ID,
                 value: PropertyValue::UInt(self.parent_id),
             },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_WIDTH,
-                value: PropertyValue::Float(self.width),
-            },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_HEIGHT,
-                value: PropertyValue::Float(self.height),
-            },
         ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_X,
+                value: PropertyValue::Float(self.scale_x),
+            });
+        }
+        if self.scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_Y,
+                value: PropertyValue::Float(self.scale_y),
+            });
+        }
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_WIDTH,
+            value: PropertyValue::Float(self.width),
+        });
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_HEIGHT,
+            value: PropertyValue::Float(self.height),
+        });
         if self.origin_x != 0.0 {
             props.push(Property {
                 key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
@@ -119,6 +193,11 @@ impl RiveObject for Ellipse {
 pub struct Rectangle {
     pub name: String,
     pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
     pub width: f32,
     pub height: f32,
     pub origin_x: f32,
@@ -133,6 +212,11 @@ pub struct Rectangle {
 pub struct Triangle {
     pub name: String,
     pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
     pub width: f32,
     pub height: f32,
     pub origin_x: f32,
@@ -144,6 +228,11 @@ impl Rectangle {
         Rectangle {
             name,
             parent_id,
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
             width,
             height,
             origin_x: 0.0,
@@ -172,15 +261,45 @@ impl RiveObject for Rectangle {
                 key: property_keys::COMPONENT_PARENT_ID,
                 value: PropertyValue::UInt(self.parent_id),
             },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_WIDTH,
-                value: PropertyValue::Float(self.width),
-            },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_HEIGHT,
-                value: PropertyValue::Float(self.height),
-            },
         ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_X,
+                value: PropertyValue::Float(self.scale_x),
+            });
+        }
+        if self.scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_Y,
+                value: PropertyValue::Float(self.scale_y),
+            });
+        }
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_WIDTH,
+            value: PropertyValue::Float(self.width),
+        });
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_HEIGHT,
+            value: PropertyValue::Float(self.height),
+        });
         if self.origin_x != 0.0 {
             props.push(Property {
                 key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
@@ -232,6 +351,11 @@ impl Triangle {
         Triangle {
             name,
             parent_id,
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
             width,
             height,
             origin_x: 0.5,
@@ -255,15 +379,45 @@ impl RiveObject for Triangle {
                 key: property_keys::COMPONENT_PARENT_ID,
                 value: PropertyValue::UInt(self.parent_id),
             },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_WIDTH,
-                value: PropertyValue::Float(self.width),
-            },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_HEIGHT,
-                value: PropertyValue::Float(self.height),
-            },
         ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_X,
+                value: PropertyValue::Float(self.scale_x),
+            });
+        }
+        if self.scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_Y,
+                value: PropertyValue::Float(self.scale_y),
+            });
+        }
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_WIDTH,
+            value: PropertyValue::Float(self.width),
+        });
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_HEIGHT,
+            value: PropertyValue::Float(self.height),
+        });
         if self.origin_x != 0.5 {
             props.push(Property {
                 key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
@@ -665,6 +819,11 @@ impl RiveObject for TrimPath {
 pub struct Polygon {
     pub name: String,
     pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
     pub width: f32,
     pub height: f32,
     pub origin_x: f32,
@@ -678,6 +837,11 @@ impl Polygon {
         Polygon {
             name,
             parent_id,
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
             width,
             height,
             origin_x: 0.5,
@@ -686,14 +850,14 @@ impl Polygon {
             corner_radius: 0.0,
         }
     }
-}
-
-impl RiveObject for Polygon {
-    fn type_key(&self) -> u16 {
-        type_keys::POLYGON
-    }
-
-    fn properties(&self) -> Vec<Property> {
+    fn properties_with_transform(
+        &self,
+        x: f32,
+        y: f32,
+        rotation: f32,
+        scale_x: f32,
+        scale_y: f32,
+    ) -> Vec<Property> {
         let mut props = vec![
             Property {
                 key: property_keys::COMPONENT_NAME,
@@ -703,15 +867,45 @@ impl RiveObject for Polygon {
                 key: property_keys::COMPONENT_PARENT_ID,
                 value: PropertyValue::UInt(self.parent_id),
             },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_WIDTH,
-                value: PropertyValue::Float(self.width),
-            },
-            Property {
-                key: property_keys::PARAMETRIC_PATH_HEIGHT,
-                value: PropertyValue::Float(self.height),
-            },
         ];
+        if x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(x),
+            });
+        }
+        if y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(y),
+            });
+        }
+        if rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_ROTATION,
+                value: PropertyValue::Float(rotation),
+            });
+        }
+        if scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_X,
+                value: PropertyValue::Float(scale_x),
+            });
+        }
+        if scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_Y,
+                value: PropertyValue::Float(scale_y),
+            });
+        }
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_WIDTH,
+            value: PropertyValue::Float(self.width),
+        });
+        props.push(Property {
+            key: property_keys::PARAMETRIC_PATH_HEIGHT,
+            value: PropertyValue::Float(self.height),
+        });
         if self.origin_x != 0.5 {
             props.push(Property {
                 key: property_keys::PARAMETRIC_PATH_ORIGIN_X,
@@ -740,8 +934,23 @@ impl RiveObject for Polygon {
     }
 }
 
+impl RiveObject for Polygon {
+    fn type_key(&self) -> u16 {
+        type_keys::POLYGON
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        self.properties_with_transform(self.x, self.y, self.rotation, self.scale_x, self.scale_y)
+    }
+}
+
 pub struct Star {
     pub polygon: Polygon,
+    pub x: f32,
+    pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
     pub inner_radius: f32,
 }
 
@@ -749,6 +958,11 @@ impl Star {
     pub fn new(name: String, parent_id: u64, width: f32, height: f32) -> Self {
         Star {
             polygon: Polygon::new(name, parent_id, width, height),
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
             inner_radius: 0.5,
         }
     }
@@ -760,7 +974,13 @@ impl RiveObject for Star {
     }
 
     fn properties(&self) -> Vec<Property> {
-        let mut props = self.polygon.properties();
+        let mut props = self.polygon.properties_with_transform(
+            self.x,
+            self.y,
+            self.rotation,
+            self.scale_x,
+            self.scale_y,
+        );
         if self.inner_radius != 0.5 {
             props.push(Property {
                 key: property_keys::STAR_INNER_RADIUS,
@@ -1461,6 +1681,36 @@ impl RiveObject for ArtboardListMapRule {
 mod tests {
     use super::*;
 
+    fn assert_default_node_transform_properties(props: &[Property]) {
+        let keys: Vec<u16> = props.iter().map(|property| property.key).collect();
+        assert!(!keys.contains(&property_keys::NODE_X));
+        assert!(!keys.contains(&property_keys::NODE_Y));
+        assert!(!keys.contains(&property_keys::TRANSFORM_ROTATION));
+        assert!(!keys.contains(&property_keys::TRANSFORM_SCALE_X));
+        assert!(!keys.contains(&property_keys::TRANSFORM_SCALE_Y));
+    }
+
+    fn assert_node_transform_properties(props: &[Property]) {
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::NODE_X && property.value == PropertyValue::Float(3.0)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::NODE_Y && property.value == PropertyValue::Float(-4.0)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TRANSFORM_ROTATION
+                && property.value == PropertyValue::Float(1.5)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TRANSFORM_SCALE_X
+                && property.value == PropertyValue::Float(2.0)
+        }));
+        assert!(props.iter().any(|property| {
+            property.key == property_keys::TRANSFORM_SCALE_Y
+                && property.value == PropertyValue::Float(0.5)
+        }));
+    }
+
     #[test]
     fn test_shape_type_key() {
         let shape = Shape::new("TestShape".to_string(), 1);
@@ -1672,13 +1922,20 @@ mod tests {
         let mut stroke = Stroke::new("S".to_string(), 1, 3.0);
         stroke.cap = 1;
         stroke.join = 2;
-        stroke.transform_affects = 1;
+        stroke.transform_affects = 0;
         let props = stroke.properties();
         assert_eq!(props.len(), 6);
         let keys: Vec<u16> = props.iter().map(|p| p.key).collect();
         assert!(keys.contains(&property_keys::STROKE_CAP));
         assert!(keys.contains(&property_keys::STROKE_JOIN));
         assert!(keys.contains(&property_keys::STROKE_TRANSFORM_AFFECTS));
+    }
+
+    #[test]
+    fn test_stroke_omits_transform_affects_at_the_runtime_default() {
+        let stroke = Stroke::new("S".to_string(), 1, 3.0);
+        let keys: Vec<u16> = stroke.properties().iter().map(|p| p.key).collect();
+        assert!(!keys.contains(&property_keys::STROKE_TRANSFORM_AFFECTS));
     }
 
     #[test]
@@ -1806,6 +2063,9 @@ mod tests {
             parent_id: 1,
             x: 0.0,
             y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
         };
         assert_eq!(node.type_key(), 2);
     }
@@ -1961,6 +2221,9 @@ mod tests {
             parent_id: 2,
             x: 50.0,
             y: 75.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
         };
         let props = node.properties();
         assert_eq!(props.len(), 4);
@@ -1968,6 +2231,87 @@ mod tests {
         assert_eq!(props[2].value, PropertyValue::Float(50.0));
         assert_eq!(props[3].key, property_keys::NODE_Y);
         assert_eq!(props[3].value, PropertyValue::Float(75.0));
+    }
+
+    #[test]
+    fn test_node_emits_rotation_and_scale_only_when_off_default() {
+        let resting = Node {
+            name: "Resting".to_string(),
+            parent_id: 0,
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+        };
+        let keys: Vec<u16> = resting.properties().iter().map(|p| p.key).collect();
+        assert!(!keys.contains(&property_keys::TRANSFORM_ROTATION));
+        assert!(!keys.contains(&property_keys::TRANSFORM_SCALE_X));
+        assert!(!keys.contains(&property_keys::TRANSFORM_SCALE_Y));
+
+        let transformed = Node {
+            name: "Transformed".to_string(),
+            parent_id: 0,
+            x: 0.0,
+            y: 0.0,
+            rotation: -1.5707964,
+            scale_x: 0.46961826,
+            scale_y: 2.319246,
+        };
+        let props = transformed.properties();
+        let value_of = |key: u16| {
+            props
+                .iter()
+                .find(|p| p.key == key)
+                .map(|p| p.value.clone())
+                .expect("property is emitted")
+        };
+        assert_eq!(
+            value_of(property_keys::TRANSFORM_ROTATION),
+            PropertyValue::Float(-1.5707964)
+        );
+        assert_eq!(
+            value_of(property_keys::TRANSFORM_SCALE_X),
+            PropertyValue::Float(0.46961826)
+        );
+        assert_eq!(
+            value_of(property_keys::TRANSFORM_SCALE_Y),
+            PropertyValue::Float(2.319246)
+        );
+    }
+
+    #[test]
+    fn test_shape_emits_rotation_and_scale_only_when_off_default() {
+        let resting = Shape::new("Resting".to_string(), 0);
+        let keys: Vec<u16> = resting.properties().iter().map(|p| p.key).collect();
+        assert!(!keys.contains(&property_keys::TRANSFORM_ROTATION));
+        assert!(!keys.contains(&property_keys::TRANSFORM_SCALE_X));
+        assert!(!keys.contains(&property_keys::TRANSFORM_SCALE_Y));
+
+        let mut transformed = Shape::new("Transformed".to_string(), 0);
+        transformed.rotation = -1.5707964;
+        transformed.scale_x = 2.129389;
+        transformed.scale_y = 2.319246;
+        let props = transformed.properties();
+        let value_of = |key: u16| {
+            props
+                .iter()
+                .find(|p| p.key == key)
+                .map(|p| p.value.clone())
+                .expect("property is emitted")
+        };
+        assert_eq!(
+            value_of(property_keys::TRANSFORM_ROTATION),
+            PropertyValue::Float(-1.5707964)
+        );
+        assert_eq!(
+            value_of(property_keys::TRANSFORM_SCALE_X),
+            PropertyValue::Float(2.129389)
+        );
+        assert_eq!(
+            value_of(property_keys::TRANSFORM_SCALE_Y),
+            PropertyValue::Float(2.319246)
+        );
     }
 
     #[test]
@@ -2257,6 +2601,66 @@ mod tests {
                 .any(|pr| pr.key == property_keys::STAR_INNER_RADIUS
                     && pr.value == PropertyValue::Float(0.3))
         );
+    }
+
+    #[test]
+    fn test_ellipse_node_transform_properties() {
+        let mut ellipse = Ellipse::new("E".to_string(), 1, 100.0, 50.0);
+        assert_default_node_transform_properties(&ellipse.properties());
+        ellipse.x = 3.0;
+        ellipse.y = -4.0;
+        ellipse.rotation = 1.5;
+        ellipse.scale_x = 2.0;
+        ellipse.scale_y = 0.5;
+        assert_node_transform_properties(&ellipse.properties());
+    }
+
+    #[test]
+    fn test_rectangle_node_transform_properties() {
+        let mut rectangle = Rectangle::new("R".to_string(), 1, 100.0, 50.0);
+        assert_default_node_transform_properties(&rectangle.properties());
+        rectangle.x = 3.0;
+        rectangle.y = -4.0;
+        rectangle.rotation = 1.5;
+        rectangle.scale_x = 2.0;
+        rectangle.scale_y = 0.5;
+        assert_node_transform_properties(&rectangle.properties());
+    }
+
+    #[test]
+    fn test_triangle_node_transform_properties() {
+        let mut triangle = Triangle::new("T".to_string(), 1, 100.0, 50.0);
+        assert_default_node_transform_properties(&triangle.properties());
+        triangle.x = 3.0;
+        triangle.y = -4.0;
+        triangle.rotation = 1.5;
+        triangle.scale_x = 2.0;
+        triangle.scale_y = 0.5;
+        assert_node_transform_properties(&triangle.properties());
+    }
+
+    #[test]
+    fn test_polygon_node_transform_properties() {
+        let mut polygon = Polygon::new("P".to_string(), 1, 100.0, 50.0);
+        assert_default_node_transform_properties(&polygon.properties());
+        polygon.x = 3.0;
+        polygon.y = -4.0;
+        polygon.rotation = 1.5;
+        polygon.scale_x = 2.0;
+        polygon.scale_y = 0.5;
+        assert_node_transform_properties(&polygon.properties());
+    }
+
+    #[test]
+    fn test_star_node_transform_properties() {
+        let mut star = Star::new("S".to_string(), 1, 100.0, 50.0);
+        assert_default_node_transform_properties(&star.properties());
+        star.x = 3.0;
+        star.y = -4.0;
+        star.rotation = 1.5;
+        star.scale_x = 2.0;
+        star.scale_y = 0.5;
+        assert_node_transform_properties(&star.properties());
     }
 
     #[test]

@@ -52,6 +52,7 @@
         },
         {
           "key": 10,
+          "name": "yArtboard",
           "value": {
             "Float": 8.0
           }

@@ -5,6 +5,9 @@ pub struct Node {
     pub parent_id: u64,
     pub x: f32,
     pub y: f32,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
 }
 
 pub struct Solo {
@@ -41,6 +44,24 @@ impl RiveObject for Node {
             props.push(Property {
                 key: property_keys::NODE_Y,
                 value: PropertyValue::Float(self.y),
+            });
+        }
+        if self.rotation != 0.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_ROTATION,
+                value: PropertyValue::Float(self.rotation),
+            });
+        }
+        if self.scale_x != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_X,
+                value: PropertyValue::Float(self.scale_x),
+            });
+        }
+        if self.scale_y != 1.0 {
+            props.push(Property {
+                key: property_keys::TRANSFORM_SCALE_Y,
+                value: PropertyValue::Float(self.scale_y),
             });
         }
         props

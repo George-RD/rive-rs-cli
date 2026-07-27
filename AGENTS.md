@@ -221,23 +221,25 @@ Exit gates:
 
 ### 2. Comparison/Parity Flow (Achieving Parity with Official Rive Files)
 
-Entry: Identify an official `.riv` file from the rive-runtime repository or Rive's public asset collection.
+Entry: identify an official `.riv` file and add its provenance to `parity/official/manifest.json`.
 
 Steps:
-1. Acquire reference: download or copy the official `.riv` file into `tests/fixtures/reference/`.
-2. Decompile: run `cargo run -- decompile` on the reference to produce a human-readable structural dump.
-3. Create comparison fixture: write a JSON scene specification that attempts to reproduce the same structure.
-4. Generate: produce a `.riv` from the comparison fixture.
-5. Compare:
-   - Structural: diff the decompile output of the reference against the generated file.
-   - Visual: load both in the Rive WASM runtime side-by-side.
-   - Pixel: run Playwright visual regression to compute pixel difference.
-6. Document gaps: if differences exceed thresholds, document them in `docs/parity.md` with a `gapType` label.
+1. Run `bash parity/fetch-official.sh` to verify legacy checksum pins and refresh fetched files.
+2. Decompile with `rive-cli decompile parity/official/<file>.riv`.
+3. Create `parity/reproductions/<name>.json` and generate its `.riv` counterpart.
+4. Compare with `rive-cli compare parity/official/<name>.riv parity/reproductions/<name>.riv`,
+   using explicit geometry, background and animation/state-machine flags as needed.
+5. Add the rung to `parity/collate-results.sh`; it must pass the 5% maximum-diff gate with no
+   missing type names before its results enter `parity/results.json`.
+6. Document unresolved structural and visual deltas in `docs/parity.md` with a `gapType`, a tracking
+   ticket and closure acceptance criteria; expected encoding deltas need a `gapType` and evidence
+   that their rendered semantics remain equal.
 
 Exit gates:
-- Structural match: decompile diff is below the threshold, or every delta is labeled with a `gapType`.
-- Visual match: pixel diff is below the threshold, or the mismatch is documented with a `gapType`.
-- All gaps use the `gapType` vocabulary: `missing-type`, `property-drift`, `encoding-difference`, `visual-mismatch`, `runtime-rejection`.
+- Structural match: decompile deltas are below the threshold, or every delta is labelled.
+- Visual match: pixel diff is below the threshold, or the mismatch is documented and ticketed.
+- All gaps use the `gapType` vocabulary: `missing-type`, `property-drift`, `encoding-difference`,
+  `visual-mismatch`, `runtime-rejection`.
 
 ### 3. Issue Triage Flow
 

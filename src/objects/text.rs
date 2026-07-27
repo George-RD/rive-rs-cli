@@ -3,6 +3,8 @@ use super::core::{Property, PropertyValue, RiveObject, property_keys, type_keys}
 pub struct Text {
     pub name: String,
     pub parent_id: u64,
+    pub x: f32,
+    pub y: f32,
     pub align_value: u64,
     pub sizing_value: u64,
     pub overflow_value: u64,
@@ -19,6 +21,8 @@ impl Text {
         Self {
             name,
             parent_id,
+            x: 0.0,
+            y: 0.0,
             align_value: 0,
             sizing_value: 0,
             overflow_value: 0,
@@ -48,6 +52,18 @@ impl RiveObject for Text {
                 value: PropertyValue::UInt(self.parent_id),
             },
         ];
+        if self.x != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_X,
+                value: PropertyValue::Float(self.x),
+            });
+        }
+        if self.y != 0.0 {
+            props.push(Property {
+                key: property_keys::NODE_Y,
+                value: PropertyValue::Float(self.y),
+            });
+        }
         if self.align_value != 0 {
             props.push(Property {
                 key: property_keys::TEXT_ALIGN_VALUE,

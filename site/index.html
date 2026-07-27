@@ -6,7 +6,7 @@
     <title>rive-cli — Rive animations, compiled from JSON</title>
     <meta
       name="description"
-      content="rive-cli compiles JSON scene specifications into Rive .riv binaries, then renders and verifies them without an editor. Every animation on this page is a .riv file this tool produced."
+      content="rive-cli compiles JSON scene specifications into Rive .riv binaries. It reads real Rive editor output, and reproduces it from JSON to a measured pixel tolerance."
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -15,44 +15,43 @@
       <div class="hero-art">
         <canvas
           class="scene"
-          data-riv="wordmark"
-          data-animation="wordmark"
           width="600"
           height="600"
-          aria-label="Animated rive-cli wordmark"
+          aria-label="Official Rive coffee loader animation"
         ></canvas>
       </div>
       <div class="hero-copy">
         <p class="eyebrow">rive-cli</p>
-        <h1>Rive animations, compiled from JSON.</h1>
+        <h1>Compiled from JSON. Measured against Rive's own files.</h1>
         <p class="lede">
           A command-line compiler for the Rive binary format. Write a scene as JSON, get a
-          <code>.riv</code>. Then render it, measure it, and prove it works — no editor, no runtime
-          in the loop you cannot inspect.
+          <code>.riv</code>. The animation beside this text is not ours — it is an official file from
+          <code>rive-app/rive-runtime</code>, read and played back through the same pipeline.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#gallery">See what it makes</a>
-          <a class="button" href="#verify">See how it is proved</a>
+          <a class="button primary" href="#gallery">See the comparison</a>
+          <a class="button" href="#verify">See how it is measured</a>
         </div>
       </div>
     </header>
 
     <section class="claim">
       <p>
-        <strong>Every animation on this page is a <code>.riv</code> file this tool produced.</strong>
-        Not a video, not a GIF — the same committed binaries the test suite loads, playing live in the
-        Rive WebAssembly runtime in your browser. Six of them were authored end to end by an AI agent
-        given nothing but one skill file and one binary; four more were added to demonstrate embedded
-        fonts, path morphing, embedded imagery and pointer-driven state machines. All ten clear the same
-        measured gate on every commit.
+        <strong>Ground truth first.</strong> Every pair below puts an official, Rive-authored
+        <code>.riv</code> on the left and our reproduction of it on the right — both rendered at the
+        same frames by <code>rive-cli compare</code>, both playing live in the Rive WebAssembly
+        runtime in your browser. The figure under each pair is the largest share of pixels that
+        differ across the compared frames. Nothing here is a video or a GIF: the binaries are the
+        ones committed to the repository, and the JSON we compiled is one disclosure away.
       </p>
     </section>
 
     <section id="gallery" class="gallery">
-      <h2>The gallery</h2>
+      <h2>The official file, and ours beside it</h2>
       <p class="section-note">
-        Each scene plays its committed <code>.riv</code>. Open the source to see the JSON it was compiled
-        from.
+        Left: the official <code>.riv</code>, pinned to an upstream commit in
+        <code>parity/official/manifest.json</code>. Right: what <code>rive-cli generate</code> made
+        from the JSON in the disclosure. The gap between them is measured, not asserted.
       </p>
       <div class="grid" id="grid"></div>
     </section>
@@ -60,16 +59,23 @@
     <section id="verify" class="verify">
       <h2>How it is verified</h2>
       <p class="section-note">
-        The compiler is only half of it. An agent cannot look at a picture, so the tool measures its own
-        output: distinct colours, a dominant-colour ratio, a content bounding box, and an ASCII coverage
-        map. This transcript is copied verbatim from a real run.
+        <code>rive-cli compare</code> decompiles both files, renders both through headless Chromium at
+        identical geometry, and reports two things: a table of every Rive type whose count differs, and
+        the share of pixels that differ per frame. It exits non-zero only when you give it a threshold
+        to fail against, so the number is the deliverable rather than a hidden pass mark. The tool also
+        measures a single file on its own — distinct colours, dominant-colour ratio, content bounding
+        box and an ASCII coverage map — because an agent cannot look at a picture. The transcript below
+        is copied verbatim from a real run.
       </p>
       <pre class="terminal" id="transcript">loading…</pre>
       <p class="section-note">
-        Three layers guard every scene on this page: <code>generate</code> and <code>validate</code> in the
-        Rust integration suite, a real-runtime load in headless Chromium, and pixel baselines at three
-        frames each. Interaction is proved separately by rendering the same frames with and without a
-        pointer event and requiring the frames before it to be byte-identical.
+        The site validation loads every official and reproduction canvas, asserts that each one paints,
+        and checks that the displayed object counts and pixel figures match the committed
+        <code>parity/results.json</code>. That results file is regenerated by
+        <code>parity/collate-results.sh</code>, which runs the same thresholded comparison for each
+        shipped rung. The existing visual regression baselines cover related committed fixtures, not
+        these parity cards. Fetched official files are checksum-verified against upstream commits;
+        legacy in-repo files are checksum-verified locally.
       </p>
     </section>
 
@@ -79,7 +85,7 @@
 $ rive-cli new spinner &gt; scene.json
 $ rive-cli generate scene.json -o scene.riv
 $ rive-cli validate scene.riv
-$ rive-cli render scene.riv --frames 0,30,60 --preview -o frames/</pre>
+$ rive-cli compare official.riv ours.riv --frames 0,15,30 --max-pixel-diff 5</pre>
       <p class="section-note">
         <code>rive-cli describe &lt;type&gt;</code> reports the fields, valid parents and animatable
         properties of any of the ~200 object types, and <code>rive-cli schema</code> emits the full JSON

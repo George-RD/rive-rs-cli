@@ -1,0 +1,87 @@
+[
+  {
+    "id": "button",
+    "title": "button",
+    "upstream": "rive-app/rive-flutter \u2014 example/assets/button.riv",
+    "state_machine": "State Machine 1",
+    "note": "An 805 kB embedded Inter variable font, a text run with two variation axes, three animations and a listener-driven state machine.",
+    "official": "parity/official/button.riv",
+    "reproduction": "parity/reproductions/button.riv",
+    "source": "parity/reproductions/button.json",
+    "reference_object_count": 64,
+    "candidate_object_count": 64,
+    "max_pixel_difference": 0.0,
+    "frames": [
+      {
+        "index": 0,
+        "pixel_difference": 0.0
+      },
+      {
+        "index": 15,
+        "pixel_difference": 0.0
+      },
+      {
+        "index": 30,
+        "pixel_difference": 0.0
+      },
+      {
+        "index": 45,
+        "pixel_difference": 0.0
+      }
+    ],
+    "missing_type_names": [],
+    "type_deltas": []
+  },
+  {
+    "id": "coffee_loader",
+    "title": "coffee_loader",
+    "upstream": "rive-app/rive-runtime \u2014 renderer/webgpu_player/rivs/coffee_loader.riv",
+    "state_machine": "State Machine 1",
+    "note": "250 objects, five state-machine layers including a 1D blend state, nine shared interpolators and ninety keyframes.",
+    "official": "parity/official/coffee_loader.riv",
+    "reproduction": "parity/reproductions/coffee_loader.riv",
+    "source": "parity/reproductions/coffee_loader.json",
+    "reference_object_count": 250,
+    "candidate_object_count": 247,
+    "max_pixel_difference": 0.2833366394042969,
+    "frames": [
+      {
+        "index": 0,
+        "pixel_difference": 0.28324127197265625
+      },
+      {
+        "index": 15,
+        "pixel_difference": 0.2833366394042969
+      },
+      {
+        "index": 30,
+        "pixel_difference": 0.25882720947265625
+      },
+      {
+        "index": 45,
+        "pixel_difference": 0.21457672119140625
+      }
+    ],
+    "missing_type_names": [],
+    "type_deltas": [
+      {
+        "candidate": 89,
+        "delta": -1,
+        "reference": 90,
+        "type_name": "KeyFrameDouble"
+      },
+      {
+        "candidate": 19,
+        "delta": -1,
+        "reference": 20,
+        "type_name": "KeyedObject"
+      },
+      {
+        "candidate": 27,
+        "delta": -1,
+        "reference": 28,
+        "type_name": "KeyedProperty"
+      }
+    ]
+  }
+]

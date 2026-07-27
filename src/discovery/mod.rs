@@ -404,8 +404,9 @@ fn generic_summary(name: &str) -> String {
 
 fn valid_parents_for(name: &str) -> Vec<String> {
     let parents: &[&str] = match name {
-        "ellipse" | "rectangle" | "triangle" | "polygon" | "star" | "points_path" | "fill"
-        | "stroke" | "clipping_shape" => &["shape"],
+        "ellipse" | "rectangle" | "triangle" | "polygon" | "star" | "points_path"
+        | "clipping_shape" => &["shape"],
+        "fill" | "stroke" => &["shape", "artboard", "layout_component"],
         "straight_vertex"
         | "cubic_mirrored_vertex"
         | "cubic_detached_vertex"

@@ -11,7 +11,7 @@ const {
 } = require("./shared");
 
 const SCREENSHOT_DIR = path.join(ROOT, "target", "playwright-vision");
-const REFERENCE_DIR = path.join(ROOT, "demo", "riv", "reference");
+const REFERENCE_DIR = path.join(ROOT, "parity", "official");
 const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8767);
 

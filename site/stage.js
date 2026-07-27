@@ -10,37 +10,42 @@ const VENDORED = [
   ["assets/rive.wasm", "assets/rive.wasm"],
 ];
 
-function showcaseFiles() {
-  return fs
-    .readdirSync(path.join(ROOT, "showcase"))
-    .filter((name) => name.endsWith(".riv") || name.endsWith(".json"))
-    .map((name) => [`showcase/${name}`, `showcase/${name}`]);
-}
-
-function referencedScenes() {
-  const source = fs.readFileSync(path.join(SITE, "main.js"), "utf8");
-  const ids = new Set();
-  for (const match of source.matchAll(/\bid:\s*"([a-z0-9_]+)"/g)) {
-    ids.add(match[1]);
-  }
-  for (const match of source.matchAll(/mountScene\([^)]*id:\s*"([a-z0-9_]+)"/g)) {
-    ids.add(match[1]);
-  }
-  return [...ids];
-}
-
-function assertReferencedScenesExist() {
-  const missing = [];
-  for (const id of referencedScenes()) {
-    for (const extension of [".riv", ".json"]) {
-      const file = path.join(ROOT, "showcase", `${id}${extension}`);
-      if (!fs.existsSync(file)) {
-        missing.push(`showcase/${id}${extension}`);
+function parityFiles() {
+  const entries = [["parity/results.json", "parity/results.json"]];
+  for (const [directory, extensions] of [
+    ["parity/official", [".riv"]],
+    ["parity/reproductions", [".riv", ".json"]],
+  ]) {
+    for (const name of fs.readdirSync(path.join(ROOT, directory))) {
+      if (extensions.some((extension) => name.endsWith(extension))) {
+        entries.push([`${directory}/${name}`, `${directory}/${name}`]);
       }
     }
   }
+  return entries;
+}
+
+function referencedScenes() {
+  const results = JSON.parse(fs.readFileSync(path.join(ROOT, "parity", "results.json"), "utf8"));
+  const files = new Set();
+  for (const rung of results) {
+    files.add(rung.official);
+    files.add(rung.reproduction);
+    files.add(rung.source);
+  }
+  const page = fs.readFileSync(path.join(SITE, "main.js"), "utf8");
+  for (const match of page.matchAll(/"(parity\/[a-z0-9_/.]+\.riv)"/g)) {
+    files.add(match[1]);
+  }
+  return [...files];
+}
+
+function assertReferencedScenesExist() {
+  const missing = referencedScenes().filter(
+    (file) => !fs.existsSync(path.join(ROOT, file))
+  );
   if (missing.length > 0) {
-    throw new Error(`site/main.js references files that do not exist: ${missing.join(", ")}`);
+    throw new Error(`the site references files that do not exist: ${missing.join(", ")}`);
   }
   return referencedScenes().length;
 }
@@ -50,7 +55,7 @@ function plan() {
   return [
     ...PAGE_FILES.map((name) => [`site/${name}`, name]),
     ...VENDORED,
-    ...showcaseFiles(),
+    ...parityFiles(),
   ];
 }
 

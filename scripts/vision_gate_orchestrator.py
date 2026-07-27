@@ -29,7 +29,7 @@ from typing import Dict, List, Optional, Tuple
 
 # Configuration
 SCREENSHOT_DIR = Path(os.environ.get("VISION_SCREENSHOT_DIR", "target/playwright-vision"))
-REFERENCE_DIR = Path(os.environ.get("VISION_REFERENCE_DIR", "demo/riv/reference"))
+REFERENCE_DIR = Path(os.environ.get("VISION_REFERENCE_DIR", "parity/official"))
 FIXTURES = os.environ.get("VISION_FIXTURES", "comparison_trim,comparison_quantize_test,comparison_official_test").split(",")
 
 # API Keys (read from environment)

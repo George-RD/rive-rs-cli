@@ -225,6 +225,26 @@ pub fn analyze(path: &Path) -> Result<ImageInfo, RenderError> {
         rgba,
     })
 }
+
+pub fn pixel_difference(a: &ImageInfo, b: &ImageInfo) -> Result<f64, RenderError> {
+    if a.width != b.width || a.height != b.height {
+        return Err(RenderError::Message(format!(
+            "cannot compare {}x{} against {}x{}",
+            a.width, a.height, b.width, b.height
+        )));
+    }
+    let pixels = a.rgba.len() / 4;
+    if pixels == 0 {
+        return Ok(0.0);
+    }
+    let different = a
+        .rgba
+        .chunks_exact(4)
+        .zip(b.rgba.chunks_exact(4))
+        .filter(|(left, right)| left != right)
+        .count();
+    Ok(different as f64 / pixels as f64 * 100.0)
+}
 pub fn contact_sheet(paths: &[PathBuf], out: &Path) -> Result<(), RenderError> {
     let imgs = paths
         .iter()

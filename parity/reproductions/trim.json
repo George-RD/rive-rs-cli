@@ -1,0 +1,94 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "work",
+    "width": 1920,
+    "height": 1080,
+    "x": 600,
+    "children": [
+      {
+        "type": "node",
+        "name": "Shape I",
+        "x": 1285.5,
+        "y": 476.5,
+        "children": [
+          {
+            "type": "node",
+            "name": "I",
+            "x": -0.9499512,
+            "y": -0.9500122,
+            "children": [
+              {
+                "type": "shape",
+                "name": "I Shape",
+                "children": [
+                  {
+                    "type": "points_path",
+                    "name": "I Path",
+                    "y": -1.0,
+                    "children": [
+                      {
+                        "type": "straight_vertex",
+                        "name": "I Vertex 1",
+                        "x": -10.75,
+                        "y": 18.05
+                      },
+                      {
+                        "type": "straight_vertex",
+                        "name": "I Vertex 2",
+                        "x": 11.25,
+                        "y": 18.05
+                      },
+                      {
+                        "type": "straight_vertex",
+                        "name": "I Vertex 3",
+                        "x": -0.05,
+                        "y": 18.05
+                      },
+                      {
+                        "type": "straight_vertex",
+                        "name": "I Vertex 4",
+                        "x": 0.15,
+                        "y": -12.15
+                      }
+                    ]
+                  },
+                  {
+                    "type": "stroke",
+                    "name": "I Stroke",
+                    "thickness": 15.0,
+                    "cap": 1,
+                    "join": 1,
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "I Stroke Color",
+                        "color": "#E1E1E1"
+                      },
+                      {
+                        "type": "trim_path",
+                        "name": "I Trim",
+                        "mode": 2
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "fill",
+        "name": "Artboard Fill",
+        "children": [
+          {
+            "type": "solid_color",
+            "name": "Artboard Fill Color",
+            "color": "#FFFFFF"
+          }
+        ]
+      }
+    ]
+  }
+}

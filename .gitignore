@@ -1,6 +1,7 @@
 /target
 *.riv
-!demo/riv/reference/*.riv
+!parity/official/*.riv
+!parity/reproductions/*.riv
 !showcase/*.riv
 .DS_Store
 __pycache__/

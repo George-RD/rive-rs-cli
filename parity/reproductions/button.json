@@ -1,0 +1,257 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Artboard",
+    "width": 500,
+    "height": 500,
+    "children": [
+      {
+        "type": "font_asset",
+        "name": "Inter",
+        "asset_id": 594377,
+        "source": "assets/Inter.ttf"
+      },
+      {
+        "type": "node",
+        "name": "Button",
+        "x": 250.0,
+        "y": 250.0,
+        "children": [
+          {
+            "type": "text",
+            "name": "Label",
+            "x": -63.69629,
+            "y": -12.0,
+            "children": [
+              {
+                "type": "text_style",
+                "name": "Label Style",
+                "font_size": 20.0,
+                "font_asset_id": 0,
+                "children": [
+                  {
+                    "type": "fill",
+                    "name": "Label Fill",
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "Label Color",
+                        "color": "#FFFFFF"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text_style_axis",
+                    "name": "Label Slant Axis",
+                    "tag": 1936486004
+                  },
+                  {
+                    "type": "text_style_axis",
+                    "name": "Label Weight Axis",
+                    "tag": 2003265652,
+                    "axis_value": 400.0
+                  }
+                ]
+              },
+              {
+                "type": "text_value_run",
+                "name": "Label Run",
+                "style": "Label Style",
+                "text": "A Rive Button"
+              }
+            ]
+          },
+          {
+            "type": "shape",
+            "name": "Button Shape",
+            "children": [
+              {
+                "type": "rectangle",
+                "name": "Button Rect",
+                "width": 149.0,
+                "height": 57.0,
+                "corner_radius": 25.0
+              },
+              {
+                "type": "fill",
+                "name": "Button Fill",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "Button Color",
+                    "color": "#932222"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Overlay Shape",
+        "x": 250.0,
+        "y": 250.0,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "Overlay Rect",
+            "width": 500.0,
+            "height": 500.0
+          },
+          {
+            "type": "fill",
+            "name": "Overlay Fill",
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Overlay Color",
+                "color": "#74747433"
+              }
+            ]
+          },
+          {
+            "type": "stroke",
+            "name": "Overlay Stroke",
+            "thickness": 12.0,
+            "children": [
+              {
+                "type": "solid_color",
+                "name": "Overlay Stroke Color",
+                "color": "#000000"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "fill",
+        "name": "Artboard Fill",
+        "is_visible": false,
+        "children": [
+          {
+            "type": "solid_color",
+            "name": "Artboard Fill Color",
+            "color": "#313131"
+          }
+        ]
+      },
+      {
+        "type": "layout_component_style",
+        "name": "Artboard Style"
+      }
+    ],
+    "animations": [
+      {
+        "name": "Up",
+        "fps": 60,
+        "duration": 60,
+        "interpolators": [
+          {
+            "name": "Ease",
+            "type": "cubic",
+            "x1": 0.42,
+            "y1": 0.0,
+            "x2": 0.58,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Button",
+            "property": "scale_x",
+            "frames": [{ "frame": 0, "value": 1.2753906, "interpolation": "linear" }]
+          },
+          {
+            "object": "Button",
+            "property": "scale_y",
+            "frames": [{ "frame": 0, "value": 1.2753906, "interpolation": "linear" }]
+          }
+        ]
+      },
+      {
+        "name": "Idle",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "Button",
+            "property": "scale_x",
+            "frames": [{ "frame": 0, "value": 1.0, "interpolation": "linear" }]
+          },
+          {
+            "object": "Button",
+            "property": "scale_y",
+            "frames": [{ "frame": 0, "value": 1.0, "interpolation": "linear" }]
+          }
+        ]
+      },
+      {
+        "name": "Down",
+        "fps": 60,
+        "duration": 60,
+        "keyframes": [
+          {
+            "object": "Button",
+            "property": "scale_x",
+            "frames": [{ "frame": 0, "value": 0.7601563, "interpolation": "linear" }]
+          },
+          {
+            "object": "Button",
+            "property": "scale_y",
+            "frames": [{ "frame": 0, "value": 0.7601563, "interpolation": "linear" }]
+          }
+        ]
+      }
+    ],
+    "state_machines": [
+      {
+        "name": "State Machine 1",
+        "inputs": [
+          { "type": "trigger", "name": "Up" },
+          { "type": "trigger", "name": "Down" }
+        ],
+        "listeners": [
+          {
+            "target": "Button",
+            "listener_type_value": 3,
+            "actions": [{ "type": "trigger_change", "input": "Up" }]
+          },
+          {
+            "target": "Button",
+            "listener_type_value": 2,
+            "actions": [{ "type": "trigger_change", "input": "Down" }]
+          }
+        ],
+        "layers": [
+          {
+            "states": [
+              { "type": "any" },
+              { "type": "exit" },
+              { "type": "entry" },
+              { "type": "animation", "animation": "Down" },
+              { "type": "animation", "animation": "Idle" },
+              { "type": "animation", "animation": "Up" }
+            ],
+            "transitions": [
+              {
+                "from": 0,
+                "to": 3,
+                "duration": 200,
+                "conditions": [{ "input": "Down" }]
+              },
+              {
+                "from": 0,
+                "to": 5,
+                "duration": 200,
+                "conditions": [{ "input": "Up" }]
+              },
+              { "from": 2, "to": 4 },
+              { "from": 5, "to": 4, "duration": 200 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -5,12 +5,177 @@ This document tracks how closely rive-cli-generated files match official Rive ru
 
 ## Reference File Inventory
 
+Fetched files are pinned to an upstream repository, commit and path in
+`parity/official/manifest.json`; legacy `in-repo` files are checksum-pinned and verified locally.
+
 |File|Source|Size|Paired Fixture|Status|
 |---|---|---|---|---|
 |trim.riv|rive-runtime test suite|184B|comparison_trim|partial|
 |quantize_test.riv|rive-runtime test suite|200B|comparison_quantize_test|partial|
 |official_test.riv|rive-runtime fire_button.riv|4407B|comparison_official_test|partial|
+|fire_button.riv|rive-app/rive-runtime `renderer/webgpu_player/rivs/fire_button.riv` @ `40ff578`|4407B|—|byte-identical to official_test.riv|
+|coffee_loader.riv|rive-app/rive-runtime `renderer/webgpu_player/rivs/coffee_loader.riv` @ `40ff578`|2605B|parity/reproductions/coffee_loader|**rung 2 pass**|
+|button.riv|rive-app/rive-flutter `example/assets/button.riv` @ `4e4b87d`|806209B|parity/reproductions/button|**rung 1 pass**|
 |clip_tests.decompiled.json|rive-runtime|21KB|comparison_clip_tests|partial|
+
+`official_test.riv` and `fire_button.riv` hash identically
+(`7c084a8aa6d4589a8b506ad14ad8d99a7358fbb49ac69b8cf1a8a9fc422879c4`). The file that had been carried
+in-tree as `official_test.riv` since before this corpus existed **is** upstream `fire_button.riv`.
+Both names are retained: `official_test.riv` is referenced by existing docs, tests and the demo,
+while `fire_button.riv` records the provenance. `gapType: encoding-difference` (naming only).
+
+## Reproduction ladder
+
+Ground truth is an official, Rive-authored `.riv`. A rung passes when the reproduction reaches
+**≤5% maximum pixel difference with no Rive type name missing from the candidate**. Every number
+below comes from `rive-cli compare` at `--width 512 --height 512 --scale 2 --background '#0B0E17'`,
+and is re-collated into `parity/results.json` by `parity/collate-results.sh`.
+
+|Rung|Official|Objects (official/ours)|Frames|Max pixel diff|Verdict|
+|---|---|---|---|---|---|
+|1|`button.riv`|64 / 64|0, 15, 30, 45|**0.0000%**|pass|
+|2|`coffee_loader.riv`|250 / 247|0, 15, 30, 45|**0.2833%**|pass|
+|—|`trim.riv`|15 / 15|0|0.0000%|not a gate, see below|
+
+### Rung 0 — `trim.riv` was discarded as a gate
+
+`parity/reproductions/trim.json` matches the reference's 15-object structure and type histogram,
+including the rendered colours, and reaches 0.0000% pixel difference at 512x512. The reproduction
+must add names required by SceneSpec, so its named property sets and emission order are not identical.
+
+It is nonetheless **not a meaningful visual gate**. Its `TrimPath` has `modeValue: 2` and default
+`start`/`end`, which trims the entire stroke away, so the only thing that draws is the artboard-level
+`Fill`. `rive-cli render` reports 2 distinct colours at 512x512 and `BLANK` at 960x540 — for the
+official file as much as for ours. A 0.0000% match between two near-empty frames proves little, so
+per the plan's contingency the ladder was shifted down and `button.riv` became rung 1. The files stay
+committed as evidence; the gallery does not show them.
+
+Two findings came out of it and are fixed:
+
+- **Artboard property key 9 was unnamed by the decompiler.** `NODE_X_ARTBOARD`/`NODE_Y_ARTBOARD`
+  (keys 9 and 10, defined on `NodeBase` as `xArtboard`/`yArtboard`) had no entry in
+  `generated_registry::property_name`, so `decompile` printed `key9` and a reproduction could not see
+  what value to set. Both keys now resolve; pinned by
+  `test_artboard_x_and_y_resolve_to_named_properties`. `gapType: property-drift`.
+- **`fill` under an artboard was mis-documented, not rejected.** `build_scene` has always accepted a
+  `fill` as a direct artboard child (the artboard is a `LayoutComponent`, hence a
+  `ShapePaintContainer`), but `rive-cli describe fill` advertised `valid_parents: ["shape"]`. The
+  discovery table now reports `shape, artboard, layout_component` for both `fill` and `stroke`.
+  `gapType: property-drift`.
+
+The official file leaves `Shape` at local 3 unnamed, while our JSON requires names for keyframe
+targeting. This expected structural divergence is labelled `gapType: encoding-difference`; only
+structural and visual equivalence are targeted.
+
+### Rung 1 — `button.riv`
+
+64 objects, 31 distinct types, an 805 kB embedded Inter variable font, a text run with two
+`TextStyleAxis` variation axes, three animations and a listener-driven state machine.
+
+**Result: 64/64 objects, empty type-delta table, 0.0000% at frames 0, 15, 30 and 45** driven through
+`State Machine 1`, and 0.0000% at frames 0 and 30 driven through the `Down` animation.
+
+The font is extracted from the official file's `FileAssetContents` into
+`parity/reproductions/assets/Inter.ttf` (805528 B,
+`bfff5663c84b220f3c6dbb0e5225c66eab3d79e0d67351bbac151b5109c78a2d`) and re-embedded via
+`font_asset.source`.
+
+One defect was found and fixed:
+
+- **`text` silently dropped `x` and `y`.** `ObjectSpec::Text` had no `x`/`y` fields, so a scene
+  setting them parsed cleanly and emitted nothing — `Text` extends `Node` and owns keys 13/14. The
+  label rendered 63.7 px off, which was the entire 0.5011% difference on the first attempt. With the
+  fields wired the rung went to 0.0000%. `gapType: property-drift`.
+
+Remaining drift, all confirmed visually inert at every compared frame:
+
+- `Artboard.styleId` (key 494) cannot be set from JSON; `ArtboardSpec` has no `style_id`.
+  `gapType: property-drift`. Tracking: [#123](https://github.com/George-RD/rive-rs-cli/issues/123).
+  Acceptance: the schema accepts `style_id` and decompile/generate preserve it.
+- `LayoutComponentStyle` emits none of the reference's ten `*UnitsValue` properties; the spec exposes
+  `margin_left` but not `margin_left_units_value`. `gapType: property-drift`. Tracking:
+  [#123](https://github.com/George-RD/rive-rs-cli/issues/123). Acceptance: all reference unit properties
+  are expressible and round-trip without changing layout.
+- `Rectangle` emits all four corner radii plus `linkCornerRadius`; the reference emits only
+  `cornerRadiusTL` and relies on the link default. `gapType: encoding-difference`. Expected and
+  accepted while rendered geometry remains equal.
+- `LinearAnimation` emits `fps` and `duration` because `AnimationSpec` requires them; the reference
+  omits both and relies on the 60/60 defaults. Same values, so no behavioural difference.
+  `gapType: encoding-difference`. Expected and accepted while animation timing remains equal.
+- `KeyFrameDouble` emits `frame: 0` and `interpolatorId: 4294967295` where the reference omits both.
+  `gapType: encoding-difference`. Expected and accepted while keyframe values remain equal.
+- `StateTransition` cannot carry `flags`, `interpolationType` or `interpolatorId`; `TransitionSpec`
+  has no fields for them, so the reference's eased 200 ms transitions become linear in ours.
+  `gapType: property-drift`. Tracking: [#125](https://github.com/George-RD/rive-rs-cli/issues/125).
+  Acceptance: transition metadata is expressible and the reproduced transition uses the reference
+  interpolation behavior.
+
+### Rung 2 — `coffee_loader.riv`
+
+250 objects, 30 distinct types, five state-machine layers including a 1D blend state, nine
+artboard-scoped `CubicEaseInterpolator`s shared across seven animations, and ninety keyframes.
+
+**Result: 250/247 objects, 0.2833% maximum across frames 0, 15, 30 and 45.** The reproduction went
+28.3521% → 7.2622% → 0.2833% as each of the three defects below was fixed.
+
+Defects found and fixed:
+
+- **No transform component could set `rotation`, `scale_x` or `scale_y` from JSON.** `node` and
+  `shape` exposed only `x`/`y`; the five parametric shapes (`ellipse`, `rectangle`, `triangle`,
+  `polygon`, `star`) exposed none of the five. All of them are `Node` subclasses owning keys 13-17,
+  and `rive-cli describe rectangle` already advertised all five as *animatable* — so the tool let you
+  keyframe a property it would not let you set. This was the largest single error, worth roughly 21
+  percentage points of pixel difference on this file. `gapType: property-drift`.
+  It was also silently corrupting existing work: `showcase/pulse_button.json` and
+  `showcase/rocket_launch.json` both set `rotation` on shapes and had been ignored since they were
+  authored, and `tests/fixtures/comparison_official_test.json` carried four `scale_x`/`scale_y`
+  values transcribed from the reference that were never emitted. All three now render as authored;
+  four PNG baselines were updated to match.
+- **`stroke` could not set `transformAffectsStroke`.** `ObjectSpec::Stroke` had no field, and the
+  `Stroke` object defaulted the value to `0` and emitted only when non-zero — so `false` was
+  unrepresentable while `true` was implied by omission. The runtime default is `true`, so the object
+  now defaults to `1` and emits only when `false`. Existing scenes are byte-identical. Worth roughly
+  7 percentage points here, because the smoke and cup strokes sit under scales from 0.47 to 2.13.
+  `gapType: property-drift`.
+- **`shape` could not be hidden.** The reference marks one shape `drawableFlags: 1`
+  (`DrawableFlag::Hidden`). `shape` now takes `hidden: true`. `gapType: property-drift`.
+
+Unresolved, and the reason this rung is 247 objects rather than 250:
+
+- **`stroke.thickness` cannot be keyframed.** The `Stop` animation keyframes key 47 on the stroke at
+  local 47. `AGENTS.md` states that strokes expose `is_visible`, not `thickness`, and that rule is
+  respected here, so one `KeyedObject`/`KeyedProperty`/`KeyFrameDouble` triple is absent — the whole
+  3-object delta. It is visually inert in this file: the single keyframe sets thickness to `6.0`,
+  which is already the stroke's static value. Upstream `dev/defs/shapes/paint/stroke.json` at `40ff578`
+  marks `thickness` `"animates": true`, and this official file exercises it. `gapType: missing-type`
+  (property coverage). Tracking: [#125](https://github.com/George-RD/rive-rs-cli/issues/125).
+  Acceptance: a thickness keyframe produces the missing three objects and matches the official
+  animation without violating the stroke property contract.
+- **`origin_x: 0.0` is unrepresentable.** `Rectangle`/`Ellipse` default `origin_x`/`origin_y` to
+  `0.0` and emit only when non-zero, but the Rive default is `0.5`, so an author asking for `0.0`
+  gets `0.5`. The reference's `Loader_Fill` rectangle sets `originX: 0.0`; the reproduction
+  compensates with `x: 7.9036255` (half the width). `tests/fixtures/constraints.json` already sets
+  `origin_x: 0.0` and is silently getting `0.5`. `gapType: property-drift`, unfixed. Tracking:
+  [#126](https://github.com/George-RD/rive-rs-cli/issues/126). Acceptance: explicit zero differs from
+  omitted and survives generation, validation and decompilation.
+- **Interpolators are artboard-scoped when emitted but validated per animation.**
+  `register_interpolators` walks every animation and emits each named interpolator once at artboard
+  scope, but `validate_artboard_spec` resolves a keyframe's `interpolator` only against its own
+  animation's list. Sharing one interpolator across animations therefore requires repeating the whole
+  `interpolators` array in each animation that references it. `gapType: property-drift`. Tracking:
+  [#125](https://github.com/George-RD/rive-rs-cli/issues/125). Acceptance: a single artboard-scoped
+  interpolator declaration resolves from every animation that references its name.
+- **Duplicate object names are rejected.** The reference has two nodes named `Smoke`; the
+  reproduction calls them `Smoke_A` and `Smoke_B`. Names do not affect rendering.
+  `gapType: encoding-difference`. Expected and accepted while object targeting remains unambiguous.
+- Object emission order differs throughout: our builder writes parents before children depth-first,
+  while the editor emits paints after the shapes that own them. `parentId` relationships are
+  identical, so the runtime resolves the same tree. `gapType: encoding-difference`. Expected and
+  accepted while hierarchy and rendered output remain equal.
+
+The residual 0.2833% is not attributed to a specific cause. It is stable across frames, survives the
+three fixes above, and is consistent with antialiasing along the cup outline given the
+`origin_x` compensation.
 
 ## Comparison Fixtures
 
@@ -94,7 +259,7 @@ The following parity gaps were identified and fixed:
 3. **Missing animation quantize**: LinearAnimation had a `quantize` field that was never emitted in `properties()`. Added emission when non-zero.
 4. **Missing JSON schema fields**: Added `x`, `y`, `origin_x`, `origin_y` to `ArtboardSpec` and `quantize`, `work_start`, `work_end`, `enable_work_area` to `AnimationSpec` so users can set these from JSON.
 5. **Node children support**: Added `children: Option<Vec<ObjectSpec>>` to `Node` in spec.rs and updated builder to recurse through children, enabling proper hierarchy construction from decompiled references.
-6. **ToC backing-code packing**: the encoder packed 16 two-bit codes per `u32` and the parser decoded the same way, but `rive-runtime/include/rive/runtime_header.hpp:87-104` reloads a fresh `u32` every 4 codes. Any file with more than 4 ToC keys was therefore misaligned by 4 bytes per extra word. `demo/riv/reference/official_test.riv` (8 ToC keys) previously decompiled to 409 objects led by two phantom `type=0` entries and failed `validate`; it now parses to 407 objects starting at Backboard. The committed reference decompiles were regenerated.
+6. **ToC backing-code packing**: the encoder packed 16 two-bit codes per `u32` and the parser decoded the same way, but `rive-runtime/include/rive/runtime_header.hpp:87-104` reloads a fresh `u32` every 4 codes. Any file with more than 4 ToC keys was therefore misaligned by 4 bytes per extra word. `parity/official/official_test.riv` (8 ToC keys) previously decompiled to 409 objects led by two phantom `type=0` entries and failed `validate`; it now parses to 407 objects starting at Backboard. The committed reference decompiles were regenerated.
 7. **Empty ToC**: `encode_riv` only added keys whose backing type was *unknown*, while `encode_toc` panicked on exactly those keys, so the ToC was always empty by construction. The encoder now declares every property key the file writes. This is what allows a runtime to skip object types it does not know instead of aborting the object stream.
 8. **File assets nested inside the artboard**: `image_asset`/`font_asset`/`audio_asset` were emitted as artboard children, so the runtime's artboard-local index space disagreed with the writer's by one per asset. Every `parentId` after an asset resolved to the wrong object; a scene with an asset plus any drawable made `@rive-app/canvas` 2.39.1 hang indefinitely instead of reporting an error. Assets are now hoisted to file scope, between the Backboard and the first Artboard, which is where Rive's own exporter puts them. `gapType: encoding-difference`.
 9. **`text_style` emitted `TextStyle` (573) instead of `TextStylePaint` (137)**: `TextStyle` is a plain `ContainerComponent` in the runtime; only its subclass `TextStylePaint` implements `ShapePaintContainer` and draws glyphs. Text therefore rendered nothing no matter what font or fill was attached, and every committed text baseline was a flat colour. `text_style` now emits 137 and accepts `fill`/`stroke` children. `gapType: missing-type`.
@@ -146,10 +311,22 @@ python3 scripts/vision_gate_orchestrator.py
 | comparison_clip_tests | N/A | No reference .riv | Only decompiled JSON available |
 | comparison_official_test | ~100% | Fail | Missing animations, state machines, interpolators |
 
-## How to add a new comparison
+## How to add a reproduction rung
+1. Add the official file to `parity/official/manifest.json` with its upstream repo, commit SHA, path,
+   SHA-256 and byte size, then run `bash parity/fetch-official.sh` to download and verify it.
+2. `rive-cli decompile parity/official/<name>.riv` and read the object tree.
+3. Author `parity/reproductions/<name>.json`, generate `parity/reproductions/<name>.riv`, commit both.
+4. `rive-cli compare parity/official/<name>.riv parity/reproductions/<name>.riv --frames … --json`
+5. Add the rung to `RUNGS` in `parity/collate-results.sh` and re-run it to refresh
+   `parity/results.json`; the site gallery and `tests/playwright/site-validation.js` read that file.
+6. Bump `EXPECTED_SCENES` in `tests/playwright/site-validation.js` to `2 * rungs + 1`.
+7. Record the numbers and every divergence in the Reproduction ladder section above, each labelled
+   with a `gapType`.
+
+## How to add a comparison fixture (older workflow)
 1. Acquire official .riv from rive-runtime repo
-2. Place in demo/riv/reference/
-3. Run `cargo run -- decompile demo/riv/reference/<file>.riv > demo/riv/reference/<file>.decompiled.json`
+2. Place in `parity/official/`
+3. Run `cargo run -- decompile parity/official/<file>.riv > parity/official/<file>.decompiled.json`
 4. Create tests/fixtures/comparison_<name>.json
 5. Add to `tests/playwright/shared.js` `FIXTURES` (runtime regression). Fixtures with committed PNG baselines are the ones absent from `RUNTIME_ONLY_FIXTURES`; add the name there too if it should stay runtime-only.
 6. Add e2e test in tests/e2e.rs
@@ -173,3 +350,27 @@ python3 scripts/vision_gate_orchestrator.py
 - [x] Root-cause three of the five `runtime-rejection` fixtures (`follow_path_constraint`, `mesh`, `nslicer` were writer/fixture defects and are fixed)
 - [x] Upgrade the vendored runtime to `@rive-app/canvas` 2.39.1 — did **not** close the remaining two rows, refuting the version-lag theory
 - [ ] Establish why the importer rejects types 481/483/484/486 and 612/618/621/626/627/631 when `CoreRegistry::makeCoreInstance` constructs all of them; the leading hypothesis is object placement in the fixture hierarchy, unverified
+- [x] Pin the official corpus in `parity/official/` with SHA-256 provenance and a refresh script
+- [x] Add `rive-cli compare` (structural type-delta table plus per-frame pixel difference)
+- [x] Walk the reproduction ladder: `button.riv` at 0.0000%, `coffee_loader.riv` at 0.2833%
+- [x] Point the site at the measured comparison instead of self-authored showcases
+- [ ] Make `origin_x: 0.0` representable on parametric shapes (currently indistinguishable from unset,
+      so `tests/fixtures/constraints.json` silently gets 0.5). Tracking:
+      [#126](https://github.com/George-RD/rive-rs-cli/issues/126); acceptance: explicit zero survives
+      generation, validation and decompilation.
+- [ ] Let a keyframe reference an interpolator declared in another animation without repeating the
+      whole `interpolators` array. Tracking: [#125](https://github.com/George-RD/rive-rs-cli/issues/125);
+      acceptance: one artboard-scoped declaration resolves from every referencing animation.
+- [ ] Expose `StateTransition` `flags`, `interpolationType` and `interpolatorId` in `TransitionSpec`.
+      Tracking: [#125](https://github.com/George-RD/rive-rs-cli/issues/125); acceptance: transition
+      metadata round-trips and reproduces the reference interpolation behavior.
+- [ ] Expose `Artboard.style_id` and `LayoutComponentStyle`'s `*_units_value` properties. Tracking:
+      [#123](https://github.com/George-RD/rive-rs-cli/issues/123); acceptance: all reference properties
+      are expressible and layout output remains unchanged when defaults are used.
+- [ ] Decide whether `stroke.thickness` should be keyframable; upstream marks it `"animates": true`
+      and `coffee_loader.riv` uses it, but `AGENTS.md` forbids it. Tracking:
+      [#125](https://github.com/George-RD/rive-rs-cli/issues/125); acceptance: the decision is encoded
+      in the property resolver and the coffee-loader object delta is either removed or documented.
+- [ ] Widen the corpus beyond three reproductions now that the ladder is walked. Tracking:
+      [#125](https://github.com/George-RD/rive-rs-cli/issues/125); acceptance: each added official file
+      has a pinned manifest entry, reproduction, compare result and site validation coverage.

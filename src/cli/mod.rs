@@ -211,6 +211,73 @@ pub enum Command {
         #[arg(long, help = "Output as JSON")]
         json: bool,
     },
+    #[command(
+        about = "Compare a reference .riv against a candidate structurally and visually",
+        long_about = "Compare a reference .riv against a candidate structurally and visually.\n\nExamples:\n  rive-cli compare parity/official/trim.riv parity/reproductions/trim.riv\n  rive-cli compare official.riv ours.riv --frames 0,15,30 --max-pixel-diff 5\n  rive-cli compare official.riv ours.riv --reference-animation idle --candidate-animation Idle"
+    )]
+    Compare {
+        #[arg(help = "Path to the reference .riv file")]
+        reference: PathBuf,
+
+        #[arg(help = "Path to the candidate .riv file")]
+        candidate: PathBuf,
+
+        #[arg(
+            long,
+            default_value = "0",
+            help = "Frames to compare: list (0,15,30) or range (start..end:step)"
+        )]
+        frames: String,
+
+        #[arg(long, default_value_t = 512, help = "Logical render width in pixels")]
+        width: u32,
+
+        #[arg(long, default_value_t = 512, help = "Logical render height in pixels")]
+        height: u32,
+
+        #[arg(long, default_value_t = 2, help = "Device pixel ratio multiplier")]
+        scale: u32,
+
+        #[arg(
+            long,
+            help = "Background color behind both artboards, e.g. #202024 (default transparent)"
+        )]
+        background: Option<String>,
+
+        #[arg(
+            long = "reference-animation",
+            help = "Animation to scrub in the reference file"
+        )]
+        reference_animation: Option<String>,
+
+        #[arg(
+            long = "candidate-animation",
+            help = "Animation to scrub in the candidate file"
+        )]
+        candidate_animation: Option<String>,
+
+        #[arg(
+            long = "reference-state-machine",
+            help = "State machine to advance in the reference file"
+        )]
+        reference_state_machine: Option<String>,
+
+        #[arg(
+            long = "candidate-state-machine",
+            help = "State machine to advance in the candidate file"
+        )]
+        candidate_state_machine: Option<String>,
+
+        #[arg(
+            long = "max-pixel-diff",
+            value_name = "PCT",
+            help = "Exit 1 when the maximum pixel difference exceeds this percentage (0-100)"
+        )]
+        max_pixel_diff: Option<f64>,
+
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
+    },
     #[command(about = "Print the SceneSpec JSON schema")]
     Schema {
         #[arg(long, help = "Print compact JSON instead of indented")]

@@ -154,7 +154,7 @@ pub fn build_scene(
     spec: &SceneSpec,
     base_dir: Option<&Path>,
 ) -> Result<Vec<Box<dyn RiveObject>>, String> {
-    validate_scene_spec(spec)?;
+    let indexes = validate_scene_spec(spec)?;
 
     let artboard_specs = resolve_artboards(spec)?;
     let mut artboard_name_to_index: HashMap<String, usize> = HashMap::new();
@@ -168,17 +168,19 @@ pub fn build_scene(
     let mut asset_ids: HashMap<String, (u64, FileAssetKind)> = HashMap::new();
     let mut asset_kinds: Vec<FileAssetKind> = Vec::new();
     let mut next_asset_ordinal: u64 = 0;
-    for artboard_spec in &artboard_specs {
+    for (artboard_spec, index) in artboard_specs.iter().zip(&indexes) {
+        for (asset_name, asset_kind) in &index.assets {
+            if asset_ids.contains_key(asset_name) {
+                return Err(format!(
+                    "asset '{asset_name}' is declared more than once; Rive stores assets at file scope, so their names must be unique across every artboard"
+                ));
+            }
+            asset_ids.insert(asset_name.clone(), (next_asset_ordinal, *asset_kind));
+            asset_kinds.push(*asset_kind);
+            next_asset_ordinal += 1;
+        }
         for child in &artboard_spec.children {
-            if let Some((asset_name, asset_kind)) = file_asset(child) {
-                if asset_ids.contains_key(asset_name) {
-                    return Err(format!(
-                        "asset '{asset_name}' is declared more than once; Rive stores assets at file scope, so their names must be unique across every artboard"
-                    ));
-                }
-                asset_ids.insert(asset_name.to_owned(), (next_asset_ordinal, asset_kind));
-                asset_kinds.push(asset_kind);
-                next_asset_ordinal += 1;
+            if file_asset(child).is_some() {
                 append_file_asset(child, &mut objects, base_dir)?;
             }
         }
@@ -384,6 +386,10 @@ mod tests {
                         name: "dup_shape".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: None,
                     }],
                     animations: None,
@@ -402,6 +408,10 @@ mod tests {
                         name: "dup_shape".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: None,
                     }],
                     animations: None,
@@ -543,9 +553,18 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![
                         ObjectSpec::Ellipse {
                             name: "ellipse_1".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 120.0,
                             height: 80.0,
                             origin_x: None,
@@ -623,8 +642,17 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::Ellipse {
                         name: "ellipse_1".to_string(),
+                        x: None,
+                        y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
                         width: 120.0,
                         height: 80.0,
                         origin_x: None,
@@ -707,8 +735,17 @@ mod tests {
                         name: "ChildShape".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: Some(vec![ObjectSpec::Ellipse {
                             name: "ChildPath".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 40.0,
                             height: 40.0,
                             origin_x: None,
@@ -777,8 +814,17 @@ mod tests {
                     name: "Target".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::Ellipse {
                         name: "TargetPath".to_string(),
+                        x: None,
+                        y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
                         width: 20.0,
                         height: 20.0,
                         origin_x: None,
@@ -1230,6 +1276,8 @@ mod tests {
                 height: 100.0,
                 children: vec![ObjectSpec::Text {
                     name: "Label".to_string(),
+                    x: None,
+                    y: None,
                     align_value: None,
                     sizing_value: None,
                     overflow_value: None,
@@ -1496,6 +1544,10 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::PointsPath {
                         name: "points_path_1".to_string(),
                         x: None,
@@ -1547,6 +1599,10 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![
                         ObjectSpec::GradientStop {
                             name: Some("gradient_stop_1".to_string()),
@@ -1726,6 +1782,10 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::TrimPath {
                         name: "trim_1".to_string(),
                         start: None,
@@ -1767,12 +1827,17 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::Stroke {
                         name: "stroke_1".to_string(),
                         thickness: Some(2.0),
                         cap: None,
                         join: None,
                         is_visible: None,
+                        transform_affects_stroke: None,
                         children: Some(vec![
                             ObjectSpec::SolidColor {
                                 name: "color_1".to_string(),
@@ -1814,6 +1879,10 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::DashPath {
                         name: "dp_1".to_string(),
                         offset: None,
@@ -1854,12 +1923,17 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::Stroke {
                         name: "stroke_1".to_string(),
                         thickness: Some(2.0),
                         cap: None,
                         join: None,
                         is_visible: None,
+                        transform_affects_stroke: None,
                         children: Some(vec![ObjectSpec::DashPath {
                             name: "dp_1".to_string(),
                             offset: None,
@@ -1932,6 +2006,10 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::Feather {
                         name: "feather_1".to_string(),
                         strength: Some(1.0),
@@ -1974,6 +2052,10 @@ mod tests {
                     name: "shape_1".to_string(),
                     x: None,
                     y: None,
+                    rotation: None,
+                    scale_x: None,
+                    scale_y: None,
+                    hidden: None,
                     children: Some(vec![ObjectSpec::Fill {
                         name: "fill_1".to_string(),
                         fill_rule: None,
@@ -2091,8 +2173,17 @@ mod tests {
                         name: "shape_a".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: Some(vec![ObjectSpec::Ellipse {
                             name: "ellipse_a".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 50.0,
                             height: 50.0,
                             origin_x: None,
@@ -2115,8 +2206,17 @@ mod tests {
                         name: "shape_b".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: Some(vec![ObjectSpec::Rectangle {
                             name: "rect_b".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 100.0,
                             height: 80.0,
                             corner_radius: None,
@@ -2482,8 +2582,17 @@ mod tests {
                         name: "s_a".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: Some(vec![ObjectSpec::Ellipse {
                             name: "e_a".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 50.0,
                             height: 50.0,
                             origin_x: None,
@@ -2535,8 +2644,17 @@ mod tests {
                         name: "s_b".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: Some(vec![ObjectSpec::Ellipse {
                             name: "e_b".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 80.0,
                             height: 80.0,
                             origin_x: None,
@@ -2594,8 +2712,17 @@ mod tests {
                         name: "s_a".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: Some(vec![ObjectSpec::Ellipse {
                             name: "e_a".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 50.0,
                             height: 50.0,
                             origin_x: None,
@@ -2647,8 +2774,17 @@ mod tests {
                         name: "s_b".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
+                        hidden: None,
                         children: Some(vec![ObjectSpec::Ellipse {
                             name: "e_b".to_string(),
+                            x: None,
+                            y: None,
+                            rotation: None,
+                            scale_x: None,
+                            scale_y: None,
                             width: 80.0,
                             height: 80.0,
                             origin_x: None,
@@ -2920,6 +3056,9 @@ mod tests {
                         name: "node_1".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
                         children: None,
                     }],
                     animations: None,
@@ -2938,6 +3077,9 @@ mod tests {
                         name: "node_1".to_string(),
                         x: None,
                         y: None,
+                        rotation: None,
+                        scale_x: None,
+                        scale_y: None,
                         children: None,
                     }],
                     animations: None,

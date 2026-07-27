@@ -3,7 +3,7 @@ mod cli;
 use clap::Parser;
 #[cfg(feature = "mcp")]
 use rive_cli::mcp;
-use rive_cli::{ai, builder, discovery, encoder, objects, render, scaffold, validator};
+use rive_cli::{ai, builder, compare, discovery, encoder, objects, render, scaffold, validator};
 fn json_error(command: &str, code: &str, message: impl std::fmt::Display) -> ! {
     let envelope = serde_json::json!({
         "ok": false,
@@ -35,6 +35,49 @@ fn json_success<T: serde::Serialize>(command: &str, value: &T) {
         ),
     }
 }
+fn json_compare_threshold_failure(
+    report: &compare::CompareReport,
+    threshold: f64,
+    message: &str,
+) -> ! {
+    let mut output = serde_json::to_value(report).unwrap_or_else(|error| {
+        json_error(
+            "compare",
+            "encode-failed",
+            format!("JSON serialization failed: {error}"),
+        );
+    });
+    if let Some(object) = output.as_object_mut() {
+        object.insert("ok".to_owned(), serde_json::Value::Bool(false));
+        object.insert(
+            "command".to_owned(),
+            serde_json::Value::String("compare".to_owned()),
+        );
+        object.insert(
+            "code".to_owned(),
+            serde_json::Value::String("pixel-diff-threshold".to_owned()),
+        );
+        object.insert(
+            "message".to_owned(),
+            serde_json::Value::String(message.to_owned()),
+        );
+        object.insert(
+            "max_pixel_diff_threshold".to_owned(),
+            serde_json::json!(threshold),
+        );
+    }
+    match serde_json::to_string_pretty(&output) {
+        Ok(text) => {
+            eprintln!("{text}");
+            std::process::exit(1);
+        }
+        Err(error) => json_error(
+            "compare",
+            "encode-failed",
+            format!("JSON serialization failed: {error}"),
+        ),
+    }
+}
 
 fn main() {
     let command_line: Vec<String> = std::env::args().collect();
@@ -42,8 +85,8 @@ fn main() {
     let json_command = command_line
         .iter()
         .find_map(|argument| match argument.as_str() {
-            "generate" | "new" | "validate" | "inspect" | "decompile" | "render" | "schema"
-            | "types" | "describe" | "ai" => Some(argument.as_str()),
+            "generate" | "new" | "validate" | "inspect" | "decompile" | "render" | "compare"
+            | "schema" | "types" | "describe" | "ai" => Some(argument.as_str()),
             _ => None,
         })
         .unwrap_or("cli");
@@ -437,6 +480,85 @@ fn main() {
                         json_error("render", "render-failed", e);
                     }
                     eprintln!("render failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        cli::Command::Compare {
+            reference,
+            candidate,
+            frames,
+            width,
+            height,
+            scale,
+            background,
+            reference_animation,
+            candidate_animation,
+            reference_state_machine,
+            candidate_state_machine,
+            max_pixel_diff,
+            json,
+        } => {
+            let json = json || global_json;
+            let frame_list = render::parse_frame_spec(&frames).unwrap_or_else(|e| {
+                if json {
+                    json_error("compare", "usage", format!("invalid --frames value: {}", e));
+                }
+                eprintln!("invalid --frames value: {}", e);
+                std::process::exit(1);
+            });
+            if let Some(threshold) = max_pixel_diff
+                && (!threshold.is_finite() || !(0.0..=100.0).contains(&threshold))
+            {
+                let message = format!(
+                    "--max-pixel-diff must be a finite percentage between 0 and 100, got {threshold}"
+                );
+                if json {
+                    json_error("compare", "usage", message);
+                }
+                eprintln!("{message}");
+                std::process::exit(1);
+            }
+            let options = compare::CompareOptions {
+                reference,
+                candidate,
+                frames: frame_list,
+                width,
+                height,
+                scale,
+                background,
+                reference_animation,
+                candidate_animation,
+                reference_state_machine,
+                candidate_state_machine,
+            };
+            match compare::compare(&options) {
+                Ok(report) => {
+                    if let Some(threshold) = max_pixel_diff
+                        && report.max_pixel_difference > threshold
+                    {
+                        let message = format!(
+                            "maximum pixel difference {:.4}% exceeds the {:.4}% threshold",
+                            report.max_pixel_difference, threshold
+                        );
+                        if json {
+                            json_compare_threshold_failure(&report, threshold, &message);
+                        }
+                        print!("{}", compare::compare_report_text(&report));
+                        eprintln!("{message}");
+                        std::process::exit(1);
+                    }
+                    if json {
+                        json_success("compare", &report);
+                    } else {
+                        print!("{}", compare::compare_report_text(&report));
+                    }
+                }
+                Err(e) => {
+                    if json {
+                        json_error("compare", "compare-failed", e);
+                    }
+                    eprintln!("compare failed: {}", e);
                     std::process::exit(1);
                 }
             }

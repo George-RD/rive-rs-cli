@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::objects::core::{BackingType, is_bool_property, property_backing_type, type_keys};
 
+use super::objects::FileAssetKind;
 use super::parsers::{
     animatable_properties_for_object_type, condition_op_is_valid, interpolation_type_from_name,
     invalid_animatable_property_error, json_value_to_color, json_value_to_f32,
@@ -16,7 +17,7 @@ use super::spec::{
     TextModifierGroupChildSpec, TransitionChildSpec,
 };
 
-pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
+pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<Vec<SpecIndex>, String> {
     if spec.scene_format_version != SCENE_FORMAT_VERSION {
         return Err(format!(
             "unsupported scene_format_version {} (expected {})",
@@ -27,12 +28,13 @@ pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
     let artboard_specs = super::scene::resolve_artboards(spec)?;
 
     let mut artboard_names: HashSet<String> = HashSet::new();
+    let mut indexes: Vec<SpecIndex> = Vec::with_capacity(artboard_specs.len());
     for artboard_spec in &artboard_specs {
         if artboard_names.contains(&artboard_spec.name) {
             return Err(format!("duplicate artboard name '{}'", artboard_spec.name));
         }
         artboard_names.insert(artboard_spec.name.clone());
-        validate_artboard_spec(artboard_spec)?;
+        indexes.push(validate_artboard_spec(artboard_spec)?);
     }
 
     let mut artboard_deps: HashMap<String, Vec<String>> = HashMap::new();
@@ -44,10 +46,10 @@ pub(crate) fn validate_scene_spec(spec: &SceneSpec) -> Result<(), String> {
     }
     detect_artboard_cycles(&artboard_deps)?;
 
-    Ok(())
+    Ok(indexes)
 }
 
-pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(), String> {
+pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<SpecIndex, String> {
     if artboard_spec.width < 0.0 {
         return Err(format!(
             "artboard '{}' width must be non-negative",
@@ -478,7 +480,7 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
         }
     }
 
-    Ok(())
+    Ok(spec_index)
 }
 
 pub(crate) fn validate_object_spec(
@@ -1585,7 +1587,7 @@ pub(crate) fn validate_object_spec(
 pub(crate) struct SpecIndex {
     pub type_keys: HashMap<String, u16>,
     pub ambiguous: HashSet<String>,
-    pub assets: Vec<(String, u16)>,
+    pub assets: Vec<(String, FileAssetKind)>,
 }
 
 impl SpecIndex {
@@ -1593,11 +1595,17 @@ impl SpecIndex {
         let mut index = SpecIndex::default();
         for child in children {
             collect_object_type_key(child, &mut |name: &str, type_key: u16| {
-                if matches!(
-                    type_key,
-                    type_keys::IMAGE_ASSET | type_keys::FONT_ASSET | type_keys::AUDIO_ASSET
-                ) {
-                    index.assets.push((name.to_string(), type_key));
+                match type_key {
+                    type_keys::IMAGE_ASSET => {
+                        index.assets.push((name.to_string(), FileAssetKind::Image));
+                    }
+                    type_keys::FONT_ASSET => {
+                        index.assets.push((name.to_string(), FileAssetKind::Font));
+                    }
+                    type_keys::AUDIO_ASSET => {
+                        index.assets.push((name.to_string(), FileAssetKind::Audio));
+                    }
+                    _ => {}
                 }
                 if index.type_keys.insert(name.to_string(), type_key).is_some() {
                     index.ambiguous.insert(name.to_string());

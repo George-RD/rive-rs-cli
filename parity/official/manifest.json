@@ -1,0 +1,68 @@
+[
+  {
+    "name": "trim.riv",
+    "source": "in-repo",
+    "upstream_repo": null,
+    "upstream_path": null,
+    "commit_sha": null,
+    "license": "MIT",
+    "license_holder": "Rive",
+    "sha256": "c9f96868800e044f65c9146d1097655e438be718ccd3d90a0de0eb80a71b984a",
+    "bytes": 184
+  },
+  {
+    "name": "quantize_test.riv",
+    "source": "in-repo",
+    "upstream_repo": null,
+    "upstream_path": null,
+    "commit_sha": null,
+    "license": "MIT",
+    "license_holder": "Rive",
+    "sha256": "f8e0eb98723bedeec5ef225ecd217949b9ff8848dcdcc8681b3b04367b3d78e7",
+    "bytes": 200
+  },
+  {
+    "name": "official_test.riv",
+    "source": "rive-app/rive-runtime",
+    "upstream_repo": "rive-app/rive-runtime",
+    "upstream_path": "renderer/webgpu_player/rivs/fire_button.riv",
+    "commit_sha": "40ff578d271ac5fb7cb7bea2b7f52c59f9d0238a",
+    "license": "MIT",
+    "license_holder": "Rive",
+    "sha256": "7c084a8aa6d4589a8b506ad14ad8d99a7358fbb49ac69b8cf1a8a9fc422879c4",
+    "bytes": 4407
+  },
+  {
+    "name": "coffee_loader.riv",
+    "source": "rive-app/rive-runtime",
+    "upstream_repo": "rive-app/rive-runtime",
+    "upstream_path": "renderer/webgpu_player/rivs/coffee_loader.riv",
+    "commit_sha": "40ff578d271ac5fb7cb7bea2b7f52c59f9d0238a",
+    "license": "MIT",
+    "license_holder": "Rive",
+    "sha256": "b89d55f169811f31e48b0f87bceedbb689d64b296036077011b7010c23fa1ab0",
+    "bytes": 2605
+  },
+  {
+    "name": "fire_button.riv",
+    "source": "rive-app/rive-runtime",
+    "upstream_repo": "rive-app/rive-runtime",
+    "upstream_path": "renderer/webgpu_player/rivs/fire_button.riv",
+    "commit_sha": "40ff578d271ac5fb7cb7bea2b7f52c59f9d0238a",
+    "license": "MIT",
+    "license_holder": "Rive",
+    "sha256": "7c084a8aa6d4589a8b506ad14ad8d99a7358fbb49ac69b8cf1a8a9fc422879c4",
+    "bytes": 4407
+  },
+  {
+    "name": "button.riv",
+    "source": "rive-app/rive-flutter",
+    "upstream_repo": "rive-app/rive-flutter",
+    "upstream_path": "example/assets/button.riv",
+    "commit_sha": "4e4b87d8dd323c88b0cdd06c0d1c9ca038d456a0",
+    "license": "MIT",
+    "license_holder": "Rive",
+    "sha256": "0db110dc42c7fe64463d720816a9ad2606be6f06db2244b4aad1391ae03f39a2",
+    "bytes": 806209
+  }
+]
