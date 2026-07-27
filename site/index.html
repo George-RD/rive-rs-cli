@@ -3,105 +3,179 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>rive-cli — Rive animations, compiled from JSON</title>
+    <title>rive-cli — Give your animation agent a real test</title>
     <meta
       name="description"
-      content="rive-cli compiles JSON scene specifications into Rive .riv binaries. It reads real Rive editor output, and reproduces it from JSON to a measured pixel tolerance."
+      content="rive-cli turns JSON scene files into Rive binaries, then checks that they load, render, and match the file you meant to make."
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <header class="hero">
-      <div class="hero-art">
-        <canvas
-          class="scene"
-          width="600"
-          height="600"
-          aria-label="Official Rive coffee loader animation"
-        ></canvas>
-      </div>
-      <div class="hero-copy">
-        <p class="eyebrow">rive-cli</p>
-        <h1>Compiled from JSON. Measured against Rive's own files.</h1>
-        <p class="lede">
-          A command-line compiler for the Rive binary format. Write a scene as JSON, get a
-          <code>.riv</code>. The animation beside this text is not ours — it is an official file from
-          <code>rive-app/rive-runtime</code>, read and played back through the same pipeline.
-        </p>
-        <div class="hero-actions">
-          <a class="button primary" href="#gallery">See the comparison</a>
-          <a class="button" href="#verify">See how it is measured</a>
-        </div>
-      </div>
+  <body class="landing">
+    <header class="site-header shell">
+      <a class="wordmark" href="index.html" aria-label="rive-cli home"><span>rive</span><b>-cli</b></a>
+      <nav aria-label="Main navigation">
+        <a href="#workflow">How it works</a>
+        <a href="#for-agents">For agents</a>
+        <a href="lab.html">Verification Lab</a>
+        <a class="nav-github" href="https://github.com/George-RD/rive-rs-cli">GitHub ↗</a>
+      </nav>
     </header>
 
-    <section class="claim">
-      <p>
-        <strong>Ground truth first.</strong> Every pair below puts an official, Rive-authored
-        <code>.riv</code> on the left and our reproduction of it on the right — both rendered at the
-        same frames by <code>rive-cli compare</code>, both playing live in the Rive WebAssembly
-        runtime in your browser. The figure under each pair is the largest share of pixels that
-        differ across the compared frames. Nothing here is a video or a GIF: the binaries are the
-        ones committed to the repository, and the JSON we compiled is one disclosure away.
-      </p>
-    </section>
+    <main>
+      <section class="hero shell">
+        <div class="hero-copy">
+          <p class="hero-label">rive-cli / code-first Rive files</p>
+          <h1>Your agent made an animation. <em>Now prove it works.</em></h1>
+          <p class="lede">
+            rive-cli turns a JSON scene into a <code>.riv</code> file your Rive player can load, inspect,
+            and compare. No guesswork after the model stops typing.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="lab.html">Open the verification lab <span>↗</span></a>
+            <a class="button button-quiet" href="#quickstart">Run it locally</a>
+          </div>
+          <p class="hero-note"><span class="status-dot"></span> Built for AI and tool builders</p>
+        </div>
 
-    <section id="gallery" class="gallery">
-      <h2>The official file, and ours beside it</h2>
-      <p class="section-note">
-        Left: the official <code>.riv</code>, pinned to an upstream commit in
-        <code>parity/official/manifest.json</code>. Right: what <code>rive-cli generate</code> made
-        from the JSON in the disclosure. The gap between them is measured, not asserted.
-      </p>
-      <div class="grid" id="grid"></div>
-    </section>
+        <div class="proof-parcel" aria-label="Live Rive proof">
+          <div class="parcel-label">
+            <span>LIVE RUNTIME CHECK</span>
+            <span>01 / 03</span>
+          </div>
+          <div class="parcel-stage">
+            <canvas
+              class="scene hero-scene"
+              width="640"
+              height="640"
+              aria-label="Official Rive coffee loader animation running in the browser"
+            ></canvas>
+            <div class="parcel-stamp">RIVE<br />LOADS</div>
+          </div>
+          <div class="parcel-foot">
+            <span>Official Rive file</span>
+            <span class="mono">coffee_loader.riv</span>
+          </div>
+        </div>
+      </section>
 
-    <section id="verify" class="verify">
-      <h2>How it is verified</h2>
-      <p class="section-note">
-        <code>rive-cli compare</code> decompiles both files, renders both through headless Chromium at
-        identical geometry, and reports two things: a table of every Rive type whose count differs, and
-        the share of pixels that differ per frame. It exits non-zero only when you give it a threshold
-        to fail against, so the number is the deliverable rather than a hidden pass mark. The tool also
-        measures a single file on its own — distinct colours, dominant-colour ratio, content bounding
-        box and an ASCII coverage map — because an agent cannot look at a picture. The transcript below
-        is copied verbatim from a real run.
-      </p>
-      <pre class="terminal" id="transcript">loading…</pre>
-      <p class="section-note">
-        The site validation loads every official and reproduction canvas, asserts that each one paints,
-        and checks that the displayed object counts and pixel figures match the committed
-        <code>parity/results.json</code>. That results file is regenerated by
-        <code>parity/collate-results.sh</code>, which runs the same thresholded comparison for each
-        shipped rung. The existing visual regression baselines cover related committed fixtures, not
-        these parity cards. Fetched official files are checksum-verified against upstream commits;
-        legacy in-repo files are checksum-verified locally.
-      </p>
-    </section>
+      <section class="problem-band">
+        <div class="shell problem-grid">
+          <p class="kicker">The missing step</p>
+          <div>
+            <h2>Fast code is not the same as a working animation.</h2>
+            <p>
+              AI can write a scene in seconds. It cannot tell you if a state is missing, a property is
+              on the wrong object, or the file breaks in the real Rive runtime. rive-cli turns those
+              unknowns into checks you can run again.
+            </p>
+          </div>
+        </div>
+      </section>
 
-    <section id="install" class="install">
-      <h2>Quickstart</h2>
-      <pre class="terminal">$ cargo install --path .
+      <section id="workflow" class="workflow shell">
+        <div class="section-heading">
+          <p class="kicker">A short path to proof</p>
+          <h2>From scene JSON to a signal you can trust.</h2>
+          <p>Keep the source in your repo. Let the CLI do the boring checks.</p>
+        </div>
+        <div class="workflow-map">
+          <article class="workflow-step">
+            <span class="step-mark">01</span>
+            <h3>Describe</h3>
+            <p>Write shapes, text, controls, and motion as JSON.</p>
+            <code>scene.json</code>
+          </article>
+          <div class="workflow-rule" aria-hidden="true"></div>
+          <article class="workflow-step">
+            <span class="step-mark">02</span>
+            <h3>Compile</h3>
+            <p>Make a real Rive binary from the scene file.</p>
+            <code>rive-cli generate</code>
+          </article>
+          <div class="workflow-rule" aria-hidden="true"></div>
+          <article class="workflow-step">
+            <span class="step-mark">03</span>
+            <h3>Check</h3>
+            <p>Load it, render it, and compare the frames that matter.</p>
+            <code>rive-cli compare</code>
+          </article>
+        </div>
+      </section>
+
+      <section id="for-agents" class="agent-panel shell">
+        <div class="agent-copy">
+          <p class="kicker">Made for the tool loop</p>
+          <h2>Give your agent an answer it can act on.</h2>
+          <p>
+            A picture helps a person. A measured result helps a tool. The CLI reports object counts,
+            missing types, pixel changes, content bounds, and a simple coverage map.
+          </p>
+          <a class="text-link" href="https://github.com/George-RD/rive-rs-cli#readme">Read the source and schema ↗</a>
+        </div>
+        <div class="code-slip">
+          <div class="slip-top"><span>CHECK.RUN / COFFEE_LOADER</span><span class="pass">PASS &lt; 5%</span></div>
+          <pre><span class="prompt">$</span> rive-cli compare \
+  official.riv ours.riv \
+  --frames 0,15,30 \
+  --max-pixel-diff 5</pre>
+          <div class="slip-result">
+            <span class="result-label">MAX PIXEL DIFFERENCE</span>
+            <strong>0.2833%</strong>
+            <span class="result-note">247 of 250 objects · four frames checked</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="proof-strip shell">
+        <div>
+          <p class="kicker">Proof, not promises</p>
+          <h2>See the checks on real files.</h2>
+        </div>
+        <p>
+          The lab puts an official Rive file beside a reproduction. Both run in the same browser
+          runtime. The gap is shown under each pair.
+        </p>
+        <a class="button button-blue" href="lab.html">Open Verification Lab <span>↗</span></a>
+      </section>
+
+      <section id="quickstart" class="quickstart shell">
+        <div class="section-heading">
+          <p class="kicker">Start with a terminal</p>
+          <h2>One small loop. Fewer surprises.</h2>
+        </div>
+        <div class="quickstart-grid">
+          <pre class="terminal terminal-light"><span class="comment"># install from this repo</span>
+$ cargo install --path .
+
+<span class="comment"># make, build, and check a scene</span>
 $ rive-cli new spinner &gt; scene.json
 $ rive-cli generate scene.json -o scene.riv
 $ rive-cli validate scene.riv
-$ rive-cli compare official.riv ours.riv --frames 0,15,30 --max-pixel-diff 5</pre>
-      <p class="section-note">
-        <code>rive-cli describe &lt;type&gt;</code> reports the fields, valid parents and animatable
-        properties of any of the ~200 object types, and <code>rive-cli schema</code> emits the full JSON
-        Schema for a scene.
-      </p>
-    </section>
+$ rive-cli render scene.riv --preview</pre>
+          <div class="quickstart-copy">
+            <p>
+              Need a field name or a valid parent? Ask the tool. <code>describe</code> and
+              <code>schema</code> expose the authoring model so your agent does not have to guess.
+            </p>
+            <a class="text-link" href="https://github.com/George-RD/rive-rs-cli#readme">See every command ↗</a>
+          </div>
+        </div>
+      </section>
+    </main>
 
-    <footer>
-      <p>
-        <a href="https://github.com/George-RD/rive-rs-cli">Source</a> ·
-        Rive runtime vendored from <code>@rive-app/canvas</code> 2.39.1 ·
-        Wordmark set in Inter (SIL OFL)
-      </p>
+    <footer class="site-footer shell">
+      <div>
+        <a class="wordmark" href="index.html" aria-label="rive-cli home"><span>rive</span><b>-cli</b></a>
+        <p>Make Rive files from code. Check them before they ship.</p>
+      </div>
+      <div class="footer-links">
+        <a href="lab.html">Verification Lab</a>
+        <a href="https://github.com/George-RD/rive-rs-cli">GitHub ↗</a>
+        <a href="https://rive.app">Rive ↗</a>
+      </div>
     </footer>
 
     <script src="assets/rive.js"></script>
-    <script src="main.js"></script>
+    <script src="landing.js"></script>
   </body>
 </html>

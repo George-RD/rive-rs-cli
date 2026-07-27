@@ -4,7 +4,7 @@ const path = require("node:path");
 const ROOT = path.resolve(__dirname, "..");
 const SITE = __dirname;
 
-const PAGE_FILES = ["index.html", "styles.css", "main.js", "verify.txt"];
+const PAGE_FILES = ["index.html", "lab.html", "styles.css", "landing.js", "main.js", "verify.txt"];
 const VENDORED = [
   ["assets/rive.js", "assets/rive.js"],
   ["assets/rive.wasm", "assets/rive.wasm"],

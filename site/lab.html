@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verification Lab — rive-cli</title>
+    <meta
+      name="description"
+      content="Compare official Rive files with rive-cli reproductions in the browser and inspect the measured gap."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header shell">
+      <a class="wordmark" href="index.html" aria-label="rive-cli home"><span>rive</span><b>-cli</b></a>
+      <nav aria-label="Main navigation">
+        <a href="index.html#workflow">How it works</a>
+        <a href="index.html#for-agents">For agents</a>
+        <a href="lab.html" aria-current="page">Verification Lab</a>
+        <a class="nav-github" href="https://github.com/George-RD/rive-rs-cli">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="lab-main">
+      <section class="lab-intro shell">
+        <div>
+          <p class="hero-label">Verification Lab / measured files</p>
+          <h1>Do not trust the file. Check it.</h1>
+          <p>
+            Each pair shows an official Rive file beside a copy made from JSON. Both play in the same
+            Rive player. The number below each pair is the measured pixel gap.
+          </p>
+          <a class="back-link" href="index.html">← Back to the product story</a>
+        </div>
+        <div class="lab-note">
+          <strong>What is checked</strong>
+          Object counts, missing types, the frames that matter, and pixels that changed. Open the JSON
+          under any pair to see the source.
+        </div>
+      </section>
+
+      <section id="gallery" class="gallery shell">
+        <h2>Official file / compiled file</h2>
+        <p class="section-note">
+          Left is the upstream file. Right is what <code>rive-cli generate</code> made. The lab reads
+          committed results from <code>parity/results.json</code> so the page and the checks share one source.
+        </p>
+        <div class="grid" id="grid"></div>
+      </section>
+
+      <section id="verify" class="verify shell">
+        <h2>Run log</h2>
+        <p class="section-note">
+          This is copied from a real compare and preview run. It is the same kind of signal an agent can
+          read in a terminal or CI job.
+        </p>
+        <pre class="terminal" id="transcript">loading…</pre>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <div>
+        <a class="wordmark" href="index.html" aria-label="rive-cli home"><span>rive</span><b>-cli</b></a>
+        <p>Make Rive files from code. Check them before they ship.</p>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="https://github.com/George-RD/rive-rs-cli">GitHub ↗</a>
+      </div>
+    </footer>
+
+    <script src="assets/rive.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>

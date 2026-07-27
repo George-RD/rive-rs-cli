@@ -6,7 +6,7 @@ const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const PORT = Number(process.env.SITE_PORT || 8771);
-const EXPECTED_SCENES = 5;
+const EXPECTED_SCENES = 4;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,6 +59,32 @@ async function waitForServer(port, timeoutMs = 20000) {
     );
 
     await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "load" });
+    await page.waitForFunction(
+      () => Boolean(document.querySelector(".hero-scene")),
+      null,
+      { timeout: 20000 }
+    );
+    await wait(2500);
+    const landing = await page.evaluate(() => {
+      const canvas = document.querySelector(".hero-scene");
+      const context = canvas.getContext("2d");
+      const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+      let painted = 0;
+      for (let i = 3; i < data.length; i += 4) {
+        if (data[i] !== 0) painted += 1;
+      }
+      return {
+        painted,
+        labLink: document.querySelector('a[href="lab.html"]')?.getAttribute("href"),
+      };
+    });
+    if (landing.painted === 0) {
+      errors.push("landing hero canvas rendered nothing");
+    }
+    if (landing.labLink !== "lab.html") {
+      errors.push("landing page does not link to lab.html");
+    }
+    await page.goto(`http://127.0.0.1:${PORT}/lab.html`, { waitUntil: "load" });
     await page.waitForFunction(
       (expected) => document.querySelectorAll("canvas.scene").length >= expected,
       EXPECTED_SCENES,
