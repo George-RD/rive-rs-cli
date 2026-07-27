@@ -64,13 +64,12 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<(),
     resolve_artboard_dimensions(artboard_spec)?;
 
     let mut object_names: HashSet<String> = HashSet::new();
-    let mut object_type_keys: HashMap<String, u16> = HashMap::new();
-    let mut ambiguous_names: HashSet<String> = HashSet::new();
     for child in &artboard_spec.children {
         validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
-        collect_ambiguous_names(child, &mut HashSet::new(), &mut ambiguous_names);
-        collect_object_type_key(child, &mut object_type_keys);
     }
+    let spec_index = SpecIndex::build(&artboard_spec.children);
+    let object_type_keys = &spec_index.type_keys;
+    let ambiguous_names = &spec_index.ambiguous;
     validate_image_asset_references(&artboard_spec.children)?;
 
     let mut animation_names: HashSet<String> = HashSet::new();
@@ -1582,283 +1581,280 @@ pub(crate) fn validate_object_spec(
     Ok(())
 }
 
-fn collect_ambiguous_names(
-    spec: &ObjectSpec,
-    seen: &mut HashSet<String>,
-    ambiguous: &mut HashSet<String>,
-) {
-    let mut names: HashMap<String, u16> = HashMap::new();
-    collect_object_type_key_named(spec, &mut names, seen, ambiguous);
+#[derive(Default)]
+pub(crate) struct SpecIndex {
+    pub type_keys: HashMap<String, u16>,
+    pub ambiguous: HashSet<String>,
+    pub assets: Vec<(String, u16)>,
 }
 
-fn collect_object_type_key_named(
-    spec: &ObjectSpec,
-    names: &mut HashMap<String, u16>,
-    seen: &mut HashSet<String>,
-    ambiguous: &mut HashSet<String>,
-) {
-    let before: HashSet<String> = names.keys().cloned().collect();
-    collect_object_type_key(spec, names);
-    for name in names.keys() {
-        if before.contains(name) {
-            continue;
+impl SpecIndex {
+    pub fn build(children: &[ObjectSpec]) -> SpecIndex {
+        let mut index = SpecIndex::default();
+        for child in children {
+            collect_object_type_key(child, &mut |name: &str, type_key: u16| {
+                if matches!(
+                    type_key,
+                    type_keys::IMAGE_ASSET | type_keys::FONT_ASSET | type_keys::AUDIO_ASSET
+                ) {
+                    index.assets.push((name.to_string(), type_key));
+                }
+                if index.type_keys.insert(name.to_string(), type_key).is_some() {
+                    index.ambiguous.insert(name.to_string());
+                }
+            });
         }
-        if !seen.insert(name.clone()) {
-            ambiguous.insert(name.clone());
-        }
+        index
     }
 }
 
-pub(crate) fn collect_object_type_key(
-    spec: &ObjectSpec,
-    object_type_keys: &mut HashMap<String, u16>,
-) {
+pub(crate) fn collect_object_type_key(spec: &ObjectSpec, visit: &mut dyn FnMut(&str, u16)) {
     match spec {
         ObjectSpec::Shape { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SHAPE);
+            visit(name, type_keys::SHAPE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Solo { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SOLO);
+            visit(name, type_keys::SOLO);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Ellipse { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::ELLIPSE);
+            visit(name, type_keys::ELLIPSE);
         }
         ObjectSpec::Rectangle { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::RECTANGLE);
+            visit(name, type_keys::RECTANGLE);
         }
         ObjectSpec::Triangle { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TRIANGLE);
+            visit(name, type_keys::TRIANGLE);
         }
         ObjectSpec::Polygon { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::POLYGON);
+            visit(name, type_keys::POLYGON);
         }
         ObjectSpec::Star { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::STAR);
+            visit(name, type_keys::STAR);
         }
         ObjectSpec::Fill { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::FILL);
+            visit(name, type_keys::FILL);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Stroke { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::STROKE);
+            visit(name, type_keys::STROKE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::SolidColor { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SOLID_COLOR);
+            visit(name, type_keys::SOLID_COLOR);
         }
         ObjectSpec::LinearGradient { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LINEAR_GRADIENT);
+            visit(name, type_keys::LINEAR_GRADIENT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::RadialGradient { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::RADIAL_GRADIENT);
+            visit(name, type_keys::RADIAL_GRADIENT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::GradientStop { name, .. } => {
             if let Some(name) = name {
-                object_type_keys.insert(name.clone(), type_keys::GRADIENT_STOP);
+                visit(name, type_keys::GRADIENT_STOP);
             }
         }
         ObjectSpec::Node { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NODE);
+            visit(name, type_keys::NODE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Image { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::IMAGE);
+            visit(name, type_keys::IMAGE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Path { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::PATH);
+            visit(name, type_keys::PATH);
         }
         ObjectSpec::PointsPath { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::POINTS_PATH);
+            visit(name, type_keys::POINTS_PATH);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::StraightVertex { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::STRAIGHT_VERTEX);
+            visit(name, type_keys::STRAIGHT_VERTEX);
         }
         ObjectSpec::CubicMirroredVertex { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUBIC_MIRRORED_VERTEX);
+            visit(name, type_keys::CUBIC_MIRRORED_VERTEX);
         }
         ObjectSpec::CubicDetachedVertex { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUBIC_DETACHED_VERTEX);
+            visit(name, type_keys::CUBIC_DETACHED_VERTEX);
         }
         ObjectSpec::CubicAsymmetricVertex { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUBIC_ASYMMETRIC_VERTEX);
+            visit(name, type_keys::CUBIC_ASYMMETRIC_VERTEX);
         }
         ObjectSpec::TrimPath { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TRIM_PATH);
+            visit(name, type_keys::TRIM_PATH);
         }
         ObjectSpec::NestedArtboard { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_ARTBOARD);
+            visit(name, type_keys::NESTED_ARTBOARD);
         }
         ObjectSpec::NestedStateMachine { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_STATE_MACHINE);
+            visit(name, type_keys::NESTED_STATE_MACHINE);
         }
         ObjectSpec::NestedSimpleAnimation { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_SIMPLE_ANIMATION);
+            visit(name, type_keys::NESTED_SIMPLE_ANIMATION);
         }
         ObjectSpec::Event { name, children } => {
-            object_type_keys.insert(name.clone(), type_keys::EVENT);
+            visit(name, type_keys::EVENT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Bone { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::BONE);
+            visit(name, type_keys::BONE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::RootBone { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::ROOT_BONE);
+            visit(name, type_keys::ROOT_BONE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Skin { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SKIN);
+            visit(name, type_keys::SKIN);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Tendon { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TENDON);
+            visit(name, type_keys::TENDON);
         }
         ObjectSpec::Weight { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::WEIGHT);
+            visit(name, type_keys::WEIGHT);
         }
         ObjectSpec::CubicWeight { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUBIC_WEIGHT);
+            visit(name, type_keys::CUBIC_WEIGHT);
         }
         ObjectSpec::IkConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::IK_CONSTRAINT);
+            visit(name, type_keys::IK_CONSTRAINT);
         }
         ObjectSpec::DistanceConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DISTANCE_CONSTRAINT);
+            visit(name, type_keys::DISTANCE_CONSTRAINT);
         }
         ObjectSpec::TransformConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TRANSFORM_CONSTRAINT);
+            visit(name, type_keys::TRANSFORM_CONSTRAINT);
         }
         ObjectSpec::TranslationConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TRANSLATION_CONSTRAINT);
+            visit(name, type_keys::TRANSLATION_CONSTRAINT);
         }
         ObjectSpec::ScaleConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCALE_CONSTRAINT);
+            visit(name, type_keys::SCALE_CONSTRAINT);
         }
         ObjectSpec::RotationConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::ROTATION_CONSTRAINT);
+            visit(name, type_keys::ROTATION_CONSTRAINT);
         }
         ObjectSpec::FollowPathConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::FOLLOW_PATH_CONSTRAINT);
+            visit(name, type_keys::FOLLOW_PATH_CONSTRAINT);
         }
         ObjectSpec::ClippingShape { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CLIPPING_SHAPE);
+            visit(name, type_keys::CLIPPING_SHAPE);
         }
         ObjectSpec::DrawRules { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DRAW_RULES);
+            visit(name, type_keys::DRAW_RULES);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::DrawTarget { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DRAW_TARGET);
+            visit(name, type_keys::DRAW_TARGET);
         }
         ObjectSpec::Joystick { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::JOYSTICK);
+            visit(name, type_keys::JOYSTICK);
         }
         ObjectSpec::Text { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT);
+            visit(name, type_keys::TEXT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::TextStyle { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_STYLE_PAINT);
+            visit(name, type_keys::TEXT_STYLE_PAINT);
         }
         ObjectSpec::TextValueRun { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_VALUE_RUN);
+            visit(name, type_keys::TEXT_VALUE_RUN);
         }
         ObjectSpec::ImageAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::IMAGE_ASSET);
+            visit(name, type_keys::IMAGE_ASSET);
         }
         ObjectSpec::FontAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::FONT_ASSET);
+            visit(name, type_keys::FONT_ASSET);
         }
         ObjectSpec::AudioAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::AUDIO_ASSET);
+            visit(name, type_keys::AUDIO_ASSET);
         }
         ObjectSpec::LayoutComponent { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LAYOUT_COMPONENT);
+            visit(name, type_keys::LAYOUT_COMPONENT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::LayoutComponentStyle { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LAYOUT_COMPONENT_STYLE);
+            visit(name, type_keys::LAYOUT_COMPONENT_STYLE);
         }
         ObjectSpec::ViewModel { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL);
+            visit(name, type_keys::VIEW_MODEL);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::ViewModelProperty { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL_PROPERTY);
+            visit(name, type_keys::VIEW_MODEL_PROPERTY);
         }
         ObjectSpec::DataBind { .. } => {}
         ObjectSpec::ViewModelInstance { .. }
@@ -1875,223 +1871,223 @@ pub(crate) fn collect_object_type_key(
         | ObjectSpec::TextVariationModifier { .. }
         | ObjectSpec::TextStyleFeature { .. } => {}
         ObjectSpec::TextModifierGroup { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_MODIFIER_GROUP);
+            visit(name, type_keys::TEXT_MODIFIER_GROUP);
         }
         ObjectSpec::Folder { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::FOLDER);
+            visit(name, type_keys::FOLDER);
         }
         ObjectSpec::LayeredAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LAYERED_ASSET);
+            visit(name, type_keys::LAYERED_ASSET);
         }
         ObjectSpec::LayerImageAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LAYER_IMAGE_ASSET);
+            visit(name, type_keys::LAYER_IMAGE_ASSET);
         }
         ObjectSpec::SVGAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SVG_ASSET);
+            visit(name, type_keys::SVG_ASSET);
         }
         ObjectSpec::LottieAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LOTTIE_ASSET);
+            visit(name, type_keys::LOTTIE_ASSET);
         }
         ObjectSpec::ExportAudio { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::EXPORT_AUDIO);
+            visit(name, type_keys::EXPORT_AUDIO);
         }
         ObjectSpec::ScriptAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_ASSET);
+            visit(name, type_keys::SCRIPT_ASSET);
         }
         ObjectSpec::BlobAsset { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::BLOB_ASSET);
+            visit(name, type_keys::BLOB_ASSET);
         }
         ObjectSpec::DashPath { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DASH_PATH);
+            visit(name, type_keys::DASH_PATH);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Dash { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DASH);
+            visit(name, type_keys::DASH);
         }
         ObjectSpec::Feather { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::FEATHER);
+            visit(name, type_keys::FEATHER);
         }
         ObjectSpec::OpenUrlEvent { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::OPEN_URL_EVENT);
+            visit(name, type_keys::OPEN_URL_EVENT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::AudioEvent { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::AUDIO_EVENT);
+            visit(name, type_keys::AUDIO_EVENT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::CustomPropertyNumber { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_NUMBER);
+            visit(name, type_keys::CUSTOM_PROPERTY_NUMBER);
         }
         ObjectSpec::CustomPropertyBoolean { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_BOOLEAN);
+            visit(name, type_keys::CUSTOM_PROPERTY_BOOLEAN);
         }
         ObjectSpec::CustomPropertyString { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_STRING);
+            visit(name, type_keys::CUSTOM_PROPERTY_STRING);
         }
         ObjectSpec::CustomPropertyColor { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_COLOR);
+            visit(name, type_keys::CUSTOM_PROPERTY_COLOR);
         }
         ObjectSpec::CustomPropertyTrigger { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_TRIGGER);
+            visit(name, type_keys::CUSTOM_PROPERTY_TRIGGER);
         }
         ObjectSpec::CustomPropertyEnum { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_ENUM);
+            visit(name, type_keys::CUSTOM_PROPERTY_ENUM);
         }
         ObjectSpec::CustomPropertyGroup { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CUSTOM_PROPERTY_GROUP);
+            visit(name, type_keys::CUSTOM_PROPERTY_GROUP);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::TargetEffect { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TARGET_EFFECT);
+            visit(name, type_keys::TARGET_EFFECT);
         }
         ObjectSpec::GroupEffect { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::GROUP_EFFECT);
+            visit(name, type_keys::GROUP_EFFECT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::ListPath { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LIST_PATH);
+            visit(name, type_keys::LIST_PATH);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::PointsCommonPath { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::POINTS_COMMON_PATH);
+            visit(name, type_keys::POINTS_COMMON_PATH);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::Guide { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::GUIDE);
+            visit(name, type_keys::GUIDE);
         }
         ObjectSpec::ArtboardComponentList { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::ARTBOARD_COMPONENT_LIST);
+            visit(name, type_keys::ARTBOARD_COMPONENT_LIST);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::ArtboardComponentListOverride { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE);
+            visit(name, type_keys::ARTBOARD_COMPONENT_LIST_OVERRIDE);
         }
         ObjectSpec::ArtboardListMapRule { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::ARTBOARD_LIST_MAP_RULE);
+            visit(name, type_keys::ARTBOARD_LIST_MAP_RULE);
         }
         ObjectSpec::ForegroundLayoutDrawable { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::FOREGROUND_LAYOUT_DRAWABLE);
+            visit(name, type_keys::FOREGROUND_LAYOUT_DRAWABLE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::ClampedScrollPhysics { .. } => {}
         ObjectSpec::ElasticScrollPhysics { .. } => {}
         ObjectSpec::Mesh { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::MESH);
+            visit(name, type_keys::MESH);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::MeshVertex { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::MESH_VERTEX);
+            visit(name, type_keys::MESH_VERTEX);
         }
         ObjectSpec::ContourMeshVertex { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::CONTOUR_MESH_VERTEX);
+            visit(name, type_keys::CONTOUR_MESH_VERTEX);
         }
         ObjectSpec::ForcedEdge { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::FORCED_EDGE);
+            visit(name, type_keys::FORCED_EDGE);
         }
         ObjectSpec::NestedLinearAnimation { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_LINEAR_ANIMATION);
+            visit(name, type_keys::NESTED_LINEAR_ANIMATION);
         }
         ObjectSpec::NestedRemapAnimation { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_REMAP_ANIMATION);
+            visit(name, type_keys::NESTED_REMAP_ANIMATION);
         }
         ObjectSpec::NestedTrigger { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_TRIGGER);
+            visit(name, type_keys::NESTED_TRIGGER);
         }
         ObjectSpec::NestedBool { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_BOOL);
+            visit(name, type_keys::NESTED_BOOL);
         }
         ObjectSpec::NestedNumber { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_NUMBER);
+            visit(name, type_keys::NESTED_NUMBER);
         }
         ObjectSpec::NestedArtboardLeaf { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_ARTBOARD_LEAF);
+            visit(name, type_keys::NESTED_ARTBOARD_LEAF);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::NestedArtboardLayout { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NESTED_ARTBOARD_LAYOUT);
+            visit(name, type_keys::NESTED_ARTBOARD_LAYOUT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::DraggableConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DRAGGABLE_CONSTRAINT);
+            visit(name, type_keys::DRAGGABLE_CONSTRAINT);
         }
         ObjectSpec::ScrollConstraint { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCROLL_CONSTRAINT);
+            visit(name, type_keys::SCROLL_CONSTRAINT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::ScrollBarConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCROLL_BAR_CONSTRAINT);
+            visit(name, type_keys::SCROLL_BAR_CONSTRAINT);
         }
         ObjectSpec::ListFollowPathConstraint { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::LIST_FOLLOW_PATH_CONSTRAINT);
+            visit(name, type_keys::LIST_FOLLOW_PATH_CONSTRAINT);
         }
         ObjectSpec::NSlicerTileMode { .. } => {}
         ObjectSpec::NSlicer { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NSLICER);
+            visit(name, type_keys::NSLICER);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::AxisY { .. } => {}
         ObjectSpec::AxisX { .. } => {}
         ObjectSpec::NSlicedNode { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::NSLICED_NODE);
+            visit(name, type_keys::NSLICED_NODE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
@@ -2109,35 +2105,35 @@ pub(crate) fn collect_object_type_key(
         | ObjectSpec::ViewModelPropertyArtboard { name, children, .. }
         | ObjectSpec::ViewModelPropertySymbol { name, children, .. }
         | ObjectSpec::ViewModelPropertySymbolListIndex { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::VIEW_MODEL_PROPERTY);
+            visit(name, type_keys::VIEW_MODEL_PROPERTY);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::DataEnum { name, children } | ObjectSpec::DataEnumCustom { name, children } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_ENUM);
+            visit(name, type_keys::DATA_ENUM);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::DataEnumSystem { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_ENUM_SYSTEM);
+            visit(name, type_keys::DATA_ENUM_SYSTEM);
         }
         ObjectSpec::TextTargetModifier { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_TARGET_MODIFIER);
+            visit(name, type_keys::TEXT_TARGET_MODIFIER);
         }
         ObjectSpec::TextFollowPathModifier { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_FOLLOW_PATH_MODIFIER);
+            visit(name, type_keys::TEXT_FOLLOW_PATH_MODIFIER);
         }
         ObjectSpec::TextInput { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT_INPUT);
+            visit(name, type_keys::TEXT_INPUT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
@@ -2146,10 +2142,10 @@ pub(crate) fn collect_object_type_key(
         | ObjectSpec::TextInputText { name, children }
         | ObjectSpec::TextInputSelection { name, children }
         | ObjectSpec::TextInputSelectedText { name, children } => {
-            object_type_keys.insert(name.clone(), type_keys::TEXT);
+            visit(name, type_keys::TEXT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
@@ -2182,111 +2178,111 @@ pub(crate) fn collect_object_type_key(
         | ObjectSpec::ScriptedListenerAction { .. }
         | ObjectSpec::ScriptedTransitionCondition { .. } => {}
         ObjectSpec::DataConverterRounder { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_ROUNDER);
+            visit(name, type_keys::DATA_CONVERTER_ROUNDER);
         }
         ObjectSpec::DataConverterToString { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_TO_STRING);
+            visit(name, type_keys::DATA_CONVERTER_TO_STRING);
         }
         ObjectSpec::DataConverterToNumber { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_TO_NUMBER);
+            visit(name, type_keys::DATA_CONVERTER_TO_NUMBER);
         }
         ObjectSpec::DataConverterGroup { name, children } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_GROUP);
+            visit(name, type_keys::DATA_CONVERTER_GROUP);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::DataConverterOperationValue { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_OPERATION_VALUE);
+            visit(name, type_keys::DATA_CONVERTER_OPERATION_VALUE);
         }
         ObjectSpec::DataConverterTrigger { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_TRIGGER);
+            visit(name, type_keys::DATA_CONVERTER_TRIGGER);
         }
         ObjectSpec::DataConverterOperationViewModel { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_OPERATION_VIEW_MODEL);
+            visit(name, type_keys::DATA_CONVERTER_OPERATION_VIEW_MODEL);
         }
         ObjectSpec::DataConverterStringPad { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_STRING_PAD);
+            visit(name, type_keys::DATA_CONVERTER_STRING_PAD);
         }
         ObjectSpec::DataConverterStringRemoveZeros { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_STRING_REMOVE_ZEROS);
+            visit(name, type_keys::DATA_CONVERTER_STRING_REMOVE_ZEROS);
         }
         ObjectSpec::DataConverterStringTrim { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_STRING_TRIM);
+            visit(name, type_keys::DATA_CONVERTER_STRING_TRIM);
         }
         ObjectSpec::DataConverterInterpolator { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_INTERPOLATOR);
+            visit(name, type_keys::DATA_CONVERTER_INTERPOLATOR);
         }
         ObjectSpec::DataConverterBooleanNegate { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_BOOLEAN_NEGATE);
+            visit(name, type_keys::DATA_CONVERTER_BOOLEAN_NEGATE);
         }
         ObjectSpec::DataConverterRangeMapper { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_RANGE_MAPPER);
+            visit(name, type_keys::DATA_CONVERTER_RANGE_MAPPER);
         }
         ObjectSpec::DataConverterFormula { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_FORMULA);
+            visit(name, type_keys::DATA_CONVERTER_FORMULA);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::DataConverterSystemDegsToRads { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_SYSTEM_DEGS_TO_RADS);
+            visit(name, type_keys::DATA_CONVERTER_SYSTEM_DEGS_TO_RADS);
         }
         ObjectSpec::DataConverterSystemNormalizer { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_SYSTEM_NORMALIZER);
+            visit(name, type_keys::DATA_CONVERTER_SYSTEM_NORMALIZER);
         }
         ObjectSpec::DataConverterNumberToList { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_NUMBER_TO_LIST);
+            visit(name, type_keys::DATA_CONVERTER_NUMBER_TO_LIST);
         }
         ObjectSpec::DataConverterListToLength { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::DATA_CONVERTER_LIST_TO_LENGTH);
+            visit(name, type_keys::DATA_CONVERTER_LIST_TO_LENGTH);
         }
         ObjectSpec::ScriptedDrawable { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_DRAWABLE);
+            visit(name, type_keys::SCRIPTED_DRAWABLE);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::ScriptedDataConverter { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_DATA_CONVERTER);
+            visit(name, type_keys::SCRIPTED_DATA_CONVERTER);
         }
         ObjectSpec::ScriptedLayout { name, children, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_LAYOUT);
+            visit(name, type_keys::SCRIPTED_LAYOUT);
             if let Some(children) = children {
                 for child in children {
-                    collect_object_type_key(child, object_type_keys);
+                    collect_object_type_key(child, visit);
                 }
             }
         }
         ObjectSpec::ScriptedPathEffect { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPTED_PATH_EFFECT);
+            visit(name, type_keys::SCRIPTED_PATH_EFFECT);
         }
         ObjectSpec::ScriptInputNumber { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_NUMBER);
+            visit(name, type_keys::SCRIPT_INPUT_NUMBER);
         }
         ObjectSpec::ScriptInputViewModelProperty { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_VIEW_MODEL_PROPERTY);
+            visit(name, type_keys::SCRIPT_INPUT_VIEW_MODEL_PROPERTY);
         }
         ObjectSpec::ScriptInputTrigger { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_TRIGGER);
+            visit(name, type_keys::SCRIPT_INPUT_TRIGGER);
         }
         ObjectSpec::ScriptInputArtboard { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_ARTBOARD);
+            visit(name, type_keys::SCRIPT_INPUT_ARTBOARD);
         }
         ObjectSpec::ScriptInputColor { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_COLOR);
+            visit(name, type_keys::SCRIPT_INPUT_COLOR);
         }
         ObjectSpec::ScriptInputString { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_STRING);
+            visit(name, type_keys::SCRIPT_INPUT_STRING);
         }
         ObjectSpec::ScriptInputBoolean { name, .. } => {
-            object_type_keys.insert(name.clone(), type_keys::SCRIPT_INPUT_BOOLEAN);
+            visit(name, type_keys::SCRIPT_INPUT_BOOLEAN);
         }
     }
 }

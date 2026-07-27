@@ -20,7 +20,7 @@ pub struct AssetServer {
 }
 
 struct Assets {
-    html: &'static [u8],
+    html: Vec<u8>,
     js: &'static [u8],
     wasm: &'static [u8],
     scene: Vec<u8>,
@@ -28,7 +28,7 @@ struct Assets {
 
 impl AssetServer {
     pub fn start(
-        html: &'static [u8],
+        html: impl Into<Vec<u8>>,
         js: &'static [u8],
         wasm: &'static [u8],
         scene: Vec<u8>,
@@ -39,7 +39,7 @@ impl AssetServer {
         let stop = Arc::new(AtomicBool::new(false));
         let flag = stop.clone();
         let assets = Arc::new(Assets {
-            html,
+            html: html.into(),
             js,
             wasm,
             scene,
@@ -97,7 +97,7 @@ fn serve(mut stream: TcpStream, assets: &Assets) {
         .unwrap_or("");
     let route = path.split('?').next().unwrap_or(path);
     let (status, content_type, body): (&str, &str, &[u8]) = match route {
-        "/" | "/index.html" => ("200 OK", "text/html; charset=utf-8", assets.html),
+        "/" | "/index.html" => ("200 OK", "text/html; charset=utf-8", assets.html.as_slice()),
         "/rive.js" => ("200 OK", "application/javascript", assets.js),
         "/rive.wasm" => ("200 OK", "application/wasm", assets.wasm),
         "/scene.riv" => ("200 OK", "application/octet-stream", &assets.scene),

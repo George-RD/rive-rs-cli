@@ -183,12 +183,11 @@ pub fn build_scene(
             }
         }
     }
-    let ctx = SceneContext {
-        asset_ids: &asset_ids,
-        asset_kinds: &asset_kinds,
-    };
-
     for artboard_spec in &artboard_specs {
+        let ctx = SceneContext {
+            asset_ids: &asset_ids,
+            asset_kinds: &asset_kinds,
+        };
         let artboard_start = objects.len();
         let (artboard_width, artboard_height) = resolve_artboard_dimensions(artboard_spec)?;
 

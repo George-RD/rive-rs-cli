@@ -1,6 +1,7 @@
 mod animations;
 mod objects;
 mod parsers;
+mod references;
 pub mod scene;
 pub(crate) mod spec;
 mod state_machines;
