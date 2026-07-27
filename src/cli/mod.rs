@@ -12,7 +12,7 @@ pub struct Cli {
     #[arg(long, help = "List available artboard size presets")]
     pub list_presets: bool,
 
-    #[arg(long, help = "Output as JSON")]
+    #[arg(long, global = true, help = "Output as JSON")]
     pub json: bool,
 
     #[cfg(feature = "mcp")]
@@ -38,6 +38,23 @@ pub enum Command {
         file_id: u64,
         #[arg(long, help = "Output as JSON")]
         json: bool,
+    },
+    #[command(
+        about = "Emit a known-good starter SceneSpec",
+        long_about = "Emit a known-good starter SceneSpec.\n\nExamples:\n  rive-cli new shape\n  rive-cli new animated -o scene.json\n  rive-cli new --list"
+    )]
+    New {
+        #[arg(value_name = "TEMPLATE", help = "Template name")]
+        template: Option<String>,
+        #[arg(long, help = "List all available templates")]
+        list: bool,
+        #[arg(
+            short,
+            long,
+            value_name = "FILE",
+            help = "Write JSON to a file instead of stdout"
+        )]
+        output: Option<PathBuf>,
     },
     #[command(about = "Validate a .riv file for structural correctness")]
     Validate {
@@ -102,6 +119,127 @@ pub enum Command {
     Decompile {
         #[arg(help = "Path to .riv file to decompile")]
         file: PathBuf,
+    },
+    #[command(
+        about = "Render frames of a .riv file to PNG images",
+        long_about = "Render frames of a .riv file to PNG images using headless Chromium.\n\nExamples:\n  rive-cli render out.riv\n  rive-cli render out.riv --frames 0,15,30,45 -o frames/\n  rive-cli render out.riv --frames 0..120:10 --width 800 --height 600\n  rive-cli render out.riv --animation spin --contact-sheet"
+    )]
+    Render {
+        #[arg(help = "Path to .riv file to render")]
+        file: PathBuf,
+
+        #[arg(
+            short,
+            long,
+            default_value = "renders",
+            help = "Output directory for PNG frames"
+        )]
+        output: PathBuf,
+
+        #[arg(
+            long,
+            default_value = "0",
+            help = "Frames to capture: list (0,15,30) or range (start..end:step)"
+        )]
+        frames: String,
+
+        #[arg(
+            long,
+            default_value_t = 60.0,
+            help = "Frames per second used to convert frame index to seconds"
+        )]
+        fps: f64,
+
+        #[arg(
+            long,
+            help = "Animation name to scrub (defaults to the first animation)"
+        )]
+        animation: Option<String>,
+
+        #[arg(
+            long = "state-machine",
+            help = "State machine to advance instead of an animation"
+        )]
+        state_machine: Option<String>,
+
+        #[arg(
+            long = "input",
+            value_name = "NAME=VALUE[@FRAME]",
+            help = "Set a state machine input: bool (true/false), number, or 'trigger'. Append @FRAME to apply it when the stepper reaches that frame, e.g. press=trigger@30. Repeatable."
+        )]
+        inputs: Vec<String>,
+
+        #[arg(
+            long = "pointer",
+            value_name = "EVENT:X,Y@FRAME",
+            help = "Dispatch a pointer event in artboard coordinates at a frame, e.g. down:120,90@10. EVENT is down, up, move, enter or exit. Requires --state-machine. Repeatable."
+        )]
+        pointers: Vec<String>,
+
+        #[arg(long, help = "Artboard name (defaults to the default artboard)")]
+        artboard: Option<String>,
+
+        #[arg(long, default_value_t = 512, help = "Logical render width in pixels")]
+        width: u32,
+
+        #[arg(long, default_value_t = 512, help = "Logical render height in pixels")]
+        height: u32,
+
+        #[arg(long, default_value_t = 2, help = "Device pixel ratio multiplier")]
+        scale: u32,
+
+        #[arg(
+            long,
+            help = "Background color behind the artboard, e.g. #202024 (default transparent)"
+        )]
+        background: Option<String>,
+
+        #[arg(
+            long = "contact-sheet",
+            help = "Also write a horizontal filmstrip of all frames"
+        )]
+        contact_sheet: bool,
+        #[arg(long, help = "Print and write a text coverage preview for every frame")]
+        preview: bool,
+
+        #[arg(
+            long,
+            help = "Path to a Chrome/Chromium binary (overrides auto-discovery)"
+        )]
+        browser: Option<PathBuf>,
+
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
+    },
+    #[command(about = "Print the SceneSpec JSON schema")]
+    Schema {
+        #[arg(long, help = "Print compact JSON instead of indented")]
+        compact: bool,
+    },
+    #[command(
+        about = "List the object types usable in a scene spec",
+        long_about = "List the object types usable in a scene spec.\n\nExamples:\n  rive-cli types\n  rive-cli types --category shape\n  rive-cli types --json"
+    )]
+    Types {
+        #[arg(
+            long,
+            help = "Filter by category (shape, paint, animation, state-machine, ...)"
+        )]
+        category: Option<String>,
+
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
+    },
+    #[command(
+        about = "Describe one object type: fields, valid parents, animatable properties",
+        long_about = "Describe one object type: fields, valid parents, animatable properties.\n\nExamples:\n  rive-cli describe ellipse\n  rive-cli describe trim_path --json"
+    )]
+    Describe {
+        #[arg(value_name = "TYPE", help = "Object type name, e.g. ellipse")]
+        type_name: String,
+
+        #[arg(long, help = "Output as JSON")]
+        json: bool,
     },
     #[command(about = "AI-assisted .riv generation and evaluation")]
     Ai {

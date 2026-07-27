@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::objects::core::{property_keys, type_keys};
 
 use super::spec::{InputSpec, InterpolatorDef};
@@ -225,83 +227,352 @@ pub(crate) fn interpolator_def_equals(left: InterpolatorDef, right: Interpolator
     }
 }
 
+const TRANSFORM_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::NODE_X),
+    ("y", property_keys::NODE_Y),
+    ("rotation", property_keys::TRANSFORM_ROTATION),
+    ("scale_x", property_keys::TRANSFORM_SCALE_X),
+    ("scale_y", property_keys::TRANSFORM_SCALE_Y),
+    ("opacity", property_keys::WORLD_TRANSFORM_OPACITY),
+];
+
+const PARAMETRIC_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("width", property_keys::PARAMETRIC_PATH_WIDTH),
+    ("height", property_keys::PARAMETRIC_PATH_HEIGHT),
+];
+
+const STRAIGHT_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    ("radius", property_keys::STRAIGHT_VERTEX_RADIUS),
+];
+
+const CUBIC_MIRRORED_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    ("rotation", property_keys::CUBIC_MIRRORED_VERTEX_ROTATION),
+    ("distance", property_keys::CUBIC_MIRRORED_VERTEX_DISTANCE),
+];
+
+const CUBIC_DETACHED_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    (
+        "in_rotation",
+        property_keys::CUBIC_DETACHED_VERTEX_IN_ROTATION,
+    ),
+    (
+        "in_distance",
+        property_keys::CUBIC_DETACHED_VERTEX_IN_DISTANCE,
+    ),
+    (
+        "out_rotation",
+        property_keys::CUBIC_DETACHED_VERTEX_OUT_ROTATION,
+    ),
+    (
+        "out_distance",
+        property_keys::CUBIC_DETACHED_VERTEX_OUT_DISTANCE,
+    ),
+];
+
+const CUBIC_ASYMMETRIC_VERTEX_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("x", property_keys::VERTEX_X),
+    ("y", property_keys::VERTEX_Y),
+    ("rotation", property_keys::CUBIC_ASYMMETRIC_VERTEX_ROTATION),
+    (
+        "in_distance",
+        property_keys::CUBIC_ASYMMETRIC_VERTEX_IN_DISTANCE,
+    ),
+    (
+        "out_distance",
+        property_keys::CUBIC_ASYMMETRIC_VERTEX_OUT_DISTANCE,
+    ),
+];
+
+const SOLID_COLOR_ANIMATABLE_PROPERTIES: &[(&str, u16)] =
+    &[("color", property_keys::SOLID_COLOR_VALUE)];
+const GRADIENT_STOP_ANIMATABLE_PROPERTIES: &[(&str, u16)] =
+    &[("color", property_keys::GRADIENT_STOP_COLOR)];
+
+const GRADIENT_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("start_x", property_keys::LINEAR_GRADIENT_START_X),
+    ("start_y", property_keys::LINEAR_GRADIENT_START_Y),
+    ("end_x", property_keys::LINEAR_GRADIENT_END_X),
+    ("end_y", property_keys::LINEAR_GRADIENT_END_Y),
+    ("opacity", property_keys::LINEAR_GRADIENT_OPACITY),
+];
+const TRIM_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("trim_start", property_keys::TRIM_PATH_START),
+    ("trim_end", property_keys::TRIM_PATH_END),
+    ("trim_offset", property_keys::TRIM_PATH_OFFSET),
+];
+
+const EVENT_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[("trigger", property_keys::EVENT_TRIGGER)];
+const SOLO_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[(
+    "active_component_id",
+    property_keys::SOLO_ACTIVE_COMPONENT_ID,
+)];
+
+const TEXT_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("width", property_keys::TEXT_WIDTH),
+    ("height", property_keys::TEXT_HEIGHT),
+    ("origin_x", property_keys::TEXT_ORIGIN_X),
+    ("origin_y", property_keys::TEXT_ORIGIN_Y),
+    ("paragraph_spacing", property_keys::TEXT_PARAGRAPH_SPACING),
+];
+
+const TEXT_STYLE_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    ("font_size", property_keys::TEXT_STYLE_FONT_SIZE),
+    ("line_height", property_keys::TEXT_STYLE_LINE_HEIGHT),
+    ("letter_spacing", property_keys::TEXT_STYLE_LETTER_SPACING),
+];
+
+const TEXT_MODIFIER_GROUP_ANIMATABLE_PROPERTIES: &[(&str, u16)] = &[
+    (
+        "modifier_flags",
+        property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS,
+    ),
+    ("origin_x", property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X),
+    ("origin_y", property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y),
+    ("opacity", property_keys::TEXT_MODIFIER_GROUP_OPACITY),
+    ("x", property_keys::TEXT_MODIFIER_GROUP_X),
+    ("y", property_keys::TEXT_MODIFIER_GROUP_Y),
+    ("rotation", property_keys::TEXT_MODIFIER_GROUP_ROTATION),
+    ("scale_x", property_keys::TEXT_MODIFIER_GROUP_SCALE_X),
+    ("scale_y", property_keys::TEXT_MODIFIER_GROUP_SCALE_Y),
+];
+
+const TEXT_VALUE_RUN_ANIMATABLE_PROPERTIES: &[&str] = &["text"];
+const VISIBILITY_ANIMATABLE_PROPERTIES: &[&str] = &["is_visible"];
+
+fn property_key_from(properties: &[(&str, u16)], name: &str) -> Option<u16> {
+    properties
+        .iter()
+        .find_map(|(property, key)| (*property == name).then_some(*key))
+}
+
 pub(crate) fn property_key_from_name(name: &str) -> Option<u16> {
-    match name {
-        "x" => Some(property_keys::NODE_X),
-        "y" => Some(property_keys::NODE_Y),
-        "rotation" => Some(property_keys::TRANSFORM_ROTATION),
-        "scale_x" => Some(property_keys::TRANSFORM_SCALE_X),
-        "scale_y" => Some(property_keys::TRANSFORM_SCALE_Y),
-        "opacity" => Some(property_keys::WORLD_TRANSFORM_OPACITY),
-        "width" => Some(property_keys::PARAMETRIC_PATH_WIDTH),
-        "height" => Some(property_keys::PARAMETRIC_PATH_HEIGHT),
-        "color" => Some(property_keys::SOLID_COLOR_VALUE),
-        "trim_start" => Some(property_keys::TRIM_PATH_START),
-        "trim_end" => Some(property_keys::TRIM_PATH_END),
-        "trim_offset" => Some(property_keys::TRIM_PATH_OFFSET),
-        "trigger" => Some(property_keys::EVENT_TRIGGER),
-        "active_component_id" => Some(property_keys::SOLO_ACTIVE_COMPONENT_ID),
+    property_key_from(TRANSFORM_ANIMATABLE_PROPERTIES, name)
+}
+
+fn property_names(properties: &'static [(&'static str, u16)]) -> Vec<&'static str> {
+    properties.iter().map(|(name, _)| *name).collect()
+}
+
+fn transform_property_names() -> Vec<&'static str> {
+    property_names(TRANSFORM_ANIMATABLE_PROPERTIES)
+}
+
+fn extend_property_names(
+    target: &mut Vec<&'static str>,
+    properties: &'static [(&'static str, u16)],
+) {
+    target.extend(properties.iter().map(|(name, _)| *name));
+}
+
+fn is_parametric_type(type_name: &str) -> bool {
+    matches!(
+        type_name,
+        "ellipse" | "rectangle" | "triangle" | "polygon" | "star"
+    )
+}
+
+fn vertex_animatable_properties(type_name: &str) -> Option<&'static [(&'static str, u16)]> {
+    match type_name {
+        "straight_vertex" => Some(STRAIGHT_VERTEX_ANIMATABLE_PROPERTIES),
+        "cubic_mirrored_vertex" => Some(CUBIC_MIRRORED_VERTEX_ANIMATABLE_PROPERTIES),
+        "cubic_detached_vertex" => Some(CUBIC_DETACHED_VERTEX_ANIMATABLE_PROPERTIES),
+        "cubic_asymmetric_vertex" => Some(CUBIC_ASYMMETRIC_VERTEX_ANIMATABLE_PROPERTIES),
         _ => None,
     }
 }
 
-pub(crate) fn property_key_for_object(name: &str, object_type_key: u16) -> Option<u16> {
-    if object_type_key == type_keys::TEXT {
-        return match name {
-            "width" => Some(property_keys::TEXT_WIDTH),
-            "height" => Some(property_keys::TEXT_HEIGHT),
-            "origin_x" => Some(property_keys::TEXT_ORIGIN_X),
-            "origin_y" => Some(property_keys::TEXT_ORIGIN_Y),
-            "paragraph_spacing" => Some(property_keys::TEXT_PARAGRAPH_SPACING),
-            _ => property_key_from_name(name),
-        };
-    }
+const LISTENER_TYPES: &[(&str, u64)] = &[
+    ("enter", 0),
+    ("exit", 1),
+    ("down", 2),
+    ("up", 3),
+    ("move", 4),
+    ("event", 5),
+    ("click", 6),
+];
 
-    if object_type_key == type_keys::LAYOUT_COMPONENT {
-        return match name {
+pub(crate) fn parse_listener_type(name: &str) -> Result<u64, String> {
+    LISTENER_TYPES
+        .iter()
+        .find_map(|(listener, value)| (*listener == name).then_some(*value))
+        .ok_or_else(|| {
+            format!(
+                "unknown listener_type '{}'; expected one of {}",
+                name,
+                LISTENER_TYPES
+                    .iter()
+                    .map(|(listener, _)| *listener)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        })
+}
+
+pub(crate) fn animatable_properties_for_object_type(type_name: &str) -> Vec<&'static str> {
+    let mut properties = match type_name {
+        "text_style" => property_names(TEXT_STYLE_ANIMATABLE_PROPERTIES),
+        "text_modifier_group" => property_names(TEXT_MODIFIER_GROUP_ANIMATABLE_PROPERTIES),
+        "text" => {
+            let mut properties = transform_property_names();
+            extend_property_names(&mut properties, TEXT_ANIMATABLE_PROPERTIES);
+            properties
+        }
+        "layout_component" => {
+            let mut properties = transform_property_names();
+            properties.extend(["width", "height"]);
+            properties
+        }
+        "text_value_run" => TEXT_VALUE_RUN_ANIMATABLE_PROPERTIES.to_vec(),
+        "clipping_shape" => VISIBILITY_ANIMATABLE_PROPERTIES.to_vec(),
+        "fill" | "stroke" => VISIBILITY_ANIMATABLE_PROPERTIES.to_vec(),
+        "solid_color" => property_names(SOLID_COLOR_ANIMATABLE_PROPERTIES),
+        "linear_gradient" | "radial_gradient" => property_names(GRADIENT_ANIMATABLE_PROPERTIES),
+        "gradient_stop" => {
+            let mut properties = property_names(GRADIENT_STOP_ANIMATABLE_PROPERTIES);
+            properties.push("position");
+            properties
+        }
+        "trim_path" => property_names(TRIM_ANIMATABLE_PROPERTIES),
+        "event" => property_names(EVENT_ANIMATABLE_PROPERTIES),
+        "solo" => property_names(SOLO_ANIMATABLE_PROPERTIES),
+        _ if is_parametric_type(type_name) => {
+            let mut properties = transform_property_names();
+            extend_property_names(&mut properties, PARAMETRIC_ANIMATABLE_PROPERTIES);
+            properties
+        }
+        "shape"
+        | "node"
+        | "image"
+        | "nested_artboard"
+        | "nested_artboard_leaf"
+        | "nested_artboard_layout"
+        | "root_bone"
+        | "n_sliced_node" => transform_property_names(),
+        _ => vertex_animatable_properties(type_name)
+            .map(property_names)
+            .unwrap_or_default(),
+    };
+    let mut seen = HashSet::new();
+    properties.retain(|name| seen.insert(*name));
+    properties
+}
+
+pub(crate) fn animatable_property_key_for_object_type(
+    type_name: &str,
+    property_name: &str,
+) -> Option<u16> {
+    if !animatable_properties_for_object_type(type_name).contains(&property_name) {
+        return None;
+    }
+    match type_name {
+        "text" => property_key_from(TEXT_ANIMATABLE_PROPERTIES, property_name)
+            .or_else(|| property_key_from(TRANSFORM_ANIMATABLE_PROPERTIES, property_name)),
+        "layout_component" => match property_name {
             "width" => Some(property_keys::LAYOUT_COMPONENT_WIDTH),
             "height" => Some(property_keys::LAYOUT_COMPONENT_HEIGHT),
-            _ => property_key_from_name(name),
-        };
-    }
-
-    if object_type_key == type_keys::TEXT_STYLE {
-        return match name {
-            "font_size" => Some(property_keys::TEXT_STYLE_FONT_SIZE),
-            "line_height" => Some(property_keys::TEXT_STYLE_LINE_HEIGHT),
-            "letter_spacing" => Some(property_keys::TEXT_STYLE_LETTER_SPACING),
-            _ => None,
-        };
-    }
-
-    if object_type_key == type_keys::TEXT_MODIFIER_GROUP {
-        return match name {
-            "modifier_flags" => Some(property_keys::TEXT_MODIFIER_GROUP_MODIFIER_FLAGS),
-            "origin_x" => Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_X),
-            "origin_y" => Some(property_keys::TEXT_MODIFIER_GROUP_ORIGIN_Y),
-            "opacity" => Some(property_keys::TEXT_MODIFIER_GROUP_OPACITY),
-            "x" => Some(property_keys::TEXT_MODIFIER_GROUP_X),
-            "y" => Some(property_keys::TEXT_MODIFIER_GROUP_Y),
-            "rotation" => Some(property_keys::TEXT_MODIFIER_GROUP_ROTATION),
-            "scale_x" => Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_X),
-            "scale_y" => Some(property_keys::TEXT_MODIFIER_GROUP_SCALE_Y),
-            _ => None,
-        };
-    }
-
-    match name {
-        "text" if object_type_key == type_keys::TEXT_VALUE_RUN => {
-            Some(property_keys::TEXT_VALUE_RUN_TEXT)
+            _ => property_key_from(TRANSFORM_ANIMATABLE_PROPERTIES, property_name),
+        },
+        "text_style" => property_key_from(TEXT_STYLE_ANIMATABLE_PROPERTIES, property_name),
+        "text_modifier_group" => {
+            property_key_from(TEXT_MODIFIER_GROUP_ANIMATABLE_PROPERTIES, property_name)
         }
-        "is_visible" if object_type_key == type_keys::CLIPPING_SHAPE => {
-            Some(property_keys::CLIPPING_SHAPE_IS_VISIBLE)
+        "text_value_run" => Some(property_keys::TEXT_VALUE_RUN_TEXT),
+        "clipping_shape" => Some(property_keys::CLIPPING_SHAPE_IS_VISIBLE),
+        "fill" | "stroke" => Some(property_keys::SHAPE_PAINT_IS_VISIBLE),
+        "solid_color" => property_key_from(SOLID_COLOR_ANIMATABLE_PROPERTIES, property_name),
+        "linear_gradient" | "radial_gradient" => {
+            property_key_from(GRADIENT_ANIMATABLE_PROPERTIES, property_name)
         }
-        "is_visible" if matches!(object_type_key, type_keys::FILL | type_keys::STROKE) => {
-            Some(property_keys::SHAPE_PAINT_IS_VISIBLE)
+        "gradient_stop" => match property_name {
+            "position" => Some(property_keys::GRADIENT_STOP_POSITION),
+            _ => property_key_from(GRADIENT_STOP_ANIMATABLE_PROPERTIES, property_name),
+        },
+        "trim_path" => property_key_from(TRIM_ANIMATABLE_PROPERTIES, property_name),
+        "event" => property_key_from(EVENT_ANIMATABLE_PROPERTIES, property_name),
+        "solo" => property_key_from(SOLO_ANIMATABLE_PROPERTIES, property_name),
+        _ if is_parametric_type(type_name) => {
+            property_key_from(PARAMETRIC_ANIMATABLE_PROPERTIES, property_name)
+                .or_else(|| property_key_from(TRANSFORM_ANIMATABLE_PROPERTIES, property_name))
         }
-        "text" | "is_visible" => None,
-        _ => property_key_from_name(name),
+        _ => match vertex_animatable_properties(type_name) {
+            Some(properties) => property_key_from(properties, property_name),
+            None => property_key_from_name(property_name),
+        },
     }
+}
+pub(crate) fn object_type_name_for_key(object_type_key: u16) -> &'static str {
+    match object_type_key {
+        type_keys::TEXT => "text",
+        type_keys::LAYOUT_COMPONENT => "layout_component",
+        type_keys::TEXT_STYLE_PAINT => "text_style",
+        type_keys::TEXT_MODIFIER_GROUP => "text_modifier_group",
+        type_keys::TEXT_VALUE_RUN => "text_value_run",
+        type_keys::CLIPPING_SHAPE => "clipping_shape",
+        type_keys::FILL => "fill",
+        type_keys::STROKE => "stroke",
+        type_keys::SOLID_COLOR => "solid_color",
+        type_keys::LINEAR_GRADIENT => "linear_gradient",
+        type_keys::RADIAL_GRADIENT => "radial_gradient",
+        type_keys::GRADIENT_STOP => "gradient_stop",
+        type_keys::TRIM_PATH => "trim_path",
+        type_keys::EVENT => "event",
+        type_keys::SOLO => "solo",
+        type_keys::ELLIPSE => "ellipse",
+        type_keys::RECTANGLE => "rectangle",
+        type_keys::TRIANGLE => "triangle",
+        type_keys::POLYGON => "polygon",
+        type_keys::STAR => "star",
+        type_keys::SHAPE => "shape",
+        type_keys::NODE => "node",
+        type_keys::IMAGE => "image",
+        type_keys::STRAIGHT_VERTEX => "straight_vertex",
+        type_keys::CUBIC_MIRRORED_VERTEX => "cubic_mirrored_vertex",
+        type_keys::CUBIC_DETACHED_VERTEX => "cubic_detached_vertex",
+        type_keys::CUBIC_ASYMMETRIC_VERTEX => "cubic_asymmetric_vertex",
+        _ => "object",
+    }
+}
+
+pub(crate) fn property_key_for_object(name: &str, object_type_key: u16) -> Option<u16> {
+    animatable_property_key_for_object_type(object_type_name_for_key(object_type_key), name)
+}
+
+pub(crate) fn invalid_animatable_property_error(
+    object_name: &str,
+    object_type_name: &str,
+    property_name: &str,
+) -> Option<String> {
+    if matches!(property_name, "width" | "height")
+        && !is_parametric_type(object_type_name)
+        && object_type_name != "text"
+        && object_type_name != "layout_component"
+    {
+        let transform_property = if property_name == "width" {
+            "scale_x"
+        } else {
+            "scale_y"
+        };
+        return Some(format!(
+            "keyframe targets '{}' ({}) with property '{}', which a {} does not have; '{}' animates the parametric geometry - target the child ellipse/rectangle instead, or use {}",
+            object_name,
+            object_type_name,
+            property_name,
+            object_type_name,
+            property_name,
+            transform_property
+        ));
+    }
+    None
+}
+
+pub(crate) fn generic_animatable_property_names() -> Vec<&'static str> {
+    transform_property_names()
 }
 
 pub(crate) fn parse_condition_op(op: &str) -> u64 {

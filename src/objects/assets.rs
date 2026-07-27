@@ -439,14 +439,12 @@ impl RiveObject for BlobAsset {
     }
 }
 
-#[allow(dead_code)] // rive-runtime type for embedded asset content
 pub struct FileAssetContents {
-    pub bytes: u64,
+    pub bytes: Vec<u8>,
 }
 
 impl FileAssetContents {
-    #[allow(dead_code)]
-    pub fn new(bytes: u64) -> Self {
+    pub fn new(bytes: Vec<u8>) -> Self {
         Self { bytes }
     }
 }
@@ -459,7 +457,7 @@ impl RiveObject for FileAssetContents {
     fn properties(&self) -> Vec<Property> {
         vec![Property {
             key: property_keys::FILE_ASSET_CONTENTS_BYTES,
-            value: PropertyValue::UInt(self.bytes),
+            value: PropertyValue::Bytes(self.bytes.clone()),
         }]
     }
 }
@@ -536,17 +534,18 @@ mod tests {
 
     #[test]
     fn test_file_asset_contents_type_key() {
-        let contents = FileAssetContents::new(1024);
+        let contents = FileAssetContents::new(vec![0u8; 4]);
         assert_eq!(contents.type_key(), type_keys::FILE_ASSET_CONTENTS);
     }
 
     #[test]
     fn test_file_asset_contents_properties() {
-        let contents = FileAssetContents::new(2048);
+        let payload = vec![0x89, 0x50, 0x4E, 0x47];
+        let contents = FileAssetContents::new(payload.clone());
         let props = contents.properties();
         assert_eq!(props.len(), 1);
         assert_eq!(props[0].key, property_keys::FILE_ASSET_CONTENTS_BYTES);
-        assert_eq!(props[0].value, PropertyValue::UInt(2048));
+        assert_eq!(props[0].value, PropertyValue::Bytes(payload));
     }
 
     #[test]

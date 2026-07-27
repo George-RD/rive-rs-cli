@@ -1,0 +1,17 @@
+{
+  "name": "rive-cli-promo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion promo for rive-cli, composed from PNG sequences rendered by the tool itself",
+  "scripts": {
+    "sequences": "bash render-sequences.sh",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts promo out/promo.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.499",
+    "remotion": "4.0.499",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  }
+}

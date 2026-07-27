@@ -13,6 +13,7 @@ pub enum PropertyValue {
     String(String),
     Float(f32),
     Color(u32),
+    Bytes(Vec<u8>),
 }
 
 impl PropertyValue {
@@ -24,6 +25,7 @@ impl PropertyValue {
             PropertyValue::String(_) => BackingType::String,
             PropertyValue::Float(_) => BackingType::Float,
             PropertyValue::Color(_) => BackingType::Color,
+            PropertyValue::Bytes(_) => BackingType::String,
         }
     }
 }
@@ -857,6 +859,10 @@ pub fn is_bool_property(key: u16) -> bool {
     )
 }
 
+pub fn is_bytes_property(key: u16) -> bool {
+    key == property_keys::FILE_ASSET_CONTENTS_BYTES
+}
+
 pub fn property_backing_type(key: u16) -> Option<BackingType> {
     match key {
         property_keys::COMPONENT_NAME
@@ -879,7 +885,8 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::BINDABLE_PROPERTY_STRING_VALUE
         | property_keys::TEXT_INPUT_TEXT_VALUE
         | property_keys::FOLDER_PATH
-        | property_keys::MESH_TRIANGLE_INDEX_BYTES => Some(BackingType::String),
+        | property_keys::MESH_TRIANGLE_INDEX_BYTES
+        | property_keys::FILE_ASSET_CONTENTS_BYTES => Some(BackingType::String),
         property_keys::LAYOUT_COMPONENT_WIDTH
         | property_keys::LAYOUT_COMPONENT_HEIGHT
         | property_keys::NODE_X_ARTBOARD
@@ -1145,7 +1152,6 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TEXT_VALUE_RUN_STYLE_ID
         | property_keys::FILE_ASSET_ASSET_ID
         | property_keys::IMAGE_ASSET_ID
-        | property_keys::FILE_ASSET_CONTENTS_BYTES
         | property_keys::LAYOUT_STYLE_FLEX_DIRECTION
         | property_keys::LAYOUT_STYLE_FLEX_WRAP
         | property_keys::LAYOUT_STYLE_ALIGN_ITEMS

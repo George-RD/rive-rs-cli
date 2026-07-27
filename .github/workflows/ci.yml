@@ -58,3 +58,15 @@ jobs:
           trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
           npx wait-on http://localhost:3021 --timeout 300000
           node tests/playwright/demo-validation.js
+
+  site:
+    needs: [check]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/site-validation.js

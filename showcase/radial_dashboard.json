@@ -1,0 +1,133 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Radial Dashboard Gauge",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape", "name": "OuterHalo", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "OuterHaloPath", "width": 294, "height": 294, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "stroke", "name": "OuterHaloStroke", "thickness": 2, "cap": "round", "children": [
+            { "type": "linear_gradient", "name": "HaloGradient", "start_x": 0, "start_y": 0, "end_x": 294, "end_y": 294, "children": [
+              { "type": "gradient_stop", "color": "#334155", "position": 0.0 },
+              { "type": "gradient_stop", "color": "#64748B", "position": 0.5 },
+              { "type": "gradient_stop", "color": "#1E293B", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      },
+      {
+        "type": "shape", "name": "TickRing", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "TickRingPath", "width": 266, "height": 266, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "stroke", "name": "TickRingStroke", "thickness": 5, "cap": "round", "children": [
+            { "type": "linear_gradient", "name": "TickGradient", "start_x": 0, "start_y": 0, "end_x": 266, "end_y": 266, "children": [
+              { "type": "gradient_stop", "color": "#31415E", "position": 0.0 },
+              { "type": "gradient_stop", "color": "#64748B", "position": 0.48 },
+              { "type": "gradient_stop", "color": "#293750", "position": 1.0 }
+            ] },
+            { "type": "trim_path", "name": "TickTrim", "start": 0.0, "end": 0.91, "offset": 0.045, "mode": "sequential" }
+          ] }
+        ]
+      },
+      {
+        "type": "shape", "name": "ProgressTrack", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "ProgressTrackPath", "width": 224, "height": 224, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "stroke", "name": "ProgressTrackStroke", "thickness": 18, "cap": "round", "children": [
+            { "type": "solid_color", "name": "ProgressTrackColor", "color": "#0C1222" },
+            { "type": "trim_path", "name": "ProgressTrackTrim", "start": 0.0, "end": 0.78, "offset": 0.11, "mode": "sequential" }
+          ] }
+        ]
+      },
+      {
+        "type": "shape", "name": "ProgressArc", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "ProgressArcPath", "width": 224, "height": 224, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "stroke", "name": "ProgressArcStroke", "thickness": 12, "cap": "round", "children": [
+            { "type": "linear_gradient", "name": "ProgressGradient", "start_x": 0, "start_y": 224, "end_x": 224, "end_y": 0, "children": [
+              { "type": "gradient_stop", "name": "ProgressStopA", "color": "#22D3EE", "position": 0.0 },
+              { "type": "gradient_stop", "name": "ProgressStopB", "color": "#3B82F6", "position": 0.42 },
+              { "type": "gradient_stop", "name": "ProgressStopC", "color": "#A855F7", "position": 0.72 },
+              { "type": "gradient_stop", "name": "ProgressStopD", "color": "#F43F8E", "position": 1.0 }
+            ] },
+            { "type": "trim_path", "name": "ProgressTrim", "start": 0.0, "end": 0.78, "offset": 0.11, "mode": "sequential" }
+          ] }
+        ]
+      },
+      {
+        "type": "shape", "name": "SecondaryTrack", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "SecondaryTrackPath", "width": 166, "height": 166, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "stroke", "name": "SecondaryTrackStroke", "thickness": 7, "cap": "round", "children": [
+            { "type": "solid_color", "name": "SecondaryTrackColor", "color": "#17233B" },
+            { "type": "trim_path", "name": "SecondaryTrackTrim", "start": 0.0, "end": 0.62, "offset": 0.55, "mode": "sequential" }
+          ] }
+        ]
+      },
+      {
+        "type": "shape", "name": "SecondaryArc", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "SecondaryArcPath", "width": 166, "height": 166, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "stroke", "name": "SecondaryArcStroke", "thickness": 7, "cap": "round", "children": [
+            { "type": "linear_gradient", "name": "SecondaryGradient", "start_x": 0, "start_y": 166, "end_x": 166, "end_y": 0, "children": [
+              { "type": "gradient_stop", "color": "#FBBF24", "position": 0.0 },
+              { "type": "gradient_stop", "color": "#FB7185", "position": 0.52 },
+              { "type": "gradient_stop", "color": "#8B5CF6", "position": 1.0 }
+            ] },
+            { "type": "trim_path", "name": "SecondaryTrim", "start": 0.0, "end": 0.62, "offset": 0.55, "mode": "sequential" }
+          ] }
+        ]
+      },
+      {
+        "type": "shape", "name": "CoreGlow", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "CoreGlowPath", "width": 116, "height": 116, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "CoreGlowFill", "children": [
+            { "type": "radial_gradient", "name": "CoreGlowGradient", "start_x": 58, "start_y": 58, "end_x": 116, "end_y": 58, "children": [
+              { "type": "gradient_stop", "color": "#1E3A8A", "position": 0.0 },
+              { "type": "gradient_stop", "color": "#172554", "position": 0.58 },
+              { "type": "gradient_stop", "color": "#0F172A", "position": 1.0 }
+            ] }
+          ] },
+          { "type": "stroke", "name": "CoreGlowStroke", "thickness": 2, "children": [ { "type": "solid_color", "name": "CoreGlowStrokeColor", "color": "#38BDF8" } ] }
+        ]
+      },
+      {
+        "type": "shape", "name": "CentralIndicator", "x": 200, "y": 200,
+        "children": [
+          { "type": "ellipse", "name": "CentralIndicatorPath", "width": 48, "height": 48, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "CentralIndicatorFill", "children": [
+            { "type": "radial_gradient", "name": "IndicatorGradient", "start_x": 24, "start_y": 20, "end_x": 48, "end_y": 24, "children": [
+              { "type": "gradient_stop", "color": "#F0FDFA", "position": 0.0 },
+              { "type": "gradient_stop", "color": "#22D3EE", "position": 0.35 },
+              { "type": "gradient_stop", "color": "#2563EB", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "dashboard_pulse", "fps": 60, "duration": 90, "loop_type": "loop",
+        "interpolators": [
+          { "name": "dashboard_ease", "x1": 0.42, "y1": 0.0, "x2": 0.58, "y2": 1.0 },
+          { "name": "sweep_ease", "x1": 0.25, "y1": 0.1, "x2": 0.25, "y2": 1.0 }
+        ],
+        "keyframes": [
+          { "object": "ProgressTrim", "property": "trim_end", "frames": [ { "frame": 0, "value": 0.18, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 45, "value": 0.78, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 89, "value": 0.42 } ] },
+          { "object": "ProgressTrim", "property": "trim_offset", "frames": [ { "frame": 0, "value": 0.11, "interpolation": "cubic", "interpolator": "sweep_ease" }, { "frame": 89, "value": 0.48 } ] },
+          { "object": "SecondaryArc", "property": "rotation", "frames": [ { "frame": 0, "value": 0.0, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 89, "value": -4.71239 } ] },
+          { "object": "SecondaryTrim", "property": "trim_end", "frames": [ { "frame": 0, "value": 0.28, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 45, "value": 0.68, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 89, "value": 0.42 } ] },
+          { "object": "TickRing", "property": "rotation", "frames": [ { "frame": 0, "value": 0.0, "interpolation": "cubic", "interpolator": "sweep_ease" }, { "frame": 89, "value": 0.785398 } ] },
+          { "object": "CentralIndicator", "property": "scale_x", "frames": [ { "frame": 0, "value": 0.72, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 30, "value": 1.22, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 60, "value": 0.92, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 89, "value": 0.72 } ] },
+          { "object": "CentralIndicator", "property": "scale_y", "frames": [ { "frame": 0, "value": 0.72, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 30, "value": 1.22, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 60, "value": 0.92, "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 89, "value": 0.72 } ] },
+          { "object": "ProgressStopD", "property": "color", "frames": [ { "frame": 0, "value": "#F43F8E", "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 45, "value": "#FBBF24", "interpolation": "cubic", "interpolator": "dashboard_ease" }, { "frame": 89, "value": "#F43F8E" } ] }
+        ]
+      }
+    ],
+    "state_machines": []
+  }
+}

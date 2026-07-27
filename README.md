@@ -1,110 +1,120 @@
 # rive-cli
 
-A feature-complete CLI for programmatic creation and manipulation of Rive (`.riv`) animation files, written in Rust. 
+`rive-cli` creates, validates, examines, and renders Rive (`.riv`) animations from JSON SceneSpec files. It is a Rust CLI for the write side of the Rive binary format; generated files are intended to load in Rive runtimes without requiring the Rive editor.
 
-## Vision
+## Workflow
 
-Generate production-ready `.riv` files from structured input (JSON, CLI commands, or piped instructions) without requiring the Rive editor. Output files are loadable by any Rive runtime (iOS, Android, Web, Flutter, etc.).
-
-This tool is designed to be composable — usable standalone, scriptable in CI pipelines, and connectable to AI agents via MCP skills/plugins. 
-
-## Why This Exists
-
-The Rive `.riv` binary format is [well-documented](https://rive.app/docs/runtimes/advanced-topic/format) and the runtimes are [MIT-licensed open source](https://github.com/rive-app/rive-runtime). The editor is proprietary. This project implements the **write side** of the format — creating `.riv` files programmatically.
-
-## Architecture
-
-```
-Input (JSON/CLI) → Builder API → Binary Encoder → .riv file
-                                                      ↓
-                                              Rive Runtime (validate)
-```
-
-### Core Layers
-
-1. **Binary Encoder** (`src/encoder/`) — Low-level .riv binary format writer. Handles the RIVE header, table of contents, LEB128 varuint encoding, object serialization. Direct port of concepts from `rive-runtime/include/rive/core/binary_writer.hpp`.
-
-2. **Object Model** (`src/objects/`) — Rust types for every .riv object (Artboard, Shape, Path, Fill, Animation, StateMachine, Bone, etc.). Auto-generated from Rive's open-source core definitions where possible.
-
-3. **Builder API** (`src/builder/`) — Ergonomic API for constructing animation scenes. Handles parent-child relationships, property defaults, ID assignment, and serialization order.
-
-4. **CLI Interface** (`src/cli/`) — Command-line interface accepting JSON scene descriptions or subcommands for building files incrementally.
-
-5. **Validator** (`src/validator/`) — Reads back generated `.riv` files using the format spec to verify structural correctness before runtime loading.
-
-## .riv Format Reference
-
-- **Spec**: https://rive.app/docs/runtimes/advanced-topic/format
-- **Binary format**: Little-endian, LEB128 varuints, 4 backing types (uint, string, float, color)
-- **Header**: `RIVE` fingerprint (4 bytes) + major version (varuint, currently 7) + minor version + file ID + ToC
-- **Objects**: Sequential list, each = type key (varuint) + property key-value pairs + zero terminator
-- **Hierarchy**: Implicit via read order; parent references via unsigned integer indices
-
-## Object Type Coverage
-
-Target: all object types from the Rive runtime's generated definitions (~150-200 types across these categories):
-
-| Category | Examples | Source |
-|----------|----------|--------|
-| **Drawing** | Artboard, Shape, Ellipse, Rectangle, Path, Fill, Stroke, RadialGradient | `generated/shapes/` |
-| **Animation** | LinearAnimation, KeyFrameDouble, KeyFrameColor, CubicInterpolator | `generated/animation/` |
-| **State Machines** | StateMachine, Layer, EntryState, AnimationState, Transition, Conditions, Listeners | `generated/animation/` |
-| **Hierarchy** | Node, TransformComponent, Drawable, ContainerComponent | root generated |
-| **Bones** | Bone, RootBone, Skin, Weight, Tendon | `generated/bones/` |
-| **Constraints** | IKConstraint, DistanceConstraint, TransformConstraint | `generated/constraints/` |
-| **Text** | Text, TextRun, TextStyle, TextValueRun | `generated/text/` |
-| **Assets** | ImageAsset, FontAsset, AudioAsset, FileAssetContents | `generated/assets/` |
-| **Layout** | LayoutComponent, various layout types | `generated/layout/` |
-| **Data Binding** | ViewModel, ViewModelProperty types, DataBind | `generated/data_bind/`, `generated/viewmodel/` |
-
-## Development Approach
-
-Build incrementally, driven by real output at each step:
-
-1. **Binary foundation** — Encoder writes valid .riv headers and empty artboards. Validate by loading in the Rive runtime.
-2. **Static drawing** — Shapes, paths, fills, strokes, colors. Produce visible artwork.
-3. **Animation** — Linear animations with keyframes. Things move.
-4. **State machines** — Interactive states with transitions and listeners. Things respond.
-5. **Rigging** — Bones, skinning, constraints. Characters articulate.
-6. **Text & assets** — Embedded text, images, fonts, audio references.
-7. **Advanced** — Data binding, view models, nested artboards, layout system.
-
-Each step produces testable `.riv` output. No layer is "done" until its output loads correctly in a Rive runtime.
-
-## Usage
+Start from a known-good scene, make the scene your own, compile it, validate the binary, then render it with the real Rive canvas runtime:
 
 ```bash
-# Generate from JSON scene description
-rive-cli generate scene.json -o output.riv
-
-# Validate a .riv file
-rive-cli validate output.riv
-
-# Inspect a .riv file (dump object tree)
-rive-cli inspect existing.riv
-rive-cli inspect existing.riv --type-name Shape
-
-# Decompile a .riv file back to an inspect-format dump
-rive-cli decompile existing.riv
-
-# List built-in artboard size presets (global --json applies here)
-rive-cli --list-presets
-rive-cli --json --list-presets
-
-# AI-assisted generation and prompt-lab evaluation
-rive-cli ai generate --prompt "bouncing ball" -o output.riv
-rive-cli ai lab --suite evals/suites/prompt_lab.v1.json
-
-# Machine-readable output: each subcommand takes its own --json
-rive-cli inspect existing.riv --json
-
-# MCP stdio server (requires --features mcp at build time)
-rive-cli --mcp
+rive-cli new spinner -o scene.json
+# Edit scene.json.
+rive-cli generate scene.json -o out.riv
+rive-cli validate out.riv
+rive-cli render out.riv --frames 0,15,30,45 --preview -o frames/
 ```
 
-`generate` reads its input from a file path; there is no stdin mode.
+`render --preview` prints an ASCII coverage map, dominant-colour percentage, and non-background bounds for each frame. It also writes `preview.txt` and `manifest.json`, alongside the PNG files, so a non-visual workflow can still inspect what was rendered.
 
-Scene specs are versioned with `scene_format_version` and currently require `1`.
+## Commands
+
+### Generate, validate, and examine files
+
+```bash
+rive-cli generate scene.json -o output.riv
+rive-cli validate output.riv
+rive-cli inspect output.riv --type-name Shape
+rive-cli decompile output.riv --json
+```
+
+- `generate INPUT` accepts `-o, --output`, `--file-id`, and `--json`.
+- `validate FILE` accepts `--json`.
+- `inspect FILE` accepts `--json`, `--artboard-index`, `--artboard-name`, `--local-index`, `--type-key`, `--type-name`, `--object-index`, and `--property-key`.
+- `decompile FILE` accepts `--json`.
+
+`--json` is also available globally and on each command that produces structured output. Errors in JSON mode use the stable envelope `{ok, command, code, message}`.
+
+### Discover the authoring contract
+
+```bash
+rive-cli schema
+rive-cli schema --compact
+rive-cli types --category paint
+rive-cli describe ellipse --json
+```
+
+- `schema` prints the complete SceneSpec JSON schema; `--compact` removes indentation.
+- `types` lists usable object types; `--category` filters the list.
+- `describe TYPE` reports the type's fields, enum values, valid parents, and animatable properties. Its animation-property resolver is the same one `generate` uses.
+
+### Scaffold scenes
+
+```bash
+rive-cli new --list
+rive-cli new animated -o scene.json
+```
+
+`new TEMPLATE` writes a known-good SceneSpec to standard output or, with `-o, --output`, to a file. The available templates are `shape`, `animated`, `gradient`, `spinner`, `button`, and `multi`.
+
+### Render PNG frames
+
+```bash
+rive-cli render output.riv
+rive-cli render output.riv --frames 0,15,30,45 -o frames/
+rive-cli render output.riv --frames 0..120:10 --width 800 --height 600
+rive-cli render output.riv --animation spin --contact-sheet
+```
+
+`render FILE` drives headless Chromium directly over CDP from Rust; it does not use Node or Playwright. A Chrome or Chromium executable is therefore required. For a non-standard browser location, set `$RIVE_CHROME` or pass `--browser /path/to/chromium`.
+
+Render options:
+
+| Option | Purpose |
+|---|---|
+| `-o, --output DIR` | PNG and manifest output directory (default `renders`) |
+| `--frames LIST_OR_RANGE` | Frame list such as `0,15,30`, or range such as `0..120:10` |
+| `--fps FPS` | Frames per second used to convert indices to time |
+| `--animation NAME` | Linear animation to scrub |
+| `--state-machine NAME` | State machine to advance instead of an animation |
+| `--input NAME=VALUE[@FRAME]` | Repeatable state-machine bool, number, or `trigger` input. `@FRAME` applies it when the stepper reaches that frame |
+| `--pointer EVENT:X,Y@FRAME` | Repeatable pointer event (`down`, `up`, `move`, `enter`, `exit`) in artboard coordinates, dispatched through Rive's own listener handling |
+| `--artboard NAME` | Artboard to render |
+| `--width PX`, `--height PX`, `--scale RATIO` | Logical dimensions and device-pixel multiplier |
+| `--background COLOR` | Background behind the artboard, for example `#202024` |
+| `--contact-sheet` | Write a horizontal filmstrip in addition to individual frames |
+| `--preview` | Print and write text coverage previews |
+| `--browser PATH` | Override browser discovery |
+| `--json` | Emit the render manifest as JSON |
+
+Each frame in `manifest.json` records its PNG path, distinct-colour count, and `blank` flag, and the manifest also records the inputs and pointer events that were applied. Identical inputs produce byte-identical PNGs.
+
+`--input` and `--pointer` both require `--state-machine`. Interaction is proved the same way animation is: render the same frames with and without the flag and require the frames before the scheduled frame to be byte-identical.
+
+### Other commands
+
+```bash
+rive-cli --list-presets
+rive-cli ai generate --template spinner -o output.riv
+rive-cli ai lab --suite evals/suites/prompt_lab.v1.json
+```
+
+`ai generate` accepts either `--prompt` or `--template`; `ai lab` runs a suite given by `--suite`. The optional MCP server is built with `--features mcp`.
+
+## For AI agents
+
+Read [`skills/rive-animation/SKILL.md`](skills/rive-animation/SKILL.md) before authoring a scene. It describes the scaffold → discover → generate → validate → render loop and the runtime constraints that structural validation alone cannot catch.
+
+The ten scenes in [`showcase/`](showcase/) are a gallery of working examples: six basics authored end to end by a fresh-context agent, and four advanced scenes covering embedded fonts, path morphing, embedded imagery and pointer-driven state machines. Use `rive-cli describe <type>` rather than guessing fields or animation properties.
+
+## Site and promo
+
+[`site/`](site/) is a dependency-free page that plays the committed `showcase/*.riv` live in the vendored Rive runtime — the animations on it are the tool's own output, not recordings. Preview it with `node site/serve.js`; `.github/workflows/pages.yml` publishes it, and `node tests/playwright/site-validation.js` asserts every scene paints, the interactive controls change the render, and the console is clean.
+
+[`promo/`](promo/) is a Remotion composition assembled from PNG sequences that `rive-cli render` produced, so every frame in the video is a frame the test suite verifies. See [`promo/README.md`](promo/README.md) to rebuild it.
+
+## SceneSpec
+
+Scene specs require `scene_format_version: 1`:
 
 ```json
 {
@@ -118,41 +128,34 @@ Scene specs are versioned with `scene_format_version` and currently require `1`.
 }
 ```
 
+The complete generated schema is [`docs/scene.schema.v1.json`](docs/scene.schema.v1.json). Format and runtime-compatibility constraints are recorded in [`docs/format-spec.md`](docs/format-spec.md).
+
 ## Installation
 
-- Prebuilt binaries: see GitHub Releases and platform packages in `docs/install.md`.
-- From source: `cargo build --release` and run `./target/release/rive-cli`.
+Build from source:
 
-## Cookbook
+```bash
+cargo build --release
+./target/release/rive-cli --help
+```
 
-- End-to-end examples are documented in `docs/cookbook.md`.
-- AI prompt templates and regression cookbook are documented in `docs/ai-prompt-cookbook.v1.md`.
-- Release maintainer flow is documented in `docs/release.md`.
+Prebuilt binaries and platform packages are documented in [`docs/install.md`](docs/install.md).
 
 ## Testing
 
 ```bash
 cargo test
-
-# Runtime compatibility regression checks via official Rive web runtime
 npx -y -p playwright node tests/playwright/regression.js
+npx -y -p playwright node tests/playwright/visual-regression.js
 ```
 
-The Playwright suite generates fixture `.riv` files, serves a local harness that loads `@rive-app/canvas`, and fails on runtime load or browser errors.
-Fixtures are intentionally high-contrast for screenshot clarity so future visual diffing can compare deterministic outputs.
+The Rust tests cover generation and structural validation. The runtime and visual regressions load generated files in the official Rive canvas runtime and compare actual renders against PNG baselines.
 
-## Internal Format Notes
+## Reference material
 
-- `docs/format-spec.md` tracks encoding behaviors and compatibility constraints discovered during implementation.
-- `docs/scene.schema.v1.json` is the complete JSON schema for SceneSpec input, generated from the Rust types in `src/builder/spec.rs`. Regenerate it with `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync`; a unit test fails if the committed file drifts.
-- `docs/ai/scene-prompt-schema.json` is the smaller curated subset embedded in the `ai generate` system prompt.
-
-## Reference Material
-
-- [.riv format specification](https://rive.app/docs/runtimes/advanced-topic/format)
-- [rive-runtime C++ (MIT)](https://github.com/rive-app/rive-runtime) — binary reader/writer, generated type definitions
-- [rive-rs Rust runtime](https://github.com/rive-app/rive-rs) — Rust bindings (read-only)
-- [Generated core definitions](https://github.com/rive-app/rive-runtime/tree/main/include/rive/generated) — all object types and property IDs
+- [Rive binary format specification](https://rive.app/docs/runtimes/advanced-topic/format)
+- [rive-runtime C++](https://github.com/rive-app/rive-runtime)
+- [rive-rs Rust runtime](https://github.com/rive-app/rive-rs)
 
 ## License
 

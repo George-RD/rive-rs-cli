@@ -101,7 +101,7 @@ impl RepairEngine {
                 }
             };
 
-            let scene = match build_scene(&spec) {
+            let scene = match build_scene(&spec, None) {
                 Ok(s) => s,
                 Err(e) => {
                     diagnostics.push(RepairDiagnostic {

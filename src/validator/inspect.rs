@@ -196,6 +196,7 @@ pub fn inspect_riv(data: &[u8], filter: &InspectFilter) -> Result<String, String
                 PropertyValueRead::String(v) => format!("string({:?})", v),
                 PropertyValueRead::Float(v) => format!("float({})", v),
                 PropertyValueRead::Color(v) => format!("color(0x{:08X})", v),
+                PropertyValueRead::Bytes { length } => format!("bytes({})", length),
             };
             out.push_str(&format!(
                 "  {}({}) {}\n",

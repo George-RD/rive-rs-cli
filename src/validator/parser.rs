@@ -2,7 +2,9 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
-use crate::objects::core::{BackingType, is_bool_property, property_backing_type};
+use crate::objects::core::{
+    BackingType, is_bool_property, is_bytes_property, property_backing_type,
+};
 use crate::objects::generated_registry;
 
 use super::binary_reader::BinaryReader;
@@ -21,6 +23,7 @@ pub enum PropertyValueRead {
     String(String),
     Float(f32),
     Color(u32),
+    Bytes { length: usize },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -167,6 +170,18 @@ pub fn parse_riv(data: &[u8], filter: &InspectFilter) -> Result<ParsedRiv, Strin
                         })?;
                         PropertyValueRead::UInt(v)
                     }
+                }
+                BackingType::String if is_bytes_property(prop_key) => {
+                    let length = reader.read_varuint().ok_or_else(|| {
+                        format!(
+                            "unexpected end of data reading bytes length for property {}",
+                            prop_key
+                        )
+                    })? as usize;
+                    reader.read_bytes(length).ok_or_else(|| {
+                        format!("unexpected end of data reading bytes property {}", prop_key)
+                    })?;
+                    PropertyValueRead::Bytes { length }
                 }
                 BackingType::String => {
                     let v = reader.read_string().ok_or_else(|| {

@@ -20,13 +20,21 @@
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <script src="rive.js"></script>
+    <script src="/assets/rive.js"></script>
     <script>
       window.__RIVE_OK = false;
       window.__RIVE_ERROR = "";
-      rive.RuntimeLoader.setWasmUrl("rive.wasm");
-
       const params = new URLSearchParams(window.location.search);
+      const logicalWidth = Number(params.get("width") || String(window.innerWidth));
+      const logicalHeight = Number(params.get("height") || String(window.innerHeight));
+      const dpr = Number(params.get("dpr") || String(window.devicePixelRatio || 1));
+      const canvas = document.getElementById("canvas");
+      canvas.style.width = `${logicalWidth}px`;
+      canvas.style.height = `${logicalHeight}px`;
+      canvas.width = Math.round(logicalWidth * dpr);
+      canvas.height = Math.round(logicalHeight * dpr);
+      rive.RuntimeLoader.setWasmUrl("/assets/rive.wasm");
+
       const file = params.get("file");
       const artboard = params.get("artboard");
       if (!file) {
@@ -35,7 +43,7 @@
         try {
           const opts = {
             src: file,
-            canvas: document.getElementById("canvas"),
+            canvas,
             autoplay: true,
             onLoad: () => {
               window.__RIVE_OK = true;
@@ -47,7 +55,7 @@
           if (artboard) {
             opts.artboard = artboard;
           }
-          new rive.Rive(opts);
+          window.__RIVE_INSTANCE = new rive.Rive(opts);
         } catch (error) {
           window.__RIVE_ERROR = String(error || "rive init error");
         }

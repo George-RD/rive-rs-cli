@@ -1,6 +1,7 @@
 /target
 *.riv
 !demo/riv/reference/*.riv
+!showcase/*.riv
 .DS_Store
 __pycache__/
 evals/runs/
@@ -8,3 +9,9 @@ evals/runs/
 .codex/
 .opencode/skills/*.local.md
 .playwright-cli/
+
+# promo render artefacts (regenerate with promo/render-sequences.sh)
+promo/public/seq/
+promo/out/
+promo/node_modules/
+target/site/

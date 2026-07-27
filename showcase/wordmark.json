@@ -1,0 +1,733 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "Wordmark",
+    "width": 600,
+    "height": 600,
+    "children": [
+      {
+        "type": "font_asset",
+        "name": "Wordmark Font",
+        "source": "../assets/fonts/Inter-Bold-Subset.ttf"
+      },
+      {
+        "type": "node",
+        "name": "Spark Orbit",
+        "x": 300,
+        "y": 196,
+        "children": [
+          {
+            "type": "shape",
+            "name": "Spark",
+            "x": 0,
+            "y": -84,
+            "children": [
+              {
+                "type": "polygon",
+                "name": "Spark Geometry",
+                "width": 30,
+                "height": 30,
+                "corner_radius": 3,
+                "origin_x": 0.5,
+                "origin_y": 0.5
+              },
+              {
+                "type": "fill",
+                "name": "Spark Fill",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "Spark Fill Ink",
+                    "color": "#B7F34A"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "shape",
+            "name": "Spark Ring",
+            "x": 0,
+            "y": 0,
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "Spark Ring Geometry",
+                "width": 184,
+                "height": 184,
+                "origin_x": 0.5,
+                "origin_y": 0.5
+              },
+              {
+                "type": "stroke",
+                "name": "Spark Ring Stroke",
+                "thickness": 2,
+                "cap": "round",
+                "join": "round",
+                "children": [
+                  {
+                    "type": "solid_color",
+                    "name": "Spark Ring Ink",
+                    "color": "#33406A"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Mark Core",
+        "x": 300,
+        "y": 196,
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "Mark Core Geometry",
+            "width": 92,
+            "height": 92,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Mark Core Fill",
+            "children": [
+              {
+                "type": "radial_gradient",
+                "name": "Mark Core Gradient",
+                "start_x": -20,
+                "start_y": -26,
+                "end_x": 50,
+                "end_y": 50,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Mark Cyan",
+                    "color": "#67E8F9",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Mark Indigo",
+                    "color": "#4F46E5",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "node",
+        "name": "Rive Anchor",
+        "x": 300,
+        "y": 348,
+        "children": [
+          {
+            "type": "text",
+            "name": "Rive",
+            "align_value": 1,
+            "sizing_value": 0,
+            "origin_x": 0.5,
+            "origin_y": 0.5,
+            "children": [
+              {
+                "type": "text_style",
+                "name": "Rive Style",
+                "font_size": 128,
+                "letter_spacing": 4.0,
+                "font_asset": "Wordmark Font",
+                "children": [
+                  {
+                    "type": "fill",
+                    "name": "Rive Fill",
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "Rive Fill Ink",
+                        "color": "#F8FAFC"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "text_value_run",
+                "name": "Rive Run",
+                "text": "RIVE",
+                "style": "Rive Style"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "node",
+        "name": "Tagline Anchor",
+        "x": 300,
+        "y": 438,
+        "children": [
+          {
+            "type": "text",
+            "name": "Tagline",
+            "align_value": 1,
+            "sizing_value": 0,
+            "origin_x": 0.5,
+            "origin_y": 0.5,
+            "children": [
+              {
+                "type": "text_style",
+                "name": "Tagline Style",
+                "font_size": 24,
+                "letter_spacing": 3.0,
+                "font_asset": "Wordmark Font",
+                "children": [
+                  {
+                    "type": "fill",
+                    "name": "Tagline Fill",
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "Tagline Fill Ink",
+                        "color": "#7DD3FC"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "text_value_run",
+                "name": "Tagline Run",
+                "text": "COMPILED FROM JSON",
+                "style": "Tagline Style"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Underline",
+        "x": 300,
+        "y": 396,
+        "children": [
+          {
+            "type": "points_path",
+            "name": "Underline Path",
+            "is_closed": false,
+            "children": [
+              {
+                "type": "straight_vertex",
+                "name": "Underline Start",
+                "x": -186,
+                "y": 0
+              },
+              {
+                "type": "straight_vertex",
+                "name": "Underline End",
+                "x": 186,
+                "y": 0
+              }
+            ]
+          },
+          {
+            "type": "stroke",
+            "name": "Underline Stroke",
+            "thickness": 5,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Underline Gradient",
+                "start_x": -186,
+                "start_y": 0,
+                "end_x": 186,
+                "end_y": 0,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Underline Violet",
+                    "color": "#8B5CF6",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Underline Cyan",
+                    "color": "#22D3EE",
+                    "position": 0.5
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Underline Lime",
+                    "color": "#B7F34A",
+                    "position": 1.0
+                  }
+                ]
+              },
+              {
+                "type": "trim_path",
+                "name": "Underline Trim",
+                "start": 0.0,
+                "end": 0.0,
+                "offset": 0.0,
+                "mode": "sequential"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Panel",
+        "x": 300,
+        "y": 396,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "Panel Geometry",
+            "width": 470,
+            "height": 172,
+            "corner_radius": 26,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "fill",
+            "name": "Panel Fill",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Panel Gradient",
+                "start_x": -235,
+                "start_y": -86,
+                "end_x": 235,
+                "end_y": 86,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Panel Left",
+                    "color": "#1B2544",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Panel Right",
+                    "color": "#111A31",
+                    "position": 1.0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Frame",
+        "x": 300,
+        "y": 300,
+        "children": [
+          {
+            "type": "rectangle",
+            "name": "Frame Geometry",
+            "width": 536,
+            "height": 536,
+            "corner_radius": 42,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+          },
+          {
+            "type": "stroke",
+            "name": "Frame Stroke",
+            "thickness": 3,
+            "cap": "round",
+            "join": "round",
+            "children": [
+              {
+                "type": "linear_gradient",
+                "name": "Frame Gradient",
+                "start_x": -268,
+                "start_y": -268,
+                "end_x": 268,
+                "end_y": 268,
+                "children": [
+                  {
+                    "type": "gradient_stop",
+                    "name": "Frame Violet",
+                    "color": "#8B5CF6",
+                    "position": 0.0
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Frame Cyan",
+                    "color": "#22D3EE",
+                    "position": 0.5
+                  },
+                  {
+                    "type": "gradient_stop",
+                    "name": "Frame Lime",
+                    "color": "#B7F34A",
+                    "position": 1.0
+                  }
+                ]
+              },
+              {
+                "type": "trim_path",
+                "name": "Frame Trim",
+                "start": 0.0,
+                "end": 0.42,
+                "offset": 0.0,
+                "mode": "sequential"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "wordmark",
+        "fps": 60,
+        "duration": 150,
+        "loop_type": "loop",
+        "interpolators": [
+          {
+            "name": "settle",
+            "x1": 0.16,
+            "y1": 0.84,
+            "x2": 0.24,
+            "y2": 1.0
+          },
+          {
+            "name": "sweep",
+            "x1": 0.42,
+            "y1": 0.0,
+            "x2": 0.58,
+            "y2": 1.0
+          },
+          {
+            "name": "linear_spin",
+            "x1": 0.0,
+            "y1": 0.0,
+            "x2": 1.0,
+            "y2": 1.0
+          }
+        ],
+        "keyframes": [
+          {
+            "object": "Rive Anchor",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 6,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 34,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Rive Anchor",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 6,
+                "value": 378.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 34,
+                "value": 348.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 348.0
+              }
+            ]
+          },
+          {
+            "object": "Rive Anchor",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 6,
+                "value": 0.88,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 34,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Rive Anchor",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 6,
+                "value": 0.88,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 34,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Tagline Anchor",
+            "property": "opacity",
+            "frames": [
+              {
+                "frame": 22,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 50,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Tagline Anchor",
+            "property": "y",
+            "frames": [
+              {
+                "frame": 22,
+                "value": 468.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 50,
+                "value": 438.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 438.0
+              }
+            ]
+          },
+          {
+            "object": "Tagline Anchor",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 22,
+                "value": 0.88,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 50,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Tagline Anchor",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 22,
+                "value": 0.88,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 50,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "settle"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Underline Trim",
+            "property": "trim_end",
+            "frames": [
+              {
+                "frame": 30,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 82,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Spark Orbit",
+            "property": "rotation",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "linear_spin"
+              },
+              {
+                "frame": 150,
+                "value": 6.2831853
+              }
+            ]
+          },
+          {
+            "object": "Spark Fill Ink",
+            "property": "color",
+            "frames": [
+              {
+                "frame": 0,
+                "value": "#B7F34A",
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 75,
+                "value": "#22D3EE",
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 150,
+                "value": "#B7F34A"
+              }
+            ]
+          },
+          {
+            "object": "Mark Core",
+            "property": "scale_x",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 40,
+                "value": 1.14,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 110,
+                "value": 1.14,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Mark Core",
+            "property": "scale_y",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 1.0,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 40,
+                "value": 1.14,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 110,
+                "value": 1.14,
+                "interpolation": "cubic",
+                "interpolator": "sweep"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          },
+          {
+            "object": "Frame Trim",
+            "property": "trim_offset",
+            "frames": [
+              {
+                "frame": 0,
+                "value": 0.0,
+                "interpolation": "cubic",
+                "interpolator": "linear_spin"
+              },
+              {
+                "frame": 150,
+                "value": 1.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

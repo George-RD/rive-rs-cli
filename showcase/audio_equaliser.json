@@ -1,0 +1,144 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "AudioEqualiser",
+    "width": 400,
+    "height": 400,
+    "children": [
+      {
+        "type": "shape",
+        "name": "Bar1",
+        "x": 52,
+        "y": 208,
+        "children": [
+          { "type": "rectangle", "name": "Bar1Path", "width": 32, "height": 252, "corner_radius": 16, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "Bar1Fill", "children": [
+            { "type": "linear_gradient", "name": "Bar1Gradient", "start_x": 0, "start_y": -126, "end_x": 0, "end_y": 126, "children": [
+              { "type": "gradient_stop", "name": "Bar1Top", "color": "#38BDF8", "position": 0.0 },
+              { "type": "gradient_stop", "name": "Bar1Mid", "color": "#2563EB", "position": 0.48 },
+              { "type": "gradient_stop", "name": "Bar1Bottom", "color": "#1E3A8A", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Bar2",
+        "x": 101,
+        "y": 208,
+        "children": [
+          { "type": "rectangle", "name": "Bar2Path", "width": 32, "height": 252, "corner_radius": 16, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "Bar2Fill", "children": [
+            { "type": "linear_gradient", "name": "Bar2Gradient", "start_x": 0, "start_y": -126, "end_x": 0, "end_y": 126, "children": [
+              { "type": "gradient_stop", "name": "Bar2Top", "color": "#22D3EE", "position": 0.0 },
+              { "type": "gradient_stop", "name": "Bar2Mid", "color": "#0EA5E9", "position": 0.48 },
+              { "type": "gradient_stop", "name": "Bar2Bottom", "color": "#4338CA", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Bar3",
+        "x": 150,
+        "y": 208,
+        "children": [
+          { "type": "rectangle", "name": "Bar3Path", "width": 32, "height": 252, "corner_radius": 16, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "Bar3Fill", "children": [
+            { "type": "linear_gradient", "name": "Bar3Gradient", "start_x": 0, "start_y": -126, "end_x": 0, "end_y": 126, "children": [
+              { "type": "gradient_stop", "name": "Bar3Top", "color": "#818CF8", "position": 0.0 },
+              { "type": "gradient_stop", "name": "Bar3Mid", "color": "#7C3AED", "position": 0.48 },
+              { "type": "gradient_stop", "name": "Bar3Bottom", "color": "#4C1D95", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Bar4",
+        "x": 200,
+        "y": 208,
+        "children": [
+          { "type": "rectangle", "name": "Bar4Path", "width": 32, "height": 252, "corner_radius": 16, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "Bar4Fill", "children": [
+            { "type": "linear_gradient", "name": "Bar4Gradient", "start_x": 0, "start_y": -126, "end_x": 0, "end_y": 126, "children": [
+              { "type": "gradient_stop", "name": "Bar4Top", "color": "#C084FC", "position": 0.0 },
+              { "type": "gradient_stop", "name": "Bar4Mid", "color": "#A855F7", "position": 0.48 },
+              { "type": "gradient_stop", "name": "Bar4Bottom", "color": "#6B21A8", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Bar5",
+        "x": 250,
+        "y": 208,
+        "children": [
+          { "type": "rectangle", "name": "Bar5Path", "width": 32, "height": 252, "corner_radius": 16, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "Bar5Fill", "children": [
+            { "type": "linear_gradient", "name": "Bar5Gradient", "start_x": 0, "start_y": -126, "end_x": 0, "end_y": 126, "children": [
+              { "type": "gradient_stop", "name": "Bar5Top", "color": "#F0ABFC", "position": 0.0 },
+              { "type": "gradient_stop", "name": "Bar5Mid", "color": "#EC4899", "position": 0.48 },
+              { "type": "gradient_stop", "name": "Bar5Bottom", "color": "#9D174D", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Bar6",
+        "x": 299,
+        "y": 208,
+        "children": [
+          { "type": "rectangle", "name": "Bar6Path", "width": 32, "height": 252, "corner_radius": 16, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "Bar6Fill", "children": [
+            { "type": "linear_gradient", "name": "Bar6Gradient", "start_x": 0, "start_y": -126, "end_x": 0, "end_y": 126, "children": [
+              { "type": "gradient_stop", "name": "Bar6Top", "color": "#FDA4AF", "position": 0.0 },
+              { "type": "gradient_stop", "name": "Bar6Mid", "color": "#F43F5E", "position": 0.48 },
+              { "type": "gradient_stop", "name": "Bar6Bottom", "color": "#9F1239", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      },
+      {
+        "type": "shape",
+        "name": "Bar7",
+        "x": 348,
+        "y": 208,
+        "children": [
+          { "type": "rectangle", "name": "Bar7Path", "width": 32, "height": 252, "corner_radius": 16, "origin_x": 0.5, "origin_y": 0.5 },
+          { "type": "fill", "name": "Bar7Fill", "children": [
+            { "type": "linear_gradient", "name": "Bar7Gradient", "start_x": 0, "start_y": -126, "end_x": 0, "end_y": 126, "children": [
+              { "type": "gradient_stop", "name": "Bar7Top", "color": "#FDE68A", "position": 0.0 },
+              { "type": "gradient_stop", "name": "Bar7Mid", "color": "#F59E0B", "position": 0.48 },
+              { "type": "gradient_stop", "name": "Bar7Bottom", "color": "#B45309", "position": 1.0 }
+            ] }
+          ] }
+        ]
+      }
+    ],
+    "animations": [
+      {
+        "name": "spectrum_loop",
+        "fps": 60,
+        "duration": 60,
+        "loop_type": "loop",
+        "interpolators": [
+          { "name": "spectrum_ease", "x1": 0.42, "y1": 0.0, "x2": 0.58, "y2": 1.0 },
+          { "name": "pulse_ease", "x1": 0.32, "y1": 0.0, "x2": 0.68, "y2": 1.0 }
+        ],
+        "keyframes": [
+          { "object": "Bar1", "property": "scale_y", "frames": [{ "frame": 0, "value": 0.38, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 15, "value": 0.94, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 30, "value": 0.58, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 45, "value": 0.76, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 60, "value": 0.38 }] },
+          { "object": "Bar2", "property": "scale_y", "frames": [{ "frame": 0, "value": 0.74, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 15, "value": 0.42, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 30, "value": 0.98, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 45, "value": 0.61, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 60, "value": 0.74 }] },
+          { "object": "Bar3", "property": "scale_y", "frames": [{ "frame": 0, "value": 0.96, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 15, "value": 0.63, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 30, "value": 0.35, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 45, "value": 0.86, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 60, "value": 0.96 }] },
+          { "object": "Bar4", "property": "scale_y", "frames": [{ "frame": 0, "value": 0.52, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 15, "value": 0.88, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 30, "value": 0.69, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 45, "value": 0.31, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 60, "value": 0.52 }] },
+          { "object": "Bar5", "property": "scale_y", "frames": [{ "frame": 0, "value": 0.83, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 15, "value": 0.36, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 30, "value": 0.79, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 45, "value": 0.97, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 60, "value": 0.83 }] },
+          { "object": "Bar6", "property": "scale_y", "frames": [{ "frame": 0, "value": 0.45, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 15, "value": 0.78, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 30, "value": 0.93, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 45, "value": 0.55, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 60, "value": 0.45 }] },
+          { "object": "Bar7", "property": "scale_y", "frames": [{ "frame": 0, "value": 0.91, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 15, "value": 0.57, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 30, "value": 0.41, "interpolation": "cubic", "interpolator": "spectrum_ease" }, { "frame": 45, "value": 0.84, "interpolation": "cubic", "interpolator": "pulse_ease" }, { "frame": 60, "value": 0.91 }] }
+        ]
+      }
+    ],
+    "state_machines": []
+  }
+}

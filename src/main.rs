@@ -3,10 +3,61 @@ mod cli;
 use clap::Parser;
 #[cfg(feature = "mcp")]
 use rive_cli::mcp;
-use rive_cli::{ai, builder, encoder, objects, validator};
+use rive_cli::{ai, builder, discovery, encoder, objects, render, scaffold, validator};
+fn json_error(command: &str, code: &str, message: impl std::fmt::Display) -> ! {
+    let envelope = serde_json::json!({
+        "ok": false,
+        "command": command,
+        "code": code,
+        "message": message.to_string(),
+    });
+    eprintln!("{}", envelope);
+    std::process::exit(1);
+}
+
+fn json_success<T: serde::Serialize>(command: &str, value: &T) {
+    let mut output = serde_json::to_value(value).unwrap_or_else(|e| {
+        json_error(
+            command,
+            "encode-failed",
+            format!("JSON serialization failed: {}", e),
+        );
+    });
+    if let Some(object) = output.as_object_mut() {
+        object.insert("ok".to_owned(), serde_json::Value::Bool(true));
+    }
+    match serde_json::to_string_pretty(&output) {
+        Ok(text) => println!("{}", text),
+        Err(e) => json_error(
+            command,
+            "encode-failed",
+            format!("JSON serialization failed: {}", e),
+        ),
+    }
+}
 
 fn main() {
-    let cli = cli::Cli::parse();
+    let command_line: Vec<String> = std::env::args().collect();
+    let json_requested = command_line.iter().any(|argument| argument == "--json");
+    let json_command = command_line
+        .iter()
+        .find_map(|argument| match argument.as_str() {
+            "generate" | "new" | "validate" | "inspect" | "decompile" | "render" | "schema"
+            | "types" | "describe" | "ai" => Some(argument.as_str()),
+            _ => None,
+        })
+        .unwrap_or("cli");
+    let cli = cli::Cli::try_parse().unwrap_or_else(|error| {
+        if json_requested
+            && !matches!(
+                error.kind(),
+                clap::error::ErrorKind::DisplayHelp | clap::error::ErrorKind::DisplayVersion
+            )
+        {
+            json_error(json_command, "usage", error);
+        }
+        error.exit();
+    });
 
     if cli.list_presets {
         if cli.json {
@@ -31,10 +82,14 @@ fn main() {
     }
 
     let command = cli.command.unwrap_or_else(|| {
+        if cli.json {
+            json_error("cli", "usage", "no command provided");
+        }
         eprintln!("no command provided");
         std::process::exit(1);
     });
 
+    let global_json = cli.json;
     match command {
         cli::Command::Generate {
             input,
@@ -42,21 +97,54 @@ fn main() {
             file_id,
             json,
         } => {
+            let json = json || global_json;
             let json_str = std::fs::read_to_string(&input).unwrap_or_else(|e| {
+                if json {
+                    json_error(
+                        "generate",
+                        "read-failed",
+                        format!("error reading {:?}: {}", input, e),
+                    );
+                }
                 eprintln!("error reading {:?}: {}", input, e);
                 std::process::exit(1);
             });
             let spec = serde_json::from_str::<builder::SceneSpec>(&json_str).unwrap_or_else(|e| {
+                if json {
+                    json_error(
+                        "generate",
+                        "parse-failed",
+                        format!("error parsing JSON: {}", e),
+                    );
+                }
                 eprintln!("error parsing JSON: {}", e);
                 std::process::exit(1);
             });
-            let scene = builder::build_scene(&spec).unwrap_or_else(|e| {
+            let base_dir = input
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .unwrap_or_else(|| std::path::Path::new("."));
+            let scene = builder::build_scene(&spec, Some(base_dir)).unwrap_or_else(|e| {
+                if json {
+                    json_error(
+                        "generate",
+                        "invalid-scene",
+                        format!("invalid scene spec: {}", e),
+                    );
+                }
                 eprintln!("invalid scene spec: {}", e);
                 std::process::exit(1);
             });
             let refs: Vec<&dyn objects::core::RiveObject> = scene.iter().map(|o| &**o).collect();
             let bytes = encoder::encode_riv(&refs, file_id);
             std::fs::write(&output, &bytes).unwrap_or_else(|e| {
+                if json {
+                    json_error(
+                        "generate",
+                        "write-failed",
+                        format!("error writing {:?}: {}", output, e),
+                    );
+                }
                 eprintln!("error writing {:?}: {}", output, e);
                 std::process::exit(1);
             });
@@ -70,31 +158,103 @@ fn main() {
                     bytes_written: bytes.len(),
                     output_path: output.display().to_string(),
                 };
-                let json_str = serde_json::to_string_pretty(&result).unwrap_or_else(|e| {
-                    eprintln!("JSON serialization failed: {}", e);
-                    std::process::exit(1);
-                });
-                println!("{}", json_str);
+                json_success("generate", &result);
             } else {
                 eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
             }
         }
+        cli::Command::New {
+            template,
+            list,
+            output,
+        } => {
+            if list {
+                if global_json {
+                    json_success(
+                        "new",
+                        &serde_json::json!({"templates": scaffold::templates()}),
+                    );
+                } else {
+                    for info in scaffold::templates() {
+                        println!("{}: {}", info.name, info.description);
+                    }
+                }
+                return;
+            }
+            let Some(template) = template else {
+                if global_json {
+                    json_error("new", "usage", "a template is required");
+                }
+                eprintln!("a template is required; use `rive-cli new --list`");
+                std::process::exit(1);
+            };
+            let scene = scaffold::template_json(&template).unwrap_or_else(|_| {
+                if global_json {
+                    json_error(
+                        "new",
+                        "unknown-template",
+                        format!("unknown template '{}'; use `rive-cli new --list`", template),
+                    );
+                }
+                eprintln!("unknown template '{}'; use `rive-cli new --list`", template);
+                std::process::exit(1);
+            });
+            if let Some(output) = output {
+                std::fs::write(&output, scene).unwrap_or_else(|e| {
+                    if global_json {
+                        json_error(
+                            "new",
+                            "write-failed",
+                            format!("error writing {:?}: {}", output, e),
+                        );
+                    }
+                    eprintln!("error writing {:?}: {}", output, e);
+                    std::process::exit(1);
+                });
+                if global_json {
+                    #[derive(serde::Serialize)]
+                    struct NewOutput {
+                        template: String,
+                        output_path: String,
+                    }
+                    json_success(
+                        "new",
+                        &NewOutput {
+                            template,
+                            output_path: output.display().to_string(),
+                        },
+                    );
+                } else {
+                    eprintln!("wrote {} scene template to {:?}", template, output);
+                }
+            } else {
+                println!("{}", scene);
+            }
+        }
         cli::Command::Validate { file, json } => {
+            let json = json || global_json;
             let bytes = std::fs::read(&file).unwrap_or_else(|e| {
+                if json {
+                    json_error(
+                        "validate",
+                        "read-failed",
+                        format!("error reading {:?}: {}", file, e),
+                    );
+                }
                 eprintln!("error reading {:?}: {}", file, e);
                 std::process::exit(1);
             });
             match validator::validate_riv(&bytes) {
                 Ok(report) => {
                     if json {
-                        let json_str = serde_json::to_string_pretty(&report).unwrap_or_else(|e| {
-                            eprintln!("JSON serialization failed: {}", e);
-                            std::process::exit(1);
-                        });
-                        println!("{}", json_str);
                         if !report.valid {
-                            std::process::exit(1);
+                            json_error(
+                                "validate",
+                                "invalid-riv",
+                                format!("invalid ({} errors)", report.errors.len()),
+                            );
                         }
+                        json_success("validate", &report);
                     } else {
                         println!(
                             "RIVE v{}.{} file_id={}",
@@ -103,6 +263,9 @@ fn main() {
                             report.header.file_id
                         );
                         println!("{} objects", report.object_count);
+                        for warning in &report.warnings {
+                            eprintln!("warning: {}", warning);
+                        }
                         if report.valid {
                             println!("valid");
                         } else {
@@ -113,11 +276,11 @@ fn main() {
                             std::process::exit(1);
                         }
                     }
-                    for warning in &report.warnings {
-                        eprintln!("warning: {}", warning);
-                    }
                 }
                 Err(e) => {
+                    if json {
+                        json_error("validate", "invalid-riv", format!("invalid: {}", e));
+                    }
                     eprintln!("invalid: {}", e);
                     std::process::exit(1);
                 }
@@ -190,6 +353,172 @@ fn main() {
                     eprintln!("decompile failed: {}", e);
                     std::process::exit(1);
                 }
+            }
+        }
+        cli::Command::Render {
+            file,
+            output,
+            frames,
+            fps,
+            animation,
+            state_machine,
+            inputs,
+            pointers,
+            artboard,
+            width,
+            height,
+            scale,
+            background,
+            contact_sheet,
+            preview,
+            browser,
+            json,
+        } => {
+            let json = json || global_json;
+            let bytes = std::fs::read(&file).unwrap_or_else(|e| {
+                if json {
+                    json_error(
+                        "render",
+                        "read-failed",
+                        format!("error reading {:?}: {}", file, e),
+                    );
+                }
+                eprintln!("error reading {:?}: {}", file, e);
+                std::process::exit(1);
+            });
+            let frame_list = render::parse_frame_spec(&frames).unwrap_or_else(|e| {
+                if json {
+                    json_error("render", "usage", format!("invalid --frames value: {}", e));
+                }
+                eprintln!("invalid --frames value: {}", e);
+                std::process::exit(1);
+            });
+            let options = render::RenderOptions {
+                riv: bytes,
+                source_path: file.clone(),
+                output_dir: output,
+                frames: frame_list,
+                fps,
+                animation,
+                state_machine,
+                inputs,
+                pointers,
+                artboard,
+                width,
+                height,
+                scale,
+                background,
+                contact_sheet,
+                preview,
+                browser,
+            };
+            match render::render(&options) {
+                Ok(manifest) => {
+                    if json {
+                        match serde_json::to_string_pretty(&manifest) {
+                            Ok(text) => println!("{}", text),
+                            Err(e) => json_error(
+                                "render",
+                                "encode-failed",
+                                format!("JSON serialization failed: {}", e),
+                            ),
+                        }
+                    } else {
+                        println!("{}", render::render_manifest_text(&manifest));
+                    }
+                    if manifest.frames.iter().all(|frame| frame.blank) {
+                        eprintln!(
+                            "warning: every rendered frame is a single flat color; the artboard may be empty or the shapes may be off-screen"
+                        );
+                    }
+                }
+                Err(e) => {
+                    if json {
+                        json_error("render", "render-failed", e);
+                    }
+                    eprintln!("render failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        cli::Command::Schema { compact } => {
+            let schema = builder::scene_schema();
+            let rendered = if compact {
+                serde_json::to_string(&schema)
+            } else {
+                serde_json::to_string_pretty(&schema)
+            };
+            match rendered {
+                Ok(text) => println!("{}", text),
+                Err(e) => {
+                    if global_json {
+                        json_error(
+                            "schema",
+                            "encode-failed",
+                            format!("JSON serialization failed: {}", e),
+                        );
+                    }
+                    eprintln!("JSON serialization failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        cli::Command::Types { category, json } => {
+            let json = json || global_json;
+            let types = discovery::list_types(category.as_deref());
+            if types.is_empty() {
+                let category = category.unwrap_or_default();
+                let message = format!(
+                    "unknown category: {}\nvalid categories: {}",
+                    category,
+                    discovery::categories().join(", ")
+                );
+                if json {
+                    json_error("types", "unknown-category", message);
+                }
+                eprintln!("{}", message);
+                std::process::exit(1);
+            }
+            if json {
+                match serde_json::to_string_pretty(&types) {
+                    Ok(text) => println!("{}", text),
+                    Err(e) => json_error(
+                        "types",
+                        "encode-failed",
+                        format!("JSON serialization failed: {}", e),
+                    ),
+                }
+            } else {
+                println!("{}", discovery::render_types_text(&types));
+            }
+        }
+        cli::Command::Describe { type_name, json } => {
+            let json = json || global_json;
+            let Some(description) = discovery::describe(&type_name) else {
+                let mut message = format!(
+                    "unknown object type: '{}'\nrun `rive-cli types` to list every valid type",
+                    type_name
+                );
+                if let Some(closest) = discovery::closest_type(&type_name) {
+                    message.push_str(&format!("\ndid you mean '{}'?", closest));
+                }
+                if json {
+                    json_error("describe", "unknown-type", message);
+                }
+                eprintln!("{}", message);
+                std::process::exit(1);
+            };
+            if json {
+                match serde_json::to_string_pretty(&description) {
+                    Ok(text) => println!("{}", text),
+                    Err(e) => json_error(
+                        "describe",
+                        "encode-failed",
+                        format!("JSON serialization failed: {}", e),
+                    ),
+                }
+            } else {
+                println!("{}", discovery::render_description_text(&description));
             }
         }
         cli::Command::Ai { command } => match command {

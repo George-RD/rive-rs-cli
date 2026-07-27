@@ -2,8 +2,11 @@
 
 pub mod ai;
 pub mod builder;
+pub mod discovery;
 pub mod encoder;
 #[cfg(feature = "mcp")]
 pub mod mcp;
 pub mod objects;
+pub mod render;
+pub mod scaffold;
 pub mod validator;

@@ -1,0 +1,70 @@
+{
+  "scene_format_version": 1,
+  "artboard": {
+    "name": "EmbeddedAssets",
+    "width": 400,
+    "height": 300,
+    "children": [
+      {
+        "type": "font_asset",
+        "name": "InterBold",
+        "source": "../../assets/fonts/Inter-Bold-Subset.ttf"
+      },
+      {
+        "type": "image_asset",
+        "name": "Aurora",
+        "source": "../../assets/textures/aurora.png"
+      },
+      {
+        "type": "image",
+        "name": "AuroraSprite",
+        "asset": "Aurora",
+        "x": 200,
+        "y": 96
+      },
+      {
+        "type": "node",
+        "name": "LabelAnchor",
+        "x": 200,
+        "y": 240,
+        "children": [
+          {
+            "type": "text",
+            "name": "Label",
+            "align_value": 1,
+            "sizing_value": 0,
+            "origin_x": 0.5,
+            "origin_y": 0.5,
+            "children": [
+              {
+                "type": "text_style",
+                "name": "LabelStyle",
+                "font_size": 44,
+                "font_asset": "InterBold",
+                "children": [
+                  {
+                    "type": "fill",
+                    "name": "LabelFill",
+                    "children": [
+                      {
+                        "type": "solid_color",
+                        "name": "LabelInk",
+                        "color": "#F8FAFC"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "text_value_run",
+                "name": "LabelRun",
+                "text": "RIVE CLI",
+                "style": "LabelStyle"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
