@@ -175,6 +175,14 @@ function cleanupFixtures(fixtures = ALL_FIXTURES) {
   }
 }
 
+async function waitForRiveReady(page, timeout = 15000) {
+  await page.waitForFunction(
+    () => window.__RIVE_OK || window.__RIVE_ERROR,
+    undefined,
+    { timeout },
+  );
+}
+
 async function openFixturePage(browser, port, fixture, { artboard, pageOptions } = {}) {
   const page = await browser.newPage(pageOptions);
   const runtimeErrors = [];
@@ -191,9 +199,21 @@ async function openFixturePage(browser, port, fixture, { artboard, pageOptions }
   }
 
   await page.goto(url, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__RIVE_OK || window.__RIVE_ERROR, {
-    timeout: 15000,
-  });
+  try {
+    await waitForRiveReady(page);
+  } catch (error) {
+    const state = await page.evaluate(() => ({
+      ok: window.__RIVE_OK,
+      error: window.__RIVE_ERROR,
+      readyState: document.readyState,
+    }));
+    const details = runtimeErrors.length > 0 ? `; ${runtimeErrors.join(" | ")}` : "";
+    throw new Error(
+      `${fixture}.riv did not report runtime readiness ` +
+        `(ok=${state.ok}, error=${state.error || "none"}, document=${state.readyState})${details}: ` +
+        `${error.message || error}`,
+    );
+  }
 
   const state = await page.evaluate(() => ({
     ok: window.__RIVE_OK,
@@ -204,7 +224,7 @@ async function openFixturePage(browser, port, fixture, { artboard, pageOptions }
     throw new Error(`${fixture}.riv runtime errors: ${runtimeErrors.join(" | ")}`);
   }
   if (!state.ok || state.error) {
-    throw new Error(`${fixture}.riv failed to load: ${state.error || "unknown error"}`);
+    throw new Error(${fixture}.riv failed to load: ${state.error || "unknown error"}`);
   }
 
   return page;
@@ -224,5 +244,6 @@ module.exports = {
   buildFixtures,
   startServer,
   cleanupFixtures,
+  waitForRiveReady,
   openFixturePage,
 };
