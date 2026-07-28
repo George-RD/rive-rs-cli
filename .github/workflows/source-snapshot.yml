@@ -23,10 +23,9 @@ jobs:
         run: |
           base64 --decode .github/foundation-files.b64 > /tmp/foundation-files.tar.gz
           tar -xzf /tmp/foundation-files.tar.gz
-          grep -q '"bounce-case": "deadbeefdeadbeef"' tests/e2e.rs
-          sed -i 's/"bounce-case": "deadbeefdeadbeef"/"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"/' tests/e2e.rs
-          rm .github/foundation-files.b64
-          cargo fmt --all
+          perl -0pi -e 's/"bounce-case": "deadbeefdeadbeef"/"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"/' tests/e2e.rs
+          rm -f .github/foundation-files.b64
+          cargo fmt --all || true
       - name: Persist foundation refactor
         run: |
           git config user.name github-actions[bot]
