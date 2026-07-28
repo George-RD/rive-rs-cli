@@ -67,6 +67,7 @@ jobs:
       - run: cargo build
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/shared-contract.js
       - run: node tests/playwright/regression.js
       - name: Run visual regression
         id: visual
