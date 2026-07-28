@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,38 +18,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/cairn-foundation
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Format Rust sources
-        id: format
-        continue-on-error: true
-        run: |
-          perl -0pi -e 's/"bounce-case": "deadbeefdeadbeef"/"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"/' tests/e2e.rs
-          set -o pipefail
-          cargo fmt --all 2>&1 | tee rustfmt.log
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: rustfmt-diagnostics
-          path: rustfmt.log
-          retention-days: 1
-      - name: Persist formatting
-        if: steps.format.outcome == 'success'
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src tests
-          if ! git diff --cached --quiet; then
-            git commit -m "style: format foundation refactor"
-            git push origin HEAD:agent/cairn-foundation
-          fi
-      - name: Fail when rustfmt failed
-        if: steps.format.outcome == 'failure'
-        run: exit 1
+      - run: cargo fmt --check
       - run: cargo clippy --all-targets --all-features -- -D warnings
       - run: cargo test --locked --all-features
 
@@ -58,8 +31,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/cairn-foundation
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
@@ -76,8 +47,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/cairn-foundation
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
@@ -99,8 +68,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/cairn-foundation
       - uses: actions/setup-node@v4
         with:
           node-version: 20
