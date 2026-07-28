@@ -23,17 +23,8 @@ jobs:
         run: |
           base64 --decode .github/foundation-files.b64 > /tmp/foundation-files.tar.gz
           tar -xzf /tmp/foundation-files.tar.gz
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path("tests/e2e.rs")
-          contents = path.read_text()
-          old = '"bounce-case": "deadbeefdeadbeef"'
-          new = '"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"'
-          if old not in contents:
-              raise SystemExit("expected AI eval baseline fixture was not found")
-          path.write_text(contents.replace(old, new, 1))
-          PY
+          grep -q '"bounce-case": "deadbeefdeadbeef"' tests/e2e.rs
+          sed -i 's/"bounce-case": "deadbeefdeadbeef"/"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"/' tests/e2e.rs
           rm .github/foundation-files.b64
           cargo fmt --all
       - name: Persist foundation refactor
