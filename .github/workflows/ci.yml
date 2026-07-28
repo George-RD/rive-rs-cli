@@ -68,7 +68,23 @@ jobs:
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
       - run: node tests/playwright/regression.js
-      - run: node tests/playwright/visual-regression.js
+      - name: Run visual regression
+        id: visual
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/playwright/visual-regression.js 2>&1 | tee visual-regression.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-regression-diagnostics
+          path: |
+            visual-regression.log
+            target/playwright-visual
+          retention-days: 1
+      - name: Fail when visual regression failed
+        if: steps.visual.outcome == 'failure'
+        run: exit 1
 
   demo:
     needs: [check]
