@@ -3,7 +3,9 @@ mod runner;
 mod traits;
 mod validation;
 
-pub use model::{EvalBaseline, EvalCase, EvalCaseReport, EvalGates, EvalReport, EvalSuite, InputKind};
+pub use model::{
+    EvalBaseline, EvalCase, EvalCaseReport, EvalGates, EvalReport, EvalSuite, InputKind,
+};
 pub use runner::{run_eval_suite, run_eval_suite_configured};
 
 #[cfg(test)]
@@ -97,7 +99,11 @@ mod tests {
         assert_eq!(parts.len(), 2);
         assert!(parts[0].parse::<u128>().is_ok());
         assert_eq!(parts[1].len(), 16);
-        assert!(parts[1].chars().all(|character| character.is_ascii_hexdigit()));
+        assert!(
+            parts[1]
+                .chars()
+                .all(|character| character.is_ascii_hexdigit())
+        );
     }
 
     #[test]
@@ -129,18 +135,22 @@ mod tests {
             suite_version: 1,
             case_hashes: BTreeMap::from([("bounce".to_string(), "a".repeat(64))]),
         };
-        assert!(validate_baseline(&suite, &baseline)
-            .unwrap_err()
-            .contains("suite name"));
+        assert!(
+            validate_baseline(&suite, &baseline)
+                .unwrap_err()
+                .contains("suite name")
+        );
 
         let baseline = EvalBaseline {
             suite_name: suite.suite_name.clone(),
             suite_version: suite.suite_version,
             case_hashes: BTreeMap::from([("bounce".to_string(), "a".repeat(64))]),
         };
-        assert!(validate_baseline(&suite, &baseline)
-            .unwrap_err()
-            .contains("missing case"));
+        assert!(
+            validate_baseline(&suite, &baseline)
+                .unwrap_err()
+                .contains("missing case")
+        );
     }
 
     #[test]
@@ -160,12 +170,9 @@ mod tests {
         let mut case = test_case("prompt");
         case.input_kind = InputKind::Prompt;
         case.input = "a bouncing ball".to_string();
-        let error = resolve_eval_config(
-            &test_suite(vec![case]),
-            None,
-            Some("template".to_string()),
-        )
-        .unwrap_err();
+        let error =
+            resolve_eval_config(&test_suite(vec![case]), None, Some("template".to_string()))
+                .unwrap_err();
         assert!(error.contains("prompt cases require"));
     }
 }

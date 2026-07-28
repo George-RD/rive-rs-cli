@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 use std::path::{Component, Path};
 
+use crate::ai::AiConfig;
 use crate::ai::config::ProviderKind;
 use crate::ai::templates;
-use crate::ai::AiConfig;
 
 use super::model::{EvalBaseline, EvalGates, EvalSuite, InputKind};
 use super::traits::SUPPORTED_TRAITS;
@@ -59,7 +59,10 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
     }
 
     let supported_traits = SUPPORTED_TRAITS.iter().copied().collect::<HashSet<_>>();
-    let templates = templates::list_templates().iter().copied().collect::<HashSet<_>>();
+    let templates = templates::list_templates()
+        .iter()
+        .copied()
+        .collect::<HashSet<_>>();
     let mut case_ids = HashSet::new();
 
     for case in &suite.cases {
@@ -86,7 +89,10 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
             .as_deref()
             .is_some_and(|path| Path::new(path).is_absolute() || has_parent_component(path))
         {
-            return Err(format!("case '{}' image_path must stay within the repository", case.id));
+            return Err(format!(
+                "case '{}' image_path must stay within the repository",
+                case.id
+            ));
         }
 
         let mut expected = HashSet::new();
@@ -132,7 +138,10 @@ pub fn validate_baseline(suite: &EvalSuite, baseline: &EvalBaseline) -> Result<(
             return Err(format!("baseline is missing case '{}'", case_id));
         };
         if hash.len() != 64 || !hash.chars().all(|character| character.is_ascii_hexdigit()) {
-            return Err(format!("baseline hash for case '{}' must be 64 hex characters", case_id));
+            return Err(format!(
+                "baseline hash for case '{}' must be 64 hex characters",
+                case_id
+            ));
         }
     }
     for case_id in baseline.case_hashes.keys() {
@@ -160,9 +169,7 @@ pub fn resolve_eval_config(
     let config = AiConfig::resolve(model_override, provider_override)
         .map_err(|error| format!("AI config error: {}", error))?;
     if has_prompt_cases && matches!(config.provider, ProviderKind::Template) {
-        return Err(
-            "prompt cases require --provider openai and an OPENAI_API_KEY".to_string(),
-        );
+        return Err("prompt cases require --provider openai and an OPENAI_API_KEY".to_string());
     }
     Ok(config)
 }
