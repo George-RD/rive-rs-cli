@@ -21,10 +21,8 @@ jobs:
           components: rustfmt
       - name: Apply staged foundation refactor
         run: |
-          base64 --decode .github/foundation-files.b64 > /tmp/foundation-files.tar.gz
-          tar --no-same-owner -xzf /tmp/foundation-files.tar.gz
-          perl -0pi -e 's/"bounce-case": "deadbeefdeadbeef"/"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"/' tests/e2e.rs
-          rm -f .github/foundation-files.b64
+          python3 -c 'import base64, io, pathlib, tarfile; payload = base64.b64decode(pathlib.Path(".github/foundation-files.b64").read_text()); tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz").extractall(".")'
+          rm .github/foundation-files.b64
           cargo fmt --all
       - name: Persist foundation refactor
         run: |
