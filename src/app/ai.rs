@@ -138,10 +138,7 @@ pub(super) fn run(command: Command) {
                                 report.validity_rate, report.valid_count, report.case_count
                             );
                             println!("average_retries={:.3}", report.average_retries);
-                            println!(
-                                "trait_adherence_rate={:.3}",
-                                report.trait_adherence_rate
-                            );
+                            println!("trait_adherence_rate={:.3}", report.trait_adherence_rate);
                             println!(
                                 "pipeline_reproducibility_rate={:.3}",
                                 report.pipeline_reproducibility_rate

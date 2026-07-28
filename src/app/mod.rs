@@ -5,9 +5,9 @@ mod scene;
 mod visual;
 
 use clap::Parser;
+use rive_cli::builder;
 #[cfg(feature = "mcp")]
 use rive_cli::mcp;
-use rive_cli::builder;
 
 use crate::cli::{Cli, Command};
 use output::json_error;
@@ -37,11 +37,12 @@ pub fn run() {
 
     if cli.list_presets {
         if cli.json {
-            let json =
-                serde_json::to_string_pretty(&builder::artboard_presets()).unwrap_or_else(|error| {
+            let json = serde_json::to_string_pretty(&builder::artboard_presets()).unwrap_or_else(
+                |error| {
                     eprintln!("JSON serialization failed: {}", error);
                     std::process::exit(1);
-                });
+                },
+            );
             println!("{}", json);
         } else {
             for preset in builder::artboard_presets() {

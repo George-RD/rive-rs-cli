@@ -1,6 +1,6 @@
+use super::output::json_error;
 use crate::cli::Command;
 use rive_cli::discovery;
-use super::output::json_error;
 
 pub(super) fn run(command: Command, global_json: bool) {
     match command {
