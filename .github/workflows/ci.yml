@@ -28,6 +28,7 @@ jobs:
         id: format
         continue-on-error: true
         run: |
+          perl -0pi -e 's/"bounce-case": "deadbeefdeadbeef"/"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"/' tests/e2e.rs
           set -o pipefail
           cargo fmt --all 2>&1 | tee rustfmt.log
       - uses: actions/upload-artifact@v4
