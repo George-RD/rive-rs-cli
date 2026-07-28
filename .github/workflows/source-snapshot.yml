@@ -22,10 +22,10 @@ jobs:
       - name: Apply staged foundation refactor
         run: |
           base64 --decode .github/foundation-files.b64 > /tmp/foundation-files.tar.gz
-          tar -xzf /tmp/foundation-files.tar.gz
+          tar --no-same-owner -xzf /tmp/foundation-files.tar.gz
           perl -0pi -e 's/"bounce-case": "deadbeefdeadbeef"/"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"/' tests/e2e.rs
           rm -f .github/foundation-files.b64
-          cargo fmt --all || true
+          cargo fmt --all
       - name: Persist foundation refactor
         run: |
           git config user.name github-actions[bot]
