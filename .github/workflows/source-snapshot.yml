@@ -14,9 +14,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Cairn
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Bootstrap Cairn from the codebase
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn --version
+          cairn init --from-code --apply --wire
+          cairn scan
+          cairn lint --json > .cairn/bootstrap-lint.json || true
       - uses: actions/upload-artifact@v4
         with:
-          name: source-snapshot
+          name: cairn-bootstrap
           path: .
           include-hidden-files: true
           retention-days: 1
