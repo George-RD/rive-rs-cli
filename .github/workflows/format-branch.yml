@@ -1,29 +1,13 @@
-name: Format foundation branch
+name: Format foundation branch (disabled)
 
 on:
-  push:
-    branches: [agent/cairn-foundation]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  format:
+  disabled:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/cairn-foundation
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - run: cargo fmt --all
-      - name: Persist formatting
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src tests
-          if ! git diff --cached --quiet; then
-            git commit -m "style: format foundation refactor"
-            git push origin HEAD:agent/cairn-foundation
-          fi
+      - run: echo "Temporary workflow disabled; remove before merge."
