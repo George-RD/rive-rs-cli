@@ -1,0 +1,89 @@
+name: Apply Rive readiness fix
+
+on:
+  push:
+    branches: [agent/cairn-foundation]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/cairn-foundation
+      - name: Apply the tested readiness contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          shared = Path("tests/playwright/shared.js")
+          source = shared.read_text()
+          if "async function waitForRiveReady" not in source:
+              source = source.replace(
+                  "async function openFixturePage(browser, port, fixture, { artboard, pageOptions } = {}) {\n",
+                  "async function waitForRiveReady(page, timeout = 15000) {\n"
+                  "  await page.waitForFunction(\n"
+                  "    () => window.__RIVE_OK || window.__RIVE_ERROR,\n"
+                  "    undefined,\n"
+                  "    { timeout },\n"
+                  "  );\n"
+                  "}\n\n"
+                  "async function openFixturePage(browser, port, fixture, { artboard, pageOptions } = {}) {\n",
+                  1,
+              )
+              source = source.replace(
+                  "  await page.goto(url, { waitUntil: \"domcontentloaded\" });\n"
+                  "  await page.waitForFunction(() => window.__RIVE_OK || window.__RIVE_ERROR, {\n"
+                  "    timeout: 15000,\n"
+                  "  });\n\n"
+                  "  const state = await page.evaluate(() => ({\n",
+                  "  await page.goto(url, { waitUntil: \"domcontentloaded\" });\n"
+                  "  try {\n"
+                  "    await waitForRiveReady(page);\n"
+                  "  } catch (error) {\n"
+                  "    const state = await page.evaluate(() => ({\n"
+                  "      ok: window.__RIVE_OK,\n"
+                  "      error: window.__RIVE_ERROR,\n"
+                  "      readyState: document.readyState,\n"
+                  "    }));\n"
+                  "    const details = runtimeErrors.length > 0 ? `; ${runtimeErrors.join(\" | \")}` : \"\";\n"
+                  "    throw new Error(\n"
+                  "      `${fixture}.riv did not report runtime readiness ` +\n"
+                  "        `(ok=${state.ok}, error=${state.error || \"none\"}, document=${state.readyState})${details}: ` +\n"
+                  "        `${error.message || error}`,\n"
+                  "    );\n"
+                  "  }\n\n"
+                  "  const state = await page.evaluate(() => ({\n",
+                  1,
+              )
+              source = source.replace(
+                  "  cleanupFixtures,\n  openFixturePage,\n};\n",
+                  "  cleanupFixtures,\n  waitForRiveReady,\n  openFixturePage,\n};\n",
+                  1,
+              )
+              shared.write_text(source)
+
+          workflow = Path(".github/workflows/ci.yml")
+          ci = workflow.read_text()
+          if "node tests/playwright/shared-contract.js" not in ci:
+              ci = ci.replace(
+                  "      - run: node tests/playwright/regression.js\n",
+                  "      - run: node tests/playwright/shared-contract.js\n"
+                  "      - run: node tests/playwright/regression.js\n",
+                  1,
+              )
+              workflow.write_text(ci)
+          PY
+          node tests/playwright/shared-contract.js
+      - name: Persist the fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add tests/playwright/shared.js tests/playwright/shared-contract.js .github/workflows/ci.yml
+          if ! git diff --cached --quiet; then
+            git commit -m "fix: make Rive readiness wait explicit"
+            git push origin HEAD:agent/cairn-foundation
+          fi
