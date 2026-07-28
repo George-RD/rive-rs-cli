@@ -63,7 +63,7 @@ pub(super) fn run(command: Command, global_json: bool) {
                     type_name
                 );
                 if let Some(closest) = discovery::closest_type(&type_name) {
-                    message.push_str(&format!("\ndid you mean '{}' ?", closest).replace("' ?", "'?"));
+                    message.push_str(&format!("\ndid you mean '{}' ?", closest));
                 }
                 if json {
                     json_error("describe", "unknown-type", message);
