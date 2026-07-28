@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   snapshot:
@@ -21,6 +21,15 @@ jobs:
           components: rustfmt
       - name: Format Rust sources
         run: cargo fmt --all
+      - name: Persist formatting
+        run: |
+          if ! git diff --quiet -- src/ai/eval src/ai/mod.rs; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add src/ai/eval src/ai/mod.rs
+            git commit -m "style: format AI evaluation foundation"
+            git push origin HEAD:agent/cairn-foundation
+          fi
       - name: Install Cairn
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
