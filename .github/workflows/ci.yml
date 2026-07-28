@@ -37,6 +37,7 @@ jobs:
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
       - run: node tests/playwright/regression.js
+      - run: node tests/playwright/visual-regression.js
 
   demo:
     needs: [check]
