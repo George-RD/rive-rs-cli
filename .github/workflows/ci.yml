@@ -23,7 +23,21 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
-      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run Clippy
+        id: clippy
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee clippy.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clippy-diagnostics
+          path: clippy.log
+          retention-days: 1
+      - name: Fail when Clippy failed
+        if: steps.clippy.outcome == 'failure'
+        run: exit 1
       - run: cargo test --locked --all-features
 
   playwright:
