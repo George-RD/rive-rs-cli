@@ -525,4 +525,89 @@ mod tests {
             "suffix should be hex"
         );
     }
+
+    fn test_case(id: &str) -> EvalCase {
+        EvalCase {
+            id: id.to_string(),
+            input_kind: InputKind::Template,
+            input: "bounce".to_string(),
+            expected_traits: vec!["has_animation".to_string()],
+            text_hint: None,
+            image_path: None,
+        }
+    }
+
+    fn test_suite(cases: Vec<EvalCase>) -> EvalSuite {
+        EvalSuite {
+            suite_name: "contract".to_string(),
+            suite_version: 1,
+            gates: EvalGates::default(),
+            cases,
+        }
+    }
+
+    #[test]
+    fn test_validate_suite_rejects_unsafe_case_id() {
+        let suite = test_suite(vec![test_case("../escape")]);
+        let error = validate_suite(&suite).unwrap_err();
+        assert!(error.contains("case id"));
+    }
+
+    #[test]
+    fn test_validate_suite_rejects_duplicate_case_ids() {
+        let suite = test_suite(vec![test_case("bounce"), test_case("bounce")]);
+        let error = validate_suite(&suite).unwrap_err();
+        assert!(error.contains("duplicate"));
+    }
+
+    #[test]
+    fn test_validate_suite_rejects_unknown_traits() {
+        let mut case = test_case("bounce");
+        case.expected_traits = vec!["looks_professional".to_string()];
+        let error = validate_suite(&test_suite(vec![case])).unwrap_err();
+        assert!(error.contains("unsupported expected trait"));
+    }
+
+    #[test]
+    fn test_validate_baseline_requires_matching_complete_case_set() {
+        let suite = test_suite(vec![test_case("bounce"), test_case("spinner")]);
+        let baseline = EvalBaseline {
+            suite_name: "other".to_string(),
+            suite_version: 1,
+            case_hashes: BTreeMap::from([("bounce".to_string(), "abc".to_string())]),
+        };
+        let error = validate_baseline(&suite, &baseline).unwrap_err();
+        assert!(error.contains("suite name"));
+
+        let baseline = EvalBaseline {
+            suite_name: suite.suite_name.clone(),
+            suite_version: suite.suite_version,
+            case_hashes: BTreeMap::from([("bounce".to_string(), "abc".to_string())]),
+        };
+        let error = validate_baseline(&suite, &baseline).unwrap_err();
+        assert!(error.contains("missing case"));
+    }
+
+    #[test]
+    fn test_eval_gates_fail_every_breached_metric() {
+        let gates = EvalGates {
+            min_validity_rate: 1.0,
+            min_trait_adherence_rate: 0.9,
+            min_pipeline_reproducibility_rate: 1.0,
+            max_average_retries: Some(1.0),
+            max_drift_count: 0,
+        };
+        let failures = evaluate_gates(&gates, 0.8, 0.7, 0.5, 2.0, 1);
+        assert_eq!(failures.len(), 5);
+    }
+
+    #[test]
+    fn test_prompt_suite_rejects_template_provider() {
+        let mut case = test_case("prompt");
+        case.input_kind = InputKind::Prompt;
+        case.input = "a bouncing ball".to_string();
+        let suite = test_suite(vec![case]);
+        let error = resolve_eval_config(&suite, None, Some("template".to_string())).unwrap_err();
+        assert!(error.contains("prompt cases require"));
+    }
 }
