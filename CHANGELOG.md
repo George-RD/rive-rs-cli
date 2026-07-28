@@ -25,6 +25,11 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 - **A reproduction ladder** at `parity/reproductions/`, authored from the official decompiles and measured with `compare`: `button.riv` (64 objects, embedded variable font, text, state machine) at **0.0000%** across frames 0/15/30/45, and `coffee_loader.riv` (250 objects, five state-machine layers, a 1D blend state, ninety keyframes) at **0.2833%**. `parity/collate-results.sh` refreshes `parity/results.json`, enforcing the 5% gate and rejecting missing type names. Full findings in `docs/parity.md`.
 - Static transform coverage is explicit: `text` accepts `x` and `y`; `node`, `shape`, `ellipse`, `rectangle`, `triangle`, `polygon` and `star` accept `x`, `y`, `rotation`, `scale_x` and `scale_y`. `shape` also accepts `hidden`, and `stroke` accepts `transform_affects_stroke`.
 
+### Changed
+
+- The site's landing hero now plays `parity/reproductions/coffee_loader.riv`, the file this tool generated, rather than the official one. The page's headline animation is now the tool's own output. `site/stage.js` also scans `landing.js` for referenced scenes, so a future hero swap cannot publish a missing file.
+- README rewritten for users rather than for the repository: what the tool is for, badges, and a link to the published site and verification lab. Adds the `compare` reference section, which was previously undocumented.
+
 ### Known gaps
 
 - A pair of transitions between two animation states conditioned on the same bool (`A -> B` when true, `B -> A` when false) makes the runtime fall back to `A` a few frames after reaching `B`. Author one-way transitions, or drive the return edge from a second input. Recorded in `docs/parity.md`.
@@ -34,6 +39,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Fixed
 
+- **`demo/serve.js` returned 500 for `/`.** The root path resolved to the `demo/` directory and was handed to `fs.readFile`, which fails with `EISDIR`. Directory paths now resolve to `index.html`, so `tests/playwright/demo-validation.js` reaches the page instead of polling until its 120-second timeout.
 - **File assets were nested inside the artboard.** Assets are now hoisted to file scope between the Backboard and the first artboard, where Rive's own exporter puts them. Previously every `parentId` after an asset was off by one against the runtime's index space, and a scene containing an asset plus any drawable made `@rive-app/canvas` hang indefinitely rather than reporting an error.
 - **`text_style` emitted the abstract `TextStyle` (573) rather than `TextStylePaint` (137).** Only the subclass implements `ShapePaintContainer`, so text never drew regardless of font or fill; every committed text baseline was a flat colour. `text_style` now emits 137 and accepts `fill`/`stroke` children.
 - **`blend_state1d` emitted the abstract `BlendState1D` (527) alongside `BlendState1DInput` (76).** The layer entered the input-less base state, so 1D blends produced nothing. A single `BlendState1DInput` is now emitted and the blend interpolates across its input range.

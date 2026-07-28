@@ -1,10 +1,35 @@
 # rive-cli
 
-`rive-cli` creates, validates, examines, and renders Rive (`.riv`) animations from JSON SceneSpec files. It is a Rust CLI for the write side of the Rive binary format; generated files are intended to load in Rive runtimes without requiring the Rive editor.
+[![CI](https://github.com/George-RD/rive-rs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/George-RD/rive-rs-cli/actions/workflows/ci.yml)
+[![Pages](https://github.com/George-RD/rive-rs-cli/actions/workflows/pages.yml/badge.svg)](https://github.com/George-RD/rive-rs-cli/actions/workflows/pages.yml)
+[![Live demo](https://img.shields.io/badge/live-verification%20lab-2f6df6)](https://george-rd.github.io/rive-rs-cli/)
+[![Rust](https://img.shields.io/badge/rust-edition%202024-b7410e?logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+
+**Write Rive animations as JSON. Compile them to real `.riv` files. Prove they work before you ship.**
+
+[Live demo and verification lab](https://george-rd.github.io/rive-rs-cli/) · [Skill file for agents](skills/rive-animation/SKILL.md) · [Scene schema](docs/scene.schema.v1.json)
+
+An AI agent can write an animation scene in seconds. It cannot tell you whether a state is missing,
+a property sits on the wrong object, or the file quietly breaks in the real Rive player. `rive-cli`
+turns those unknowns into checks you can run again, in a terminal or in CI.
+
+The coffee loader on the [demo page](https://george-rd.github.io/rive-rs-cli/) is not a recording.
+It is a `.riv` file this tool built from JSON, playing in the official Rive runtime. Against the
+file Rive's own designers made, it holds a 0.2833% maximum pixel difference across the checked
+frames.
+
+## What you get
+
+- **A file format you can edit.** Scenes are plain JSON in your repo, so they diff, review, and merge.
+- **A binary the runtime accepts.** `generate` writes the `.riv` format the Rive players read, with no editor in the loop.
+- **Answers a tool can act on.** Object counts, missing types, pixel differences, content bounds, and a text coverage map, all available as JSON.
+- **A self-describing contract.** `schema`, `types`, and `describe` list every field, parent, and animatable property, so an agent never has to guess.
 
 ## Workflow
 
-Start from a known-good scene, make the scene your own, compile it, validate the binary, then render it with the real Rive canvas runtime:
+Start from a known-good scene, make it your own, compile it, validate the binary, then render it
+with the real Rive canvas runtime:
 
 ```bash
 rive-cli new spinner -o scene.json
@@ -90,6 +115,22 @@ Each frame in `manifest.json` records its PNG path, distinct-colour count, and `
 
 `--input` and `--pointer` both require `--state-machine`. Interaction is proved the same way animation is: render the same frames with and without the flag and require the frames before the scheduled frame to be byte-identical.
 
+### Compare against a reference file
+
+```bash
+rive-cli compare official.riv ours.riv \
+  --frames 0,15,30,45 \
+  --reference-state-machine 'State Machine 1' \
+  --candidate-state-machine 'State Machine 1' \
+  --max-pixel-diff 5
+```
+
+`compare REFERENCE CANDIDATE` decompiles both files, renders both, and prints a per-type object
+delta table plus a pixel difference for each frame. It exits non-zero only when you pass
+`--max-pixel-diff PCT` and the worst frame goes over it, so it drops into CI as a gate. Frame,
+size, background, animation, and state-machine flags mirror `render`, with `--reference-` and
+`--candidate-` prefixes where the two files differ.
+
 ### Other commands
 
 ```bash
@@ -106,9 +147,22 @@ Read [`skills/rive-animation/SKILL.md`](skills/rive-animation/SKILL.md) before a
 
 The ten scenes in [`showcase/`](showcase/) are a gallery of working examples: six basics authored end to end by a fresh-context agent, and four advanced scenes covering embedded fonts, path morphing, embedded imagery and pointer-driven state machines. Use `rive-cli describe <type>` rather than guessing fields or animation properties.
 
-## Site and promo
+## Site and parity lab
 
-[`site/`](site/) is a dependency-free page that plays the committed `showcase/*.riv` live in the vendored Rive runtime — the animations on it are the tool's own output, not recordings. Preview it with `node site/serve.js`; `.github/workflows/pages.yml` publishes it, and `node tests/playwright/site-validation.js` asserts every scene paints, the interactive controls change the render, and the console is clean.
+[`site/`](site/) is a dependency-free page published at
+[george-rd.github.io/rive-rs-cli](https://george-rd.github.io/rive-rs-cli/). Everything on it plays
+live in the vendored Rive runtime, so nothing is a recording. The landing hero is this tool's own
+`parity/reproductions/coffee_loader.riv`, and the
+[verification lab](https://george-rd.github.io/rive-rs-cli/lab.html) puts each
+official Rive file beside the copy `rive-cli` generated, with the measured gap underneath.
+
+Preview it with `node site/serve.js`. `.github/workflows/pages.yml` publishes it, and
+`node tests/playwright/site-validation.js` asserts every canvas paints, the reported figures match
+`parity/results.json`, and the console stays clean.
+
+[`parity/`](parity/) holds the official files, the JSON that reproduces them, and
+`results.json`, the numbers the lab displays. `parity/fetch-official.sh` re-fetches the upstream
+files and checks them against a pinned manifest.
 
 [`promo/`](promo/) is a Remotion composition assembled from PNG sequences that `rive-cli render` produced, so every frame in the video is a frame the test suite verifies. See [`promo/README.md`](promo/README.md) to rebuild it.
 

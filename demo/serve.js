@@ -390,7 +390,8 @@ const server = http.createServer((req, res) => {
   }
 
   const requestPath = req.url.split('?')[0];
-  const filePath = path.resolve(DEMO_DIR, `.${requestPath}`);
+  const resolvedPath = requestPath.endsWith('/') ? `${requestPath}index.html` : requestPath;
+  const filePath = path.resolve(DEMO_DIR, `.${resolvedPath}`);
   const relativePath = path.relative(DEMO_DIR, filePath);
   if (relativePath.startsWith(`..${path.sep}`) || path.isAbsolute(relativePath)) {
     res.writeHead(403);

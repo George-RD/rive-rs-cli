@@ -5,7 +5,7 @@ function mountHero() {
   if (!canvas) return;
   const instance = new rive.Rive({
     canvas,
-    src: "parity/official/coffee_loader.riv",
+    src: "parity/reproductions/coffee_loader.riv",
     stateMachines: ["State Machine 1"],
     autoplay: true,
     fit: rive.Fit.contain,

@@ -33,9 +33,11 @@ function referencedScenes() {
     files.add(rung.reproduction);
     files.add(rung.source);
   }
-  const page = fs.readFileSync(path.join(SITE, "main.js"), "utf8");
-  for (const match of page.matchAll(/"(parity\/[a-z0-9_/.]+\.riv)"/g)) {
-    files.add(match[1]);
+  for (const name of ["main.js", "landing.js"]) {
+    const page = fs.readFileSync(path.join(SITE, name), "utf8");
+    for (const match of page.matchAll(/"(parity\/[a-z0-9_/.]+\.riv)"/g)) {
+      files.add(match[1]);
+    }
   }
   return [...files];
 }
