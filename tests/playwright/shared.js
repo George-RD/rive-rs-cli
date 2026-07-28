@@ -224,7 +224,7 @@ async function openFixturePage(browser, port, fixture, { artboard, pageOptions }
     throw new Error(`${fixture}.riv runtime errors: ${runtimeErrors.join(" | ")}`);
   }
   if (!state.ok || state.error) {
-    throw new Error(${fixture}.riv failed to load: ${state.error || "unknown error"}`);
+    throw new Error(`${fixture}.riv failed to load: ${state.error || "unknown error"}`);
   }
 
   return page;
