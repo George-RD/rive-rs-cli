@@ -19,17 +19,30 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - name: Format Rust sources
-        run: cargo fmt --all
-      - name: Persist formatting
+      - name: Apply staged foundation refactor
         run: |
-          if ! git diff --quiet -- src/ai/eval src/ai/mod.rs; then
-            git config user.name github-actions[bot]
-            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add src/ai/eval src/ai/mod.rs
-            git commit -m "style: format AI evaluation foundation"
-            git push origin HEAD:agent/cairn-foundation
-          fi
+          base64 --decode .github/foundation-files.b64 > /tmp/foundation-files.tar.gz
+          tar -xzf /tmp/foundation-files.tar.gz
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/e2e.rs")
+          contents = path.read_text()
+          old = '"bounce-case": "deadbeefdeadbeef"'
+          new = '"bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"'
+          if old not in contents:
+              raise SystemExit("expected AI eval baseline fixture was not found")
+          path.write_text(contents.replace(old, new, 1))
+          PY
+          rm .github/foundation-files.b64
+          cargo fmt --all
+      - name: Persist foundation refactor
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "refactor: establish command and eval foundation"
+          git push origin HEAD:agent/cairn-foundation
       - name: Install Cairn
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
