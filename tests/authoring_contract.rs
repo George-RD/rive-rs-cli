@@ -136,7 +136,8 @@ const RAW_ESCAPE_SCENE: &str = r##"
 "##;
 
 fn assert_builds(scene: serde_json::Value) {
-    let scene: SceneSpec = serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
+    let scene: SceneSpec =
+        serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
     build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
 }
 
@@ -171,7 +172,12 @@ fn source_map_tracks_generated_runtime_names_and_expansion_paths() {
         .find(|entry| entry.authored_id == "left/disc")
         .expect("expanded component source-map entry");
 
-    assert!(expanded.definition_path.as_deref().is_some_and(|path| path.contains("components[0]")));
+    assert!(
+        expanded
+            .definition_path
+            .as_deref()
+            .is_some_and(|path| path.contains("components[0]"))
+    );
     assert!(expanded.authored_path.contains("visual.nodes[0]"));
     assert_eq!(expanded.runtime_names.len(), 4);
     assert_eq!(expanded.scene_paths.len(), 4);
@@ -209,7 +215,8 @@ fn schema_is_versioned_and_exposes_explicit_authored_graphs() {
 
 #[test]
 fn unknown_component_reports_the_authored_path() {
-    let input = COMPONENT_SCENE.replace("\"component\": \"badge\"", "\"component\": \"missing\"");
+    let input =
+        COMPONENT_SCENE.replace("\"component\": \"badge\"", "\"component\": \"missing\"");
     let error = lower_authoring_json(&input).expect_err("unknown component must fail");
 
     assert!(error.diagnostics.iter().any(|diagnostic| {
@@ -220,7 +227,7 @@ fn unknown_component_reports_the_authored_path() {
 
 #[test]
 fn incompatible_expression_units_report_the_operand_path() {
-    let input = r#"
+    let input = r##"
     {
       "authoring_format_version": 0,
       "artboard": {
@@ -246,7 +253,7 @@ fn incompatible_expression_units_report_the_operand_path() {
       "motion": {},
       "behavior": {}
     }
-    "#;
+    "##;
     let error = lower_authoring_json(input).expect_err("unit mismatch must fail");
 
     assert!(error.diagnostics.iter().any(|diagnostic| {
@@ -257,7 +264,7 @@ fn incompatible_expression_units_report_the_operand_path() {
 
 #[test]
 fn component_cycles_report_the_instance_path() {
-    let input = r#"
+    let input = r##"
     {
       "authoring_format_version": 0,
       "artboard": {
@@ -287,7 +294,7 @@ fn component_cycles_report_the_instance_path() {
       "motion": {},
       "behavior": {}
     }
-    "#;
+    "##;
     let error = lower_authoring_json(input).expect_err("component cycle must fail");
 
     assert!(error.diagnostics.iter().any(|diagnostic| {
