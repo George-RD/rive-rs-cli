@@ -1,0 +1,23 @@
+{
+  "suite_name": "template-contract-v1",
+  "suite_version": 1,
+  "gates": {
+    "min_validity_rate": 1.0,
+    "min_trait_adherence_rate": 1.0,
+    "min_pipeline_reproducibility_rate": 1.0,
+    "max_average_retries": 0.0,
+    "max_drift_count": 0
+  },
+  "cases": [
+    {"id": "bounce", "input_kind": "template", "input": "bounce", "expected_traits": ["has_animation"]},
+    {"id": "spinner", "input_kind": "template", "input": "spinner", "expected_traits": ["has_animation"]},
+    {"id": "pulse", "input_kind": "template", "input": "pulse", "expected_traits": ["has_animation"]},
+    {"id": "fade", "input_kind": "template", "input": "fade", "expected_traits": ["has_animation"]},
+    {"id": "state_machine", "input_kind": "template", "input": "state_machine", "expected_traits": ["has_state_machine"]},
+    {"id": "text", "input_kind": "template", "input": "text", "expected_traits": ["has_text"]},
+    {"id": "layout", "input_kind": "template", "input": "layout", "expected_traits": ["has_layout"]},
+    {"id": "data_binding", "input_kind": "template", "input": "data_binding", "expected_traits": ["has_data_binding"]},
+    {"id": "bones", "input_kind": "template", "input": "bones", "expected_traits": ["has_bones"]},
+    {"id": "constraints", "input_kind": "template", "input": "constraints", "expected_traits": ["has_constraints"]}
+  ]
+}

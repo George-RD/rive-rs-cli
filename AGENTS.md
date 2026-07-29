@@ -6,6 +6,26 @@
 
 **Primary commands**: `generate`, `new`, `validate`, `inspect`, `decompile`, `render`, `schema`, `types`, `describe`, and `ai generate`/`ai lab`.
 
+## Architecture and roadmap source of truth
+
+Run `cairn context` before broad repository exploration. `cairn.blueprint` owns
+stable architecture responsibilities, accepted decisions live in
+`meta/decisions/`, research in `meta/research/`, and work status in
+`meta/todos/`. `ROADMAP.md` is the ordered view of those todos.
+
+`dec.ai-authoring-layer` is binding: `SceneSpec` is the canonical lowered IR, and
+complex AI generation must target the planned AuthoringSpec frontend. Do not add
+specialized raw-SceneSpec generation skills while
+`todo.ai-generation-skills.md` is blocked.
+
+Before a PR that changes architecture or roadmap scope, update the relevant Cairn
+artefacts and run:
+
+```bash
+cairn scan
+cairn lint
+```
+
 ## Architecture & Data Flow
 
 The codebase is organized around JSON scene authoring, binary generation and validation, plus a browser render path:

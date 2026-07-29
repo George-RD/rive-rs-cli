@@ -1,0 +1,19 @@
+{
+  "suite_name": "prompt-quality-v1",
+  "suite_version": 1,
+  "gates": {
+    "min_validity_rate": 0.8,
+    "min_trait_adherence_rate": 0.75,
+    "min_pipeline_reproducibility_rate": 1.0,
+    "max_average_retries": 1.0,
+    "max_drift_count": 0
+  },
+  "cases": [
+    {"id": "animated_loader", "input_kind": "prompt", "input": "A looping circular loading indicator with a single smooth rotation animation", "expected_traits": ["has_animation"]},
+    {"id": "toggle_state", "input_kind": "prompt", "input": "An interactive on/off toggle controlled by a boolean state machine input", "expected_traits": ["has_state_machine"]},
+    {"id": "status_text", "input_kind": "prompt", "input": "A compact status badge with editable text and a subtle pulse animation", "expected_traits": ["has_text", "has_animation"]},
+    {"id": "responsive_card", "input_kind": "prompt", "input": "A responsive information card arranged with layout components", "expected_traits": ["has_layout"]},
+    {"id": "bound_gauge", "input_kind": "prompt", "input": "A gauge whose displayed value is connected through data binding", "expected_traits": ["has_data_binding"]},
+    {"id": "rigged_character", "input_kind": "prompt", "input": "A simple two-bone character arm with an IK constraint", "expected_traits": ["has_bones", "has_constraints"]}
+  ]
+}

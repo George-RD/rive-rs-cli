@@ -1,0 +1,174 @@
+use super::output::{json_compare_threshold_failure, json_error, json_success};
+use crate::cli::Command;
+use rive_cli::{compare, render};
+
+pub(super) fn run(command: Command, global_json: bool) {
+    match command {
+        Command::Render {
+            file,
+            output,
+            frames,
+            fps,
+            animation,
+            state_machine,
+            inputs,
+            pointers,
+            artboard,
+            width,
+            height,
+            scale,
+            background,
+            contact_sheet,
+            preview,
+            browser,
+            json,
+        } => {
+            let json = json || global_json;
+            let bytes = std::fs::read(&file).unwrap_or_else(|e| {
+                if json {
+                    json_error(
+                        "render",
+                        "read-failed",
+                        format!("error reading {:?}: {}", file, e),
+                    );
+                }
+                eprintln!("error reading {:?}: {}", file, e);
+                std::process::exit(1);
+            });
+            let frame_list = render::parse_frame_spec(&frames).unwrap_or_else(|e| {
+                if json {
+                    json_error("render", "usage", format!("invalid --frames value: {}", e));
+                }
+                eprintln!("invalid --frames value: {}", e);
+                std::process::exit(1);
+            });
+            let options = render::RenderOptions {
+                riv: bytes,
+                source_path: file.clone(),
+                output_dir: output,
+                frames: frame_list,
+                fps,
+                animation,
+                state_machine,
+                inputs,
+                pointers,
+                artboard,
+                width,
+                height,
+                scale,
+                background,
+                contact_sheet,
+                preview,
+                browser,
+            };
+            match render::render(&options) {
+                Ok(manifest) => {
+                    if json {
+                        match serde_json::to_string_pretty(&manifest) {
+                            Ok(text) => println!("{}", text),
+                            Err(e) => json_error(
+                                "render",
+                                "encode-failed",
+                                format!("JSON serialization failed: {}", e),
+                            ),
+                        }
+                    } else {
+                        println!("{}", render::render_manifest_text(&manifest));
+                    }
+                    if manifest.frames.iter().all(|frame| frame.blank) {
+                        eprintln!(
+                            "warning: every rendered frame is a single flat color; the artboard may be empty or the shapes may be off-screen"
+                        );
+                    }
+                }
+                Err(e) => {
+                    if json {
+                        json_error("render", "render-failed", e);
+                    }
+                    eprintln!("render failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Command::Compare {
+            reference,
+            candidate,
+            frames,
+            width,
+            height,
+            scale,
+            background,
+            reference_animation,
+            candidate_animation,
+            reference_state_machine,
+            candidate_state_machine,
+            max_pixel_diff,
+            json,
+        } => {
+            let json = json || global_json;
+            let frame_list = render::parse_frame_spec(&frames).unwrap_or_else(|e| {
+                if json {
+                    json_error("compare", "usage", format!("invalid --frames value: {}", e));
+                }
+                eprintln!("invalid --frames value: {}", e);
+                std::process::exit(1);
+            });
+            if let Some(threshold) = max_pixel_diff
+                && (!threshold.is_finite() || !(0.0..=100.0).contains(&threshold))
+            {
+                let message = format!(
+                    "--max-pixel-diff must be a finite percentage between 0 and 100, got {threshold}"
+                );
+                if json {
+                    json_error("compare", "usage", message);
+                }
+                eprintln!("{message}");
+                std::process::exit(1);
+            }
+            let options = compare::CompareOptions {
+                reference,
+                candidate,
+                frames: frame_list,
+                width,
+                height,
+                scale,
+                background,
+                reference_animation,
+                candidate_animation,
+                reference_state_machine,
+                candidate_state_machine,
+            };
+            match compare::compare(&options) {
+                Ok(report) => {
+                    if let Some(threshold) = max_pixel_diff
+                        && report.max_pixel_difference > threshold
+                    {
+                        let message = format!(
+                            "maximum pixel difference {:.4}% exceeds the {:.4}% threshold",
+                            report.max_pixel_difference, threshold
+                        );
+                        if json {
+                            json_compare_threshold_failure(&report, threshold, &message);
+                        }
+                        print!("{}", compare::compare_report_text(&report));
+                        eprintln!("{message}");
+                        std::process::exit(1);
+                    }
+                    if json {
+                        json_success("compare", &report);
+                    } else {
+                        print!("{}", compare::compare_report_text(&report));
+                    }
+                }
+                Err(e) => {
+                    if json {
+                        json_error("compare", "compare-failed", e);
+                    }
+                    eprintln!("compare failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        _ => unreachable!("visual command router received another command"),
+    }
+}

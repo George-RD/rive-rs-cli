@@ -175,6 +175,94 @@ function cleanupFixtures(fixtures = ALL_FIXTURES) {
   }
 }
 
+async function waitForRiveReady(page, timeout = 15000) {
+  await page.waitForFunction(
+    () => window.__RIVE_OK || window.__RIVE_ERROR,
+    undefined,
+    { timeout },
+  );
+}
+
+function visualBrowserLaunchOptions() {
+  return {
+    headless: true,
+    args: ["--disable-gpu"],
+  };
+}
+
+async function captureCanvasPng(
+  page,
+  outputPath,
+  {
+    selector = "#canvas-controlled",
+    background = "#0f172a",
+    scale = 2,
+    timeout = 15000,
+  } = {},
+) {
+  const previousBackground = await page.evaluate(
+    ({ selector: canvasSelector, background: fill }) => {
+      const source = document.querySelector(canvasSelector);
+      if (!(source instanceof HTMLCanvasElement)) {
+        throw new Error(`missing canvas ${canvasSelector}`);
+      }
+      const previous = source.style.backgroundColor;
+      source.style.backgroundColor = fill || "";
+      return previous;
+    },
+    { selector, background },
+  );
+
+  let session;
+  let timer;
+  try {
+    const box = await page.locator(selector).boundingBox();
+    if (!box || box.width <= 0 || box.height <= 0) {
+      throw new Error(`canvas ${selector} has no visible bounds`);
+    }
+    session = await page.context().newCDPSession(page);
+    await session.send("Page.enable");
+    const options = {
+      format: "png",
+      captureBeyondViewport: false,
+      clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale },
+    };
+    const result = await Promise.race([
+      session.send("Page.captureScreenshot", options),
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`timed out capturing canvas ${selector}`)),
+          timeout,
+        );
+      }),
+    ]);
+    if (!result.data) {
+      throw new Error("browser returned no PNG screenshot data");
+    }
+    fs.writeFileSync(outputPath, Buffer.from(result.data, "base64"));
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    if (session) {
+      try {
+        await session.detach();
+      } catch {}
+    }
+    try {
+      await page.evaluate(
+        ({ selector: canvasSelector, background: fill }) => {
+          const source = document.querySelector(canvasSelector);
+          if (source instanceof HTMLCanvasElement) {
+            source.style.backgroundColor = fill;
+          }
+        },
+        { selector, background: previousBackground },
+      );
+    } catch {}
+  }
+}
+
 async function openFixturePage(browser, port, fixture, { artboard, pageOptions } = {}) {
   const page = await browser.newPage(pageOptions);
   const runtimeErrors = [];
@@ -191,9 +279,21 @@ async function openFixturePage(browser, port, fixture, { artboard, pageOptions }
   }
 
   await page.goto(url, { waitUntil: "domcontentloaded" });
-  await page.waitForFunction(() => window.__RIVE_OK || window.__RIVE_ERROR, {
-    timeout: 15000,
-  });
+  try {
+    await waitForRiveReady(page);
+  } catch (error) {
+    const state = await page.evaluate(() => ({
+      ok: window.__RIVE_OK,
+      error: window.__RIVE_ERROR,
+      readyState: document.readyState,
+    }));
+    const details = runtimeErrors.length > 0 ? `; ${runtimeErrors.join(" | ")}` : "";
+    throw new Error(
+      `${fixture}.riv did not report runtime readiness ` +
+        `(ok=${state.ok}, error=${state.error || "none"}, document=${state.readyState})${details}: ` +
+        `${error.message || error}`,
+    );
+  }
 
   const state = await page.evaluate(() => ({
     ok: window.__RIVE_OK,
@@ -224,5 +324,8 @@ module.exports = {
   buildFixtures,
   startServer,
   cleanupFixtures,
+  waitForRiveReady,
+  visualBrowserLaunchOptions,
+  captureCanvasPng,
   openFixturePage,
 };

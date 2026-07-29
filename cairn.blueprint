@@ -1,0 +1,127 @@
+# cairn.blueprint
+# Curated architecture map. Keep this map at the level of stable responsibilities;
+# use contracts and todos for detail rather than mirroring every source file.
+System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive files" id "rive-cli" @product {
+    decisions "./meta/decisions"
+    research "./meta/research"
+    sources "./meta/sources"
+    todos "./meta/todos"
+
+    Container Core "Canonical SceneSpec-to-Rive compiler pipeline" id "rive-cli.core" @compiler {
+        Module Objects "Rive object model, type keys, properties, and backing types" id "rive-cli.core.objects" {
+            path "./src/objects"
+        }
+        Module Builder "Canonical SceneSpec model, validation, reference resolution, and object construction" id "rive-cli.core.builder" {
+            path "./src/builder"
+            contract "./meta/contracts/builder.md"
+        }
+        Module Encoder "Deterministic Rive binary writer" id "rive-cli.core.encoder" {
+            path "./src/encoder"
+        }
+        Module Validator "Binary parser, structural validation, inspection, and decompilation" id "rive-cli.core.validator" {
+            path "./src/validator"
+        }
+    }
+
+    Container Interfaces "User and integration surfaces over the compiler" id "rive-cli.interfaces" {
+        Module CLI "Command parsing and command-specific application orchestration" id "rive-cli.interfaces.cli" {
+            path ["./src/main.rs", "./src/cli", "./src/app"]
+        }
+        Module PublicAPI "Library exports for embedding rive-cli" id "rive-cli.interfaces.public-api" {
+            path "./src/lib.rs"
+        }
+        Module Render "Headless Chromium rendering and image evidence" id "rive-cli.interfaces.render" {
+            path "./src/render"
+        }
+        Module Compare "Structural and visual comparison orchestration" id "rive-cli.interfaces.compare" {
+            path "./src/compare.rs"
+        }
+        Module Discovery "Schema, type, field, and animation-property discovery" id "rive-cli.interfaces.discovery" {
+            path "./src/discovery"
+        }
+        Module Scaffold "Known-good starter SceneSpec templates" id "rive-cli.interfaces.scaffold" {
+            path "./src/scaffold"
+        }
+        Module MCP "Optional Model Context Protocol integration" id "rive-cli.interfaces.mcp" @integration {
+            path "./src/mcp"
+        }
+    }
+
+    Container Intelligence "AI generation, repair, evaluation, and future authoring abstraction" id "rive-cli.intelligence" @ai {
+        Module AI "Providers, templates, repair, and evaluation suites" id "rive-cli.intelligence.ai" {
+            path ["./src/ai", "./evals"]
+            contract "./meta/contracts/ai.md"
+        }
+        Module Authoring "Planned parametric, component-based AI authoring frontend that lowers to SceneSpec" id "rive-cli.intelligence.authoring" @planned {
+            contract "./meta/contracts/authoring.md"
+        }
+    }
+
+    Container Verification "Evidence that generated binaries are correct and usable" id "rive-cli.verification" @verification {
+        Module RustTests "Unit, integration, and CLI end-to-end tests" id "rive-cli.verification.rust" @test {
+            path ["./tests/e2e.rs", "./tests/eval_contract.rs"]
+        }
+        Module BrowserTests "Official-runtime, visual, demo, and site browser checks" id "rive-cli.verification.browser" @test {
+            path "./tests/playwright"
+        }
+        Module Parity "Official-file provenance and reproduction comparisons" id "rive-cli.verification.parity" {
+            path "./parity"
+        }
+        Module Fuzz "Adversarial binary parser testing" id "rive-cli.verification.fuzz" @test {
+            path "./fuzz"
+        }
+    }
+
+    Container Delivery "Examples, documentation, assets, and public proof surfaces" id "rive-cli.delivery" {
+        Module Examples "Showcase scenes and interactive demo" id "rive-cli.delivery.examples" {
+            path ["./showcase", "./demo"]
+        }
+        Module Site "GitHub Pages product and verification lab" id "rive-cli.delivery.site" {
+            path "./site"
+        }
+        Module Documentation "Project, product, roadmap, schema, cookbook, and agent guidance" id "rive-cli.delivery.docs" {
+            path ["./README.md", "./PRODUCT.md", "./DESIGN.md", "./ROADMAP.md", "./AGENTS.md", "./docs", "./skills"]
+        }
+        Module Assets "Vendored runtime, render harness, fonts, and textures" id "rive-cli.delivery.assets" {
+            path "./assets"
+        }
+        Module Tooling "CI workflows and support scripts" id "rive-cli.delivery.tooling" {
+            path ["./.github/workflows", "./scripts"]
+        }
+        Module Promo "Regenerable promotional render composition" id "rive-cli.delivery.promo" {
+            path "./promo"
+        }
+    }
+}
+
+rive-cli.core.builder -> rive-cli.core.objects "Constructs the canonical object graph"
+rive-cli.core.encoder -> rive-cli.core.objects "Serializes object properties"
+rive-cli.core.validator -> rive-cli.core.objects "Names and interprets parsed object types"
+rive-cli.core.validator -> rive-cli.core.encoder "Shares binary format primitives in round-trip checks"
+rive-cli.interfaces.public-api -> rive-cli.core.builder "Exports scene construction"
+rive-cli.interfaces.public-api -> rive-cli.core.encoder "Exports binary encoding"
+rive-cli.interfaces.public-api -> rive-cli.core.validator "Exports validation and inspection"
+rive-cli.interfaces.public-api -> rive-cli.interfaces.render "Exports runtime rendering"
+rive-cli.interfaces.public-api -> rive-cli.intelligence.ai "Exports AI generation and evaluation"
+rive-cli.interfaces.cli -> rive-cli.core.builder "Compiles SceneSpec inputs"
+rive-cli.interfaces.cli -> rive-cli.core.encoder "Writes Rive binaries"
+rive-cli.interfaces.cli -> rive-cli.core.validator "Validates and inspects binaries"
+rive-cli.interfaces.cli -> rive-cli.interfaces.render "Renders frames through Chromium"
+rive-cli.interfaces.cli -> rive-cli.interfaces.compare "Dispatches comparison commands"
+rive-cli.interfaces.cli -> rive-cli.interfaces.discovery "Exposes authoring metadata"
+rive-cli.interfaces.cli -> rive-cli.interfaces.scaffold "Creates starter scenes"
+rive-cli.interfaces.cli -> rive-cli.intelligence.ai "Dispatches AI generation and lab commands"
+rive-cli.interfaces.compare -> rive-cli.interfaces.render "Produces frame evidence for comparison"
+rive-cli.interfaces.compare -> rive-cli.core.validator "Compares parsed structures"
+rive-cli.intelligence.ai -> rive-cli.core.builder "Builds generated SceneSpec values"
+rive-cli.intelligence.ai -> rive-cli.core.encoder "Encodes repaired scenes"
+rive-cli.intelligence.ai -> rive-cli.core.validator "Checks and inspects generated binaries"
+rive-cli.intelligence.authoring -> rive-cli.core.builder "Must lower deterministically to canonical SceneSpec"
+rive-cli.interfaces.mcp -> rive-cli.core.builder "Builds scenes for MCP callers"
+rive-cli.interfaces.mcp -> rive-cli.core.encoder "Encodes MCP outputs"
+rive-cli.interfaces.mcp -> rive-cli.core.validator "Validates and decompiles MCP inputs"
+rive-cli.verification.rust -> rive-cli.core.builder "Characterizes scene construction"
+rive-cli.verification.rust -> rive-cli.core.encoder "Characterizes binary encoding"
+rive-cli.verification.rust -> rive-cli.core.validator "Characterizes parsing and validation"
+rive-cli.verification.rust -> rive-cli.intelligence.ai "Enforces AI evaluation contracts"
+rive-cli.verification.browser -> rive-cli.interfaces.render "Checks official-runtime and visual behavior"

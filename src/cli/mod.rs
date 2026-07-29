@@ -378,8 +378,12 @@ pub enum AiCommand {
         max_retries: u8,
         #[arg(long, help = "Optional baseline JSON file for drift detection")]
         baseline: Option<PathBuf>,
-        #[arg(long, help = "Write baseline JSON from this run")]
+        #[arg(long, help = "Write baseline JSON from this passing run")]
         write_baseline: Option<PathBuf>,
+        #[arg(long, help = "Override AI model for prompt cases")]
+        model: Option<String>,
+        #[arg(long, help = "AI provider for prompt cases (template, openai)")]
+        provider: Option<String>,
         #[arg(long, help = "Output as JSON")]
         json: bool,
     },

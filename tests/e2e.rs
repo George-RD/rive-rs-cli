@@ -2132,7 +2132,7 @@ fn test_ai_lab_regression_flags_drift() {
   "suite_name": "e2e-drift-suite",
   "suite_version": 1,
   "case_hashes": {
-    "bounce-case": "deadbeefdeadbeef"
+    "bounce-case": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
   }
 }"#;
     std::fs::write(&baseline_path, baseline_json).expect("failed to write baseline json");
