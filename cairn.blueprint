@@ -52,14 +52,15 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
             path ["./src/ai", "./evals"]
             contract "./meta/contracts/ai.md"
         }
-        Module Authoring "Planned parametric, component-based AI authoring frontend that lowers to SceneSpec" id "rive-cli.intelligence.authoring" @planned {
+        Module Authoring "Strict parametric, component-based AI authoring frontend that lowers to SceneSpec" id "rive-cli.intelligence.authoring" {
+            path "./src/authoring"
             contract "./meta/contracts/authoring.md"
         }
     }
 
     Container Verification "Evidence that generated binaries are correct and usable" id "rive-cli.verification" @verification {
         Module RustTests "Unit, integration, and CLI end-to-end tests" id "rive-cli.verification.rust" @test {
-            path ["./tests/e2e.rs", "./tests/eval_contract.rs"]
+            path ["./tests/e2e.rs", "./tests/eval_contract.rs", "./tests/authoring_contract.rs", "./tests/authoring_examples.rs"]
         }
         Module BrowserTests "Official-runtime, visual, demo, and site browser checks" id "rive-cli.verification.browser" @test {
             path "./tests/playwright"
@@ -74,7 +75,7 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
 
     Container Delivery "Examples, documentation, assets, and public proof surfaces" id "rive-cli.delivery" {
         Module Examples "Showcase scenes and interactive demo" id "rive-cli.delivery.examples" {
-            path ["./showcase", "./demo"]
+            path ["./showcase", "./demo", "./examples/authoring"]
         }
         Module Site "GitHub Pages product and verification lab" id "rive-cli.delivery.site" {
             path "./site"
@@ -103,6 +104,7 @@ rive-cli.interfaces.public-api -> rive-cli.core.encoder "Exports binary encoding
 rive-cli.interfaces.public-api -> rive-cli.core.validator "Exports validation and inspection"
 rive-cli.interfaces.public-api -> rive-cli.interfaces.render "Exports runtime rendering"
 rive-cli.interfaces.public-api -> rive-cli.intelligence.ai "Exports AI generation and evaluation"
+rive-cli.interfaces.public-api -> rive-cli.intelligence.authoring "Exports AuthoringSpec schema and lowering"
 rive-cli.interfaces.cli -> rive-cli.core.builder "Compiles SceneSpec inputs"
 rive-cli.interfaces.cli -> rive-cli.core.encoder "Writes Rive binaries"
 rive-cli.interfaces.cli -> rive-cli.core.validator "Validates and inspects binaries"
@@ -116,7 +118,7 @@ rive-cli.interfaces.compare -> rive-cli.core.validator "Compares parsed structur
 rive-cli.intelligence.ai -> rive-cli.core.builder "Builds generated SceneSpec values"
 rive-cli.intelligence.ai -> rive-cli.core.encoder "Encodes repaired scenes"
 rive-cli.intelligence.ai -> rive-cli.core.validator "Checks and inspects generated binaries"
-rive-cli.intelligence.authoring -> rive-cli.core.builder "Must lower deterministically to canonical SceneSpec"
+rive-cli.intelligence.authoring -> rive-cli.core.builder "Lowers deterministically to canonical SceneSpec and validates through the builder"
 rive-cli.interfaces.mcp -> rive-cli.core.builder "Builds scenes for MCP callers"
 rive-cli.interfaces.mcp -> rive-cli.core.encoder "Encodes MCP outputs"
 rive-cli.interfaces.mcp -> rive-cli.core.validator "Validates and decompiles MCP inputs"
@@ -124,4 +126,5 @@ rive-cli.verification.rust -> rive-cli.core.builder "Characterizes scene constru
 rive-cli.verification.rust -> rive-cli.core.encoder "Characterizes binary encoding"
 rive-cli.verification.rust -> rive-cli.core.validator "Characterizes parsing and validation"
 rive-cli.verification.rust -> rive-cli.intelligence.ai "Enforces AI evaluation contracts"
+rive-cli.verification.rust -> rive-cli.intelligence.authoring "Enforces AuthoringSpec contracts and deterministic examples"
 rive-cli.verification.browser -> rive-cli.interfaces.render "Checks official-runtime and visual behavior"

@@ -1,7 +1,8 @@
 ---
 node: rive-cli.intelligence.ai
-status: in_progress
+status: done
 created: 2026-07-29
+completed: 2026-07-29
 ---
 
 # P0 — Add official-runtime evidence to AI evaluations
@@ -16,3 +17,8 @@ runtime pass-rate independently from structural validity.
 - Each runtime-enabled case retains its `.riv`, manifest, rendered frames, and failure reason.
 - Runtime failures do not reduce or overwrite the structural-validity metric.
 - CI executes the offline runtime contract and retains evidence on failure.
+
+## Evidence
+
+- Completed and merged in PR #134.
+- CI run `30453199043` passed the offline official-runtime contract at 3/3 while retaining runtime evidence separately from structural validity.
