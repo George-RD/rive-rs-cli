@@ -114,7 +114,7 @@ const RAW_ESCAPE_SCENE: &str = r##"
         "id": "pulse-motion",
         "value": {
           "name": "pulse",
-          "fps": 60.0,
+          "fps": 60,
           "duration": 60,
           "keyframes": [
             {
