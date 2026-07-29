@@ -21,15 +21,14 @@ pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringEr
         ))
     })?;
     validate_authoring(&spec)?;
-    let lowered = lower::lower_authoring_json(input)
-        .map_err(|error| rewrite_error_paths(&spec, error))?;
+    let lowered =
+        lower::lower_authoring_json(input).map_err(|error| rewrite_error_paths(&spec, error))?;
     validate_runtime_names(lowered)
 }
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     validate_authoring(spec)?;
-    let lowered =
-        lower::lower_authoring(spec).map_err(|error| rewrite_error_paths(spec, error))?;
+    let lowered = lower::lower_authoring(spec).map_err(|error| rewrite_error_paths(spec, error))?;
     validate_runtime_names(lowered)
 }
 
@@ -47,16 +46,12 @@ fn validate_authoring(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
     validate_component_definitions(spec)
 }
 
-fn validate_runtime_names(
-    lowered: LoweredAuthoring,
-) -> Result<LoweredAuthoring, AuthoringError> {
+fn validate_runtime_names(lowered: LoweredAuthoring) -> Result<LoweredAuthoring, AuthoringError> {
     let mut names = HashSet::new();
     for entry in &lowered.source_map.entries {
         for name in &entry.runtime_names {
             if !names.insert(name.as_str()) {
-                let path = if entry
-                    .authored_path
-                    .starts_with("$.motion.raw_animations[")
+                let path = if entry.authored_path.starts_with("$.motion.raw_animations[")
                     || entry
                         .authored_path
                         .starts_with("$.behavior.raw_state_machines[")
