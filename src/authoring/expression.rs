@@ -190,10 +190,7 @@ fn expect_unit(
     Ok(evaluated.value)
 }
 
-pub(crate) fn validate_scene_number(
-    value: f64,
-    path: &str,
-) -> Result<(), AuthoringDiagnostic> {
+pub(crate) fn validate_scene_number(value: f64, path: &str) -> Result<(), AuthoringDiagnostic> {
     if !value.is_finite() {
         return Err(AuthoringDiagnostic::new(
             path,
