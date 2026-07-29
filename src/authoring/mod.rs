@@ -286,9 +286,11 @@ mod tests {
         input["visual"]["nodes"] = json!(instances);
 
         let error = lower(&input).expect_err("generated nodes must have a total budget");
-        assert!(error
-            .diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.code == "component_expansion_node_limit"));
+        assert!(
+            error
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "component_expansion_node_limit")
+        );
     }
 }
