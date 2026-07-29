@@ -4,7 +4,7 @@
 
 ## Versioning
 
-- `authoring_format_version` is required and must be `0`.
+- `authoring_format_version` is required and must be `0`; the generated schema constrains the field to that single value.
 - Unknown fields are rejected at every typed authoring layer.
 - A breaking field, semantic, unit, naming, or lowering change requires a new authoring format version.
 - Additive compiler capability may be introduced within v0 only when existing v0 documents lower to the same canonical `SceneSpec` and source map.
@@ -29,7 +29,9 @@ The visual compiler slice is intentionally narrow. It supports ellipses, rectang
 
 ## Stable identity and runtime names
 
-Every authored artboard, component, node, and raw fragment has an explicit stable `id`. Generated Rive runtime names are derived deterministically from the authored expansion path, including instance paths. The encoding is collision-resistant for distinct UTF-8 ids and does not depend on hash-map iteration or process state.
+Every authored artboard, component, node, and raw fragment has an explicit stable `id`. The `/` character is reserved as the source-map expansion separator and is rejected in authored ids. Generated Rive runtime names are derived deterministically from the authored expansion path, including instance paths. The encoding is collision-resistant for distinct accepted ids and does not depend on hash-map iteration or process state.
+
+Parameter names must contain only ASCII letters, digits, `_`, or `-`. This keeps parameter references and diagnostic paths unambiguous.
 
 Lowering returns an `AuthoringSourceMap`. Each entry links:
 
@@ -38,11 +40,11 @@ Lowering returns an `AuthoringSourceMap`. Each entry links:
 - generated or declared runtime names;
 - canonical `SceneSpec` JSON-pointer paths.
 
-Raw escapes preserve expert-authored runtime names. Duplicate declared or generated object names are rejected before canonical builder validation.
+Raw escapes preserve expert-authored runtime names. Generated names and names declared by visual objects, animations, and state machines share a collision registry; duplicates are rejected before a result is returned.
 
 ## Units and expressions
 
-Literal quantities are typed as `px`, `scalar`, `percent`, `degrees`, or `radians`. Expressions are data-only AST nodes; executable strings are not accepted.
+Literal quantities are typed as `px`, `scalar`, `degrees`, or `radians`. Expressions are data-only AST nodes; executable strings are not accepted.
 
 Supported expression nodes are:
 
@@ -53,11 +55,11 @@ Supported expression nodes are:
 - `multiply`
 - `divide`
 
-Addition and subtraction require compatible units. Degrees are normalized to radians. Transform position and dimensions require pixels; scale requires scalar values; rotation requires an angle. Non-finite values and division by zero are rejected with authored JSON paths.
+Addition and subtraction require compatible units. Degrees are normalized to radians. Transform position and dimensions require pixels; scale requires scalar values; rotation requires an angle. Non-finite values, values that overflow or underflow the canonical `f32` scene representation, and division by zero are rejected with authored JSON paths.
 
 ## Components and instances
 
-Components define typed parameter defaults and a visual node list. Instances may override only declared component parameters. Runtime names include the full instance expansion path, so repeated component contents remain unique and deterministic. Recursive component expansion is rejected with a `component_cycle` diagnostic.
+Components define typed parameter defaults and a visual node list. A component body can reference only parameters declared by that component. Document-level parameters remain available to the root visual graph and instance transforms but do not leak into reusable component definitions. Instances may override only declared component parameters. Runtime names include the full instance expansion path, so repeated component contents remain unique and deterministic. Recursive component expansion is rejected with a `component_cycle` diagnostic.
 
 ## Raw canonical escapes
 
