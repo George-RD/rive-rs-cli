@@ -22,7 +22,7 @@ pub(crate) fn evaluate_quantity(
     path: &str,
     expected: Unit,
 ) -> Result<f64, AuthoringDiagnostic> {
-    ensure_finite(quantity.value, path)?;
+    validate_scene_number(quantity.value, &format!("{path}.value"))?;
     let evaluated = canonicalize(Evaluated {
         value: quantity.value,
         unit: quantity.unit,
@@ -76,7 +76,7 @@ fn evaluate(
 ) -> Result<Evaluated, AuthoringDiagnostic> {
     match expression {
         ScalarExpr::Literal { value, unit } => {
-            ensure_finite(*value, path)?;
+            validate_scene_number(*value, &format!("{path}.value"))?;
             Ok(canonicalize(Evaluated {
                 value: *value,
                 unit: *unit,
@@ -90,7 +90,7 @@ fn evaluate(
                     format!("parameter '{name}' is not defined in this scope"),
                 )
             })?;
-            ensure_finite(quantity.value, path)?;
+            validate_scene_number(quantity.value, path)?;
             Ok(canonicalize(Evaluated {
                 value: quantity.value,
                 unit: quantity.unit,
@@ -103,17 +103,17 @@ fn evaluate(
             evaluate_binary(left, right, path, scope, |left, right| left - right)
         }
         ScalarExpr::Multiply { value, factor } => {
-            ensure_finite(*factor, &format!("{path}.factor"))?;
+            validate_scene_number(*factor, &format!("{path}.factor"))?;
             let evaluated = evaluate(value, &format!("{path}.value"), scope)?;
             let result = evaluated.value * factor;
-            ensure_finite(result, path)?;
+            validate_scene_number(result, path)?;
             Ok(Evaluated {
                 value: result,
                 unit: evaluated.unit,
             })
         }
         ScalarExpr::Divide { value, divisor } => {
-            ensure_finite(*divisor, &format!("{path}.divisor"))?;
+            validate_scene_number(*divisor, &format!("{path}.divisor"))?;
             if *divisor == 0.0 {
                 return Err(AuthoringDiagnostic::new(
                     format!("{path}.divisor"),
@@ -123,7 +123,7 @@ fn evaluate(
             }
             let evaluated = evaluate(value, &format!("{path}.value"), scope)?;
             let result = evaluated.value / divisor;
-            ensure_finite(result, path)?;
+            validate_scene_number(result, path)?;
             Ok(Evaluated {
                 value: result,
                 unit: evaluated.unit,
@@ -153,7 +153,7 @@ fn evaluate_binary(
         ));
     }
     let value = operation(left.value, right.value);
-    ensure_finite(value, path)?;
+    validate_scene_number(value, path)?;
     Ok(Evaluated {
         value,
         unit: left.unit,
@@ -190,14 +190,23 @@ fn expect_unit(
     Ok(evaluated.value)
 }
 
-fn ensure_finite(value: f64, path: &str) -> Result<(), AuthoringDiagnostic> {
-    if value.is_finite() {
-        Ok(())
-    } else {
-        Err(AuthoringDiagnostic::new(
+pub(crate) fn validate_scene_number(
+    value: f64,
+    path: &str,
+) -> Result<(), AuthoringDiagnostic> {
+    if !value.is_finite() {
+        return Err(AuthoringDiagnostic::new(
             path,
             "non_finite",
             "numeric values must be finite",
-        ))
+        ));
     }
+    if value.abs() > f64::from(f32::MAX) {
+        return Err(AuthoringDiagnostic::new(
+            path,
+            "numeric_out_of_range",
+            "numeric values must fit the canonical f32 scene representation",
+        ));
+    }
+    Ok(())
 }
