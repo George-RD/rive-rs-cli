@@ -209,9 +209,10 @@ async function captureCanvasPng(
       throw new Error(`canvas ${selector} has no visible bounds`);
     }
     session = await page.context().newCDPSession(page);
+    await session.send("Page.enable");
     const options = {
       format: "png",
-      fromSurface: true,
+      captureBeyondViewport: false,
       clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: 1 },
     };
     const result = await Promise.race([
