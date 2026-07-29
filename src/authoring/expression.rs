@@ -171,10 +171,7 @@ fn evaluate_binary(
     })
 }
 
-fn canonicalize(
-    evaluated: Evaluated,
-    path: &str,
-) -> Result<Evaluated, AuthoringDiagnostic> {
+fn canonicalize(evaluated: Evaluated, path: &str) -> Result<Evaluated, AuthoringDiagnostic> {
     let canonical = match evaluated.unit {
         Unit::Degrees => Evaluated {
             value: evaluated.value.to_radians(),
