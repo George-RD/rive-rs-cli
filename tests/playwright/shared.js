@@ -193,7 +193,12 @@ function visualBrowserLaunchOptions() {
 async function captureCanvasPng(
   page,
   outputPath,
-  { selector = "#canvas-controlled", background = "#0f172a", timeout = 15000 } = {},
+  {
+    selector = "#canvas-controlled",
+    background = "#0f172a",
+    scale = 2,
+    timeout = 15000,
+  } = {},
 ) {
   const previousBackground = await page.evaluate(
     ({ selector: canvasSelector, background: fill }) => {
@@ -220,7 +225,7 @@ async function captureCanvasPng(
     const options = {
       format: "png",
       captureBeyondViewport: false,
-      clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: 1 },
+      clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale },
     };
     const result = await Promise.race([
       session.send("Page.captureScreenshot", options),
