@@ -19,7 +19,7 @@ until that frontend and its evidence gates exist.
 
 | Priority | Work | Status | Exit gate |
 |---|---|---|---|
-| P0 | Foundation refactor, Cairn map, roadmap, and deterministic CI | in progress in PR #133 | all Rust, browser, visual, and Cairn gates green; merged to `main` |
+| P0 | Foundation refactor, Cairn map, roadmap, and deterministic CI | complete in PR #133 | all Rust, browser, visual, and Cairn gates green; merged to `main` |
 | P0 | Official-runtime evidence in `ai lab` | in progress in PR #134 | per-case frames and runtime pass rate retained separately from structural validity |
 | P0 | [AuthoringSpec v0 and lowering boundary](meta/todos/todo.authoring-spec-v0.md) | open | strict schema, deterministic lowering, source map, two validated examples |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | open | components, parameters, patterns, simple constraints, complex static showcase |
