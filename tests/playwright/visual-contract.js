@@ -12,7 +12,10 @@ async function main() {
   const session = {
     send: async (method, options) => {
       calls.push({ type: "send", method, options });
-      return { data: expected.toString("base64") };
+      if (method === "Page.captureScreenshot") {
+        return { data: expected.toString("base64") };
+      }
+      return {};
     },
     detach: async () => calls.push({ type: "detach" }),
   };
@@ -41,11 +44,15 @@ async function main() {
     assert.equal(calls.filter((call) => call.type === "newCDPSession").length, 1);
     assert.equal(calls.filter((call) => call.type === "boundingBox").length, 1);
     assert.equal(calls.filter((call) => call.type === "detach").length, 1);
-    const capture = calls.find((call) => call.type === "send");
-    assert.equal(capture.method, "Page.captureScreenshot");
-    assert.deepEqual(capture.options, {
+    const sends = calls.filter((call) => call.type === "send");
+    assert.deepEqual(sends.map((call) => call.method), [
+      "Page.enable",
+      "Page.captureScreenshot",
+    ]);
+    assert.deepEqual(sends[0].options, undefined);
+    assert.deepEqual(sends[1].options, {
       format: "png",
-      fromSurface: true,
+      captureBeyondViewport: false,
       clip: { x: 12, y: 18, width: 512, height: 512, scale: 1 },
     });
     const evaluations = calls.filter((call) => call.type === "evaluate");
