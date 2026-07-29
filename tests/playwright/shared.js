@@ -183,6 +183,13 @@ async function waitForRiveReady(page, timeout = 15000) {
   );
 }
 
+function visualBrowserLaunchOptions() {
+  return {
+    headless: true,
+    args: ["--disable-gpu"],
+  };
+}
+
 async function captureCanvasPng(
   page,
   outputPath,
@@ -313,6 +320,7 @@ module.exports = {
   startServer,
   cleanupFixtures,
   waitForRiveReady,
+  visualBrowserLaunchOptions,
   captureCanvasPng,
   openFixturePage,
 };
