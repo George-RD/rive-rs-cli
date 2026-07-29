@@ -186,35 +186,68 @@ async function waitForRiveReady(page, timeout = 15000) {
 async function captureCanvasPng(
   page,
   outputPath,
-  { selector = "#canvas-controlled", background = "#0f172a" } = {},
+  { selector = "#canvas-controlled", background = "#0f172a", timeout = 15000 } = {},
 ) {
-  const dataUrl = await page.evaluate(
+  const previousBackground = await page.evaluate(
     ({ selector: canvasSelector, background: fill }) => {
       const source = document.querySelector(canvasSelector);
       if (!(source instanceof HTMLCanvasElement)) {
         throw new Error(`missing canvas ${canvasSelector}`);
       }
-      const output = document.createElement("canvas");
-      output.width = source.width;
-      output.height = source.height;
-      const context = output.getContext("2d");
-      if (!context) {
-        throw new Error("could not create a 2D canvas context");
-      }
-      if (fill) {
-        context.fillStyle = fill;
-        context.fillRect(0, 0, output.width, output.height);
-      }
-      context.drawImage(source, 0, 0);
-      return output.toDataURL("image/png");
+      const previous = source.style.backgroundColor;
+      source.style.backgroundColor = fill || "";
+      return previous;
     },
     { selector, background },
   );
-  const prefix = "data:image/png;base64,";
-  if (!dataUrl.startsWith(prefix)) {
-    throw new Error("canvas capture did not return a PNG data URL");
+
+  let session;
+  let timer;
+  try {
+    const box = await page.locator(selector).boundingBox();
+    if (!box || box.width <= 0 || box.height <= 0) {
+      throw new Error(`canvas ${selector} has no visible bounds`);
+    }
+    session = await page.context().newCDPSession(page);
+    const options = {
+      format: "png",
+      fromSurface: true,
+      clip: { x: box.x, y: box.y, width: box.width, height: box.height, scale: 1 },
+    };
+    const result = await Promise.race([
+      session.send("Page.captureScreenshot", options),
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`timed out capturing canvas ${selector}`)),
+          timeout,
+        );
+      }),
+    ]);
+    if (!result.data) {
+      throw new Error("browser returned no PNG screenshot data");
+    }
+    fs.writeFileSync(outputPath, Buffer.from(result.data, "base64"));
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
+    if (session) {
+      try {
+        await session.detach();
+      } catch {}
+    }
+    try {
+      await page.evaluate(
+        ({ selector: canvasSelector, background: fill }) => {
+          const source = document.querySelector(canvasSelector);
+          if (source instanceof HTMLCanvasElement) {
+            source.style.backgroundColor = fill;
+          }
+        },
+        { selector, background: previousBackground },
+      );
+    } catch {}
   }
-  fs.writeFileSync(outputPath, Buffer.from(dataUrl.slice(prefix.length), "base64"));
 }
 
 async function openFixturePage(browser, port, fixture, { artboard, pageOptions } = {}) {
