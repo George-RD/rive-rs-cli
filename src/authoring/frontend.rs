@@ -38,6 +38,8 @@ fn validate_authoring(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
         return Err(AuthoringError::many(name_diagnostics));
     }
 
+    validate_raw_fragment_runtime_names(spec)?;
+
     let numeric_diagnostics = validate_numeric_values(spec);
     if !numeric_diagnostics.is_empty() {
         return Err(AuthoringError::many(numeric_diagnostics));
@@ -69,6 +71,56 @@ fn validate_runtime_names(lowered: LoweredAuthoring) -> Result<LoweredAuthoring,
         }
     }
     Ok(lowered)
+}
+
+fn validate_raw_fragment_runtime_names(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
+    let mut names = HashSet::new();
+    for (fragments, list_path) in [
+        (
+            spec.motion.raw_animations.as_slice(),
+            "$.motion.raw_animations",
+        ),
+        (
+            spec.behavior.raw_state_machines.as_slice(),
+            "$.behavior.raw_state_machines",
+        ),
+    ] {
+        for (index, fragment) in fragments.iter().enumerate() {
+            let mut declared_names = Vec::new();
+            collect_declared_names(&fragment.value, &mut declared_names);
+            for name in declared_names {
+                if !names.insert(name.clone()) {
+                    return Err(AuthoringError::one(AuthoringDiagnostic::new(
+                        format!("{list_path}[{index}].value"),
+                        "runtime_name_collision",
+                        format!("runtime name '{name}' is declared more than once"),
+                    )));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn collect_declared_names(value: &serde_json::Value, names: &mut Vec<String>) {
+    match value {
+        serde_json::Value::Object(object) => {
+            if let Some(name) = object.get("name").and_then(serde_json::Value::as_str) {
+                names.push(name.to_string());
+            }
+            if let Some(serde_json::Value::Array(children)) = object.get("children") {
+                for child in children {
+                    collect_declared_names(child, names);
+                }
+            }
+        }
+        serde_json::Value::Array(values) => {
+            for child in values {
+                collect_declared_names(child, names);
+            }
+        }
+        _ => {}
+    }
 }
 
 fn validate_authored_names(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
