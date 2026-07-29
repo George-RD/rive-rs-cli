@@ -2,9 +2,14 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { captureCanvasPng } = require("./shared");
+const { captureCanvasPng, visualBrowserLaunchOptions } = require("./shared");
 
 async function main() {
+  assert.deepEqual(visualBrowserLaunchOptions(), {
+    headless: true,
+    args: ["--disable-gpu"],
+  });
+
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "rive-visual-contract-"));
   const output = path.join(root, "frame.png");
   const expected = Buffer.from("deterministic-png-bytes");
