@@ -10,6 +10,7 @@ pub const AUTHORING_FORMAT_VERSION: u32 = 0;
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct AuthoringSpec {
+    #[schemars(range(min = 0, max = 0))]
     pub authoring_format_version: u32,
     pub artboard: AuthoringArtboard,
     #[serde(default)]
@@ -41,7 +42,6 @@ pub struct Quantity {
 pub enum Unit {
     Px,
     Scalar,
-    Percent,
     Degrees,
     Radians,
 }
