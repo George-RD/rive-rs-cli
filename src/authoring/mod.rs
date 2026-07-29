@@ -174,11 +174,7 @@ mod tests {
         ]);
 
         let error = lower(&input).expect_err("ambiguous authored id must fail");
-        assert!(has_diagnostic(
-            &error,
-            "invalid_id",
-            "$.visual.nodes[0].id"
-        ));
+        assert!(has_diagnostic(&error, "invalid_id", "$.visual.nodes[0].id"));
     }
 
     #[test]
