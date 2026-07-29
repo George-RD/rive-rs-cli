@@ -87,16 +87,8 @@ fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringE
 
 fn validate_numeric_values(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();
-    validate_quantity(
-        spec.artboard.width,
-        "$.artboard.width",
-        &mut diagnostics,
-    );
-    validate_quantity(
-        spec.artboard.height,
-        "$.artboard.height",
-        &mut diagnostics,
-    );
+    validate_quantity(spec.artboard.width, "$.artboard.width", &mut diagnostics);
+    validate_quantity(spec.artboard.height, "$.artboard.height", &mut diagnostics);
     validate_quantity_map(&spec.parameters, "$.parameters", &mut diagnostics);
 
     for (component_index, component) in spec.components.iter().enumerate() {
@@ -126,11 +118,7 @@ fn validate_quantity_map(
     }
 }
 
-fn validate_quantity(
-    quantity: Quantity,
-    path: &str,
-    diagnostics: &mut Vec<AuthoringDiagnostic>,
-) {
+fn validate_quantity(quantity: Quantity, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>) {
     if let Err(diagnostic) = validate_scene_number(quantity.value, &format!("{path}.value")) {
         diagnostics.push(diagnostic);
     }
@@ -146,11 +134,7 @@ fn validate_nodes(
     }
 }
 
-fn validate_node(
-    node: &VisualNode,
-    path: &str,
-    diagnostics: &mut Vec<AuthoringDiagnostic>,
-) {
+fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>) {
     match node {
         VisualNode::Ellipse {
             width,
@@ -172,11 +156,7 @@ fn validate_node(
             validate_expression(width, &format!("{path}.width"), diagnostics);
             validate_expression(height, &format!("{path}.height"), diagnostics);
             if let Some(corner_radius) = corner_radius {
-                validate_expression(
-                    corner_radius,
-                    &format!("{path}.corner_radius"),
-                    diagnostics,
-                );
+                validate_expression(corner_radius, &format!("{path}.corner_radius"), diagnostics);
             }
             validate_transform(transform, &format!("{path}.transform"), diagnostics);
         }
