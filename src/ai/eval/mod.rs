@@ -183,6 +183,7 @@ mod tests {
                 .unwrap_err();
         assert!(error.contains("prompt cases require"));
     }
+
     fn runtime_frame(index: u32, distinct_colors: usize, blank: bool) -> RenderedFrame {
         RenderedFrame {
             index,
@@ -216,6 +217,29 @@ mod tests {
     }
 
     #[test]
+    fn runtime_evidence_rejects_wrong_frame_indices() {
+        let expectations = RuntimeExpectations {
+            frames: vec![0, 30],
+            min_non_blank_frames: 2,
+            min_distinct_colors: 3,
+            ..RuntimeExpectations::default()
+        };
+        let frames = vec![runtime_frame(0, 5, false), runtime_frame(31, 7, false)];
+        let evidence = evaluate_runtime_frames(
+            &expectations,
+            &frames,
+            std::path::Path::new("render/manifest.json"),
+        );
+        assert!(!evidence.passed);
+        assert!(
+            evidence
+                .failure_reason
+                .expect("missing frame identity failure")
+                .contains("frame indices")
+        );
+    }
+
+    #[test]
     fn runtime_evidence_keeps_blank_and_colour_failures_separate_from_validity() {
         let expectations = RuntimeExpectations {
             frames: vec![0, 30],
@@ -244,5 +268,12 @@ mod tests {
         });
         let error = validate_suite(&test_suite(vec![case])).unwrap_err();
         assert!(error.contains("runtime frames"));
+    }
+
+    #[test]
+    fn ci_runs_official_runtime_contract_suite() {
+        let ci = include_str!("../../../.github/workflows/ci.yml");
+        assert!(ci.contains("evals/suites/runtime_contract.v1.json"));
+        assert!(ci.contains("runtime-eval-evidence"));
     }
 }
