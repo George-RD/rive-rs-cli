@@ -64,6 +64,35 @@ jobs:
       - run: node tests/playwright/shared-contract.js
       - run: node tests/playwright/visual-contract.js
 
+  runtime-eval-evidence:
+    needs: [check, browser-contracts]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Run official-runtime evaluation suite
+        run: |
+          set -o pipefail
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/runtime_contract.v1.json \
+            --provider template \
+            --output-dir target/eval-runtime 2>&1 | tee runtime-eval.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-eval-evidence
+          path: |
+            runtime-eval.log
+            target/eval-runtime
+          retention-days: 7
+
   architecture:
     needs: [check]
     runs-on: ubuntu-24.04
