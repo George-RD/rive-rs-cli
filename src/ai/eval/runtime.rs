@@ -10,6 +10,7 @@ pub fn evaluate_runtime_frames(
     manifest_path: &Path,
 ) -> RuntimeEvidence {
     let rendered_frame_count = frames.len();
+    let rendered_frame_indices = frames.iter().map(|frame| frame.index).collect::<Vec<_>>();
     let non_blank_frame_count = frames.iter().filter(|frame| !frame.blank).count();
     let minimum_distinct_colors_observed = frames
         .iter()
@@ -22,6 +23,12 @@ pub fn evaluate_runtime_frames(
         failures.push(format!(
             "rendered {rendered_frame_count} frame(s), expected {}",
             expectations.frames.len()
+        ));
+    }
+    if rendered_frame_indices != expectations.frames {
+        failures.push(format!(
+            "rendered frame indices {rendered_frame_indices:?}, expected {:?}",
+            expectations.frames
         ));
     }
     if non_blank_frame_count < expectations.min_non_blank_frames {
