@@ -409,8 +409,7 @@ mod tests {
                 "fill": "#111827"
             });
             if kind == "star" {
-                node["inner_radius"] =
-                    json!({ "kind": "literal", "value": 0.5, "unit": "scalar" });
+                node["inner_radius"] = json!({ "kind": "literal", "value": 0.5, "unit": "scalar" });
             }
             input["visual"]["nodes"] = json!([node]);
 
@@ -425,9 +424,10 @@ mod tests {
 
     #[test]
     fn star_inner_radius_requires_a_bounded_scalar_ratio() {
-        for (value, unit, expected_code) in
-            [(0.5, "px", "unit_mismatch"), (1.1, "scalar", "invalid_ratio")]
-        {
+        for (value, unit, expected_code) in [
+            (0.5, "px", "unit_mismatch"),
+            (1.1, "scalar", "invalid_ratio"),
+        ] {
             let mut input = document();
             input["visual"]["nodes"] = json!([
                 {
