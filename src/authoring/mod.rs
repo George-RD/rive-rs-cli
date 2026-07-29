@@ -7,6 +7,7 @@ use schemars::schema_for;
 use serde_json::Value;
 
 pub use frontend::{lower_authoring, lower_authoring_json};
+pub use lower::lower_authoring_json as lower_authoring_json_unchecked;
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, LoweredAuthoring,
