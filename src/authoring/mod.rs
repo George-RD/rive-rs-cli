@@ -101,6 +101,32 @@ mod tests {
     }
 
     #[test]
+    fn degree_normalization_that_underflows_f32_is_rejected() {
+        let mut input = document();
+        input["visual"]["nodes"] = json!([
+            {
+                "kind": "group",
+                "id": "tiny-rotation",
+                "transform": {
+                    "rotation": {
+                        "kind": "literal",
+                        "value": 1.0e-44_f64,
+                        "unit": "degrees"
+                    }
+                },
+                "children": []
+            }
+        ]);
+
+        let error = lower(&input).expect_err("normalized underflow must fail");
+        assert!(has_diagnostic(
+            &error,
+            "numeric_out_of_range",
+            "$.visual.nodes[0].transform.rotation.value"
+        ));
+    }
+
+    #[test]
     fn component_bodies_only_see_declared_component_parameters() {
         let mut input = document();
         input["parameters"] = json!({
@@ -186,5 +212,83 @@ mod tests {
 
         let error = lower(&input).expect_err("ambiguous parameter name must fail");
         assert!(has_diagnostic(&error, "invalid_parameter", "$.parameters"));
+    }
+
+    #[test]
+    fn acyclic_component_depth_is_bounded() {
+        let mut input = document();
+        let components = (0..65)
+            .map(|index| {
+                let visual = if index == 64 {
+                    json!([
+                        {
+                            "kind": "ellipse",
+                            "id": "leaf",
+                            "width": { "kind": "literal", "value": 1.0, "unit": "px" },
+                            "height": { "kind": "literal", "value": 1.0, "unit": "px" },
+                            "fill": "#000000"
+                        }
+                    ])
+                } else {
+                    json!([
+                        {
+                            "kind": "instance",
+                            "id": format!("next-{index}"),
+                            "component": format!("component-{}", index + 1)
+                        }
+                    ])
+                };
+                json!({
+                    "id": format!("component-{index}"),
+                    "visual": visual
+                })
+            })
+            .collect::<Vec<_>>();
+        input["components"] = json!(components);
+        input["visual"]["nodes"] = json!([
+            { "kind": "instance", "id": "root", "component": "component-0" }
+        ]);
+
+        let error = lower(&input).expect_err("deep acyclic expansion must be bounded");
+        assert!(has_diagnostic(
+            &error,
+            "component_expansion_depth_limit",
+            "$.components[63].visual[0].component"
+        ));
+    }
+
+    #[test]
+    fn generated_component_nodes_have_a_total_budget() {
+        let mut input = document();
+        let component_nodes = (0..100)
+            .map(|index| {
+                json!({
+                    "kind": "ellipse",
+                    "id": format!("dot-{index}"),
+                    "width": { "kind": "literal", "value": 1.0, "unit": "px" },
+                    "height": { "kind": "literal", "value": 1.0, "unit": "px" },
+                    "fill": "#000000"
+                })
+            })
+            .collect::<Vec<_>>();
+        input["components"] = json!([
+            { "id": "field", "visual": component_nodes }
+        ]);
+        let instances = (0..101)
+            .map(|index| {
+                json!({
+                    "kind": "instance",
+                    "id": format!("field-{index}"),
+                    "component": "field"
+                })
+            })
+            .collect::<Vec<_>>();
+        input["visual"]["nodes"] = json!(instances);
+
+        let error = lower(&input).expect_err("generated nodes must have a total budget");
+        assert!(error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == "component_expansion_node_limit"));
     }
 }
