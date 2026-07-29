@@ -54,6 +54,16 @@ jobs:
         if: steps.tests.outcome == 'failure'
         run: exit 1
 
+  browser-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/playwright/shared-contract.js
+      - run: node tests/playwright/visual-contract.js
+
   architecture:
     needs: [check]
     runs-on: ubuntu-24.04
@@ -78,8 +88,9 @@ jobs:
           retention-days: 7
 
   playwright:
-    needs: [check]
+    needs: [check, browser-contracts]
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -90,8 +101,6 @@ jobs:
       - run: cargo build
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
-      - run: node tests/playwright/shared-contract.js
-      - run: node tests/playwright/visual-contract.js
       - run: node tests/playwright/regression.js
       - name: Run visual regression
         id: visual
