@@ -60,6 +60,8 @@ pub fn authoring_schema() -> Value {
 mod tests {
     use serde_json::{Value, json};
 
+    use crate::builder::{SceneSpec, build_scene};
+
     use super::{AuthoringError, authoring_schema, lower_authoring_json};
 
     fn document() -> Value {
@@ -85,6 +87,12 @@ mod tests {
             .diagnostics
             .iter()
             .any(|diagnostic| diagnostic.code == code && diagnostic.path == path)
+    }
+
+    fn assert_builds(scene: Value) {
+        let scene: SceneSpec =
+            serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
+        build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
     }
 
     #[test]
@@ -313,5 +321,132 @@ mod tests {
                 .iter()
                 .any(|diagnostic| diagnostic.code == "component_expansion_node_limit")
         );
+    }
+
+    #[test]
+    fn common_shape_primitives_lower_deterministically_and_build() {
+        let mut input = document();
+        input["visual"]["nodes"] = json!([
+            {
+                "kind": "triangle",
+                "id": "triangle",
+                "width": { "kind": "literal", "value": 72.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 64.0, "unit": "px" },
+                "fill": "#EF4444",
+                "transform": {
+                    "x": { "kind": "literal", "value": 64.0, "unit": "px" },
+                    "y": { "kind": "literal", "value": 120.0, "unit": "px" }
+                }
+            },
+            {
+                "kind": "polygon",
+                "id": "hexagon",
+                "width": { "kind": "literal", "value": 80.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 80.0, "unit": "px" },
+                "points": 6,
+                "corner_radius": { "kind": "literal", "value": 4.0, "unit": "px" },
+                "fill": "#22C55E",
+                "transform": {
+                    "x": { "kind": "literal", "value": 160.0, "unit": "px" },
+                    "y": { "kind": "literal", "value": 120.0, "unit": "px" }
+                }
+            },
+            {
+                "kind": "star",
+                "id": "star",
+                "width": { "kind": "literal", "value": 88.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 88.0, "unit": "px" },
+                "points": 5,
+                "inner_radius": { "kind": "literal", "value": 0.42, "unit": "scalar" },
+                "corner_radius": { "kind": "literal", "value": 2.0, "unit": "px" },
+                "fill": "#3B82F6",
+                "transform": {
+                    "x": { "kind": "literal", "value": 256.0, "unit": "px" },
+                    "y": { "kind": "literal", "value": 120.0, "unit": "px" }
+                }
+            }
+        ]);
+
+        let first = lower(&input).expect("first primitive lowering");
+        let second = lower(&input).expect("second primitive lowering");
+        assert_eq!(first.scene, second.scene);
+        assert_eq!(first.source_map, second.source_map);
+
+        let children = first.scene["artboard"]["children"]
+            .as_array()
+            .expect("lowered artboard children");
+        assert_eq!(children[0]["children"][0]["type"], "triangle");
+        assert_eq!(children[1]["children"][0]["type"], "polygon");
+        assert_eq!(children[1]["children"][0]["points"], 6);
+        assert_eq!(children[1]["children"][0]["corner_radius"], 4.0);
+        assert_eq!(children[2]["children"][0]["type"], "star");
+        assert_eq!(children[2]["children"][0]["points"], 5);
+        assert_eq!(children[2]["children"][0]["inner_radius"], 0.42);
+
+        for authored_id in ["triangle", "hexagon", "star"] {
+            let entry = first
+                .source_map
+                .entries
+                .iter()
+                .find(|entry| entry.authored_id == authored_id)
+                .expect("primitive source-map entry");
+            assert_eq!(entry.runtime_names.len(), 4);
+            assert_eq!(entry.scene_paths.len(), 4);
+        }
+        assert_builds(first.scene);
+    }
+
+    #[test]
+    fn polygons_and_stars_require_at_least_three_points() {
+        for kind in ["polygon", "star"] {
+            let mut input = document();
+            let mut node = json!({
+                "kind": kind,
+                "id": kind,
+                "width": { "kind": "literal", "value": 40.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 40.0, "unit": "px" },
+                "points": 2,
+                "fill": "#111827"
+            });
+            if kind == "star" {
+                node["inner_radius"] = json!({ "kind": "literal", "value": 0.5, "unit": "scalar" });
+            }
+            input["visual"]["nodes"] = json!([node]);
+
+            let error = lower(&input).expect_err("too few points must fail");
+            assert!(has_diagnostic(
+                &error,
+                "invalid_points",
+                "$.visual.nodes[0].points"
+            ));
+        }
+    }
+
+    #[test]
+    fn star_inner_radius_requires_a_bounded_scalar_ratio() {
+        for (value, unit, expected_code) in [
+            (0.5, "px", "unit_mismatch"),
+            (1.1, "scalar", "invalid_ratio"),
+        ] {
+            let mut input = document();
+            input["visual"]["nodes"] = json!([
+                {
+                    "kind": "star",
+                    "id": "star",
+                    "width": { "kind": "literal", "value": 40.0, "unit": "px" },
+                    "height": { "kind": "literal", "value": 40.0, "unit": "px" },
+                    "points": 5,
+                    "inner_radius": { "kind": "literal", "value": value, "unit": unit },
+                    "fill": "#111827"
+                }
+            ]);
+
+            let error = lower(&input).expect_err("invalid inner radius must fail");
+            assert!(has_diagnostic(
+                &error,
+                expected_code,
+                "$.visual.nodes[0].inner_radius"
+            ));
+        }
     }
 }

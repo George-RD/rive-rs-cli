@@ -220,6 +220,9 @@ fn validate_node_names(
             }
             VisualNode::Ellipse { .. }
             | VisualNode::Rectangle { .. }
+            | VisualNode::Triangle { .. }
+            | VisualNode::Polygon { .. }
+            | VisualNode::Star { .. }
             | VisualNode::RawSceneObject { .. } => {}
         }
     }
@@ -347,6 +350,12 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
             height,
             transform,
             ..
+        }
+        | VisualNode::Triangle {
+            width,
+            height,
+            transform,
+            ..
         } => {
             validate_expression(width, &format!("{path}.width"), diagnostics);
             validate_expression(height, &format!("{path}.height"), diagnostics);
@@ -358,9 +367,32 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
             corner_radius,
             transform,
             ..
+        }
+        | VisualNode::Polygon {
+            width,
+            height,
+            corner_radius,
+            transform,
+            ..
         } => {
             validate_expression(width, &format!("{path}.width"), diagnostics);
             validate_expression(height, &format!("{path}.height"), diagnostics);
+            if let Some(corner_radius) = corner_radius {
+                validate_expression(corner_radius, &format!("{path}.corner_radius"), diagnostics);
+            }
+            validate_transform(transform, &format!("{path}.transform"), diagnostics);
+        }
+        VisualNode::Star {
+            width,
+            height,
+            inner_radius,
+            corner_radius,
+            transform,
+            ..
+        } => {
+            validate_expression(width, &format!("{path}.width"), diagnostics);
+            validate_expression(height, &format!("{path}.height"), diagnostics);
+            validate_expression(inner_radius, &format!("{path}.inner_radius"), diagnostics);
             if let Some(corner_radius) = corner_radius {
                 validate_expression(corner_radius, &format!("{path}.corner_radius"), diagnostics);
             }

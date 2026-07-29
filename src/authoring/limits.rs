@@ -130,6 +130,9 @@ fn validate_nodes<'a>(
             }
             VisualNode::Ellipse { .. }
             | VisualNode::Rectangle { .. }
+            | VisualNode::Triangle { .. }
+            | VisualNode::Polygon { .. }
+            | VisualNode::Star { .. }
             | VisualNode::RawSceneObject { .. } => {}
         }
     }
