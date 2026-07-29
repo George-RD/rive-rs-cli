@@ -1,0 +1,67 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "raw-stage",
+    "width": { "value": 240.0, "unit": "px" },
+    "height": { "value": 240.0, "unit": "px" }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "raw_scene_object",
+        "id": "raw-ball",
+        "object": {
+          "type": "shape",
+          "name": "RawBall",
+          "x": 120.0,
+          "y": 120.0,
+          "children": [
+            {
+              "type": "ellipse",
+              "name": "RawBallGeometry",
+              "width": 80.0,
+              "height": 80.0,
+              "origin_x": 0.5,
+              "origin_y": 0.5
+            },
+            {
+              "type": "fill",
+              "name": "RawBallFill",
+              "children": [
+                {
+                  "type": "solid_color",
+                  "name": "RawBallColor",
+                  "color": "#EF4444"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "motion": {
+    "raw_animations": [
+      {
+        "id": "pulse-motion",
+        "value": {
+          "name": "pulse",
+          "fps": 60.0,
+          "duration": 60,
+          "keyframes": [
+            {
+              "object": "RawBallGeometry",
+              "property": "width",
+              "frames": [
+                { "frame": 0, "value": 80.0 },
+                { "frame": 30, "value": 120.0 },
+                { "frame": 59, "value": 80.0 }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "behavior": {}
+}
