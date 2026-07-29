@@ -1,0 +1,59 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "main-stage",
+    "width": { "value": 320.0, "unit": "px" },
+    "height": { "value": 240.0, "unit": "px" }
+  },
+  "parameters": {
+    "gap": { "value": 24.0, "unit": "px" }
+  },
+  "components": [
+    {
+      "id": "badge",
+      "parameters": {
+        "diameter": { "value": 64.0, "unit": "px" }
+      },
+      "visual": [
+        {
+          "kind": "ellipse",
+          "id": "disc",
+          "width": { "kind": "parameter", "name": "diameter" },
+          "height": { "kind": "parameter", "name": "diameter" },
+          "fill": "#246BFD"
+        }
+      ]
+    }
+  ],
+  "visual": {
+    "nodes": [
+      {
+        "kind": "instance",
+        "id": "left",
+        "component": "badge",
+        "overrides": {
+          "diameter": { "value": 72.0, "unit": "px" }
+        },
+        "transform": {
+          "x": { "kind": "literal", "value": 80.0, "unit": "px" },
+          "y": { "kind": "literal", "value": 120.0, "unit": "px" }
+        }
+      },
+      {
+        "kind": "instance",
+        "id": "right",
+        "component": "badge",
+        "transform": {
+          "x": {
+            "kind": "add",
+            "left": { "kind": "literal", "value": 200.0, "unit": "px" },
+            "right": { "kind": "parameter", "name": "gap" }
+          },
+          "y": { "kind": "literal", "value": 120.0, "unit": "px" }
+        }
+      }
+    ]
+  },
+  "motion": {},
+  "behavior": {}
+}
