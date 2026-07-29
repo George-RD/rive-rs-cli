@@ -1,11 +1,11 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 use super::expression::validate_scene_number;
 use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, Quantity, ScalarExpr,
-    TransformSpec, Unit, VisualNode, VisualSection,
+    AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, Quantity, RawSceneFragment,
+    ScalarExpr, TransformSpec, Unit, VisualNode, VisualSection,
 };
 
 pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError> {
@@ -20,17 +20,176 @@ pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringEr
             ),
         ))
     })?;
-    lower_authoring(&spec)
+    validate_authoring(&spec)?;
+    let lowered = lower::lower_authoring_json(input)
+        .map_err(|error| rewrite_error_paths(&spec, error))?;
+    validate_runtime_names(lowered)
 }
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
+    validate_authoring(spec)?;
+    let lowered =
+        lower::lower_authoring(spec).map_err(|error| rewrite_error_paths(spec, error))?;
+    validate_runtime_names(lowered)
+}
+
+fn validate_authoring(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
+    let name_diagnostics = validate_authored_names(spec);
+    if !name_diagnostics.is_empty() {
+        return Err(AuthoringError::many(name_diagnostics));
+    }
+
     let numeric_diagnostics = validate_numeric_values(spec);
     if !numeric_diagnostics.is_empty() {
         return Err(AuthoringError::many(numeric_diagnostics));
     }
 
-    validate_component_definitions(spec)?;
-    lower::lower_authoring(spec).map_err(|error| rewrite_error_paths(spec, error))
+    validate_component_definitions(spec)
+}
+
+fn validate_runtime_names(
+    lowered: LoweredAuthoring,
+) -> Result<LoweredAuthoring, AuthoringError> {
+    let mut names = HashSet::new();
+    for entry in &lowered.source_map.entries {
+        for name in &entry.runtime_names {
+            if !names.insert(name.as_str()) {
+                let path = if entry
+                    .authored_path
+                    .starts_with("$.motion.raw_animations[")
+                    || entry
+                        .authored_path
+                        .starts_with("$.behavior.raw_state_machines[")
+                {
+                    format!("{}.value", entry.authored_path)
+                } else {
+                    entry.authored_path.clone()
+                };
+                return Err(AuthoringError::one(AuthoringDiagnostic::new(
+                    path,
+                    "runtime_name_collision",
+                    format!("runtime name '{name}' is generated or declared more than once"),
+                )));
+            }
+        }
+    }
+    Ok(lowered)
+}
+
+fn validate_authored_names(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
+    let mut diagnostics = Vec::new();
+    validate_id(&spec.artboard.id, "$.artboard.id", &mut diagnostics);
+    validate_parameter_names(&spec.parameters, "$.parameters", &mut diagnostics);
+
+    for (component_index, component) in spec.components.iter().enumerate() {
+        let component_path = format!("$.components[{component_index}]");
+        validate_id(
+            &component.id,
+            &format!("{component_path}.id"),
+            &mut diagnostics,
+        );
+        validate_parameter_names(
+            &component.parameters,
+            &format!("{component_path}.parameters"),
+            &mut diagnostics,
+        );
+        validate_node_names(
+            &component.visual,
+            &format!("{component_path}.visual"),
+            &mut diagnostics,
+        );
+    }
+
+    validate_node_names(&spec.visual.nodes, "$.visual.nodes", &mut diagnostics);
+    validate_fragment_names(
+        &spec.motion.raw_animations,
+        "$.motion.raw_animations",
+        &mut diagnostics,
+    );
+    validate_fragment_names(
+        &spec.behavior.raw_state_machines,
+        "$.behavior.raw_state_machines",
+        &mut diagnostics,
+    );
+    diagnostics
+}
+
+fn validate_id(id: &str, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>) {
+    if id.trim().is_empty() {
+        diagnostics.push(AuthoringDiagnostic::new(
+            path,
+            "invalid_id",
+            "authored ids must not be empty",
+        ));
+    }
+    if id.contains('/') {
+        diagnostics.push(AuthoringDiagnostic::new(
+            path,
+            "invalid_id",
+            "authored ids must not contain the reserved '/' source-map separator",
+        ));
+    }
+}
+
+fn validate_parameter_names(
+    parameters: &BTreeMap<String, Quantity>,
+    path: &str,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    for name in parameters.keys() {
+        if !is_parameter_name(name) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                path,
+                "invalid_parameter",
+                format!(
+                    "parameter name '{name}' must contain only ASCII letters, digits, '_' or '-'"
+                ),
+            ));
+        }
+    }
+}
+
+fn is_parameter_name(name: &str) -> bool {
+    !name.is_empty()
+        && name
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'))
+}
+
+fn validate_node_names(
+    nodes: &[VisualNode],
+    list_path: &str,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    for (index, node) in nodes.iter().enumerate() {
+        let path = format!("{list_path}[{index}]");
+        validate_id(node.id(), &format!("{path}.id"), diagnostics);
+        match node {
+            VisualNode::Group { children, .. } => {
+                validate_node_names(children, &format!("{path}.children"), diagnostics);
+            }
+            VisualNode::Instance { overrides, .. } => {
+                validate_parameter_names(overrides, &format!("{path}.overrides"), diagnostics);
+            }
+            VisualNode::Ellipse { .. }
+            | VisualNode::Rectangle { .. }
+            | VisualNode::RawSceneObject { .. } => {}
+        }
+    }
+}
+
+fn validate_fragment_names(
+    fragments: &[RawSceneFragment],
+    list_path: &str,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    for (index, fragment) in fragments.iter().enumerate() {
+        validate_id(
+            &fragment.id,
+            &format!("{list_path}[{index}].id"),
+            diagnostics,
+        );
+    }
 }
 
 fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
@@ -52,7 +211,7 @@ fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringE
                     unit: Unit::Px,
                 },
             },
-            parameters: spec.parameters.clone(),
+            parameters: BTreeMap::new(),
             components: spec.components.clone(),
             visual: VisualSection {
                 nodes: vec![VisualNode::Instance {
