@@ -1,10 +1,12 @@
 mod model;
 mod runner;
+mod runtime;
 mod traits;
 mod validation;
 
 pub use model::{
     EvalBaseline, EvalCase, EvalCaseReport, EvalGates, EvalReport, EvalSuite, InputKind,
+    RuntimeEvidence, RuntimeExpectations,
 };
 pub use runner::{run_eval_suite, run_eval_suite_configured};
 
@@ -12,12 +14,16 @@ pub use runner::{run_eval_suite, run_eval_suite_configured};
 mod tests {
     use std::collections::{BTreeMap, HashSet};
 
-    use super::model::{EvalBaseline, EvalCase, EvalGates, EvalSuite, InputKind};
+    use super::model::{
+        EvalBaseline, EvalCase, EvalGates, EvalSuite, InputKind, RuntimeExpectations,
+    };
     use super::runner::{test_hash_bytes, test_run_id};
+    use super::runtime::evaluate_runtime_frames;
     use super::traits::trait_score;
     use super::validation::{
         evaluate_gates, resolve_eval_config, validate_baseline, validate_suite,
     };
+    use crate::render::RenderedFrame;
 
     fn test_case(id: &str) -> EvalCase {
         EvalCase {
@@ -27,6 +33,7 @@ mod tests {
             expected_traits: vec!["has_animation".to_string()],
             text_hint: None,
             image_path: None,
+            runtime: None,
         }
     }
 
@@ -161,8 +168,9 @@ mod tests {
             min_pipeline_reproducibility_rate: 1.0,
             max_average_retries: Some(1.0),
             max_drift_count: 0,
+            min_runtime_pass_rate: 1.0,
         };
-        assert_eq!(evaluate_gates(&gates, 0.8, 0.7, 0.5, 2.0, 1).len(), 5);
+        assert_eq!(evaluate_gates(&gates, 0.8, 0.7, 0.5, 0.5, 2.0, 1).len(), 6);
     }
 
     #[test]
@@ -174,5 +182,98 @@ mod tests {
             resolve_eval_config(&test_suite(vec![case]), None, Some("template".to_string()))
                 .unwrap_err();
         assert!(error.contains("prompt cases require"));
+    }
+
+    fn runtime_frame(index: u32, distinct_colors: usize, blank: bool) -> RenderedFrame {
+        RenderedFrame {
+            index,
+            seconds: f64::from(index) / 60.0,
+            filename: format!("frame_{index:05}.png"),
+            distinct_colors,
+            blank,
+            preview: None,
+        }
+    }
+
+    #[test]
+    fn runtime_evidence_passes_when_frame_requirements_are_met() {
+        let expectations = RuntimeExpectations {
+            frames: vec![0, 30],
+            min_non_blank_frames: 2,
+            min_distinct_colors: 3,
+            ..RuntimeExpectations::default()
+        };
+        let frames = vec![runtime_frame(0, 5, false), runtime_frame(30, 7, false)];
+        let evidence = evaluate_runtime_frames(
+            &expectations,
+            &frames,
+            std::path::Path::new("render/manifest.json"),
+        );
+        assert!(evidence.passed);
+        assert_eq!(evidence.rendered_frame_count, 2);
+        assert_eq!(evidence.non_blank_frame_count, 2);
+        assert_eq!(evidence.minimum_distinct_colors_observed, 5);
+        assert!(evidence.failure_reason.is_none());
+    }
+
+    #[test]
+    fn runtime_evidence_rejects_wrong_frame_indices() {
+        let expectations = RuntimeExpectations {
+            frames: vec![0, 30],
+            min_non_blank_frames: 2,
+            min_distinct_colors: 3,
+            ..RuntimeExpectations::default()
+        };
+        let frames = vec![runtime_frame(0, 5, false), runtime_frame(31, 7, false)];
+        let evidence = evaluate_runtime_frames(
+            &expectations,
+            &frames,
+            std::path::Path::new("render/manifest.json"),
+        );
+        assert!(!evidence.passed);
+        assert!(
+            evidence
+                .failure_reason
+                .expect("missing frame identity failure")
+                .contains("frame indices")
+        );
+    }
+
+    #[test]
+    fn runtime_evidence_keeps_blank_and_colour_failures_separate_from_validity() {
+        let expectations = RuntimeExpectations {
+            frames: vec![0, 30],
+            min_non_blank_frames: 2,
+            min_distinct_colors: 4,
+            ..RuntimeExpectations::default()
+        };
+        let frames = vec![runtime_frame(0, 1, true), runtime_frame(30, 3, false)];
+        let evidence = evaluate_runtime_frames(
+            &expectations,
+            &frames,
+            std::path::Path::new("render/manifest.json"),
+        );
+        assert!(!evidence.passed);
+        let failure = evidence.failure_reason.expect("missing runtime failure");
+        assert!(failure.contains("non-blank"));
+        assert!(failure.contains("distinct colors"));
+    }
+
+    #[test]
+    fn validate_suite_rejects_runtime_plan_without_frames() {
+        let mut case = test_case("runtime");
+        case.runtime = Some(RuntimeExpectations {
+            frames: Vec::new(),
+            ..RuntimeExpectations::default()
+        });
+        let error = validate_suite(&test_suite(vec![case])).unwrap_err();
+        assert!(error.contains("runtime frames"));
+    }
+
+    #[test]
+    fn ci_runs_official_runtime_contract_suite() {
+        let ci = include_str!("../../../.github/workflows/ci.yml");
+        assert!(ci.contains("evals/suites/runtime_contract.v1.json"));
+        assert!(ci.contains("runtime-eval-evidence"));
     }
 }

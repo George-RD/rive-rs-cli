@@ -1,0 +1,56 @@
+{
+  "suite_name": "runtime-contract-v1",
+  "suite_version": 1,
+  "gates": {
+    "min_validity_rate": 1.0,
+    "min_trait_adherence_rate": 1.0,
+    "min_pipeline_reproducibility_rate": 1.0,
+    "min_runtime_pass_rate": 1.0,
+    "max_average_retries": 0.0,
+    "max_drift_count": 0
+  },
+  "cases": [
+    {
+      "id": "bounce-runtime",
+      "input_kind": "template",
+      "input": "bounce",
+      "expected_traits": ["has_animation"],
+      "runtime": {
+        "frames": [0, 30, 60],
+        "animation": "bounce",
+        "width": 256,
+        "height": 256,
+        "min_non_blank_frames": 3,
+        "min_distinct_colors": 2
+      }
+    },
+    {
+      "id": "spinner-runtime",
+      "input_kind": "template",
+      "input": "spinner",
+      "expected_traits": ["has_animation"],
+      "runtime": {
+        "frames": [0, 15, 59],
+        "animation": "spinner",
+        "width": 256,
+        "height": 256,
+        "min_non_blank_frames": 3,
+        "min_distinct_colors": 2
+      }
+    },
+    {
+      "id": "pulse-runtime",
+      "input_kind": "template",
+      "input": "pulse",
+      "expected_traits": ["has_animation"],
+      "runtime": {
+        "frames": [0, 15, 30],
+        "animation": "pulse",
+        "width": 256,
+        "height": 256,
+        "min_non_blank_frames": 3,
+        "min_distinct_colors": 2
+      }
+    }
+  ]
+}

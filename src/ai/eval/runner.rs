@@ -12,6 +12,7 @@ use crate::ai::{AiConfig, AiError, RepairEngine, create_provider};
 use crate::validator::{InspectFilter, ValidationReport, parse_riv, validate_riv};
 
 use super::model::{EvalBaseline, EvalCase, EvalCaseReport, EvalReport, EvalSuite, InputKind};
+use super::runtime::{failed_runtime_evidence, render_runtime_evidence};
 use super::traits::trait_score;
 use super::validation::{evaluate_gates, resolve_eval_config, validate_baseline, validate_suite};
 
@@ -71,6 +72,11 @@ fn failed_case(case: &EvalCase, case_dir: &Path, error: String) -> EvalCaseRepor
         artifact_dir: case_dir.display().to_string(),
         text_hint: case.text_hint.clone(),
         image_path: case.image_path.clone(),
+        runtime: case.runtime.as_ref().map(|_| {
+            failed_runtime_evidence(
+                "runtime render was not attempted because the case pipeline failed",
+            )
+        }),
     }
 }
 
@@ -127,6 +133,10 @@ fn run_case(
     let output_hash = hash_bytes(&repaired.riv_bytes);
     let (style_score, matched_traits) = trait_score(&repaired.scene_json, &case.expected_traits);
     let drifted = baseline_hash.is_some_and(|hash| hash != &output_hash);
+    let runtime = case
+        .runtime
+        .as_ref()
+        .map(|expectations| render_runtime_evidence(case_dir, &repaired.riv_bytes, expectations));
 
     Ok(EvalCaseReport {
         id: case.id.clone(),
@@ -144,6 +154,7 @@ fn run_case(
         artifact_dir: case_dir.display().to_string(),
         text_hint: case.text_hint.clone(),
         image_path: case.image_path.clone(),
+        runtime,
     })
 }
 
@@ -243,12 +254,24 @@ pub fn run_eval_suite_configured(
         cases.iter().map(|case| case.style_score).sum::<f64>() / case_count as f64;
     let pipeline_reproducibility_rate =
         cases.iter().filter(|case| case.reproducible).count() as f64 / case_count as f64;
+    let runtime_case_count = cases.iter().filter(|case| case.runtime.is_some()).count();
+    let runtime_pass_count = cases
+        .iter()
+        .filter_map(|case| case.runtime.as_ref())
+        .filter(|runtime| runtime.passed)
+        .count();
+    let runtime_pass_rate = if runtime_case_count == 0 {
+        1.0
+    } else {
+        runtime_pass_count as f64 / runtime_case_count as f64
+    };
     let drift_count = cases.iter().filter(|case| case.drifted).count();
     let gate_failures = evaluate_gates(
         &suite.gates,
         validity_rate,
         trait_adherence_rate,
         pipeline_reproducibility_rate,
+        runtime_pass_rate,
         average_retries,
         drift_count,
     );
@@ -271,6 +294,9 @@ pub fn run_eval_suite_configured(
         style_adherence_rate: trait_adherence_rate,
         pipeline_reproducibility_rate,
         reproducibility_rate: pipeline_reproducibility_rate,
+        runtime_case_count,
+        runtime_pass_count,
+        runtime_pass_rate,
         drift_count,
         cases,
     };
