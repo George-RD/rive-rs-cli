@@ -555,13 +555,13 @@ impl<'a> Lowerer<'a> {
             "origin_x": 0.5,
             "origin_y": 0.5
         });
-        if geometry_type == "rectangle" {
-            if let Some(object) = geometry.as_object_mut() {
-                object.insert(
-                    "corner_radius".to_string(),
-                    corner_radius.map_or(Value::Null, Value::from),
-                );
-            }
+        if geometry_type == "rectangle"
+            && let Some(object) = geometry.as_object_mut()
+        {
+            object.insert(
+                "corner_radius".to_string(),
+                corner_radius.map_or(Value::Null, Value::from),
+            );
         }
 
         Ok(json!({
