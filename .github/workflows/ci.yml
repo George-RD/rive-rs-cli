@@ -14,54 +14,6 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  runtime-eval-bootstrap:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/runtime-eval-evidence'
-    permissions:
-      contents: write
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/runtime-eval-evidence
-          fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - name: Apply and verify the prepared runtime-eval implementation
-        run: |
-          python3 - <<'PY'
-          import base64
-          import io
-          import pathlib
-          import tarfile
-
-          payload_path = pathlib.Path('.github/runtime-eval-implementation.b64')
-          payload = base64.b64decode(payload_path.read_text(), validate=True)
-          with tarfile.open(fileobj=io.BytesIO(payload), mode='r:gz') as archive:
-              root = pathlib.Path.cwd().resolve()
-              for member in archive.getmembers():
-                  destination = (root / member.name).resolve()
-                  if root not in destination.parents and destination != root:
-                      raise SystemExit(f'unsafe archive member: {member.name}')
-              archive.extractall(root)
-          PY
-          cargo fmt --all
-          cargo fmt --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          cargo test --locked --all-features
-      - name: Replace bootstrap files with the verified implementation
-        run: |
-          git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
-          rm -f .github/runtime-eval-implementation.b64
-          rm -f .github/workflows/runtime-source-snapshot.yml
-          rm -f .runtime-eval-trigger
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
-          git commit -m "feat: add official-runtime evidence to AI evals"
-          git push origin HEAD:agent/runtime-eval-evidence
-
   check:
     runs-on: ubuntu-24.04
     steps:

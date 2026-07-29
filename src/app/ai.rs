@@ -143,6 +143,12 @@ pub(super) fn run(command: Command) {
                                 "pipeline_reproducibility_rate={:.3}",
                                 report.pipeline_reproducibility_rate
                             );
+                            println!(
+                                "runtime_pass_rate={:.3} ({}/{})",
+                                report.runtime_pass_rate,
+                                report.runtime_pass_count,
+                                report.runtime_case_count
+                            );
                             println!("drift_count={}", report.drift_count);
                             println!("passed={}", report.passed);
                         }

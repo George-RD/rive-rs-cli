@@ -6,6 +6,26 @@ fn one() -> f64 {
     1.0
 }
 
+fn runtime_fps() -> f64 {
+    60.0
+}
+
+fn runtime_dimension() -> u32 {
+    256
+}
+
+fn runtime_scale() -> u32 {
+    1
+}
+
+fn one_frame() -> usize {
+    1
+}
+
+fn two_colours() -> usize {
+    2
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvalSuite {
     pub suite_name: String,
@@ -23,6 +43,8 @@ pub struct EvalGates {
     pub min_trait_adherence_rate: f64,
     #[serde(default = "one")]
     pub min_pipeline_reproducibility_rate: f64,
+    #[serde(default = "one")]
+    pub min_runtime_pass_rate: f64,
     #[serde(default)]
     pub max_average_retries: Option<f64>,
     #[serde(default)]
@@ -35,6 +57,7 @@ impl Default for EvalGates {
             min_validity_rate: 1.0,
             min_trait_adherence_rate: 1.0,
             min_pipeline_reproducibility_rate: 1.0,
+            min_runtime_pass_rate: 1.0,
             max_average_retries: None,
             max_drift_count: 0,
         }
@@ -52,6 +75,62 @@ pub struct EvalCase {
     pub text_hint: Option<String>,
     #[serde(default)]
     pub image_path: Option<String>,
+    #[serde(default)]
+    pub runtime: Option<RuntimeExpectations>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimeExpectations {
+    #[serde(default)]
+    pub frames: Vec<u32>,
+    #[serde(default = "runtime_fps")]
+    pub fps: f64,
+    #[serde(default)]
+    pub animation: Option<String>,
+    #[serde(default)]
+    pub state_machine: Option<String>,
+    #[serde(default)]
+    pub artboard: Option<String>,
+    #[serde(default)]
+    pub background: Option<String>,
+    #[serde(default = "runtime_dimension")]
+    pub width: u32,
+    #[serde(default = "runtime_dimension")]
+    pub height: u32,
+    #[serde(default = "runtime_scale")]
+    pub scale: u32,
+    #[serde(default = "one_frame")]
+    pub min_non_blank_frames: usize,
+    #[serde(default = "two_colours")]
+    pub min_distinct_colors: usize,
+}
+
+impl Default for RuntimeExpectations {
+    fn default() -> Self {
+        Self {
+            frames: Vec::new(),
+            fps: runtime_fps(),
+            animation: None,
+            state_machine: None,
+            artboard: None,
+            background: None,
+            width: runtime_dimension(),
+            height: runtime_dimension(),
+            scale: runtime_scale(),
+            min_non_blank_frames: one_frame(),
+            min_distinct_colors: two_colours(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RuntimeEvidence {
+    pub passed: bool,
+    pub rendered_frame_count: usize,
+    pub non_blank_frame_count: usize,
+    pub minimum_distinct_colors_observed: usize,
+    pub manifest_path: Option<String>,
+    pub failure_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,6 +175,9 @@ pub struct EvalReport {
     pub style_adherence_rate: f64,
     pub pipeline_reproducibility_rate: f64,
     pub reproducibility_rate: f64,
+    pub runtime_case_count: usize,
+    pub runtime_pass_count: usize,
+    pub runtime_pass_rate: f64,
     pub drift_count: usize,
     pub cases: Vec<EvalCaseReport>,
 }
@@ -117,4 +199,6 @@ pub struct EvalCaseReport {
     pub artifact_dir: String,
     pub text_hint: Option<String>,
     pub image_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<RuntimeEvidence>,
 }

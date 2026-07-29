@@ -50,6 +50,7 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
         "min_pipeline_reproducibility_rate",
         suite.gates.min_pipeline_reproducibility_rate,
     )?;
+    validate_rate("min_runtime_pass_rate", suite.gates.min_runtime_pass_rate)?;
     if suite
         .gates
         .max_average_retries
@@ -93,6 +94,50 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                 "case '{}' image_path must stay within the repository",
                 case.id
             ));
+        }
+        if let Some(runtime) = &case.runtime {
+            if runtime.frames.is_empty() {
+                return Err(format!(
+                    "case '{}' runtime frames must not be empty",
+                    case.id
+                ));
+            }
+            if runtime.frames.iter().copied().collect::<HashSet<_>>().len() != runtime.frames.len()
+            {
+                return Err(format!("case '{}' runtime frames must be unique", case.id));
+            }
+            if !runtime.fps.is_finite() || runtime.fps <= 0.0 {
+                return Err(format!(
+                    "case '{}' runtime fps must be finite and greater than zero",
+                    case.id
+                ));
+            }
+            if runtime.width == 0 || runtime.height == 0 || runtime.scale == 0 {
+                return Err(format!(
+                    "case '{}' runtime width, height and scale must be greater than zero",
+                    case.id
+                ));
+            }
+            if runtime.min_non_blank_frames == 0
+                || runtime.min_non_blank_frames > runtime.frames.len()
+            {
+                return Err(format!(
+                    "case '{}' runtime min_non_blank_frames must be between 1 and the frame count",
+                    case.id
+                ));
+            }
+            if runtime.min_distinct_colors == 0 {
+                return Err(format!(
+                    "case '{}' runtime min_distinct_colors must be greater than zero",
+                    case.id
+                ));
+            }
+            if runtime.animation.is_some() && runtime.state_machine.is_some() {
+                return Err(format!(
+                    "case '{}' runtime cannot select both an animation and a state machine",
+                    case.id
+                ));
+            }
         }
 
         let mut expected = HashSet::new();
@@ -179,6 +224,7 @@ pub fn evaluate_gates(
     validity_rate: f64,
     trait_adherence_rate: f64,
     pipeline_reproducibility_rate: f64,
+    runtime_pass_rate: f64,
     average_retries: f64,
     drift_count: usize,
 ) -> Vec<String> {
@@ -199,6 +245,12 @@ pub fn evaluate_gates(
         failures.push(format!(
             "pipeline reproducibility rate {:.3} is below {:.3}",
             pipeline_reproducibility_rate, gates.min_pipeline_reproducibility_rate
+        ));
+    }
+    if runtime_pass_rate < gates.min_runtime_pass_rate {
+        failures.push(format!(
+            "runtime pass rate {:.3} is below {:.3}",
+            runtime_pass_rate, gates.min_runtime_pass_rate
         ));
     }
     if gates

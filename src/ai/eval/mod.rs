@@ -1,10 +1,12 @@
 mod model;
 mod runner;
+mod runtime;
 mod traits;
 mod validation;
 
 pub use model::{
     EvalBaseline, EvalCase, EvalCaseReport, EvalGates, EvalReport, EvalSuite, InputKind,
+    RuntimeEvidence, RuntimeExpectations,
 };
 pub use runner::{run_eval_suite, run_eval_suite_configured};
 
@@ -15,13 +17,13 @@ mod tests {
     use super::model::{
         EvalBaseline, EvalCase, EvalGates, EvalSuite, InputKind, RuntimeExpectations,
     };
-    use super::runtime::evaluate_runtime_frames;
-    use crate::render::RenderedFrame;
     use super::runner::{test_hash_bytes, test_run_id};
+    use super::runtime::evaluate_runtime_frames;
     use super::traits::trait_score;
     use super::validation::{
         evaluate_gates, resolve_eval_config, validate_baseline, validate_suite,
     };
+    use crate::render::RenderedFrame;
 
     fn test_case(id: &str) -> EvalCase {
         EvalCase {
@@ -168,10 +170,7 @@ mod tests {
             max_drift_count: 0,
             min_runtime_pass_rate: 1.0,
         };
-        assert_eq!(
-            evaluate_gates(&gates, 0.8, 0.7, 0.5, 0.5, 2.0, 1).len(),
-            6
-        );
+        assert_eq!(evaluate_gates(&gates, 0.8, 0.7, 0.5, 0.5, 2.0, 1).len(), 6);
     }
 
     #[test]
@@ -184,7 +183,6 @@ mod tests {
                 .unwrap_err();
         assert!(error.contains("prompt cases require"));
     }
-
     fn runtime_frame(index: u32, distinct_colors: usize, blank: bool) -> RenderedFrame {
         RenderedFrame {
             index,
