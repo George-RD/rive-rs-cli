@@ -93,12 +93,12 @@ Semantic diagnostics point to authored paths. JSON syntax and unknown-field erro
     "width": { "value": 320, "unit": "px" },
     "height": { "value": 240, "unit": "px" }
   },
-  "parameters": {
-    "diameter": { "value": 64, "unit": "px" }
-  },
   "components": [
     {
       "id": "badge",
+      "parameters": {
+        "diameter": { "value": 64, "unit": "px" }
+      },
       "visual": [
         {
           "kind": "ellipse",
