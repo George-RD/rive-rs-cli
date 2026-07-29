@@ -135,11 +135,8 @@ impl<'a> Lowerer<'a> {
         }
 
         let artboard_name = runtime_name(&[self.spec.artboard.id.clone()], "artboard");
-        self.register_runtime_names(
-            std::slice::from_ref(&artboard_name),
-            "$.artboard.id",
-        )
-        .map_err(AuthoringError::one)?;
+        self.register_runtime_names(std::slice::from_ref(&artboard_name), "$.artboard.id")
+            .map_err(AuthoringError::one)?;
         self.source_map.entries.push(SourceMapEntry {
             authored_id: self.spec.artboard.id.clone(),
             authored_path: "$.artboard".to_string(),
@@ -196,10 +193,7 @@ impl<'a> Lowerer<'a> {
                 object.insert("animations".to_string(), Value::Array(animations));
             }
             if !state_machines.is_empty() {
-                object.insert(
-                    "state_machines".to_string(),
-                    Value::Array(state_machines),
-                );
+                object.insert("state_machines".to_string(), Value::Array(state_machines));
             }
         }
         let scene = json!({
@@ -288,11 +282,8 @@ impl<'a> Lowerer<'a> {
                 ..
             } => {
                 validate_sibling_ids_result(children, &format!("{authored_path}.children"))?;
-                let transform_values = evaluate_transform(
-                    transform,
-                    &format!("{authored_path}.transform"),
-                    scope,
-                )?;
+                let transform_values =
+                    evaluate_transform(transform, &format!("{authored_path}.transform"), scope)?;
                 let wrapper_name = runtime_name(&runtime_segments, "group");
                 self.register_runtime_names(
                     std::slice::from_ref(&wrapper_name),
@@ -381,11 +372,8 @@ impl<'a> Lowerer<'a> {
                     }
                 }
 
-                let transform_values = evaluate_transform(
-                    transform,
-                    &format!("{authored_path}.transform"),
-                    scope,
-                )?;
+                let transform_values =
+                    evaluate_transform(transform, &format!("{authored_path}.transform"), scope)?;
                 let wrapper_name = runtime_name(&runtime_segments, "instance");
                 self.register_runtime_names(
                     std::slice::from_ref(&wrapper_name),
@@ -454,16 +442,8 @@ impl<'a> Lowerer<'a> {
                 }
                 let mut runtime_names = Vec::new();
                 let mut scene_paths = Vec::new();
-                collect_named_paths(
-                    object,
-                    &scene_path,
-                    &mut runtime_names,
-                    &mut scene_paths,
-                );
-                self.register_runtime_names(
-                    &runtime_names,
-                    &format!("{authored_path}.object"),
-                )?;
+                collect_named_paths(object, &scene_path, &mut runtime_names, &mut scene_paths);
+                self.register_runtime_names(&runtime_names, &format!("{authored_path}.object"))?;
                 self.source_map.entries.push(SourceMapEntry {
                     authored_id,
                     authored_path,

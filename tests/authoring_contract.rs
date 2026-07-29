@@ -215,13 +215,11 @@ fn schema_is_versioned_and_exposes_explicit_authored_graphs() {
 
 #[test]
 fn unknown_component_reports_the_authored_path() {
-    let input =
-        COMPONENT_SCENE.replace("\"component\": \"badge\"", "\"component\": \"missing\"");
+    let input = COMPONENT_SCENE.replace("\"component\": \"badge\"", "\"component\": \"missing\"");
     let error = lower_authoring_json(&input).expect_err("unknown component must fail");
 
     assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "unknown_component"
-            && diagnostic.path == "$.visual.nodes[0].component"
+        diagnostic.code == "unknown_component" && diagnostic.path == "$.visual.nodes[0].component"
     }));
 }
 
@@ -257,8 +255,7 @@ fn incompatible_expression_units_report_the_operand_path() {
     let error = lower_authoring_json(input).expect_err("unit mismatch must fail");
 
     assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "unit_mismatch"
-            && diagnostic.path == "$.visual.nodes[0].width.right"
+        diagnostic.code == "unit_mismatch" && diagnostic.path == "$.visual.nodes[0].width.right"
     }));
 }
 

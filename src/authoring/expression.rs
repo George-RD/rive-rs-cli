@@ -44,36 +44,21 @@ pub(crate) fn evaluate_transform(
     path: &str,
     scope: &BTreeMap<String, Quantity>,
 ) -> Result<TransformValues, AuthoringDiagnostic> {
-    let x = transform
-        .x
-        .as_ref()
-        .map_or(Ok(0.0), |value| {
-            evaluate_expression(value, &format!("{path}.x"), scope, Unit::Px)
-        })?;
-    let y = transform
-        .y
-        .as_ref()
-        .map_or(Ok(0.0), |value| {
-            evaluate_expression(value, &format!("{path}.y"), scope, Unit::Px)
-        })?;
-    let rotation = transform
-        .rotation
-        .as_ref()
-        .map_or(Ok(0.0), |value| {
-            evaluate_expression(value, &format!("{path}.rotation"), scope, Unit::Radians)
-        })?;
-    let scale_x = transform
-        .scale_x
-        .as_ref()
-        .map_or(Ok(1.0), |value| {
-            evaluate_expression(value, &format!("{path}.scale_x"), scope, Unit::Scalar)
-        })?;
-    let scale_y = transform
-        .scale_y
-        .as_ref()
-        .map_or(Ok(1.0), |value| {
-            evaluate_expression(value, &format!("{path}.scale_y"), scope, Unit::Scalar)
-        })?;
+    let x = transform.x.as_ref().map_or(Ok(0.0), |value| {
+        evaluate_expression(value, &format!("{path}.x"), scope, Unit::Px)
+    })?;
+    let y = transform.y.as_ref().map_or(Ok(0.0), |value| {
+        evaluate_expression(value, &format!("{path}.y"), scope, Unit::Px)
+    })?;
+    let rotation = transform.rotation.as_ref().map_or(Ok(0.0), |value| {
+        evaluate_expression(value, &format!("{path}.rotation"), scope, Unit::Radians)
+    })?;
+    let scale_x = transform.scale_x.as_ref().map_or(Ok(1.0), |value| {
+        evaluate_expression(value, &format!("{path}.scale_x"), scope, Unit::Scalar)
+    })?;
+    let scale_y = transform.scale_y.as_ref().map_or(Ok(1.0), |value| {
+        evaluate_expression(value, &format!("{path}.scale_y"), scope, Unit::Scalar)
+    })?;
 
     Ok(TransformValues {
         x,
@@ -199,10 +184,7 @@ fn expect_unit(
         return Err(AuthoringDiagnostic::new(
             path,
             "unit_mismatch",
-            format!(
-                "expected {:?}, found {:?}",
-                expected, evaluated.unit
-            ),
+            format!("expected {:?}, found {:?}", expected, evaluated.unit),
         ));
     }
     Ok(evaluated.value)
