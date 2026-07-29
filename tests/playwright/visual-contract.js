@@ -44,7 +44,7 @@ async function main() {
   };
 
   try {
-    await captureCanvasPng(page, output);
+    await captureCanvasPng(page, output, { scale: 2 });
     assert.deepEqual(fs.readFileSync(output), expected);
     assert.equal(calls.filter((call) => call.type === "newCDPSession").length, 1);
     assert.equal(calls.filter((call) => call.type === "boundingBox").length, 1);
@@ -58,7 +58,7 @@ async function main() {
     assert.deepEqual(sends[1].options, {
       format: "png",
       captureBeyondViewport: false,
-      clip: { x: 12, y: 18, width: 512, height: 512, scale: 1 },
+      clip: { x: 12, y: 18, width: 512, height: 512, scale: 2 },
     });
     const evaluations = calls.filter((call) => call.type === "evaluate");
     assert.equal(evaluations.length, 2);
