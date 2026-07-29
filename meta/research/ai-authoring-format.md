@@ -14,7 +14,7 @@ sources:
   - src.dotlottie-v2
   - src.rive-data-binding
 date: 2026-07-29
-method: primary-and-comparative
+method: primary
 ---
 
 # AI authoring format for complex Rive files

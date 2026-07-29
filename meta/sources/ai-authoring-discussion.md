@@ -1,7 +1,7 @@
 ---
 id: src.ai-authoring-discussion
 file: conversation://2026-07-29/rive-ai-authoring-format
-verification: verified
+verification: unverified
 type: design-discussion
 date: 2026-07-29
 ---
