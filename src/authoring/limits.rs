@@ -58,12 +58,7 @@ fn validate_nodes<'a>(
     components: &HashMap<&'a str, ComponentRef<'a>>,
 ) -> Result<(), AuthoringError> {
     let mut work = Vec::new();
-    push_nodes(
-        &mut work,
-        nodes,
-        list_path,
-        &active_components,
-    );
+    push_nodes(&mut work, nodes, list_path, &active_components);
 
     while let Some(item) = work.pop() {
         match item.node {
