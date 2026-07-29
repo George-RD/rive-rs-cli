@@ -22,11 +22,15 @@ pub(crate) fn evaluate_quantity(
     path: &str,
     expected: Unit,
 ) -> Result<f64, AuthoringDiagnostic> {
-    validate_scene_number(quantity.value, &format!("{path}.value"))?;
-    let evaluated = canonicalize(Evaluated {
-        value: quantity.value,
-        unit: quantity.unit,
-    });
+    let value_path = format!("{path}.value");
+    validate_scene_number(quantity.value, &value_path)?;
+    let evaluated = canonicalize(
+        Evaluated {
+            value: quantity.value,
+            unit: quantity.unit,
+        },
+        &value_path,
+    )?;
     expect_unit(evaluated, path, expected)
 }
 
@@ -76,11 +80,15 @@ fn evaluate(
 ) -> Result<Evaluated, AuthoringDiagnostic> {
     match expression {
         ScalarExpr::Literal { value, unit } => {
-            validate_scene_number(*value, &format!("{path}.value"))?;
-            Ok(canonicalize(Evaluated {
-                value: *value,
-                unit: *unit,
-            }))
+            let value_path = format!("{path}.value");
+            validate_scene_number(*value, &value_path)?;
+            canonicalize(
+                Evaluated {
+                    value: *value,
+                    unit: *unit,
+                },
+                &value_path,
+            )
         }
         ScalarExpr::Parameter { name } => {
             let quantity = scope.get(name).ok_or_else(|| {
@@ -91,10 +99,13 @@ fn evaluate(
                 )
             })?;
             validate_scene_number(quantity.value, path)?;
-            Ok(canonicalize(Evaluated {
-                value: quantity.value,
-                unit: quantity.unit,
-            }))
+            canonicalize(
+                Evaluated {
+                    value: quantity.value,
+                    unit: quantity.unit,
+                },
+                path,
+            )
         }
         ScalarExpr::Add { left, right } => {
             evaluate_binary(left, right, path, scope, |left, right| left + right)
@@ -160,13 +171,25 @@ fn evaluate_binary(
     })
 }
 
-fn canonicalize(evaluated: Evaluated) -> Evaluated {
-    match evaluated.unit {
+fn canonicalize(
+    evaluated: Evaluated,
+    path: &str,
+) -> Result<Evaluated, AuthoringDiagnostic> {
+    let canonical = match evaluated.unit {
         Unit::Degrees => Evaluated {
             value: evaluated.value.to_radians(),
             unit: Unit::Radians,
         },
         _ => evaluated,
+    };
+    validate_scene_number(canonical.value, path)?;
+    Ok(canonical)
+}
+
+fn canonical_unit(unit: Unit) -> Unit {
+    match unit {
+        Unit::Degrees => Unit::Radians,
+        _ => unit,
     }
 }
 
@@ -175,11 +198,7 @@ fn expect_unit(
     path: &str,
     expected: Unit,
 ) -> Result<f64, AuthoringDiagnostic> {
-    let expected = canonicalize(Evaluated {
-        value: 0.0,
-        unit: expected,
-    })
-    .unit;
+    let expected = canonical_unit(expected);
     if evaluated.unit != expected {
         return Err(AuthoringDiagnostic::new(
             path,
