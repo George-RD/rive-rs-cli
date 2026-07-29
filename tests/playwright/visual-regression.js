@@ -10,6 +10,7 @@ const {
   startServer,
   waitForServer,
   cleanupFixtures,
+  visualBrowserLaunchOptions,
   captureCanvasPng,
   openFixturePage,
 } = require("./shared");
@@ -300,7 +301,6 @@ async function mountControlledRive(page, fixture, artboard) {
   return result.animationName;
 }
 
-
 function baselineName(fixture, frame, artboard) {
   if (artboard) {
     return `${fixture}-${sanitizeArtboardName(artboard)}-f${frame}.png`;
@@ -327,10 +327,7 @@ async function main() {
     buildFixtures(VISUAL_FIXTURES);
     server = startServer(PORT);
     await waitForServer(PORT);
-    browser = await chromium.launch({
-      headless: true,
-      args: ["--disable-gpu", "--deterministic-mode", "--run-all-compositor-stages-before-draw"],
-    });
+    browser = await chromium.launch(visualBrowserLaunchOptions());
 
     for (const fixture of VISUAL_FIXTURES) {
       for (const artboard of artboardPlansForFixture(fixture)) {
