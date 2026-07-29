@@ -16,3 +16,8 @@ promo/public/seq/
 promo/out/
 promo/node_modules/
 target/site/
+
+# Cairn local scan state
+.cairn/log.md
+.cairn/state/*
+!.cairn/state/.gitkeep

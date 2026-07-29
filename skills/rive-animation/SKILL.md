@@ -8,6 +8,16 @@ description: Author Rive (.riv) vector animations from JSON scene specs using th
 You write a JSON **scene spec**, compile it to a `.riv` binary with `rive-cli`, then **render frames to PNG
 and look at them**. Never claim an animation works until you have rendered it and inspected the frames.
 
+
+## Scope boundary
+
+Use this direct SceneSpec workflow for bounded scenes, diagnostics, and expert raw
+escape-hatch work. It does not make raw SceneSpec a reliable high-level interface
+for complex AI generation. Do not create additional specialized generation skills
+around this format while `meta/todos/todo.ai-generation-skills.md` is blocked.
+Follow `ROADMAP.md` and `dec.ai-authoring-layer` for the planned AuthoringSpec
+frontend.
+
 ## Start from a working scene
 
 Do not invent a scene spec from a blank file. Scaffold one, then edit it:

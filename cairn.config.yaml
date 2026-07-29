@@ -1,0 +1,15 @@
+ignore:
+  - target
+  - .git
+  - .agents
+  - .claude
+  - .codex
+  - .playwright-cli
+  - promo/node_modules
+  - promo/out
+  - promo/public/seq
+context: |
+  SceneSpec is the canonical lowered representation. The planned Authoring module
+  is a higher-level frontend and must compile to SceneSpec rather than bypass the
+  existing builder, encoder, validator, and runtime evidence loop.
+rules: {}

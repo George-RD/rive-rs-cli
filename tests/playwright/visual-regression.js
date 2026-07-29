@@ -10,6 +10,7 @@ const {
   startServer,
   waitForServer,
   cleanupFixtures,
+  captureCanvasPng,
   openFixturePage,
 } = require("./shared");
 
@@ -349,7 +350,7 @@ async function main() {
           const label = artboard ? `${fixture}[${artboard}]@f${frame}` : `${fixture}@f${frame}`;
           const currentPath = path.join(CURRENT_DIR, name);
           const baselinePath = path.join(BASELINE_DIR, name);
-          await page.screenshot({ path: currentPath });
+          await captureCanvasPng(page, currentPath);
 
           if (update) {
             fs.copyFileSync(currentPath, baselinePath);

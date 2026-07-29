@@ -2,6 +2,16 @@
 
 The primary authoring skill is [`rive-animation/SKILL.md`](rive-animation/SKILL.md). It is the authoritative, tool-driven workflow for creating, validating, and rendering Rive animations. It tells an agent to scaffold a known-good SceneSpec, discover types and animatable properties from the CLI, generate and validate the `.riv`, then render frames with `--preview`.
 
+
+## Scope boundary
+
+The current skill is a low-level expert workflow for bounded scenes. It is not the
+planned abstraction for reliably generating large, reusable, behavior-heavy Rive
+files. Do not multiply specialized skills around raw SceneSpec. Complex AI
+authoring is blocked by `meta/todos/todo.ai-generation-skills.md` until the
+AuthoringSpec compiler and runtime and semantic evaluation gates in `ROADMAP.md`
+are available.
+
 ## Install and use
 
 Copy or symlink the primary skill into the skills directory used by your agent:

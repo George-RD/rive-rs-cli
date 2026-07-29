@@ -183,6 +183,40 @@ async function waitForRiveReady(page, timeout = 15000) {
   );
 }
 
+async function captureCanvasPng(
+  page,
+  outputPath,
+  { selector = "#canvas-controlled", background = "#0f172a" } = {},
+) {
+  const dataUrl = await page.evaluate(
+    ({ selector: canvasSelector, background: fill }) => {
+      const source = document.querySelector(canvasSelector);
+      if (!(source instanceof HTMLCanvasElement)) {
+        throw new Error(`missing canvas ${canvasSelector}`);
+      }
+      const output = document.createElement("canvas");
+      output.width = source.width;
+      output.height = source.height;
+      const context = output.getContext("2d");
+      if (!context) {
+        throw new Error("could not create a 2D canvas context");
+      }
+      if (fill) {
+        context.fillStyle = fill;
+        context.fillRect(0, 0, output.width, output.height);
+      }
+      context.drawImage(source, 0, 0);
+      return output.toDataURL("image/png");
+    },
+    { selector, background },
+  );
+  const prefix = "data:image/png;base64,";
+  if (!dataUrl.startsWith(prefix)) {
+    throw new Error("canvas capture did not return a PNG data URL");
+  }
+  fs.writeFileSync(outputPath, Buffer.from(dataUrl.slice(prefix.length), "base64"));
+}
+
 async function openFixturePage(browser, port, fixture, { artboard, pageOptions } = {}) {
   const page = await browser.newPage(pageOptions);
   const runtimeErrors = [];
@@ -245,5 +279,6 @@ module.exports = {
   startServer,
   cleanupFixtures,
   waitForRiveReady,
+  captureCanvasPng,
   openFixturePage,
 };
