@@ -18,8 +18,7 @@ fn out_of_range_authoring_number_reports_the_authored_value_path() {
 
     let error = lower_authoring_json(input).expect_err("f32 overflow must fail before lowering");
     assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "numeric_out_of_range"
-            && diagnostic.path == "$.artboard.width.value"
+        diagnostic.code == "numeric_out_of_range" && diagnostic.path == "$.artboard.width.value"
     }));
 }
 
@@ -121,8 +120,7 @@ fn unused_raw_component_objects_pass_canonical_scene_validation() {
 
     let error = lower_authoring_json(input).expect_err("unused raw object must be validated");
     assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "invalid_component_scene"
-            && diagnostic.path == "$.components[0].visual"
+        diagnostic.code == "invalid_component_scene" && diagnostic.path == "$.components[0].visual"
     }));
 }
 
