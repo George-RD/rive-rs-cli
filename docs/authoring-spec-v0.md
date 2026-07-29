@@ -55,11 +55,13 @@ Supported expression nodes are:
 - `multiply`
 - `divide`
 
-Addition and subtraction require compatible units. Degrees are normalized to radians. Transform position and dimensions require pixels; scale requires scalar values; rotation requires an angle. Non-finite values, values that overflow or underflow the canonical `f32` scene representation, and division by zero are rejected with authored JSON paths.
+Addition and subtraction require compatible units. Degrees are normalized to radians. Transform position and dimensions require pixels; scale requires scalar values; rotation requires an angle. Non-finite values, values that overflow or underflow the canonical `f32` scene representation, and division by zero are rejected with authored JSON paths. Canonicalized values are checked again after unit conversion, so conversion cannot silently turn a non-zero authored value into zero.
 
 ## Components and instances
 
 Components define typed parameter defaults and a visual node list. A component body can reference only parameters declared by that component. Document-level parameters remain available to the root visual graph and instance transforms but do not leak into reusable component definitions. Instances may override only declared component parameters. Runtime names include the full instance expansion path, so repeated component contents remain unique and deterministic. Recursive component expansion is rejected with a `component_cycle` diagnostic.
+
+Expansion is preflighted iteratively before recursive lowering. An active component chain is limited to 64 definitions, and each component-validation or root-document traversal may generate at most 10,000 component nodes. The limits return `component_expansion_depth_limit` or `component_expansion_node_limit` diagnostics at the authored instance path instead of risking stack or memory exhaustion.
 
 ## Raw canonical escapes
 
