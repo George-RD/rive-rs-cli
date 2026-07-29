@@ -19,7 +19,7 @@ struct WorkItem<'a> {
     budget_path: String,
 }
 
-pub(crate) fn validate_component_expansion(
+pub(crate) fn validate_component_expansion_depth(
     spec: &AuthoringSpec,
 ) -> Result<(), AuthoringError> {
     let mut components = HashMap::new();
