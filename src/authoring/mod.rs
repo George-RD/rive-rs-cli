@@ -1,11 +1,12 @@
 mod expression;
+mod frontend;
 mod lower;
 mod spec;
 
 use schemars::schema_for;
 use serde_json::Value;
 
-pub use lower::{lower_authoring, lower_authoring_json};
+pub use frontend::{lower_authoring, lower_authoring_json};
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, LoweredAuthoring,
