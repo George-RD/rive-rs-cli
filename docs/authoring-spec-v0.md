@@ -25,7 +25,7 @@ A v0 document has four explicit graphs:
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, groups, component instances, and raw `SceneSpec` objects. Broader primitives, bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 

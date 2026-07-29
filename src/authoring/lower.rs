@@ -246,6 +246,8 @@ impl<'a> Lowerer<'a> {
                 width,
                 height,
                 None,
+                None,
+                None,
                 fill,
                 transform,
                 authored_path,
@@ -266,7 +268,80 @@ impl<'a> Lowerer<'a> {
                 "rectangle",
                 width,
                 height,
+                None,
                 corner_radius.as_ref(),
+                None,
+                fill,
+                transform,
+                authored_path,
+                definition_path,
+                authored_id,
+                runtime_segments,
+                scene_path,
+                scope,
+            ),
+            VisualNode::Triangle {
+                width,
+                height,
+                fill,
+                transform,
+                ..
+            } => self.lower_shape(
+                "triangle",
+                width,
+                height,
+                None,
+                None,
+                None,
+                fill,
+                transform,
+                authored_path,
+                definition_path,
+                authored_id,
+                runtime_segments,
+                scene_path,
+                scope,
+            ),
+            VisualNode::Polygon {
+                width,
+                height,
+                points,
+                fill,
+                corner_radius,
+                transform,
+                ..
+            } => self.lower_shape(
+                "polygon",
+                width,
+                height,
+                Some(*points),
+                corner_radius.as_ref(),
+                None,
+                fill,
+                transform,
+                authored_path,
+                definition_path,
+                authored_id,
+                runtime_segments,
+                scene_path,
+                scope,
+            ),
+            VisualNode::Star {
+                width,
+                height,
+                points,
+                inner_radius,
+                fill,
+                corner_radius,
+                transform,
+                ..
+            } => self.lower_shape(
+                "star",
+                width,
+                height,
+                Some(*points),
+                corner_radius.as_ref(),
+                Some(inner_radius),
                 fill,
                 transform,
                 authored_path,
@@ -466,7 +541,9 @@ impl<'a> Lowerer<'a> {
         geometry_type: &str,
         width_expression: &super::spec::ScalarExpr,
         height_expression: &super::spec::ScalarExpr,
+        points: Option<u64>,
         corner_radius_expression: Option<&super::spec::ScalarExpr>,
+        inner_radius_expression: Option<&super::spec::ScalarExpr>,
         fill: &str,
         transform: &super::spec::TransformSpec,
         authored_path: String,
@@ -502,6 +579,13 @@ impl<'a> Lowerer<'a> {
                 "shape height must be greater than zero",
             ));
         }
+        if points.is_some_and(|points| points < 3) {
+            return Err(AuthoringDiagnostic::new(
+                format!("{authored_path}.points"),
+                "invalid_points",
+                "polygon and star point counts must be at least three",
+            ));
+        }
         let corner_radius = corner_radius_expression
             .map(|expression| {
                 evaluate_expression(
@@ -517,6 +601,23 @@ impl<'a> Lowerer<'a> {
                 format!("{authored_path}.corner_radius"),
                 "invalid_dimension",
                 "corner radius must not be negative",
+            ));
+        }
+        let inner_radius = inner_radius_expression
+            .map(|expression| {
+                evaluate_expression(
+                    expression,
+                    &format!("{authored_path}.inner_radius"),
+                    scope,
+                    Unit::Scalar,
+                )
+            })
+            .transpose()?;
+        if inner_radius.is_some_and(|ratio| !(0.0..=1.0).contains(&ratio)) {
+            return Err(AuthoringDiagnostic::new(
+                format!("{authored_path}.inner_radius"),
+                "invalid_ratio",
+                "star inner radius must be between zero and one",
             ));
         }
         let transform_values =
@@ -555,13 +656,19 @@ impl<'a> Lowerer<'a> {
             "origin_x": 0.5,
             "origin_y": 0.5
         });
-        if geometry_type == "rectangle"
-            && let Some(object) = geometry.as_object_mut()
-        {
-            object.insert(
-                "corner_radius".to_string(),
-                corner_radius.map_or(Value::Null, Value::from),
-            );
+        if let Some(object) = geometry.as_object_mut() {
+            if matches!(geometry_type, "rectangle" | "polygon" | "star") {
+                object.insert(
+                    "corner_radius".to_string(),
+                    corner_radius.map_or(Value::Null, Value::from),
+                );
+            }
+            if let Some(points) = points {
+                object.insert("points".to_string(), Value::from(points));
+            }
+            if let Some(inner_radius) = inner_radius {
+                object.insert("inner_radius".to_string(), Value::from(inner_radius));
+            }
         }
 
         Ok(json!({

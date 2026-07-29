@@ -126,6 +126,39 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    Triangle {
+        id: String,
+        width: ScalarExpr,
+        height: ScalarExpr,
+        fill: String,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
+    Polygon {
+        id: String,
+        width: ScalarExpr,
+        height: ScalarExpr,
+        #[schemars(range(min = 3))]
+        points: u64,
+        fill: String,
+        #[serde(default)]
+        corner_radius: Option<ScalarExpr>,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
+    Star {
+        id: String,
+        width: ScalarExpr,
+        height: ScalarExpr,
+        #[schemars(range(min = 3))]
+        points: u64,
+        inner_radius: ScalarExpr,
+        fill: String,
+        #[serde(default)]
+        corner_radius: Option<ScalarExpr>,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Group {
         id: String,
         #[serde(default)]
@@ -152,6 +185,9 @@ impl VisualNode {
         match self {
             Self::Ellipse { id, .. }
             | Self::Rectangle { id, .. }
+            | Self::Triangle { id, .. }
+            | Self::Polygon { id, .. }
+            | Self::Star { id, .. }
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
