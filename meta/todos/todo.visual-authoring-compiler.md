@@ -1,6 +1,6 @@
 ---
 node: rive-cli.intelligence.authoring
-status: open
+status: in_progress
 created: 2026-07-29
 ---
 
@@ -8,6 +8,16 @@ created: 2026-07-29
 
 Lower inline geometry, paint, trim, text, assets, transforms, parameters,
 components, instances, and bounded patterns into explicit SceneSpec objects.
+
+## Progress
+
+- Triangle, polygon, and star authoring nodes are implemented in PR #136 through
+  the existing expression, component, source-map, SceneSpec, builder, and encoder
+  path.
+- Polygon and star point counts are validated at the authored path; star inner
+  radius is a typed scalar ratio.
+- Remaining work includes richer paint and trim, text and assets, bounded
+  patterns, constraints, and a complex static showcase without raw escapes.
 
 ## Acceptance criteria
 
