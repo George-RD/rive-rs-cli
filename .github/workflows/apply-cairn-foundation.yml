@@ -7,6 +7,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: apply-cairn-foundation
+  cancel-in-progress: false
+
 jobs:
   apply:
     runs-on: ubuntu-24.04
