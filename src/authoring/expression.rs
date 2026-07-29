@@ -198,11 +198,11 @@ pub(crate) fn validate_scene_number(value: f64, path: &str) -> Result<(), Author
             "numeric values must be finite",
         ));
     }
-    if value.abs() > f64::from(f32::MAX) {
+    if value.abs() > f64::from(f32::MAX) || (value != 0.0 && value as f32 == 0.0) {
         return Err(AuthoringDiagnostic::new(
             path,
             "numeric_out_of_range",
-            "numeric values must fit the canonical f32 scene representation",
+            "numeric values must survive the canonical f32 scene representation",
         ));
     }
     Ok(())
