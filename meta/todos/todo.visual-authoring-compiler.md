@@ -27,8 +27,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Typed linear and radial gradient strokes are implemented in PR #140 through the
   shared `PaintSpec` and paint-lowering helper. `stroke.paint` is canonical while
   the previous solid `stroke.color` form remains accepted as a parser alias.
-- The next bounded visual slice is authored trim-path support on strokes, keeping
-  trim expressions, generated runtime objects, and diagnostics source-mapped.
+- Typed trim paths on strokes are implemented in PR #141. Start, end, and optional
+  offset expressions flow through component parameters and overrides; generated trim
+  objects, runtime names, SceneSpec paths, and diagnostics remain source-mapped.
 - Remaining work includes text and assets, bounded patterns, constraints, and a
   complex static showcase without raw escapes.
 

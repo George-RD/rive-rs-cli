@@ -331,6 +331,17 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         if let Some(stroke) = shape.stroke {
             validate_paint(&stroke.paint, &format!("{path}.stroke.paint"), diagnostics);
             validate_expression(&stroke.width, &format!("{path}.stroke.width"), diagnostics);
+            if let Some(trim) = &stroke.trim {
+                validate_expression(
+                    &trim.start,
+                    &format!("{path}.stroke.trim.start"),
+                    diagnostics,
+                );
+                validate_expression(&trim.end, &format!("{path}.stroke.trim.end"), diagnostics);
+                if let Some(offset) = &trim.offset {
+                    validate_expression(offset, &format!("{path}.stroke.trim.offset"), diagnostics);
+                }
+            }
         }
         validate_transform(shape.transform, &format!("{path}.transform"), diagnostics);
         return;

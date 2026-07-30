@@ -306,6 +306,17 @@
         "paint": {
           "$ref": "#/$defs/PaintSpec"
         },
+        "trim": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrimPathSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "width": {
           "$ref": "#/$defs/ScalarExpr"
         }
@@ -375,6 +386,44 @@
           "default": null
         }
       },
+      "type": "object"
+    },
+    "TrimPathMode": {
+      "enum": [
+        "sequential",
+        "synchronized"
+      ],
+      "type": "string"
+    },
+    "TrimPathSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "mode": {
+          "$ref": "#/$defs/TrimPathMode"
+        },
+        "offset": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "start": {
+          "$ref": "#/$defs/ScalarExpr"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "mode"
+      ],
       "type": "object"
     },
     "Unit": {

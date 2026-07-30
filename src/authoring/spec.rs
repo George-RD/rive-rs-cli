@@ -121,12 +121,31 @@ pub enum PaintSpec {
     Gradient(GradientPaintSpec),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TrimPathMode {
+    Sequential,
+    Synchronized,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct TrimPathSpec {
+    pub start: ScalarExpr,
+    pub end: ScalarExpr,
+    #[serde(default)]
+    pub offset: Option<ScalarExpr>,
+    pub mode: TrimPathMode,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct StrokeSpec {
     #[serde(alias = "color")]
     pub paint: PaintSpec,
     pub width: ScalarExpr,
+    #[serde(default)]
+    pub trim: Option<TrimPathSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
