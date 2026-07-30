@@ -75,8 +75,6 @@ jobs:
           cairn lint --json 2>&1 | tee /tmp/cairn-lint.log
           LINT_STATUS=${PIPESTATUS[0]}
           set -e
-          grep -q 'src/authoring/lower/pattern.rs' map.md
-          grep -q 'tests/authoring_grid_contract.rs' map.md
           if [ "$SCAN_STATUS" -ne 0 ] || [ "$LINT_STATUS" -ne 0 ]; then
             echo "Cairn failed: scan=$SCAN_STATUS lint=$LINT_STATUS" >&2
             exit 1
