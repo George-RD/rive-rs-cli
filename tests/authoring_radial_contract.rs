@@ -355,6 +355,43 @@ fn radial_contract_counts_generated_descendants_against_global_budget() {
 }
 
 #[test]
+fn radial_contract_rejects_repeated_raw_scene_items_at_authored_path() {
+    let input = document(vec![radial(
+        "raw-orbit",
+        2,
+        literal(20.0, "px"),
+        literal(0.0, "degrees"),
+        literal(180.0, "degrees"),
+        false,
+        json!({
+              "kind": "raw_scene_object",
+              "id": "raw-tile",
+              "object": {
+        "type": "node",
+        "name": "embedded-node",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "children": []
+              }
+          }),
+    )]);
+
+    let error = lower_authoring_json(&input)
+        .expect_err("repeated raw scene items must fail before runtime-name registration");
+    assert!(
+        error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "unsupported_repeated_raw_scene_object"
+                && diagnostic.path == "$.visual.nodes[0].item"
+        }),
+        "missing repeated raw item diagnostic: {:#?}",
+        error.diagnostics
+    );
+}
+
+#[test]
 fn radial_rejects_derived_angles_outside_scene_number_range() {
     let input = document(vec![radial(
         "too-far",
