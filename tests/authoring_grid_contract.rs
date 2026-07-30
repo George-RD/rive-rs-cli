@@ -22,7 +22,14 @@ fn rectangle(id: &str) -> Value {
     })
 }
 
-fn grid(id: &str, columns: u64, rows: u64, column_step: Value, row_step: Value, item: Value) -> Value {
+fn grid(
+    id: &str,
+    columns: u64,
+    rows: u64,
+    column_step: Value,
+    row_step: Value,
+    item: Value,
+) -> Value {
     json!({
         "kind": "grid",
         "id": id,
@@ -187,7 +194,10 @@ fn grid_steps_flow_through_component_overrides() {
         .iter()
         .find(|entry| entry.authored_id == "hero/cells")
         .expect("expanded grid source-map entry");
-    assert_eq!(expanded.definition_path.as_deref(), Some("$.components[0].visual[0]"));
+    assert_eq!(
+        expanded.definition_path.as_deref(),
+        Some("$.components[0].visual[0]")
+    );
 
     assert_builds(lowered.scene);
 }
@@ -234,7 +244,8 @@ fn grid_contract_rejects_invalid_counts_units_and_nested_expansion() {
     ];
 
     for (node, code, path) in cases {
-        let error = lower_authoring_json(&document(vec![node])).expect_err("invalid grid must fail");
+        let error =
+            lower_authoring_json(&document(vec![node])).expect_err("invalid grid must fail");
         assert!(
             error
                 .diagnostics
