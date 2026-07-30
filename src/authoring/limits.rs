@@ -98,7 +98,6 @@ fn validate_nodes<'a>(
         } = item;
 
         validate_repeatable_pattern_node(node, &path, &expansion)?;
-
         if expansion.generated_by_component {
             charge_expansion_budget(
                 &mut budget.generated_component_nodes,
@@ -258,5 +257,72 @@ fn push_nodes<'a>(
             path: format!("{list_path}[{index}]"),
             expansion: expansion.clone(),
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use crate::authoring::lower_authoring_json;
+
+    #[test]
+    fn repeated_gradient_stops_share_the_pattern_node_budget() {
+        let stops = (0..=100)
+            .map(|index| {
+                json!({
+                    "color": "#2563EB",
+                    "position": {
+                        "kind": "literal",
+                        "value": index as f64 / 100.0,
+                        "unit": "scalar"
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+        let input = json!({
+            "authoring_format_version": 0,
+            "artboard": {
+                "id": "stage",
+                "width": { "value": 320.0, "unit": "px" },
+                "height": { "value": 220.0, "unit": "px" }
+            },
+            "visual": {
+                "nodes": [
+                    {
+                        "kind": "radial",
+                        "id": "gradient-orbit",
+                        "copies": 100,
+                        "radius": { "kind": "literal", "value": 20.0, "unit": "px" },
+                        "start_angle": { "kind": "literal", "value": 0.0, "unit": "degrees" },
+                        "angle_step": { "kind": "literal", "value": 3.6, "unit": "degrees" },
+                        "item": {
+                            "kind": "rectangle",
+                            "id": "gradient-tile",
+                            "width": { "kind": "literal", "value": 16.0, "unit": "px" },
+                            "height": { "kind": "literal", "value": 12.0, "unit": "px" },
+                            "fill": {
+                                "kind": "linear_gradient",
+                                "start_x": { "kind": "literal", "value": 0.0, "unit": "px" },
+                                "start_y": { "kind": "literal", "value": 0.0, "unit": "px" },
+                                "end_x": { "kind": "literal", "value": 16.0, "unit": "px" },
+                                "end_y": { "kind": "literal", "value": 12.0, "unit": "px" },
+                                "stops": stops
+                            }
+                        }
+                    }
+                ]
+            },
+            "motion": {},
+            "behavior": {}
+        })
+        .to_string();
+
+        let error = lower_authoring_json(&input)
+            .expect_err("repeated gradient stops must share the pattern node budget");
+        assert!(error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "pattern_expansion_node_limit"
+                && diagnostic.path == "$.visual.nodes[0].copies"
+        }));
     }
 }
