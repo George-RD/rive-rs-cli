@@ -198,9 +198,10 @@ fn gradient_contract_errors_point_to_the_authored_fill() {
     for (fill, expected_code, expected_path) in cases {
         let error = lower_authoring_json(&simple_scene(fill))
             .expect_err("invalid gradient contract must fail");
-        let found = error.diagnostics.iter().any(|diagnostic| {
-            diagnostic.code == expected_code && diagnostic.path == expected_path
-        });
+        let found = error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == expected_code && diagnostic.path == expected_path);
         assert!(
             found,
             "missing {expected_code} at {expected_path}; diagnostics: {:#?}",

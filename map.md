@@ -38,6 +38,7 @@ generated: true
 - rive-cli.verification.parity
 
 ## Orphaned
+- tests/authoring_gradient_contract.rs
 - tests/authoring_stroke_contract.rs
 - tests/authoring_validation_contract.rs
 
@@ -83,7 +84,7 @@ None in Phase 1.
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.core.objects` claims `src/objects/text.rs` at 1105 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.core.validator` claims `src/validator/parser.rs` at 501 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.ai` claims `src/ai/repair.rs` at 825 lines, over the 500-line guideline with no allow-list marker
-- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 847 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 966 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.discovery` claims `src/discovery/mod.rs` at 896 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.render` claims `src/render/mod.rs` at 782 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.scaffold` claims `src/scaffold/mod.rs` at 717 lines, over the 500-line guideline with no allow-list marker
@@ -129,6 +130,7 @@ None in Phase 1.
 - warning: CAIRN_TEST_COVERAGE_MISSING synced module `rive-cli.interfaces.scaffold` has no #[cfg(test)] coverage in its reconciled source
 - warning: CAIRN_TEST_COVERAGE_MISSING synced module `rive-cli.verification.fuzz` has no #[cfg(test)] coverage in its reconciled source
 - warning: CAIRN_TEST_COVERAGE_MISSING synced module `rive-cli.verification.rust` has no #[cfg(test)] coverage in its reconciled source
+- info: CAIRN_RECONCILE_ORPHANED_FILE Rust file `tests/authoring_gradient_contract.rs` is not owned by any eligible node
 - info: CAIRN_RECONCILE_ORPHANED_FILE Rust file `tests/authoring_stroke_contract.rs` is not owned by any eligible node
 - info: CAIRN_RECONCILE_ORPHANED_FILE Rust file `tests/authoring_validation_contract.rs` is not owned by any eligible node
 - info: CAIRN_SOURCE_UNVERIFIED source `src.ai-authoring-discussion` is unverified

@@ -4,8 +4,8 @@ use super::expression::validate_scene_number;
 use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, Quantity, RawSceneFragment,
-    ScalarExpr, TransformSpec, Unit, VisualNode, VisualSection,
+    AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, PaintSpec, Quantity,
+    RawSceneFragment, ScalarExpr, TransformSpec, Unit, VisualNode, VisualSection,
 };
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
@@ -327,6 +327,7 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         if let Some(inner_radius) = shape.inner_radius {
             validate_expression(inner_radius, &format!("{path}.inner_radius"), diagnostics);
         }
+        validate_paint(shape.fill, &format!("{path}.fill"), diagnostics);
         if let Some(stroke) = shape.stroke {
             validate_expression(&stroke.width, &format!("{path}.stroke.width"), diagnostics);
         }
@@ -357,6 +358,36 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         | VisualNode::Triangle { .. }
         | VisualNode::Polygon { .. }
         | VisualNode::Star { .. } => unreachable!("shape nodes are handled above"),
+    }
+}
+
+fn validate_paint(paint: &PaintSpec, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>) {
+    let PaintSpec::Gradient(gradient) = paint else {
+        return;
+    };
+
+    for (name, expression) in [
+        ("start_x", &gradient.start_x),
+        ("start_y", &gradient.start_y),
+        ("end_x", &gradient.end_x),
+        ("end_y", &gradient.end_y),
+    ] {
+        validate_expression(expression, &format!("{path}.{name}"), diagnostics);
+    }
+
+    if gradient.stops.len() < 2 {
+        diagnostics.push(AuthoringDiagnostic::new(
+            format!("{path}.stops"),
+            "invalid_gradient_stops",
+            "gradient fills require at least two stops",
+        ));
+    }
+    for (index, stop) in gradient.stops.iter().enumerate() {
+        validate_expression(
+            &stop.position,
+            &format!("{path}.stops[{index}].position"),
+            diagnostics,
+        );
     }
 }
 

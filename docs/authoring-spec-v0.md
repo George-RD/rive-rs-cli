@@ -25,7 +25,7 @@ A v0 document has four explicit graphs:
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Shapes require a solid `fill` colour and may add a typed solid `stroke` with a colour and positive pixel width. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Shape fills may be a solid colour string or a typed linear/radial gradient; shapes may also add a typed solid `stroke` with a colour and positive pixel width. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
@@ -56,6 +56,38 @@ Supported expression nodes are:
 - `divide`
 
 Addition and subtraction require compatible units. Degrees are normalized to radians. Transform position and dimensions require pixels; scale requires scalar values; rotation requires an angle. Non-finite values, values that overflow or underflow the canonical `f32` scene representation, and division by zero are rejected with authored JSON paths. Canonicalized values are checked again after unit conversion, so conversion cannot silently turn a non-zero authored value into zero.
+
+## Paints
+
+A solid fill remains the compact string form used by existing v0 documents:
+
+```json
+"fill": "#246BFD"
+```
+
+Linear and radial gradients use the same typed expression model as geometry and components:
+
+```json
+"fill": {
+  "kind": "linear_gradient",
+  "start_x": { "kind": "literal", "value": 0, "unit": "px" },
+  "start_y": { "kind": "literal", "value": 0, "unit": "px" },
+  "end_x": { "kind": "parameter", "name": "gradient-width" },
+  "end_y": { "kind": "literal", "value": 80, "unit": "px" },
+  "stops": [
+    {
+      "color": "#F59E0B",
+      "position": { "kind": "literal", "value": 0, "unit": "scalar" }
+    },
+    {
+      "color": "#7C3AED",
+      "position": { "kind": "literal", "value": 1, "unit": "scalar" }
+    }
+  ]
+}
+```
+
+Gradient endpoints require pixel expressions. Stop positions require scalar expressions from zero to one, at least two stops are required, and evaluated positions must be in non-decreasing order. Equal positions are allowed for hard colour transitions. Every generated gradient and stop receives a deterministic runtime name and source-map path. Gradient strokes remain a later paint slice; v0 strokes are currently solid.
 
 ## Components and instances
 

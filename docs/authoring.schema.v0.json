@@ -59,6 +59,64 @@
       ],
       "type": "object"
     },
+    "GradientKind": {
+      "enum": [
+        "linear_gradient",
+        "radial_gradient"
+      ],
+      "type": "string"
+    },
+    "GradientPaintSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "end_x": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "end_y": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "kind": {
+          "$ref": "#/$defs/GradientKind"
+        },
+        "start_x": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "start_y": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "stops": {
+          "items": {
+            "$ref": "#/$defs/GradientStopSpec"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "start_x",
+        "start_y",
+        "end_x",
+        "end_y",
+        "stops"
+      ],
+      "type": "object"
+    },
+    "GradientStopSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "position": {
+          "$ref": "#/$defs/ScalarExpr"
+        }
+      },
+      "required": [
+        "color",
+        "position"
+      ],
+      "type": "object"
+    },
     "MotionSection": {
       "additionalProperties": false,
       "properties": {
@@ -71,6 +129,16 @@
         }
       },
       "type": "object"
+    },
+    "PaintSpec": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/GradientPaintSpec"
+        }
+      ]
     },
     "Quantity": {
       "additionalProperties": false,
@@ -324,7 +392,7 @@
           "additionalProperties": false,
           "properties": {
             "fill": {
-              "type": "string"
+              "$ref": "#/$defs/PaintSpec"
             },
             "height": {
               "$ref": "#/$defs/ScalarExpr"
@@ -385,7 +453,7 @@
               "default": null
             },
             "fill": {
-              "type": "string"
+              "$ref": "#/$defs/PaintSpec"
             },
             "height": {
               "$ref": "#/$defs/ScalarExpr"
@@ -435,7 +503,7 @@
           "additionalProperties": false,
           "properties": {
             "fill": {
-              "type": "string"
+              "$ref": "#/$defs/PaintSpec"
             },
             "height": {
               "$ref": "#/$defs/ScalarExpr"
@@ -496,7 +564,7 @@
               "default": null
             },
             "fill": {
-              "type": "string"
+              "$ref": "#/$defs/PaintSpec"
             },
             "height": {
               "$ref": "#/$defs/ScalarExpr"
@@ -563,7 +631,7 @@
               "default": null
             },
             "fill": {
-              "type": "string"
+              "$ref": "#/$defs/PaintSpec"
             },
             "height": {
               "$ref": "#/$defs/ScalarExpr"

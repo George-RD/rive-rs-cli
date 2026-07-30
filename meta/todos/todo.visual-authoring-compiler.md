@@ -21,7 +21,10 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   definition path.
 - Shape validation and lowering now share one shape descriptor, and JSON
   authoring input is parsed once before validation and lowering.
-- Remaining work includes richer paint and trim, text and assets, bounded
+- Typed linear and radial gradient fills are implemented in PR #138 while
+  preserving the compact solid-colour string form. Endpoint and stop expressions
+  flow through component parameters, and every generated stop is source-mapped.
+- Remaining work includes gradient strokes, trim, text and assets, bounded
   patterns, constraints, and a complex static showcase without raw escapes.
 
 ## Acceptance criteria

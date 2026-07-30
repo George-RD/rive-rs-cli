@@ -9,9 +9,10 @@ use serde_json::Value;
 
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, LoweredAuthoring,
-    MotionSection, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec,
-    TransformSpec, Unit, VisualNode, VisualSection,
+    AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, GradientKind,
+    GradientPaintSpec, GradientStopSpec, LoweredAuthoring, MotionSection, PaintSpec, Quantity,
+    RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec, TransformSpec, Unit, VisualNode,
+    VisualSection,
 };
 
 pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError> {
