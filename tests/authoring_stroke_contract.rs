@@ -92,13 +92,17 @@ fn typed_stroke_lowers_through_components_deterministically_and_builds() {
 #[test]
 fn stroke_width_requires_positive_pixels_at_the_authored_path() {
     for (width, expected_code) in [
-        (r#"{ "kind": "literal", "value": 0.0, "unit": "px" }"#, "invalid_dimension"),
-        (r#"{ "kind": "literal", "value": 2.0, "unit": "scalar" }"#, "unit_mismatch"),
+        (
+            r#"{ "kind": "literal", "value": 0.0, "unit": "px" }"#,
+            "invalid_dimension",
+        ),
+        (
+            r#"{ "kind": "literal", "value": 2.0, "unit": "scalar" }"#,
+            "unit_mismatch",
+        ),
     ] {
-        let input = STROKED_COMPONENT_SCENE.replace(
-            r#"{ "kind": "parameter", "name": "outline" }"#,
-            width,
-        );
+        let input =
+            STROKED_COMPONENT_SCENE.replace(r#"{ "kind": "parameter", "name": "outline" }"#, width);
         let error = lower_authoring_json(&input).expect_err("invalid stroke width must fail");
 
         assert!(error.diagnostics.iter().any(|diagnostic| {
