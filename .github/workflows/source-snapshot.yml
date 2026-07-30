@@ -43,14 +43,13 @@ jobs:
       - name: Package patched source for diagnosis
         if: always()
         run: |
-          tar --exclude=.git --exclude=target --exclude=patched-source.tar.gz \
-            -czf patched-source.tar.gz .
+          tar --exclude=.git --exclude=target -czf /tmp/patched-source.tar.gz .
       - name: Upload patched source for diagnosis
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gradient-patched-source-${{ github.run_id }}
-          path: patched-source.tar.gz
+          path: /tmp/patched-source.tar.gz
           retention-days: 1
       - name: Validate Cairn graph
         run: |
