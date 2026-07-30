@@ -280,6 +280,25 @@ fn grid_contract_rejects_invalid_counts_units_and_nested_expansion() {
 }
 
 #[test]
+fn grid_rejects_derived_offsets_outside_scene_number_range() {
+    let input = document(vec![grid(
+        "too-wide",
+        3,
+        1,
+        literal(f64::from(f32::MAX), "px"),
+        literal(0.0, "px"),
+        rectangle("tile"),
+    )]);
+
+    let error = lower_authoring_json(&input)
+        .expect_err("derived grid offsets must fit the canonical f32 scene representation");
+    assert!(error.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "numeric_out_of_range"
+            && diagnostic.path == "$.visual.nodes[0].column_step"
+    }));
+}
+
+#[test]
 fn grid_schema_exposes_only_bounded_semantic_fields() {
     let schema = authoring_schema();
     let grid = schema["$defs"]["VisualNode"]["oneOf"]
