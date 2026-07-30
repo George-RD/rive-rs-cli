@@ -327,6 +327,25 @@
       ],
       "type": "object"
     },
+    "TextAlign": {
+      "enum": [
+        "left",
+        "right",
+        "center"
+      ],
+      "type": "string"
+    },
+    "TextOverflow": {
+      "enum": [
+        "visible",
+        "hidden",
+        "clipped",
+        "ellipsis",
+        "fit",
+        "fit_font_size"
+      ],
+      "type": "string"
+    },
     "TransformSpec": {
       "additionalProperties": false,
       "properties": {
@@ -732,6 +751,130 @@
             "height",
             "points",
             "inner_radius",
+            "fill"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "align": {
+              "$ref": "#/$defs/TextAlign",
+              "default": "left"
+            },
+            "fill": {
+              "$ref": "#/$defs/PaintSpec"
+            },
+            "font_size": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "height": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ScalarExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "text",
+              "type": "string"
+            },
+            "letter_spacing": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ScalarExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "line_height": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ScalarExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "origin_x": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ScalarExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "origin_y": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ScalarExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "overflow": {
+              "$ref": "#/$defs/TextOverflow",
+              "default": "visible"
+            },
+            "paragraph_spacing": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ScalarExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "text": {
+              "type": "string"
+            },
+            "transform": {
+              "$ref": "#/$defs/TransformSpec",
+              "default": {
+                "rotation": null,
+                "scale_x": null,
+                "scale_y": null,
+                "x": null,
+                "y": null
+              }
+            },
+            "width": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ScalarExpr"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "text",
+            "font_size",
             "fill"
           ],
           "type": "object"

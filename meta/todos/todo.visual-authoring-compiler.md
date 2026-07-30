@@ -30,8 +30,13 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Typed trim paths on strokes are implemented in PR #141. Start, end, and optional
   offset expressions flow through component parameters and overrides; generated trim
   objects, runtime names, SceneSpec paths, and diagnostics remain source-mapped.
-- Remaining work includes text and assets, bounded patterns, constraints, and a
-  complex static showcase without raw escapes.
+- Literal text nodes are implemented in PR #143 with parameterized numeric styling,
+  semantic alignment and overflow, derived sizing, shared paints, deterministic
+  runtime names, and complete source maps.
+- The current text slice proves canonical structure and encoding. Official-runtime
+  glyph rendering remains gated on the separate font-asset embedding slice.
+- Remaining work includes font and image assets, bounded patterns, constraints, and
+  a complex static showcase without raw escapes.
 
 ## Acceptance criteria
 

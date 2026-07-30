@@ -1,0 +1,49 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "text-label",
+    "width": { "value": 480, "unit": "px" },
+    "height": { "value": 240, "unit": "px" }
+  },
+  "parameters": {
+    "headline-size": { "value": 42, "unit": "px" },
+    "copy-width": { "value": 360, "unit": "px" }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "text",
+        "id": "headline",
+        "text": "Rive from data",
+        "font_size": { "kind": "parameter", "name": "headline-size" },
+        "fill": {
+          "kind": "linear_gradient",
+          "start_x": { "kind": "literal", "value": 0, "unit": "px" },
+          "start_y": { "kind": "literal", "value": 0, "unit": "px" },
+          "end_x": { "kind": "parameter", "name": "copy-width" },
+          "end_y": { "kind": "literal", "value": 0, "unit": "px" },
+          "stops": [
+            {
+              "color": "#22D3EE",
+              "position": { "kind": "literal", "value": 0, "unit": "scalar" }
+            },
+            {
+              "color": "#7C3AED",
+              "position": { "kind": "literal", "value": 1, "unit": "scalar" }
+            }
+          ]
+        },
+        "width": { "kind": "parameter", "name": "copy-width" },
+        "line_height": { "kind": "literal", "value": 1.2, "unit": "scalar" },
+        "align": "center",
+        "origin_x": { "kind": "literal", "value": 0.5, "unit": "scalar" },
+        "transform": {
+          "x": { "kind": "literal", "value": 240, "unit": "px" },
+          "y": { "kind": "literal", "value": 96, "unit": "px" }
+        }
+      }
+    ]
+  },
+  "motion": {},
+  "behavior": {}
+}

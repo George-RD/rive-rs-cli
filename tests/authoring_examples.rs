@@ -9,6 +9,10 @@ const RAW_PULSE: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/examples/authoring/raw-pulse.v0.json"
 ));
+const TEXT_LABEL: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/examples/authoring/text-label.v0.json"
+));
 
 fn assert_deterministic_and_buildable(input: &str) {
     let first = lower_authoring_json(input).expect("first lowering must succeed");
@@ -29,4 +33,9 @@ fn component_badges_example_is_deterministic_and_buildable() {
 #[test]
 fn raw_pulse_example_is_deterministic_and_buildable() {
     assert_deterministic_and_buildable(RAW_PULSE);
+}
+
+#[test]
+fn text_label_example_is_deterministic_and_buildable() {
+    assert_deterministic_and_buildable(TEXT_LABEL);
 }
