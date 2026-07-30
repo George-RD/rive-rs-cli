@@ -1,0 +1,157 @@
+name: Apply Authoring Test Hygiene
+
+on:
+  push:
+    branches:
+      - agent/authoring-test-hygiene
+    paths:
+      - .github/workflows/authoring-test-hygiene.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/authoring-test-hygiene
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Consolidate authoring test support
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"expected one match in {path}, found {count}")
+              file.write_text(text.replace(old, new, 1))
+
+          Path("tests/support").mkdir(exist_ok=True)
+          Path("tests/support/mod.rs").write_text(
+              """use rive_cli::builder::{SceneSpec, build_scene};
+
+          pub(crate) fn assert_builds(scene: serde_json::Value) {
+              let scene: SceneSpec =
+                  serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
+              build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
+          }
+          """
+          )
+
+          replace_once(
+              "tests/authoring_contract.rs",
+              """use std::collections::HashSet;
+
+          use rive_cli::authoring::{authoring_schema, lower_authoring_json};
+          use rive_cli::builder::{SceneSpec, build_scene};
+          """,
+              """mod support;
+
+          use std::collections::HashSet;
+
+          use rive_cli::authoring::{authoring_schema, lower_authoring_json};
+          use support::assert_builds;
+          """,
+          )
+          replace_once(
+              "tests/authoring_contract.rs",
+              """fn assert_builds(scene: serde_json::Value) {
+              let scene: SceneSpec =
+                  serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
+              build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
+          }
+
+          """,
+              "",
+          )
+
+          replace_once(
+              "tests/authoring_gradient_contract.rs",
+              """use rive_cli::authoring::lower_authoring_json;
+          use rive_cli::builder::{SceneSpec, build_scene};
+          use serde_json::{Value, json};
+          """,
+              """mod support;
+
+          use rive_cli::authoring::lower_authoring_json;
+          use serde_json::{Value, json};
+          use support::assert_builds;
+          """,
+          )
+          replace_once(
+              "tests/authoring_gradient_contract.rs",
+              """fn assert_builds(scene: Value) {
+              let scene: SceneSpec =
+                  serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
+              build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
+          }
+
+          """,
+              "",
+          )
+
+          replace_once(
+              "tests/authoring_stroke_contract.rs",
+              """use rive_cli::authoring::lower_authoring_json;
+          use rive_cli::builder::{SceneSpec, build_scene};
+          """,
+              """mod support;
+
+          use rive_cli::authoring::lower_authoring_json;
+          use support::assert_builds;
+          """,
+          )
+          replace_once(
+              "tests/authoring_stroke_contract.rs",
+              """fn assert_builds(scene: serde_json::Value) {
+              let scene: SceneSpec =
+                  serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
+              build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
+          }
+
+          """,
+              "",
+          )
+
+          replace_once(
+              "cairn.blueprint",
+              '            path ["./tests/e2e.rs", "./tests/eval_contract.rs", "./tests/authoring_contract.rs", "./tests/authoring_examples.rs"]\n',
+              '            path ["./tests/e2e.rs", "./tests/eval_contract.rs", "./tests/authoring_contract.rs", "./tests/authoring_examples.rs", "./tests/authoring_gradient_contract.rs", "./tests/authoring_stroke_contract.rs", "./tests/authoring_validation_contract.rs", "./tests/support"]\n',
+          )
+          PY
+          cargo fmt --all
+          cargo fmt --all --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --locked --all-features \
+            --test authoring_contract \
+            --test authoring_examples \
+            --test authoring_gradient_contract \
+            --test authoring_stroke_contract \
+            --test authoring_validation_contract
+      - name: Regenerate and validate Cairn map
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn scan
+          cairn lint
+          if grep -Eq 'CAIRN_RECONCILE_ORPHANED_FILE.*tests/(authoring_gradient_contract|authoring_stroke_contract|authoring_validation_contract|support)' map.md; then
+            echo "authoring contract files remain orphaned in Cairn" >&2
+            exit 1
+          fi
+      - name: Commit verified refactor
+        run: |
+          rm .github/workflows/authoring-test-hygiene.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "refactor: consolidate authoring test support"
+          git push origin HEAD:agent/authoring-test-hygiene
