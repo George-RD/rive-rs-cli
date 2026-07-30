@@ -12,6 +12,9 @@ impl<'a> Lowerer<'a> {
         context: NodeContext<'_>,
         component_stack: &mut Vec<String>,
     ) -> Result<Value, AuthoringDiagnostic> {
+        if let Some(grid) = node.grid() {
+            return self.lower_grid(grid, context, component_stack);
+        }
         if let Some(shape) = node.shape() {
             return self.lower_shape(shape, context);
         }
@@ -219,7 +222,10 @@ impl<'a> Lowerer<'a> {
             | VisualNode::Triangle { .. }
             | VisualNode::Polygon { .. }
             | VisualNode::Star { .. }
-            | VisualNode::Text { .. } => unreachable!("shape and text nodes are handled above"),
+            | VisualNode::Text { .. }
+            | VisualNode::Grid { .. } => {
+                unreachable!("shape, text, and grid nodes are handled above")
+            }
         }
     }
 }

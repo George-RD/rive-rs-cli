@@ -33,7 +33,7 @@ pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringEr
 }
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
-    limits::validate_component_expansion_depth(spec)?;
+    limits::validate_expansion_limits(spec)?;
     frontend::lower_authoring(spec)
 }
 

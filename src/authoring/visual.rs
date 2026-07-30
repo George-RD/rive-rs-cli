@@ -98,6 +98,18 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    Grid {
+        id: String,
+        #[schemars(range(min = 1, max = 100))]
+        columns: u64,
+        #[schemars(range(min = 1, max = 100))]
+        rows: u64,
+        column_step: ScalarExpr,
+        row_step: ScalarExpr,
+        item: Box<VisualNode>,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Group {
         id: String,
         #[serde(default)]
@@ -149,6 +161,16 @@ pub(crate) struct TextNodeRef<'a> {
     pub transform: &'a TransformSpec,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct GridNodeRef<'a> {
+    pub columns: u64,
+    pub rows: u64,
+    pub column_step: &'a ScalarExpr,
+    pub row_step: &'a ScalarExpr,
+    pub item: &'a VisualNode,
+    pub transform: &'a TransformSpec,
+}
+
 impl VisualNode {
     pub(crate) fn id(&self) -> &str {
         match self {
@@ -158,6 +180,7 @@ impl VisualNode {
             | Self::Polygon { id, .. }
             | Self::Star { id, .. }
             | Self::Text { id, .. }
+            | Self::Grid { id, .. }
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
@@ -263,6 +286,7 @@ impl VisualNode {
                 transform,
             },
             Self::Text { .. }
+            | Self::Grid { .. }
             | Self::Group { .. }
             | Self::Instance { .. }
             | Self::RawSceneObject { .. } => {
@@ -302,6 +326,28 @@ impl VisualNode {
                 origin_y: origin_y.as_ref(),
                 align: *align,
                 overflow: *overflow,
+                transform,
+            }),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn grid(&self) -> Option<GridNodeRef<'_>> {
+        match self {
+            Self::Grid {
+                columns,
+                rows,
+                column_step,
+                row_step,
+                item,
+                transform,
+                ..
+            } => Some(GridNodeRef {
+                columns: *columns,
+                rows: *rows,
+                column_step,
+                row_step,
+                item,
                 transform,
             }),
             _ => None,

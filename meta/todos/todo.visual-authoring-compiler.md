@@ -41,7 +41,11 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - The authored lowering pipeline is split by node, text, shape, and paint responsibility
   in PR #145. The parent lowerer is 466 lines; its focused modules are 225–294 lines.
   Schema, validation, generated SceneSpec, runtime names, and source maps remain fixed.
-- Remaining work includes font and image assets, bounded patterns, constraints, and
+- Deterministic bounded grid patterns are implemented in PR #146. Row-major expansion,
+  component parameter overrides, stable generated IDs, complete source maps, and a global
+  nested-pattern cell budget are pinned by the authoring grid contract suite.
+- Remaining work includes font and image assets, radial/mirror/distribute/along-path patterns,
+  constraints, and
   a complex static showcase without raw escapes.
 
 ## Acceptance criteria
