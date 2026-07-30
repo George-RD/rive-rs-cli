@@ -85,6 +85,10 @@ fn simple_scene(fill: Value) -> String {
             "width": { "value": 240.0, "unit": "px" },
             "height": { "value": 180.0, "unit": "px" }
         },
+        "parameters": {
+            "diameter": { "value": 80.0, "unit": "px" },
+            "gradient_end": { "value": 120.0, "unit": "px" }
+        },
         "visual": {
             "nodes": [
                 {
