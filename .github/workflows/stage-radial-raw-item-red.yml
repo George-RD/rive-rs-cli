@@ -1,0 +1,82 @@
+name: Stage repeated raw item contract
+
+on:
+  push:
+    branches:
+      - agent/radial-pattern-v0
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/radial-pattern-v0
+      - name: Add failing contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/authoring_radial_contract.rs")
+          text = path.read_text()
+          name = "radial_contract_rejects_repeated_raw_scene_items_at_authored_path"
+          marker = "#[test]\nfn radial_rejects_derived_angles_outside_scene_number_range() {"
+          test = '''#[test]
+          fn radial_contract_rejects_repeated_raw_scene_items_at_authored_path() {
+              let input = document(vec![radial(
+                  "raw-orbit",
+                  2,
+                  literal(20.0, "px"),
+                  literal(0.0, "degrees"),
+                  literal(180.0, "degrees"),
+                  false,
+                  json!({
+                      "kind": "raw_scene_object",
+                      "id": "raw-tile",
+                      "object": {
+                          "type": "node",
+                          "name": "embedded-node",
+                          "x": 0.0,
+                          "y": 0.0,
+                          "rotation": 0.0,
+                          "scale_x": 1.0,
+                          "scale_y": 1.0,
+                          "children": []
+                      }
+                  }),
+              )]);
+
+              let error = lower_authoring_json(&input)
+                  .expect_err("repeated raw scene items must fail before runtime-name registration");
+              assert!(
+                  error.diagnostics.iter().any(|diagnostic| {
+                      diagnostic.code == "unsupported_repeated_raw_scene_object"
+                          && diagnostic.path == "$.visual.nodes[0].item"
+                  }),
+                  "missing repeated raw item diagnostic: {:#?}",
+                  error.diagnostics
+              );
+          }
+
+          '''.replace("          fn", "fn").replace("              ", "    ")
+          if name not in text:
+              if marker not in text:
+                  raise SystemExit("radial insertion marker not found")
+              text = text.replace(marker, test + marker, 1)
+              path.write_text(text)
+          Path(".github/workflows/stage-radial-raw-item-red.yml").unlink()
+          PY
+      - name: Format Rust
+        run: cargo fmt --all
+      - name: Commit contract
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test(authoring): reject repeated raw pattern items"
+          git push origin HEAD:agent/radial-pattern-v0
