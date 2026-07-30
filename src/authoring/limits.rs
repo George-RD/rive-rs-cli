@@ -6,7 +6,7 @@ use super::visual::{PatternNodeRef, VisualNode};
 const MAX_COMPONENT_EXPANSION_DEPTH: usize = 64;
 const MAX_GENERATED_COMPONENT_NODES: u64 = 10_000;
 const MAX_PATTERN_AXIS_COUNT: u64 = 100;
-const MAX_GENERATED_PATTERN_ITEMS: u64 = 10_000;
+const MAX_GENERATED_PATTERN_NODES: u64 = 10_000;
 
 #[derive(Clone, Copy)]
 struct ComponentRef<'a> {
@@ -17,7 +17,7 @@ struct ComponentRef<'a> {
 #[derive(Default)]
 struct ExpansionBudget {
     generated_component_nodes: u64,
-    generated_pattern_items: u64,
+    generated_pattern_nodes: u64,
 }
 
 #[derive(Clone)]
@@ -26,6 +26,8 @@ struct ExpansionContext {
     multiplicity: u64,
     generated_by_component: bool,
     component_budget_path: Option<String>,
+    generated_by_pattern: bool,
+    pattern_budget_path: Option<String>,
 }
 
 struct WorkItem<'a> {
@@ -83,6 +85,8 @@ fn validate_nodes<'a>(
         multiplicity: 1,
         generated_by_component: false,
         component_budget_path: None,
+        generated_by_pattern: false,
+        pattern_budget_path: None,
     };
     push_nodes(&mut work, nodes, list_path, &root_expansion);
 
@@ -94,21 +98,28 @@ fn validate_nodes<'a>(
         } = item;
 
         if expansion.generated_by_component {
-            budget.generated_component_nodes = budget
-                .generated_component_nodes
-                .saturating_add(expansion.multiplicity);
-            if budget.generated_component_nodes > MAX_GENERATED_COMPONENT_NODES {
-                return Err(AuthoringError::one(AuthoringDiagnostic::new(
-                    expansion
-                        .component_budget_path
-                        .clone()
-                        .unwrap_or_else(|| path.clone()),
-                    "component_expansion_node_limit",
-                    format!(
-                        "component expansion exceeds the maximum generated-node budget of {MAX_GENERATED_COMPONENT_NODES}"
-                    ),
-                )));
-            }
+            charge_expansion_budget(
+                &mut budget.generated_component_nodes,
+                expansion.multiplicity,
+                MAX_GENERATED_COMPONENT_NODES,
+                expansion
+                    .component_budget_path
+                    .as_deref()
+                    .unwrap_or(&path),
+                "component_expansion_node_limit",
+                "component expansion exceeds the maximum generated-node budget",
+            )?;
+        }
+
+        if expansion.generated_by_pattern {
+            charge_expansion_budget(
+                &mut budget.generated_pattern_nodes,
+                expansion.multiplicity,
+                MAX_GENERATED_PATTERN_NODES,
+                expansion.pattern_budget_path.as_deref().unwrap_or(&path),
+                "pattern_expansion_node_limit",
+                "pattern expansion exceeds the maximum generated-item budget",
+            )?;
         }
 
         if let Some(children) = node.children() {
@@ -118,24 +129,14 @@ fn validate_nodes<'a>(
 
         if let Some(pattern) = node.pattern() {
             let (item_count, limit_path) = validate_pattern(pattern, &path)?;
-            let generated_items = expansion.multiplicity.saturating_mul(item_count);
-            budget.generated_pattern_items = budget
-                .generated_pattern_items
-                .saturating_add(generated_items);
-            if budget.generated_pattern_items > MAX_GENERATED_PATTERN_ITEMS {
-                return Err(AuthoringError::one(AuthoringDiagnostic::new(
-                    limit_path,
-                    "pattern_expansion_node_limit",
-                    format!(
-                        "pattern expansion exceeds the maximum generated-item budget of {MAX_GENERATED_PATTERN_ITEMS}"
-                    ),
-                )));
-            }
+            let generated_nodes = expansion.multiplicity.saturating_mul(item_count);
             work.push(WorkItem {
                 node: pattern.item(),
                 path: format!("{path}.item"),
                 expansion: ExpansionContext {
-                    multiplicity: generated_items,
+                    multiplicity: generated_nodes,
+                    generated_by_pattern: true,
+                    pattern_budget_path: Some(limit_path),
                     ..expansion
                 },
             });
@@ -176,6 +177,25 @@ fn validate_nodes<'a>(
     }
 
     Ok(())
+}
+
+fn charge_expansion_budget(
+    used: &mut u64,
+    generated: u64,
+    maximum: u64,
+    path: &str,
+    code: &str,
+    message: &str,
+) -> Result<(), AuthoringError> {
+    *used = used.saturating_add(generated);
+    if *used <= maximum {
+        return Ok(());
+    }
+    Err(AuthoringError::one(AuthoringDiagnostic::new(
+        path,
+        code,
+        format!("{message} of {maximum}"),
+    )))
 }
 
 fn validate_pattern(
