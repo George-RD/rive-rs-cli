@@ -40,6 +40,18 @@ jobs:
           cargo fmt --check
           cargo clippy --all-targets --all-features -- -D warnings
           cargo test --locked --all-features
+      - name: Package patched source for diagnosis
+        if: always()
+        run: |
+          tar --exclude=.git --exclude=target --exclude=patched-source.tar.gz \
+            -czf patched-source.tar.gz .
+      - name: Upload patched source for diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradient-patched-source-${{ github.run_id }}
+          path: patched-source.tar.gz
+          retention-days: 1
       - name: Validate Cairn graph
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
