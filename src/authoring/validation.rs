@@ -105,6 +105,18 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         return;
     }
 
+    if let Some(grid) = node.grid() {
+        validate_expression(
+            grid.column_step,
+            &format!("{path}.column_step"),
+            diagnostics,
+        );
+        validate_expression(grid.row_step, &format!("{path}.row_step"), diagnostics);
+        validate_transform(grid.transform, &format!("{path}.transform"), diagnostics);
+        validate_node(grid.item, &format!("{path}.item"), diagnostics);
+        return;
+    }
+
     match node {
         VisualNode::Group {
             transform,
@@ -128,7 +140,10 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         | VisualNode::Triangle { .. }
         | VisualNode::Polygon { .. }
         | VisualNode::Star { .. }
-        | VisualNode::Text { .. } => unreachable!("shape and text nodes are handled above"),
+        | VisualNode::Text { .. }
+        | VisualNode::Grid { .. } => {
+            unreachable!("shape, text, and grid nodes are handled above")
+        }
     }
 }
 

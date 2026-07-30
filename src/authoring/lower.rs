@@ -13,6 +13,7 @@ use super::visual::VisualNode;
 
 mod node;
 mod paint;
+mod pattern;
 mod shape;
 mod text;
 
