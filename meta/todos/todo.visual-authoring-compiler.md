@@ -24,8 +24,10 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Typed linear and radial gradient fills are implemented in PR #138 while
   preserving the compact solid-colour string form. Endpoint and stop expressions
   flow through component parameters, and every generated stop is source-mapped.
-- Remaining work includes gradient strokes, trim, text and assets, bounded
-  patterns, constraints, and a complex static showcase without raw escapes.
+- The next bounded paint slice is gradient strokes, reusing the typed `PaintSpec`
+  and paint-lowering helper rather than creating a second gradient implementation.
+- Remaining work includes trim, text and assets, bounded patterns, constraints,
+  and a complex static showcase without raw escapes.
 
 ## Acceptance criteria
 
