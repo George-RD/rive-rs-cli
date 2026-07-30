@@ -198,9 +198,12 @@ fn text_nodes_lower_through_components_deterministically_and_build() {
             .iter()
             .any(|name| name == "auth__textstage__hero__copy__text_run")
     );
-    assert!(expanded.scene_paths.iter().any(|path| {
-        path == "/artboard/children/0/children/0/children/0/children/1"
-    }));
+    assert!(
+        expanded
+            .scene_paths
+            .iter()
+            .any(|path| { path == "/artboard/children/0/children/0/children/0/children/1" })
+    );
 
     assert_builds(first.scene);
 }
@@ -313,8 +316,7 @@ fn text_contract_errors_point_to_authored_fields() {
     )]))
     .expect_err("height without width must fail");
     assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "invalid_text_layout"
-            && diagnostic.path == "$.visual.nodes[0].height"
+        diagnostic.code == "invalid_text_layout" && diagnostic.path == "$.visual.nodes[0].height"
     }));
 }
 
@@ -327,7 +329,14 @@ fn text_schema_exposes_semantic_fields_without_runtime_indices() {
     );
     assert_eq!(
         schema["$defs"]["TextOverflow"]["enum"],
-        json!(["visible", "hidden", "clipped", "ellipsis", "fit", "fit_font_size"])
+        json!([
+            "visible",
+            "hidden",
+            "clipped",
+            "ellipsis",
+            "fit",
+            "fit_font_size"
+        ])
     );
 
     let text = schema["$defs"]["VisualNode"]["oneOf"]
