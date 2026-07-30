@@ -55,6 +55,8 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Pattern expansion accounting now charges every recursively generated node at inherited
   multiplicity, preventing grouped or component-backed radial items from bypassing the
   shared 10,000-node budget.
+- Raw SceneSpec escapes remain valid as single nodes but are rejected when a pattern would
+  repeat them, because arbitrary embedded names and references cannot be safely namespaced.
 - Remaining work includes font and image assets, mirror/distribute/along-path patterns,
   constraints, and
   a complex static showcase without raw escapes.
