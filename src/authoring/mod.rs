@@ -10,8 +10,8 @@ use serde_json::Value;
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, LoweredAuthoring,
-    MotionSection, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, TransformSpec, Unit,
-    VisualNode, VisualSection,
+    MotionSection, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec,
+    TransformSpec, Unit, VisualNode, VisualSection,
 };
 
 pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError> {
@@ -26,8 +26,7 @@ pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringEr
             ),
         ))
     })?;
-    limits::validate_component_expansion_depth(&spec)?;
-    frontend::lower_authoring_json(input)
+    lower_authoring(&spec)
 }
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {

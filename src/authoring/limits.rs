@@ -90,51 +90,48 @@ fn validate_nodes<'a>(
             }
         }
 
-        match item.node {
-            VisualNode::Group { children, .. } => push_nodes(
+        if let Some(children) = item.node.children() {
+            push_nodes(
                 &mut work,
                 children,
                 &format!("{}.children", item.path),
                 &item.active_components,
                 item.generated,
                 &item.budget_path,
-            ),
-            VisualNode::Instance { component, .. } => {
-                let Some(component_ref) = components.get(component.as_str()).copied() else {
-                    continue;
-                };
-                if item.active_components.contains(&component_ref.index) {
-                    continue;
-                }
-                if item.active_components.len() >= MAX_COMPONENT_EXPANSION_DEPTH {
-                    return Err(AuthoringError::one(AuthoringDiagnostic::new(
-                        format!("{}.component", item.path),
-                        "component_expansion_depth_limit",
-                        format!(
-                            "component expansion exceeds the maximum depth of {MAX_COMPONENT_EXPANSION_DEPTH}"
-                        ),
-                    )));
-                }
-
-                let mut next_active = item.active_components;
-                next_active.push(component_ref.index);
-                let expansion_path = format!("{}.component", item.path);
-                push_nodes(
-                    &mut work,
-                    &component_ref.spec.visual,
-                    &format!("$.components[{}].visual", component_ref.index),
-                    &next_active,
-                    true,
-                    &expansion_path,
-                );
-            }
-            VisualNode::Ellipse { .. }
-            | VisualNode::Rectangle { .. }
-            | VisualNode::Triangle { .. }
-            | VisualNode::Polygon { .. }
-            | VisualNode::Star { .. }
-            | VisualNode::RawSceneObject { .. } => {}
+            );
+            continue;
         }
+
+        let VisualNode::Instance { component, .. } = item.node else {
+            continue;
+        };
+        let Some(component_ref) = components.get(component.as_str()).copied() else {
+            continue;
+        };
+        if item.active_components.contains(&component_ref.index) {
+            continue;
+        }
+        if item.active_components.len() >= MAX_COMPONENT_EXPANSION_DEPTH {
+            return Err(AuthoringError::one(AuthoringDiagnostic::new(
+                format!("{}.component", item.path),
+                "component_expansion_depth_limit",
+                format!(
+                    "component expansion exceeds the maximum depth of {MAX_COMPONENT_EXPANSION_DEPTH}"
+                ),
+            )));
+        }
+
+        let mut next_active = item.active_components;
+        next_active.push(component_ref.index);
+        let expansion_path = format!("{}.component", item.path);
+        push_nodes(
+            &mut work,
+            &component_ref.spec.visual,
+            &format!("$.components[{}].visual", component_ref.index),
+            &next_active,
+            true,
+            &expansion_path,
+        );
     }
 
     Ok(())

@@ -7,7 +7,8 @@ use crate::builder::{SceneSpec, build_scene};
 use super::expression::{evaluate_expression, evaluate_quantity, evaluate_transform};
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringDiagnostic, AuthoringError, AuthoringSourceMap,
-    AuthoringSpec, ComponentSpec, LoweredAuthoring, Quantity, SourceMapEntry, Unit, VisualNode,
+    AuthoringSpec, ComponentSpec, LoweredAuthoring, Quantity, ShapeNodeRef, SourceMapEntry, Unit,
+    VisualNode,
 };
 
 #[derive(Clone, Copy)]
@@ -23,19 +24,13 @@ struct Lowerer<'a> {
     runtime_names: HashSet<String>,
 }
 
-pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError> {
-    let spec = serde_json::from_str::<AuthoringSpec>(input).map_err(|error| {
-        AuthoringError::one(AuthoringDiagnostic::new(
-            "$",
-            "invalid_json",
-            format!(
-                "{error} at line {}, column {}",
-                error.line(),
-                error.column()
-            ),
-        ))
-    })?;
-    lower_authoring(&spec)
+struct NodeContext<'a> {
+    authored_path: String,
+    definition_path: Option<String>,
+    authored_id: String,
+    runtime_segments: Vec<String>,
+    scene_path: String,
+    scope: &'a BTreeMap<String, Quantity>,
 }
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
@@ -155,12 +150,14 @@ impl<'a> Lowerer<'a> {
             let child = self
                 .lower_node(
                     node,
-                    authored_path,
-                    None,
-                    authored_id,
-                    runtime_segments,
-                    scene_path,
-                    &self.spec.parameters,
+                    NodeContext {
+                        authored_path,
+                        definition_path: None,
+                        authored_id,
+                        runtime_segments,
+                        scene_path,
+                        scope: &self.spec.parameters,
+                    },
                     &mut component_stack,
                 )
                 .map_err(AuthoringError::one)?;
@@ -222,135 +219,26 @@ impl<'a> Lowerer<'a> {
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn lower_node(
         &mut self,
         node: &VisualNode,
-        authored_path: String,
-        definition_path: Option<String>,
-        authored_id: String,
-        runtime_segments: Vec<String>,
-        scene_path: String,
-        scope: &BTreeMap<String, Quantity>,
+        context: NodeContext<'_>,
         component_stack: &mut Vec<String>,
     ) -> Result<Value, AuthoringDiagnostic> {
+        if let Some(shape) = node.shape() {
+            return self.lower_shape(shape, context);
+        }
+
+        let NodeContext {
+            authored_path,
+            definition_path,
+            authored_id,
+            runtime_segments,
+            scene_path,
+            scope,
+        } = context;
+
         match node {
-            VisualNode::Ellipse {
-                width,
-                height,
-                fill,
-                transform,
-                ..
-            } => self.lower_shape(
-                "ellipse",
-                width,
-                height,
-                None,
-                None,
-                None,
-                fill,
-                transform,
-                authored_path,
-                definition_path,
-                authored_id,
-                runtime_segments,
-                scene_path,
-                scope,
-            ),
-            VisualNode::Rectangle {
-                width,
-                height,
-                fill,
-                corner_radius,
-                transform,
-                ..
-            } => self.lower_shape(
-                "rectangle",
-                width,
-                height,
-                None,
-                corner_radius.as_ref(),
-                None,
-                fill,
-                transform,
-                authored_path,
-                definition_path,
-                authored_id,
-                runtime_segments,
-                scene_path,
-                scope,
-            ),
-            VisualNode::Triangle {
-                width,
-                height,
-                fill,
-                transform,
-                ..
-            } => self.lower_shape(
-                "triangle",
-                width,
-                height,
-                None,
-                None,
-                None,
-                fill,
-                transform,
-                authored_path,
-                definition_path,
-                authored_id,
-                runtime_segments,
-                scene_path,
-                scope,
-            ),
-            VisualNode::Polygon {
-                width,
-                height,
-                points,
-                fill,
-                corner_radius,
-                transform,
-                ..
-            } => self.lower_shape(
-                "polygon",
-                width,
-                height,
-                Some(*points),
-                corner_radius.as_ref(),
-                None,
-                fill,
-                transform,
-                authored_path,
-                definition_path,
-                authored_id,
-                runtime_segments,
-                scene_path,
-                scope,
-            ),
-            VisualNode::Star {
-                width,
-                height,
-                points,
-                inner_radius,
-                fill,
-                corner_radius,
-                transform,
-                ..
-            } => self.lower_shape(
-                "star",
-                width,
-                height,
-                Some(*points),
-                corner_radius.as_ref(),
-                Some(inner_radius),
-                fill,
-                transform,
-                authored_path,
-                definition_path,
-                authored_id,
-                runtime_segments,
-                scene_path,
-                scope,
-            ),
             VisualNode::Group {
                 transform,
                 children,
@@ -384,12 +272,14 @@ impl<'a> Lowerer<'a> {
                     let child_scene_path = format!("{scene_path}/children/{index}");
                     lowered_children.push(self.lower_node(
                         child,
-                        child_authored_path,
-                        child_definition_path,
-                        child_authored_id,
-                        child_runtime_segments,
-                        child_scene_path,
-                        scope,
+                        NodeContext {
+                            authored_path: child_authored_path,
+                            definition_path: child_definition_path,
+                            authored_id: child_authored_id,
+                            runtime_segments: child_runtime_segments,
+                            scene_path: child_scene_path,
+                            scope,
+                        },
                         component_stack,
                     )?);
                 }
@@ -479,12 +369,14 @@ impl<'a> Lowerer<'a> {
                     let child_scene_path = format!("{scene_path}/children/{index}");
                     match self.lower_node(
                         child,
-                        child_authored_path,
-                        child_definition_path,
-                        child_authored_id,
-                        child_runtime_segments,
-                        child_scene_path,
-                        &component_scope,
+                        NodeContext {
+                            authored_path: child_authored_path,
+                            definition_path: child_definition_path,
+                            authored_id: child_authored_id,
+                            runtime_segments: child_runtime_segments,
+                            scene_path: child_scene_path,
+                            scope: &component_scope,
+                        },
                         component_stack,
                     ) {
                         Ok(child) => lowered_children.push(child),
@@ -532,27 +424,39 @@ impl<'a> Lowerer<'a> {
                 });
                 Ok(object.clone())
             }
+            VisualNode::Ellipse { .. }
+            | VisualNode::Rectangle { .. }
+            | VisualNode::Triangle { .. }
+            | VisualNode::Polygon { .. }
+            | VisualNode::Star { .. } => unreachable!("shape nodes are handled above"),
         }
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn lower_shape(
         &mut self,
-        geometry_type: &str,
-        width_expression: &super::spec::ScalarExpr,
-        height_expression: &super::spec::ScalarExpr,
-        points: Option<u64>,
-        corner_radius_expression: Option<&super::spec::ScalarExpr>,
-        inner_radius_expression: Option<&super::spec::ScalarExpr>,
-        fill: &str,
-        transform: &super::spec::TransformSpec,
-        authored_path: String,
-        definition_path: Option<String>,
-        authored_id: String,
-        runtime_segments: Vec<String>,
-        scene_path: String,
-        scope: &BTreeMap<String, Quantity>,
+        shape: ShapeNodeRef<'_>,
+        context: NodeContext<'_>,
     ) -> Result<Value, AuthoringDiagnostic> {
+        let ShapeNodeRef {
+            geometry_type,
+            width: width_expression,
+            height: height_expression,
+            points,
+            corner_radius: corner_radius_expression,
+            inner_radius: inner_radius_expression,
+            fill,
+            stroke,
+            transform,
+        } = shape;
+        let NodeContext {
+            authored_path,
+            definition_path,
+            authored_id,
+            runtime_segments,
+            scene_path,
+            scope,
+        } = context;
+
         let width = evaluate_expression(
             width_expression,
             &format!("{authored_path}.width"),
@@ -620,6 +524,23 @@ impl<'a> Lowerer<'a> {
                 "star inner radius must be between zero and one",
             ));
         }
+        let stroke_thickness = stroke
+            .map(|stroke| {
+                evaluate_expression(
+                    &stroke.width,
+                    &format!("{authored_path}.stroke.width"),
+                    scope,
+                    Unit::Px,
+                )
+            })
+            .transpose()?;
+        if stroke_thickness.is_some_and(|thickness| thickness <= 0.0) {
+            return Err(AuthoringDiagnostic::new(
+                format!("{authored_path}.stroke.width"),
+                "invalid_dimension",
+                "stroke width must be greater than zero",
+            ));
+        }
         let transform_values =
             evaluate_transform(transform, &format!("{authored_path}.transform"), scope)?;
 
@@ -627,26 +548,18 @@ impl<'a> Lowerer<'a> {
         let geometry_name = runtime_name(&runtime_segments, "geometry");
         let fill_name = runtime_name(&runtime_segments, "fill");
         let color_name = runtime_name(&runtime_segments, "color");
-        let runtime_names = vec![
+        let mut runtime_names = vec![
             shape_name.clone(),
             geometry_name.clone(),
             fill_name.clone(),
             color_name.clone(),
         ];
-        self.register_runtime_names(&runtime_names, &format!("{authored_path}.id"))?;
-        let scene_paths = vec![
+        let mut scene_paths = vec![
             scene_path.clone(),
             format!("{scene_path}/children/0"),
             format!("{scene_path}/children/1"),
             format!("{scene_path}/children/1/children/0"),
         ];
-        self.source_map.entries.push(SourceMapEntry {
-            authored_id,
-            authored_path,
-            definition_path,
-            runtime_names,
-            scene_paths,
-        });
 
         let mut geometry = json!({
             "type": geometry_type,
@@ -671,6 +584,51 @@ impl<'a> Lowerer<'a> {
             }
         }
 
+        let mut children = vec![
+            geometry,
+            json!({
+                "type": "fill",
+                "name": fill_name,
+                "children": [
+                    {
+                        "type": "solid_color",
+                        "name": color_name,
+                        "color": fill
+                    }
+                ]
+            }),
+        ];
+        if let (Some(stroke), Some(thickness)) = (stroke, stroke_thickness) {
+            let stroke_name = runtime_name(&runtime_segments, "stroke");
+            let stroke_color_name = runtime_name(&runtime_segments, "stroke_color");
+            runtime_names.extend([stroke_name.clone(), stroke_color_name.clone()]);
+            scene_paths.extend([
+                format!("{scene_path}/children/2"),
+                format!("{scene_path}/children/2/children/0"),
+            ]);
+            children.push(json!({
+                "type": "stroke",
+                "name": stroke_name,
+                "thickness": thickness,
+                "children": [
+                    {
+                        "type": "solid_color",
+                        "name": stroke_color_name,
+                        "color": stroke.color.as_str()
+                    }
+                ]
+            }));
+        }
+
+        self.register_runtime_names(&runtime_names, &format!("{authored_path}.id"))?;
+        self.source_map.entries.push(SourceMapEntry {
+            authored_id,
+            authored_path,
+            definition_path,
+            runtime_names,
+            scene_paths,
+        });
+
         Ok(json!({
             "type": "shape",
             "name": shape_name,
@@ -679,20 +637,7 @@ impl<'a> Lowerer<'a> {
             "rotation": transform_values.rotation,
             "scale_x": transform_values.scale_x,
             "scale_y": transform_values.scale_y,
-            "children": [
-                geometry,
-                {
-                    "type": "fill",
-                    "name": fill_name,
-                    "children": [
-                        {
-                            "type": "solid_color",
-                            "name": color_name,
-                            "color": fill
-                        }
-                    ]
-                }
-            ]
+            "children": children
         }))
     }
 
