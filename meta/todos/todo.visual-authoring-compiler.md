@@ -16,8 +16,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   path.
 - Polygon and star point counts are validated at the authored path; star inner
   radius is a typed scalar ratio.
-- Optional typed solid strokes lower through components and parameter overrides,
-  with stroke width diagnostics mapped back to the authored definition path.
+- Optional typed solid strokes are implemented in PR #137 through components and
+  parameter overrides, with stroke width diagnostics mapped back to the authored
+  definition path.
 - Shape validation and lowering now share one shape descriptor, and JSON
   authoring input is parsed once before validation and lowering.
 - Remaining work includes richer paint and trim, text and assets, bounded
