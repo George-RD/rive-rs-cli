@@ -69,7 +69,7 @@ fn typed_stroke_lowers_through_components_deterministically_and_builds() {
     assert_eq!(first.scene, second.scene);
     assert_eq!(first.source_map, second.source_map);
 
-    let children = first.scene["artboard"]["children"][0]["children"]
+    let children = first.scene["artboard"]["children"][0]["children"][0]["children"]
         .as_array()
         .expect("shape children");
     assert_eq!(children[2]["type"], "stroke");
