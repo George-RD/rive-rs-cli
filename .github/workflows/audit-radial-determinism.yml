@@ -1,0 +1,59 @@
+name: Audit radial trig determinism
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+    paths:
+      - .github/workflows/audit-radial-determinism.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Record standard-library trig bit patterns
+        shell: bash
+        run: |
+          cat > trig_probe.rs <<'RS'
+          use std::f64::consts::{FRAC_PI_6, PI, TAU};
+
+          fn main() {
+              let cases = [
+                  ("literal_0_1", 0.1_f64),
+                  ("frac_pi_6", FRAC_PI_6),
+                  ("degrees_30", 30.0_f64.to_radians()),
+                  ("arbitrary", 1.234_567_890_123_45_f64),
+                  ("near_pi", PI + f64::EPSILON),
+                  ("many_turns", 123_456.789_f64 * TAU + 0.123_456_789_f64),
+                  ("large_1e20", 1.0e20_f64),
+                  ("f32_half_max", f64::from(f32::MAX / 2.0)),
+              ];
+
+              println!("case\tangle_bits\tsin_bits\tcos_bits\tf32_sin_bits\tf32_cos_bits");
+              for (name, angle) in cases {
+                  println!(
+                      "{name}\t{:016x}\t{:016x}\t{:016x}\t{:08x}\t{:08x}",
+                      angle.to_bits(),
+                      angle.sin().to_bits(),
+                      angle.cos().to_bits(),
+                      (angle.sin() as f32).to_bits(),
+                      (angle.cos() as f32).to_bits(),
+                  );
+              }
+          }
+          RS
+          rustc trig_probe.rs -O -o trig_probe
+          ./trig_probe | tee trig-${{ runner.os }}.tsv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trig-${{ runner.os }}
+          path: trig-${{ runner.os }}.tsv
+          retention-days: 7
