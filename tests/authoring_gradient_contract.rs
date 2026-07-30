@@ -118,8 +118,8 @@ fn typed_gradients_lower_through_components_deterministically_and_build() {
         assert_eq!(first.scene, second.scene);
         assert_eq!(first.source_map, second.source_map);
 
-        let gradient = &first.scene["artboard"]["children"][0]["children"][0]["children"][1]
-            ["children"][0];
+        let gradient =
+            &first.scene["artboard"]["children"][0]["children"][0]["children"][1]["children"][0];
         assert_eq!(gradient["type"], kind);
         assert_eq!(gradient["end_x"], 96.0);
         assert_eq!(gradient["end_y"], 88.0);
@@ -157,7 +157,7 @@ fn gradient_contract_errors_point_to_the_authored_fill() {
                 "linear_gradient",
                 vec![
                     json!({ "color": "#F59E0B", "position": literal(0.0, "scalar") }),
-                    json!({ "color": "#7C3AED", "position": literal(1.2, "scalar") })
+                    json!({ "color": "#7C3AED", "position": literal(1.2, "scalar") }),
                 ],
             ),
             "invalid_ratio",
@@ -168,7 +168,7 @@ fn gradient_contract_errors_point_to_the_authored_fill() {
                 "linear_gradient",
                 vec![
                     json!({ "color": "#F59E0B", "position": literal(0.75, "scalar") }),
-                    json!({ "color": "#7C3AED", "position": literal(0.25, "scalar") })
+                    json!({ "color": "#7C3AED", "position": literal(0.25, "scalar") }),
                 ],
             ),
             "invalid_gradient_stop_order",
