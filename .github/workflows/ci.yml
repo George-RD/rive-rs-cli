@@ -40,7 +40,32 @@ jobs:
           fi
           grep -q 'unknown variant `grid`' /tmp/grid-red.log
       - name: Apply the bounded grid implementation
-        run: python3 scripts/stage_grid_pattern.py
+        run: |
+          python3 scripts/stage_grid_pattern.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('src/authoring/limits.rs')
+          text = path.read_text()
+          text = text.replace(
+              '''budget
+                .generated_component_nodes
+                .checked_add(item.multiplicity)
+                .unwrap_or(u64::MAX)''',
+              '''budget
+                .generated_component_nodes
+                .saturating_add(item.multiplicity)''',
+          )
+          text = text.replace(
+              '''budget
+                .generated_pattern_cells
+                .checked_add(generated_cells)
+                .unwrap_or(u64::MAX)''',
+              '''budget
+                .generated_pattern_cells
+                .saturating_add(generated_cells)''',
+          )
+          path.write_text(text)
+          PY
       - name: Format and verify Rust behavior
         run: |
           cargo fmt
