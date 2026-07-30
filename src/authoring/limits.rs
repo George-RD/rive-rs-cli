@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec};
+use super::spec::{
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec, PaintSpec,
+};
 use super::visual::{PatternNodeRef, VisualNode};
 
 const MAX_COMPONENT_EXPANSION_DEPTH: usize = 64;
@@ -98,27 +100,10 @@ fn validate_nodes<'a>(
         } = item;
 
         validate_repeatable_pattern_node(node, &path, &expansion)?;
-        if expansion.generated_by_component {
-            charge_expansion_budget(
-                &mut budget.generated_component_nodes,
-                expansion.multiplicity,
-                MAX_GENERATED_COMPONENT_NODES,
-                expansion.component_budget_path.as_deref().unwrap_or(&path),
-                "component_expansion_node_limit",
-                "component expansion exceeds the maximum generated-node budget",
-            )?;
-        }
-
-        if expansion.generated_by_pattern {
-            charge_expansion_budget(
-                &mut budget.generated_pattern_nodes,
-                expansion.multiplicity,
-                MAX_GENERATED_PATTERN_NODES,
-                expansion.pattern_budget_path.as_deref().unwrap_or(&path),
-                "pattern_expansion_node_limit",
-                "pattern expansion exceeds the maximum generated-node budget",
-            )?;
-        }
+        let generated_nodes = expansion
+            .multiplicity
+            .saturating_mul(generated_node_weight(node));
+        charge_generated_nodes(budget, &expansion, &path, generated_nodes)?;
 
         if let Some(children) = node.children() {
             push_nodes(&mut work, children, &format!("{path}.children"), &expansion);
@@ -192,6 +177,63 @@ fn validate_repeatable_pattern_node(
             "raw SceneSpec objects cannot be repeated because embedded names and references cannot be safely namespaced",
         )));
     }
+    Ok(())
+}
+
+fn generated_node_weight(node: &VisualNode) -> u64 {
+    if let Some(shape) = node.shape() {
+        return 1_u64
+            .saturating_add(paint_child_count(shape.fill))
+            .saturating_add(
+                shape
+                    .stroke
+                    .map_or(0, |stroke| paint_child_count(&stroke.paint)),
+            );
+    }
+
+    1_u64.saturating_add(
+        node.text_node()
+            .map_or(0, |text| paint_child_count(text.fill)),
+    )
+}
+
+fn paint_child_count(paint: &PaintSpec) -> u64 {
+    match paint {
+        PaintSpec::Solid(_) => 0,
+        PaintSpec::Gradient(gradient) => {
+            u64::try_from(gradient.stops.len()).unwrap_or(u64::MAX)
+        }
+    }
+}
+
+fn charge_generated_nodes(
+    budget: &mut ExpansionBudget,
+    expansion: &ExpansionContext,
+    path: &str,
+    generated: u64,
+) -> Result<(), AuthoringError> {
+    if expansion.generated_by_component {
+        charge_expansion_budget(
+            &mut budget.generated_component_nodes,
+            generated,
+            MAX_GENERATED_COMPONENT_NODES,
+            expansion.component_budget_path.as_deref().unwrap_or(path),
+            "component_expansion_node_limit",
+            "component expansion exceeds the maximum generated-node budget",
+        )?;
+    }
+
+    if expansion.generated_by_pattern {
+        charge_expansion_budget(
+            &mut budget.generated_pattern_nodes,
+            generated,
+            MAX_GENERATED_PATTERN_NODES,
+            expansion.pattern_budget_path.as_deref().unwrap_or(path),
+            "pattern_expansion_node_limit",
+            "pattern expansion exceeds the maximum generated-node budget",
+        )?;
+    }
+
     Ok(())
 }
 
