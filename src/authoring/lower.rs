@@ -7,7 +7,7 @@ use crate::builder::{SceneSpec, build_scene};
 use super::expression::{evaluate_expression, evaluate_quantity, evaluate_transform};
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringDiagnostic, AuthoringError, AuthoringSourceMap,
-    AuthoringSpec, ComponentSpec, GradientKind, LoweredAuthoring, PaintSpec, Quantity,
+    AuthoringSpec, ComponentSpec, GradientKind, LoweredAuthoring, PaintSpec, Quantity, ScalarExpr,
     ShapeNodeRef, SourceMapEntry, TrimPathMode, TrimPathSpec, Unit, VisualNode,
 };
 
@@ -33,16 +33,10 @@ struct NodeContext<'a> {
     scope: &'a BTreeMap<String, Quantity>,
 }
 
-struct LoweredPaint {
+struct LoweredObject {
     object: Value,
     runtime_names: Vec<String>,
     scene_paths: Vec<String>,
-}
-
-struct LoweredTrimPath {
-    object: Value,
-    runtime_name: String,
-    scene_path: String,
 }
 
 #[derive(Clone, Copy)]
@@ -536,21 +530,15 @@ impl<'a> Lowerer<'a> {
         }
         let inner_radius = inner_radius_expression
             .map(|expression| {
-                evaluate_expression(
+                let path = format!("{authored_path}.inner_radius");
+                evaluate_ratio_expression(
                     expression,
-                    &format!("{authored_path}.inner_radius"),
+                    &path,
                     scope,
-                    Unit::Scalar,
+                    "star inner radius must be between zero and one",
                 )
             })
             .transpose()?;
-        if inner_radius.is_some_and(|ratio| !(0.0..=1.0).contains(&ratio)) {
-            return Err(AuthoringDiagnostic::new(
-                format!("{authored_path}.inner_radius"),
-                "invalid_ratio",
-                "star inner radius must be between zero and one",
-            ));
-        }
         let stroke_thickness = stroke
             .map(|stroke| {
                 evaluate_expression(
@@ -574,7 +562,7 @@ impl<'a> Lowerer<'a> {
         let shape_name = runtime_name(&runtime_segments, "shape");
         let geometry_name = runtime_name(&runtime_segments, "geometry");
         let fill_name = runtime_name(&runtime_segments, "fill");
-        let LoweredPaint {
+        let LoweredObject {
             object: fill_paint,
             runtime_names: fill_runtime_names,
             scene_paths: fill_scene_paths,
@@ -628,7 +616,7 @@ impl<'a> Lowerer<'a> {
         ];
         if let (Some(stroke), Some(thickness)) = (stroke, stroke_thickness) {
             let stroke_name = runtime_name(&runtime_segments, "stroke");
-            let LoweredPaint {
+            let LoweredObject {
                 object: stroke_paint,
                 runtime_names: stroke_runtime_names,
                 scene_paths: stroke_scene_paths,
@@ -647,10 +635,10 @@ impl<'a> Lowerer<'a> {
 
             let mut stroke_children = vec![stroke_paint];
             if let Some(trim) = &stroke.trim {
-                let LoweredTrimPath {
+                let LoweredObject {
                     object,
-                    runtime_name,
-                    scene_path,
+                    runtime_names: trim_runtime_names,
+                    scene_paths: trim_scene_paths,
                 } = self.lower_trim_path(
                     trim,
                     &format!("{authored_path}.stroke.trim"),
@@ -658,8 +646,8 @@ impl<'a> Lowerer<'a> {
                     &format!("{scene_path}/children/2/children/1"),
                     scope,
                 )?;
-                runtime_names.push(runtime_name);
-                scene_paths.push(scene_path);
+                runtime_names.extend(trim_runtime_names);
+                scene_paths.extend(trim_scene_paths);
                 stroke_children.push(object);
             }
 
@@ -699,34 +687,21 @@ impl<'a> Lowerer<'a> {
         runtime_segments: &[String],
         scene_path: &str,
         scope: &BTreeMap<String, Quantity>,
-    ) -> Result<LoweredTrimPath, AuthoringDiagnostic> {
-        let start = evaluate_expression(
+    ) -> Result<LoweredObject, AuthoringDiagnostic> {
+        let start_path = format!("{authored_path}.start");
+        let start = evaluate_ratio_expression(
             &trim.start,
-            &format!("{authored_path}.start"),
+            &start_path,
             scope,
-            Unit::Scalar,
+            "trim start must be between zero and one",
         )?;
-        if !(0.0..=1.0).contains(&start) {
-            return Err(AuthoringDiagnostic::new(
-                format!("{authored_path}.start"),
-                "invalid_ratio",
-                "trim start must be between zero and one",
-            ));
-        }
-
-        let end = evaluate_expression(
+        let end_path = format!("{authored_path}.end");
+        let end = evaluate_ratio_expression(
             &trim.end,
-            &format!("{authored_path}.end"),
+            &end_path,
             scope,
-            Unit::Scalar,
+            "trim end must be between zero and one",
         )?;
-        if !(0.0..=1.0).contains(&end) {
-            return Err(AuthoringDiagnostic::new(
-                format!("{authored_path}.end"),
-                "invalid_ratio",
-                "trim end must be between zero and one",
-            ));
-        }
 
         let offset = trim
             .offset
@@ -747,7 +722,7 @@ impl<'a> Lowerer<'a> {
         };
         let runtime_name = runtime_name(runtime_segments, "stroke_trim");
 
-        Ok(LoweredTrimPath {
+        Ok(LoweredObject {
             object: json!({
                 "type": "trim_path",
                 "name": runtime_name.clone(),
@@ -756,8 +731,8 @@ impl<'a> Lowerer<'a> {
                 "offset": offset,
                 "mode": mode
             }),
-            runtime_name,
-            scene_path: scene_path.to_string(),
+            runtime_names: vec![runtime_name],
+            scene_paths: vec![scene_path.to_string()],
         })
     }
 
@@ -769,11 +744,11 @@ impl<'a> Lowerer<'a> {
         scene_path: &str,
         scope: &BTreeMap<String, Quantity>,
         target: PaintTarget,
-    ) -> Result<LoweredPaint, AuthoringDiagnostic> {
+    ) -> Result<LoweredObject, AuthoringDiagnostic> {
         match paint {
             PaintSpec::Solid(color) => {
                 let color_name = target.runtime_name(runtime_segments, "color");
-                Ok(LoweredPaint {
+                Ok(LoweredObject {
                     object: json!({
                         "type": "solid_color",
                         "name": color_name.clone(),
@@ -824,15 +799,12 @@ impl<'a> Lowerer<'a> {
                 let mut previous_position = None;
                 for (index, stop) in gradient.stops.iter().enumerate() {
                     let stop_path = format!("{authored_path}.stops[{index}].position");
-                    let position =
-                        evaluate_expression(&stop.position, &stop_path, scope, Unit::Scalar)?;
-                    if !(0.0..=1.0).contains(&position) {
-                        return Err(AuthoringDiagnostic::new(
-                            stop_path,
-                            "invalid_ratio",
-                            "gradient stop positions must be between zero and one",
-                        ));
-                    }
+                    let position = evaluate_ratio_expression(
+                        &stop.position,
+                        &stop_path,
+                        scope,
+                        "gradient stop positions must be between zero and one",
+                    )?;
                     if previous_position.is_some_and(|previous| position < previous) {
                         return Err(AuthoringDiagnostic::new(
                             stop_path,
@@ -858,7 +830,7 @@ impl<'a> Lowerer<'a> {
                     GradientKind::LinearGradient => "linear_gradient",
                     GradientKind::RadialGradient => "radial_gradient",
                 };
-                Ok(LoweredPaint {
+                Ok(LoweredObject {
                     object: json!({
                         "type": gradient_type,
                         "name": gradient_name,
@@ -932,6 +904,19 @@ impl<'a> Lowerer<'a> {
         }
         Ok(())
     }
+}
+
+fn evaluate_ratio_expression(
+    expression: &ScalarExpr,
+    path: &str,
+    scope: &BTreeMap<String, Quantity>,
+    message: &str,
+) -> Result<f64, AuthoringDiagnostic> {
+    let value = evaluate_expression(expression, path, scope, Unit::Scalar)?;
+    if !(0.0..=1.0).contains(&value) {
+        return Err(AuthoringDiagnostic::new(path, "invalid_ratio", message));
+    }
+    Ok(value)
 }
 
 fn validate_id(id: &str, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>) {
