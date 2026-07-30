@@ -69,9 +69,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/authoring/frontend.rs src/authoring/validation.rs \
-            src/authoring/lower.rs src/authoring/mod.rs cairn.blueprint map.json map.md \
-            .github/workflows/agent-authoring-validation-cleanup.yml \
-            scripts/agent_refactor_authoring_validation.py
+          git add -A
           git commit -m "refactor: separate authoring validation helpers"
           git push origin HEAD:agent/authoring-validation-cleanup
