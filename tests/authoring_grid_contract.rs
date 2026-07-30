@@ -283,9 +283,9 @@ fn grid_contract_rejects_invalid_counts_units_and_nested_expansion() {
 fn grid_rejects_derived_offsets_outside_scene_number_range() {
     let input = document(vec![grid(
         "too-wide",
-        3,
+        4,
         1,
-        literal(f64::from(f32::MAX), "px"),
+        literal(f64::from(f32::MAX / 2.0), "px"),
         literal(0.0, "px"),
         rectangle("tile"),
     )]);
