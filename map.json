@@ -12058,6 +12058,7 @@
         "./src/authoring"
       ],
       "files": [
+        "src/authoring/deterministic_math.rs",
         "src/authoring/expression.rs",
         "src/authoring/frontend.rs",
         "src/authoring/limits.rs",
@@ -12146,15 +12147,15 @@
           "signature": "pub enum VisualNode",
           "file": "src/authoring/visual.rs",
           "line": 13,
-          "end_line": 132
+          "end_line": 145
         },
         {
           "name": "authoring_schema",
           "kind": "function",
           "signature": "pub fn authoring_schema() -> Value",
           "file": "src/authoring/mod.rs",
-          "line": 40,
-          "end_line": 59
+          "line": 41,
+          "end_line": 60
         },
         {
           "name": "lower_authoring",
@@ -12177,16 +12178,16 @@
           "kind": "function",
           "signature": "pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError>",
           "file": "src/authoring/mod.rs",
-          "line": 35,
-          "end_line": 38
+          "line": 36,
+          "end_line": 39
         },
         {
           "name": "lower_authoring_json",
           "kind": "function",
           "signature": "pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError>",
           "file": "src/authoring/mod.rs",
-          "line": 20,
-          "end_line": 33
+          "line": 21,
+          "end_line": 34
         },
         {
           "name": "AuthoringArtboard",
@@ -12333,52 +12334,60 @@
           "end_line": 188
         },
         {
+          "name": "PatternNodeRef",
+          "kind": "enum",
+          "signature": "pub(crate) enum PatternNodeRef<'a>",
+          "file": "src/authoring/visual.rs",
+          "line": 199,
+          "end_line": 202
+        },
+        {
           "name": "children",
           "kind": "function",
           "signature": "pub(crate) fn children(&self) -> Option<&[VisualNode]>",
           "file": "src/authoring/visual.rs",
-          "line": 357,
-          "end_line": 362
+          "line": 416,
+          "end_line": 421
         },
         {
           "name": "evaluate_expression",
           "kind": "function",
           "signature": "pub(crate) fn evaluate_expression( expression: &ScalarExpr, path: &str, scope: &BTreeMap<String, Quantity>, expected: Unit, ) -> Result<f64, AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 37,
-          "end_line": 44
+          "line": 38,
+          "end_line": 45
         },
         {
           "name": "evaluate_quantity",
           "kind": "function",
           "signature": "pub(crate) fn evaluate_quantity( quantity: Quantity, path: &str, expected: Unit, ) -> Result<f64, AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 20,
-          "end_line": 35
+          "line": 21,
+          "end_line": 36
         },
         {
           "name": "evaluate_transform",
           "kind": "function",
           "signature": "pub(crate) fn evaluate_transform( transform: &TransformSpec, path: &str, scope: &BTreeMap<String, Quantity>, ) -> Result<TransformValues, AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 46,
-          "end_line": 74
-        },
-        {
-          "name": "grid",
-          "kind": "function",
-          "signature": "pub(crate) fn grid(&self) -> Option<GridNodeRef<'_>>",
-          "file": "src/authoring/visual.rs",
-          "line": 335,
-          "end_line": 355
+          "line": 47,
+          "end_line": 75
         },
         {
           "name": "id",
           "kind": "function",
           "signature": "pub(crate) fn id(&self) -> &str",
           "file": "src/authoring/visual.rs",
-          "line": 175,
-          "end_line": 188
+          "line": 214,
+          "end_line": 228
+        },
+        {
+          "name": "item",
+          "kind": "function",
+          "signature": "pub(crate) fn item(self) -> &'a VisualNode",
+          "file": "src/authoring/visual.rs",
+          "line": 205,
+          "end_line": 210
         },
         {
           "name": "many",
@@ -12405,68 +12414,84 @@
           "end_line": 263
         },
         {
+          "name": "pattern",
+          "kind": "function",
+          "signature": "pub(crate) fn pattern(&self) -> Option<PatternNodeRef<'_>>",
+          "file": "src/authoring/visual.rs",
+          "line": 376,
+          "end_line": 414
+        },
+        {
           "name": "shape",
           "kind": "function",
           "signature": "pub(crate) fn shape(&self) -> Option<ShapeNodeRef<'_>>",
           "file": "src/authoring/visual.rs",
-          "line": 190,
-          "end_line": 297
+          "line": 230,
+          "end_line": 338
         },
         {
           "name": "text_node",
           "kind": "function",
           "signature": "pub(crate) fn text_node(&self) -> Option<TextNodeRef<'_>>",
           "file": "src/authoring/visual.rs",
-          "line": 299,
-          "end_line": 333
+          "line": 340,
+          "end_line": 374
         },
         {
           "name": "validate_scene_number",
           "kind": "function",
           "signature": "pub(crate) fn validate_scene_number(value: f64, path: &str) -> Result<(), AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 209,
-          "end_line": 225
+          "line": 210,
+          "end_line": 226
         },
         {
           "name": "Evaluated",
           "kind": "struct",
           "signature": "pub(crate) struct Evaluated",
           "file": "src/authoring/expression.rs",
-          "line": 6,
-          "end_line": 9
+          "line": 7,
+          "end_line": 10
         },
         {
           "name": "GridNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct GridNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 165,
-          "end_line": 172
+          "line": 178,
+          "end_line": 185
+        },
+        {
+          "name": "RadialNodeRef",
+          "kind": "struct",
+          "signature": "pub(crate) struct RadialNodeRef<'a>",
+          "file": "src/authoring/visual.rs",
+          "line": 188,
+          "end_line": 196
         },
         {
           "name": "ShapeNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct ShapeNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 135,
-          "end_line": 145
+          "line": 148,
+          "end_line": 158
         },
         {
           "name": "TextNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct TextNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 148,
-          "end_line": 162
+          "line": 161,
+          "end_line": 175
         },
         {
           "name": "TransformValues",
           "kind": "struct",
           "signature": "pub(crate) struct TransformValues",
           "file": "src/authoring/expression.rs",
-          "line": 12,
-          "end_line": 18
+          "line": 13,
+          "end_line": 19
         }
       ]
     },
@@ -13209,6 +13234,7 @@
         "./tests/authoring_examples.rs",
         "./tests/authoring_gradient_contract.rs",
         "./tests/authoring_grid_contract.rs",
+        "./tests/authoring_radial_contract.rs",
         "./tests/authoring_stroke_contract.rs",
         "./tests/authoring_text_contract.rs",
         "./tests/authoring_trim_path_contract.rs",
@@ -13220,6 +13246,7 @@
         "tests/authoring_examples.rs",
         "tests/authoring_gradient_contract.rs",
         "tests/authoring_grid_contract.rs",
+        "tests/authoring_radial_contract.rs",
         "tests/authoring_stroke_contract.rs",
         "tests/authoring_text_contract.rs",
         "tests/authoring_trim_path_contract.rs",

@@ -935,6 +935,60 @@
         {
           "additionalProperties": false,
           "properties": {
+            "angle_step": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "copies": {
+              "format": "uint64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "id": {
+              "type": "string"
+            },
+            "item": {
+              "$ref": "#/$defs/VisualNode"
+            },
+            "kind": {
+              "const": "radial",
+              "type": "string"
+            },
+            "radius": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "rotate_items": {
+              "default": false,
+              "type": "boolean"
+            },
+            "start_angle": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "transform": {
+              "$ref": "#/$defs/TransformSpec",
+              "default": {
+                "rotation": null,
+                "scale_x": null,
+                "scale_y": null,
+                "x": null,
+                "y": null
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "copies",
+            "radius",
+            "start_angle",
+            "angle_step",
+            "item"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "children": {
               "default": [],
               "items": {

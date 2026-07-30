@@ -201,8 +201,8 @@ fn validate_node_name(node: &VisualNode, path: &str, diagnostics: &mut Vec<Autho
     if let Some(children) = node.children() {
         validate_node_names(children, &format!("{path}.children"), diagnostics);
     }
-    if let Some(grid) = node.grid() {
-        validate_node_name(grid.item, &format!("{path}.item"), diagnostics);
+    if let Some(pattern) = node.pattern() {
+        validate_node_name(pattern.item(), &format!("{path}.item"), diagnostics);
     }
     if let VisualNode::Instance { overrides, .. } = node {
         validate_parameter_names(overrides, &format!("{path}.overrides"), diagnostics);
@@ -309,10 +309,8 @@ fn resolve_expanded_path(spec: &AuthoringSpec, path: &str) -> Option<String> {
         }
 
         if let Some(rest) = remainder.strip_prefix(".item") {
-            let VisualNode::Grid { item, .. } = node else {
-                return None;
-            };
-            node = item.as_ref();
+            let pattern = node.pattern()?;
+            node = pattern.item();
             resolved.push_str(".item");
             remainder = rest;
             continue;

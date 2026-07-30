@@ -24,6 +24,7 @@ schemars = "1"
 tungstenite = "0.24"
 png = "0.17"
 base64 = "0.22"
+libm = "=0.2.16"
 
 [features]
 default = []

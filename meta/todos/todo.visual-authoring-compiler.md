@@ -44,8 +44,21 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Deterministic bounded grid patterns are implemented in PR #146. Row-major expansion,
   component parameter overrides, stable generated IDs, complete source maps, and a global
   nested-pattern cell budget are pinned by the authoring grid contract suite.
-- Review hardening for PR #146 mechanically synchronizes the published AuthoringSpec schema and preserves component-definition diagnostic paths through nested grid items.
-- Remaining work includes font and image assets, radial/mirror/distribute/along-path patterns,
+- Review hardening for PR #146 mechanically synchronizes the published AuthoringSpec
+  schema and preserves component-definition diagnostic paths through nested grid items.
+- Deterministic bounded radial patterns are implemented in PR #147. They share pattern
+  traversal, expansion budgets, source-map lowering, and authored-path rewriting with
+  grids; radius and angular expressions flow through component overrides.
+- A Linux/macOS/Windows bit audit found platform-dependent standard-library trig output;
+  authoring math now pins pure-Rust `libm` 0.2.16 and exact coordinate bits so radial
+  SceneSpec output remains reproducible across supported build hosts.
+- Pattern expansion accounting now charges every recursively generated node at inherited
+  multiplicity, preventing grouped or component-backed radial items from bypassing the
+  shared 10,000-node budget.
+- Generated gradient stops now share the inherited pattern and component expansion budget.
+- Raw SceneSpec escapes remain valid as single nodes but are rejected when a pattern would
+  repeat them, because arbitrary embedded names and references cannot be safely namespaced.
+- Remaining work includes font and image assets, mirror/distribute/along-path patterns,
   constraints, and
   a complex static showcase without raw escapes.
 

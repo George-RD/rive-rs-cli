@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use super::deterministic_math::radians_from_degrees;
 use super::spec::{AuthoringDiagnostic, Quantity, ScalarExpr, TransformSpec, Unit};
 
 #[derive(Debug, Clone, Copy)]
@@ -174,7 +175,7 @@ fn evaluate_binary(
 fn canonicalize(evaluated: Evaluated, path: &str) -> Result<Evaluated, AuthoringDiagnostic> {
     let canonical = match evaluated.unit {
         Unit::Degrees => Evaluated {
-            value: evaluated.value.to_radians(),
+            value: radians_from_degrees(evaluated.value),
             unit: Unit::Radians,
         },
         _ => evaluated,
