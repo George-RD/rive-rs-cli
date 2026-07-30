@@ -1,5 +1,6 @@
 use serde_json::{Value, json};
 
+use super::super::deterministic_math::sin_cos;
 use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, TransformSpec, Unit};
 use super::super::visual::{GridNodeRef, PatternNodeRef, RadialNodeRef, VisualNode};
@@ -122,8 +123,9 @@ impl<'a> Lowerer<'a> {
         for index in 0..copies {
             let angle = start_angle + index as f64 * angle_step;
             validate_scene_number(angle, &angle_step_path)?;
-            let x = radius * angle.cos();
-            let y = radius * angle.sin();
+            let (sine, cosine) = sin_cos(angle);
+            let x = radius * cosine;
+            let y = radius * sine;
             validate_scene_number(x, &radius_path)?;
             validate_scene_number(y, &radius_path)?;
             placements.push(PatternPlacement {

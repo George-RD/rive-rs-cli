@@ -12058,6 +12058,7 @@
         "./src/authoring"
       ],
       "files": [
+        "src/authoring/deterministic_math.rs",
         "src/authoring/expression.rs",
         "src/authoring/frontend.rs",
         "src/authoring/limits.rs",
@@ -12153,8 +12154,8 @@
           "kind": "function",
           "signature": "pub fn authoring_schema() -> Value",
           "file": "src/authoring/mod.rs",
-          "line": 40,
-          "end_line": 59
+          "line": 41,
+          "end_line": 60
         },
         {
           "name": "lower_authoring",
@@ -12177,16 +12178,16 @@
           "kind": "function",
           "signature": "pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError>",
           "file": "src/authoring/mod.rs",
-          "line": 35,
-          "end_line": 38
+          "line": 36,
+          "end_line": 39
         },
         {
           "name": "lower_authoring_json",
           "kind": "function",
           "signature": "pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError>",
           "file": "src/authoring/mod.rs",
-          "line": 20,
-          "end_line": 33
+          "line": 21,
+          "end_line": 34
         },
         {
           "name": "AuthoringArtboard",
@@ -12353,24 +12354,24 @@
           "kind": "function",
           "signature": "pub(crate) fn evaluate_expression( expression: &ScalarExpr, path: &str, scope: &BTreeMap<String, Quantity>, expected: Unit, ) -> Result<f64, AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 37,
-          "end_line": 44
+          "line": 38,
+          "end_line": 45
         },
         {
           "name": "evaluate_quantity",
           "kind": "function",
           "signature": "pub(crate) fn evaluate_quantity( quantity: Quantity, path: &str, expected: Unit, ) -> Result<f64, AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 20,
-          "end_line": 35
+          "line": 21,
+          "end_line": 36
         },
         {
           "name": "evaluate_transform",
           "kind": "function",
           "signature": "pub(crate) fn evaluate_transform( transform: &TransformSpec, path: &str, scope: &BTreeMap<String, Quantity>, ) -> Result<TransformValues, AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 46,
-          "end_line": 74
+          "line": 47,
+          "end_line": 75
         },
         {
           "name": "id",
@@ -12441,16 +12442,16 @@
           "kind": "function",
           "signature": "pub(crate) fn validate_scene_number(value: f64, path: &str) -> Result<(), AuthoringDiagnostic>",
           "file": "src/authoring/expression.rs",
-          "line": 209,
-          "end_line": 225
+          "line": 210,
+          "end_line": 226
         },
         {
           "name": "Evaluated",
           "kind": "struct",
           "signature": "pub(crate) struct Evaluated",
           "file": "src/authoring/expression.rs",
-          "line": 6,
-          "end_line": 9
+          "line": 7,
+          "end_line": 10
         },
         {
           "name": "GridNodeRef",
@@ -12489,8 +12490,8 @@
           "kind": "struct",
           "signature": "pub(crate) struct TransformValues",
           "file": "src/authoring/expression.rs",
-          "line": 12,
-          "end_line": 18
+          "line": 13,
+          "end_line": 19
         }
       ]
     },

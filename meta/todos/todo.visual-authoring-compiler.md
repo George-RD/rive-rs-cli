@@ -49,6 +49,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Deterministic bounded radial patterns are implemented in PR #147. They share pattern
   traversal, expansion budgets, source-map lowering, and authored-path rewriting with
   grids; radius and angular expressions flow through component overrides.
+- A Linux/macOS/Windows bit audit found platform-dependent standard-library trig output;
+  authoring math now pins pure-Rust `libm` 0.2.16 and exact coordinate bits so radial
+  SceneSpec output remains reproducible across supported build hosts.
 - Remaining work includes font and image assets, mirror/distribute/along-path patterns,
   constraints, and
   a complex static showcase without raw escapes.

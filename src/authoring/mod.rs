@@ -1,3 +1,4 @@
+mod deterministic_math;
 mod expression;
 mod frontend;
 mod limits;
