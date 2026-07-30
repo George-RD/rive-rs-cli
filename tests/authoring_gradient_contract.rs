@@ -1,6 +1,8 @@
+mod support;
+
 use rive_cli::authoring::lower_authoring_json;
-use rive_cli::builder::{SceneSpec, build_scene};
 use serde_json::{Value, json};
+use support::assert_builds;
 
 fn literal(value: f64, unit: &str) -> Value {
     json!({ "kind": "literal", "value": value, "unit": unit })
@@ -104,12 +106,6 @@ fn simple_scene(fill: Value) -> String {
         "behavior": {}
     })
     .to_string()
-}
-
-fn assert_builds(scene: Value) {
-    let scene: SceneSpec =
-        serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
-    build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
 }
 
 #[test]
