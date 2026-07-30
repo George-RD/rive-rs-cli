@@ -4,9 +4,10 @@ use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, Quantity, RawSceneFragment,
-    TransformSpec, Unit, VisualNode, VisualSection,
+    TransformSpec, Unit, VisualSection,
 };
 use super::validation::validate_numeric_values;
+use super::visual::VisualNode;
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     validate_authoring(spec)?;
