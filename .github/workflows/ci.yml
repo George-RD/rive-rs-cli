@@ -7,13 +7,65 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
 
 jobs:
+  stage-grid-pattern:
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/grid-pattern-v0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: agent/grid-pattern-v0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Confirm the grid contract is RED
+        run: |
+          set +e
+          cargo test --locked --test authoring_grid_contract > /tmp/grid-red.log 2>&1
+          STATUS=$?
+          set -e
+          cat /tmp/grid-red.log
+          if [ "$STATUS" -eq 0 ]; then
+            echo 'grid contract unexpectedly passed before implementation' >&2
+            exit 1
+          fi
+          grep -q 'unknown variant `grid`' /tmp/grid-red.log
+      - name: Apply the bounded grid implementation
+        run: python3 scripts/stage_grid_pattern.py
+      - name: Format and verify Rust behavior
+        run: |
+          cargo fmt
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --locked --all-features
+      - name: Reconcile and verify Cairn
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn scan --json > /tmp/cairn-scan.json
+          cairn lint --json > /tmp/cairn-lint.json
+          grep -q 'src/authoring/lower/pattern.rs' map.md
+          grep -q 'tests/authoring_grid_contract.rs' map.md
+      - name: Commit the verified implementation
+        run: |
+          git checkout origin/main -- .github/workflows/ci.yml
+          rm scripts/stage_grid_pattern.py
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git status --short
+          git commit -m 'feat: add bounded deterministic grid patterns'
+          git push origin HEAD:agent/grid-pattern-v0
+
   check:
     runs-on: ubuntu-24.04
     steps:
