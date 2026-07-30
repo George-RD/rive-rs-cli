@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec, VisualNode};
+use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec};
+use super::visual::VisualNode;
 
 const MAX_COMPONENT_EXPANSION_DEPTH: usize = 64;
 const MAX_GENERATED_COMPONENT_NODES: usize = 10_000;

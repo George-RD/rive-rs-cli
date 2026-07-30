@@ -2,8 +2,9 @@ use std::collections::BTreeMap;
 
 use super::expression::validate_scene_number;
 use super::spec::{
-    AuthoringDiagnostic, AuthoringSpec, PaintSpec, Quantity, ScalarExpr, TransformSpec, VisualNode,
+    AuthoringDiagnostic, AuthoringSpec, PaintSpec, Quantity, ScalarExpr, TransformSpec,
 };
+use super::visual::VisualNode;
 
 pub(super) fn validate_numeric_values(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();

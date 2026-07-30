@@ -35,6 +35,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   runtime names, and complete source maps.
 - The current text slice proves canonical structure and encoding. Official-runtime
   glyph rendering remains gated on the separate font-asset embedding slice.
+- The authored visual model is split from the core document/error model in PR #144.
+  The generated schema remains byte-identical while `spec.rs` and `visual.rs` are
+  each below Cairn's module-size guideline.
 - Remaining work includes font and image assets, bounded patterns, constraints, and
   a complex static showcase without raw escapes.
 

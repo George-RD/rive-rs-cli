@@ -4,6 +4,7 @@ mod limits;
 mod lower;
 mod spec;
 mod validation;
+mod visual;
 
 use schemars::schema_for;
 use serde_json::Value;
@@ -12,9 +13,9 @@ pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, GradientKind,
     GradientPaintSpec, GradientStopSpec, LoweredAuthoring, MotionSection, PaintSpec, Quantity,
-    RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec, TransformSpec, Unit, VisualNode,
-    VisualSection,
+    RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec, TransformSpec, Unit, VisualSection,
 };
+pub use visual::VisualNode;
 
 pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError> {
     let spec = serde_json::from_str::<AuthoringSpec>(input).map_err(|error| {

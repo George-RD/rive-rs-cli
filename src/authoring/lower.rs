@@ -8,9 +8,9 @@ use super::expression::{evaluate_expression, evaluate_quantity, evaluate_transfo
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringDiagnostic, AuthoringError, AuthoringSourceMap,
     AuthoringSpec, ComponentSpec, GradientKind, LoweredAuthoring, PaintSpec, Quantity, ScalarExpr,
-    ShapeNodeRef, SourceMapEntry, TextAlign, TextNodeRef, TextOverflow, TrimPathMode, TrimPathSpec,
-    Unit, VisualNode,
+    SourceMapEntry, TextAlign, TextOverflow, TrimPathMode, TrimPathSpec, Unit,
 };
+use super::visual::{ShapeNodeRef, TextNodeRef, VisualNode};
 
 #[derive(Clone, Copy)]
 struct ComponentRef<'a> {
