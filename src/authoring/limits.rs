@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec, PaintSpec,
-};
+use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec, PaintSpec};
 use super::visual::{PatternNodeRef, VisualNode};
 
 const MAX_COMPONENT_EXPANSION_DEPTH: usize = 64;
@@ -200,9 +198,7 @@ fn generated_node_weight(node: &VisualNode) -> u64 {
 fn paint_child_count(paint: &PaintSpec) -> u64 {
     match paint {
         PaintSpec::Solid(_) => 0,
-        PaintSpec::Gradient(gradient) => {
-            u64::try_from(gradient.stops.len()).unwrap_or(u64::MAX)
-        }
+        PaintSpec::Gradient(gradient) => u64::try_from(gradient.stops.len()).unwrap_or(u64::MAX),
     }
 }
 
