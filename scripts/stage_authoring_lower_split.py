@@ -86,7 +86,9 @@ LOWER_DIR.mkdir()
     module(
         """use serde_json::{Value, json};
 
-use super::{Lowerer, NodeContext, collect_named_paths, runtime_name};
+use super::{
+    Lowerer, NodeContext, collect_named_paths, runtime_name, validate_sibling_ids_result,
+};
 use super::super::expression::evaluate_transform;
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry};
 use super::super::visual::VisualNode;""",
@@ -123,7 +125,7 @@ use super::super::visual::ShapeNodeRef;""",
     module(
         """use std::collections::BTreeMap;
 
-use serde_json::{Value, json};
+use serde_json::json;
 
 use super::{LoweredObject, Lowerer, PaintTarget, evaluate_ratio_expression, runtime_name};
 use super::super::expression::evaluate_expression;
