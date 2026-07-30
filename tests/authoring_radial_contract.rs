@@ -356,30 +356,41 @@ fn radial_contract_counts_generated_descendants_against_global_budget() {
 
 #[test]
 fn radial_contract_rejects_repeated_raw_scene_items_at_authored_path() {
-    let input = document(vec![radial(
+    let raw_item = json!({
+        "kind": "raw_scene_object",
+        "id": "raw-tile",
+        "object": {
+            "type": "node",
+            "name": "embedded-node",
+            "x": 0.0,
+            "y": 0.0,
+            "rotation": 0.0,
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "children": []
+        }
+    });
+    let single = document(vec![radial(
+        "single-raw",
+        1,
+        literal(20.0, "px"),
+        literal(0.0, "degrees"),
+        literal(180.0, "degrees"),
+        false,
+        raw_item.clone(),
+    )]);
+    lower_authoring_json(&single).expect("a raw item used once remains valid");
+
+    let repeated = document(vec![radial(
         "raw-orbit",
         2,
         literal(20.0, "px"),
         literal(0.0, "degrees"),
         literal(180.0, "degrees"),
         false,
-        json!({
-              "kind": "raw_scene_object",
-              "id": "raw-tile",
-              "object": {
-        "type": "node",
-        "name": "embedded-node",
-        "x": 0.0,
-        "y": 0.0,
-        "rotation": 0.0,
-        "scale_x": 1.0,
-        "scale_y": 1.0,
-        "children": []
-              }
-          }),
+        raw_item,
     )]);
-
-    let error = lower_authoring_json(&input)
+    let error = lower_authoring_json(&repeated)
         .expect_err("repeated raw scene items must fail before runtime-name registration");
     assert!(
         error.diagnostics.iter().any(|diagnostic| {
