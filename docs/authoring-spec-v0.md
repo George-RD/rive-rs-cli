@@ -25,7 +25,7 @@ A v0 document has four explicit graphs:
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Shape fills may be a solid colour string or a typed linear/radial gradient; shapes may also add a typed solid `stroke` with a colour and positive pixel width. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Shape fills and strokes share one solid/linear/radial paint contract; stroke width is a positive pixel expression. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
@@ -87,7 +87,34 @@ Linear and radial gradients use the same typed expression model as geometry and 
 }
 ```
 
-Gradient endpoints require pixel expressions. Stop positions require scalar expressions from zero to one, at least two stops are required, and evaluated positions must be in non-decreasing order. Equal positions are allowed for hard colour transitions. Every generated gradient and stop receives a deterministic runtime name and source-map path. Gradient strokes remain a later paint slice; v0 strokes are currently solid.
+Gradient endpoints require pixel expressions. Stop positions require scalar expressions from zero to one, at least two stops are required, and evaluated positions must be in non-decreasing order. Equal positions are allowed for hard colour transitions. Every generated gradient and stop receives a deterministic runtime name and source-map path.
+
+Strokes use the same paint contract under `paint`, plus a positive pixel `width`:
+
+```json
+"stroke": {
+  "paint": {
+    "kind": "radial_gradient",
+    "start_x": { "kind": "literal", "value": 0, "unit": "px" },
+    "start_y": { "kind": "literal", "value": 0, "unit": "px" },
+    "end_x": { "kind": "literal", "value": 80, "unit": "px" },
+    "end_y": { "kind": "literal", "value": 80, "unit": "px" },
+    "stops": [
+      {
+        "color": "#0F172A",
+        "position": { "kind": "literal", "value": 0, "unit": "scalar" }
+      },
+      {
+        "color": "#F8FAFC",
+        "position": { "kind": "literal", "value": 1, "unit": "scalar" }
+      }
+    ]
+  },
+  "width": { "kind": "literal", "value": 4, "unit": "px" }
+}
+```
+
+The previous `color` field remains accepted as a parser compatibility alias for `paint`, but `paint` is the canonical v0 schema field.
 
 ## Components and instances
 
@@ -143,7 +170,7 @@ Semantic diagnostics point to authored paths. JSON syntax and unknown-field erro
           "height": { "kind": "parameter", "name": "diameter" },
           "fill": "#246BFD",
           "stroke": {
-            "color": "#0F172A",
+            "paint": "#0F172A",
             "width": { "kind": "literal", "value": 3, "unit": "px" }
           }
         }

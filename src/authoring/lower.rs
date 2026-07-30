@@ -39,6 +39,21 @@ struct LoweredPaint {
     scene_paths: Vec<String>,
 }
 
+#[derive(Clone, Copy)]
+enum PaintTarget {
+    Fill,
+    Stroke,
+}
+
+impl PaintTarget {
+    fn runtime_name(self, segments: &[String], role: &str) -> String {
+        match self {
+            Self::Fill => runtime_name(segments, role),
+            Self::Stroke => runtime_name(segments, &format!("stroke_{role}")),
+        }
+    }
+}
+
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     let mut diagnostics = Vec::new();
     if spec.authoring_format_version != AUTHORING_FORMAT_VERSION {
@@ -563,6 +578,7 @@ impl<'a> Lowerer<'a> {
             &runtime_segments,
             &format!("{scene_path}/children/1/children/0"),
             scope,
+            PaintTarget::Fill,
         )?;
         let mut runtime_names = vec![shape_name.clone(), geometry_name.clone(), fill_name.clone()];
         runtime_names.extend(fill_runtime_names);
@@ -606,23 +622,27 @@ impl<'a> Lowerer<'a> {
         ];
         if let (Some(stroke), Some(thickness)) = (stroke, stroke_thickness) {
             let stroke_name = runtime_name(&runtime_segments, "stroke");
-            let stroke_color_name = runtime_name(&runtime_segments, "stroke_color");
-            runtime_names.extend([stroke_name.clone(), stroke_color_name.clone()]);
-            scene_paths.extend([
-                format!("{scene_path}/children/2"),
-                format!("{scene_path}/children/2/children/0"),
-            ]);
+            let LoweredPaint {
+                object: stroke_paint,
+                runtime_names: stroke_runtime_names,
+                scene_paths: stroke_scene_paths,
+            } = self.lower_paint(
+                &stroke.paint,
+                &format!("{authored_path}.stroke.paint"),
+                &runtime_segments,
+                &format!("{scene_path}/children/2/children/0"),
+                scope,
+                PaintTarget::Stroke,
+            )?;
+            runtime_names.push(stroke_name.clone());
+            runtime_names.extend(stroke_runtime_names);
+            scene_paths.push(format!("{scene_path}/children/2"));
+            scene_paths.extend(stroke_scene_paths);
             children.push(json!({
                 "type": "stroke",
                 "name": stroke_name,
                 "thickness": thickness,
-                "children": [
-                    {
-                        "type": "solid_color",
-                        "name": stroke_color_name,
-                        "color": stroke.color.as_str()
-                    }
-                ]
+                "children": [stroke_paint]
             }));
         }
 
@@ -654,10 +674,11 @@ impl<'a> Lowerer<'a> {
         runtime_segments: &[String],
         scene_path: &str,
         scope: &BTreeMap<String, Quantity>,
+        target: PaintTarget,
     ) -> Result<LoweredPaint, AuthoringDiagnostic> {
         match paint {
             PaintSpec::Solid(color) => {
-                let color_name = runtime_name(runtime_segments, "color");
+                let color_name = target.runtime_name(runtime_segments, "color");
                 Ok(LoweredPaint {
                     object: json!({
                         "type": "solid_color",
@@ -673,7 +694,7 @@ impl<'a> Lowerer<'a> {
                     return Err(AuthoringDiagnostic::new(
                         format!("{authored_path}.stops"),
                         "invalid_gradient_stops",
-                        "gradient fills require at least two stops",
+                        "gradient paints require at least two stops",
                     ));
                 }
 
@@ -702,7 +723,7 @@ impl<'a> Lowerer<'a> {
                     Unit::Px,
                 )?;
 
-                let gradient_name = runtime_name(runtime_segments, "gradient");
+                let gradient_name = target.runtime_name(runtime_segments, "gradient");
                 let mut runtime_names = vec![gradient_name.clone()];
                 let mut scene_paths = vec![scene_path.to_string()];
                 let mut children = Vec::with_capacity(gradient.stops.len());
@@ -728,7 +749,7 @@ impl<'a> Lowerer<'a> {
                     previous_position = Some(position);
 
                     let stop_name =
-                        runtime_name(runtime_segments, &format!("gradient_stop_{index}"));
+                        target.runtime_name(runtime_segments, &format!("gradient_stop_{index}"));
                     runtime_names.push(stop_name.clone());
                     scene_paths.push(format!("{scene_path}/children/{index}"));
                     children.push(json!({

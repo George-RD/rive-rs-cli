@@ -99,11 +99,7 @@ fn standard_gradient(kind: &str) -> Value {
 
 #[test]
 fn legacy_solid_stroke_alias_lowers_through_components_and_builds() {
-    let input = component_scene(stroke(
-        "color",
-        json!("#0F172A"),
-        parameter("outline"),
-    ));
+    let input = component_scene(stroke("color", json!("#0F172A"), parameter("outline")));
     let first = lower_authoring_json(&input).expect("first stroke lowering");
     let second = lower_authoring_json(&input).expect("second stroke lowering");
 
