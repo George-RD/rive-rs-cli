@@ -1,11 +1,19 @@
+//! Bit-stable floating-point helpers for generated authoring output.
+//!
+//! Authoring calculations are serialized into SceneSpec, so a one-bit platform
+//! difference becomes a different generated document. Keep the implementation
+//! and dependency version explicit, then pin representative results in tests.
+
 use std::f64::consts::PI;
 
 const RADIANS_PER_DEGREE: f64 = PI / 180.0;
 
+/// Converts degrees with the repository's pinned arithmetic sequence.
 pub(crate) fn radians_from_degrees(degrees: f64) -> f64 {
     degrees * RADIANS_PER_DEGREE
 }
 
+/// Returns sine and cosine through the exactly pinned pure-Rust implementation.
 pub(crate) fn sin_cos(radians: f64) -> (f64, f64) {
     (libm::sin(radians), libm::cos(radians))
 }
