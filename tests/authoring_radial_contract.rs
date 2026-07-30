@@ -458,3 +458,33 @@ fn radial_zero_radius_is_valid_for_rotation_only_patterns() {
     assert_close(&cells[2]["rotation"], PI);
     assert_builds(lowered.scene);
 }
+
+#[test]
+fn radial_coordinates_use_pinned_deterministic_trigonometry() {
+    // The standard library produced different cosine bits for this exact angle
+    // across the Linux/Windows and macOS audit runners. The expected bits are
+    // pinned to the repository's pure-Rust trigonometric contract.
+    let angle = f64::from_bits(0xbfe9_0003_ce1c_711f);
+    let input = document(vec![radial(
+        "deterministic-orbit",
+        1,
+        literal(1.0, "px"),
+        literal(angle, "radians"),
+        literal(0.0, "radians"),
+        false,
+        rectangle("tile"),
+    )]);
+
+    let lowered = lower_authoring_json(&input).expect("deterministic radial lowering");
+    let cell = &lowered.scene["artboard"]["children"][0]["children"][0];
+    assert_eq!(
+        cell["x"].as_f64().expect("radial x").to_bits(),
+        0x3fe6_b896_4cae_d975,
+        "radial x must use the pinned pure-Rust cosine result"
+    );
+    assert_eq!(
+        cell["y"].as_f64().expect("radial y").to_bits(),
+        0xbfe6_888d_01ba_048a,
+        "radial y must use the pinned pure-Rust sine result"
+    );
+}
