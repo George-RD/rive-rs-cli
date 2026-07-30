@@ -85,18 +85,18 @@ jobs:
           )
           replace_once(
               "src/authoring/lower/pattern.rs",
-              "use super::super::expression::{\n",
+              "use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};\n",
               "use super::super::deterministic_math::sin_cos;\n"
-              "use super::super::expression::{\n",
+              "use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};\n",
               "deterministic trig import",
           )
           replace_once(
               "src/authoring/lower/pattern.rs",
-              "                let x = radius * angle.cos();\n"
-              "                let y = radius * angle.sin();\n",
-              "                let (sine, cosine) = sin_cos(angle);\n"
-              "                let x = radius * cosine;\n"
-              "                let y = radius * sine;\n",
+              "            let x = radius * angle.cos();\n"
+              "            let y = radius * angle.sin();\n",
+              "            let (sine, cosine) = sin_cos(angle);\n"
+              "            let x = radius * cosine;\n"
+              "            let y = radius * sine;\n",
               "deterministic radial coordinates",
           )
 
@@ -229,13 +229,15 @@ jobs:
           ref: ${{ github.head_ref }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Verify exact radial coordinate bits
+      - name: Verify exact deterministic authoring math bits
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --locked --test authoring_radial_contract \
-            radial_coordinates_use_pinned_deterministic_trigonometry -- --exact --nocapture \
-            | tee radial-determinism-${{ runner.os }}.log
+          {
+            cargo test --locked --test authoring_radial_contract \
+              radial_coordinates_use_pinned_deterministic_trigonometry -- --exact --nocapture
+            cargo test --locked deterministic_math
+          } | tee radial-determinism-${{ runner.os }}.log
       - uses: actions/upload-artifact@v4
         with:
           name: radial-determinism-${{ runner.os }}
