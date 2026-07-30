@@ -38,6 +38,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - The authored visual model is split from the core document/error model in PR #144.
   The generated schema remains byte-identical while `spec.rs` and `visual.rs` are
   each below Cairn's module-size guideline.
+- The authored lowering pipeline is split by node, text, shape, and paint responsibility
+  in PR #145. The parent lowerer is 466 lines; its focused modules are 225–294 lines.
+  Schema, validation, generated SceneSpec, runtime names, and source maps remain fixed.
 - Remaining work includes font and image assets, bounded patterns, constraints, and
   a complex static showcase without raw escapes.
 
