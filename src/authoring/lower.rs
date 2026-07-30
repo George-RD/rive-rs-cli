@@ -8,7 +8,7 @@ use super::expression::{evaluate_expression, evaluate_quantity, evaluate_transfo
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringDiagnostic, AuthoringError, AuthoringSourceMap,
     AuthoringSpec, ComponentSpec, GradientKind, LoweredAuthoring, PaintSpec, Quantity,
-    ShapeNodeRef, SourceMapEntry, Unit, VisualNode,
+    ShapeNodeRef, SourceMapEntry, TrimPathMode, TrimPathSpec, Unit, VisualNode,
 };
 
 #[derive(Clone, Copy)]
@@ -37,6 +37,12 @@ struct LoweredPaint {
     object: Value,
     runtime_names: Vec<String>,
     scene_paths: Vec<String>,
+}
+
+struct LoweredTrimPath {
+    object: Value,
+    runtime_name: String,
+    scene_path: String,
 }
 
 #[derive(Clone, Copy)]
@@ -638,11 +644,30 @@ impl<'a> Lowerer<'a> {
             runtime_names.extend(stroke_runtime_names);
             scene_paths.push(format!("{scene_path}/children/2"));
             scene_paths.extend(stroke_scene_paths);
+
+            let mut stroke_children = vec![stroke_paint];
+            if let Some(trim) = &stroke.trim {
+                let LoweredTrimPath {
+                    object,
+                    runtime_name,
+                    scene_path,
+                } = self.lower_trim_path(
+                    trim,
+                    &format!("{authored_path}.stroke.trim"),
+                    &runtime_segments,
+                    &format!("{scene_path}/children/2/children/1"),
+                    scope,
+                )?;
+                runtime_names.push(runtime_name);
+                scene_paths.push(scene_path);
+                stroke_children.push(object);
+            }
+
             children.push(json!({
                 "type": "stroke",
                 "name": stroke_name,
                 "thickness": thickness,
-                "children": [stroke_paint]
+                "children": stroke_children
             }));
         }
 
@@ -665,6 +690,75 @@ impl<'a> Lowerer<'a> {
             "scale_y": transform_values.scale_y,
             "children": children
         }))
+    }
+
+    fn lower_trim_path(
+        &self,
+        trim: &TrimPathSpec,
+        authored_path: &str,
+        runtime_segments: &[String],
+        scene_path: &str,
+        scope: &BTreeMap<String, Quantity>,
+    ) -> Result<LoweredTrimPath, AuthoringDiagnostic> {
+        let start = evaluate_expression(
+            &trim.start,
+            &format!("{authored_path}.start"),
+            scope,
+            Unit::Scalar,
+        )?;
+        if !(0.0..=1.0).contains(&start) {
+            return Err(AuthoringDiagnostic::new(
+                format!("{authored_path}.start"),
+                "invalid_ratio",
+                "trim start must be between zero and one",
+            ));
+        }
+
+        let end = evaluate_expression(
+            &trim.end,
+            &format!("{authored_path}.end"),
+            scope,
+            Unit::Scalar,
+        )?;
+        if !(0.0..=1.0).contains(&end) {
+            return Err(AuthoringDiagnostic::new(
+                format!("{authored_path}.end"),
+                "invalid_ratio",
+                "trim end must be between zero and one",
+            ));
+        }
+
+        let offset = trim
+            .offset
+            .as_ref()
+            .map(|expression| {
+                evaluate_expression(
+                    expression,
+                    &format!("{authored_path}.offset"),
+                    scope,
+                    Unit::Scalar,
+                )
+            })
+            .transpose()?
+            .unwrap_or(0.0);
+        let mode = match trim.mode {
+            TrimPathMode::Sequential => "sequential",
+            TrimPathMode::Synchronized => "synchronized",
+        };
+        let runtime_name = runtime_name(runtime_segments, "stroke_trim");
+
+        Ok(LoweredTrimPath {
+            object: json!({
+                "type": "trim_path",
+                "name": runtime_name.clone(),
+                "start": start,
+                "end": end,
+                "offset": offset,
+                "mode": mode
+            }),
+            runtime_name,
+            scene_path: scene_path.to_string(),
+        })
     }
 
     fn lower_paint(

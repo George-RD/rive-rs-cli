@@ -25,7 +25,7 @@ A v0 document has four explicit graphs:
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Shape fills and strokes share one solid/linear/radial paint contract; stroke width is a positive pixel expression. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Shape fills and strokes share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
@@ -115,6 +115,19 @@ Strokes use the same paint contract under `paint`, plus a positive pixel `width`
 ```
 
 The previous `color` field remains accepted as a parser compatibility alias for `paint`, but `paint` is the canonical v0 schema field.
+
+A stroke may optionally add a typed trim path after its paint child:
+
+```json
+"trim": {
+  "start": { "kind": "literal", "value": 0.1, "unit": "scalar" },
+  "end": { "kind": "parameter", "name": "trim-end" },
+  "offset": { "kind": "literal", "value": 0, "unit": "scalar" },
+  "mode": "sequential"
+}
+```
+
+`start` and `end` are normalized scalar expressions from zero to one. `offset` is an optional scalar expression that defaults to zero and is intentionally not clamped, allowing complete-cycle wrapping. `mode` is either `sequential` or `synchronized`. The generated trim object receives a deterministic runtime name and source-map path.
 
 ## Components and instances
 
