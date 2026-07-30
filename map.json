@@ -10467,7 +10467,6 @@
       ],
       "files": [
         "scripts/parity_metric.py",
-        "scripts/stage_grid_pattern.py",
         "scripts/vision_gate_orchestrator.py"
       ],
       "contracts": [],
@@ -10585,14 +10584,6 @@
           "end_line": 32
         },
         {
-          "name": "ROOT",
-          "kind": "variable",
-          "signature": "assignment:ROOT",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 7,
-          "end_line": 7
-        },
-        {
           "name": "SCREENSHOT_DIR",
           "kind": "variable",
           "signature": "assignment:SCREENSHOT_DIR",
@@ -10663,30 +10654,6 @@
           "file": "scripts/vision_gate_orchestrator.py",
           "line": 308,
           "end_line": 308
-        },
-        {
-          "name": "blueprint",
-          "kind": "variable",
-          "signature": "assignment:blueprint",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 615,
-          "end_line": 615
-        },
-        {
-          "name": "blueprint",
-          "kind": "variable",
-          "signature": "assignment:blueprint",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 616,
-          "end_line": 621
-        },
-        {
-          "name": "blueprint_path",
-          "kind": "variable",
-          "signature": "assignment:blueprint_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 614,
-          "end_line": 614
         },
         {
           "name": "by_global",
@@ -10849,30 +10816,6 @@
           "end_line": 285
         },
         {
-          "name": "frontend",
-          "kind": "variable",
-          "signature": "assignment:frontend",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 393,
-          "end_line": 393
-        },
-        {
-          "name": "frontend",
-          "kind": "variable",
-          "signature": "assignment:frontend",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 394,
-          "end_line": 441
-        },
-        {
-          "name": "frontend_path",
-          "kind": "variable",
-          "signature": "assignment:frontend_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 392,
-          "end_line": 392
-        },
-        {
           "name": "futures",
           "kind": "variable",
           "signature": "assignment:futures",
@@ -10985,14 +10928,6 @@
           "end_line": 125
         },
         {
-          "name": "limits_path",
-          "kind": "variable",
-          "signature": "assignment:limits_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 122,
-          "end_line": 122
-        },
-        {
           "name": "local_of",
           "kind": "variable",
           "signature": "assignment:local_of",
@@ -11015,30 +10950,6 @@
           "file": "scripts/parity_metric.py",
           "line": 86,
           "end_line": 86
-        },
-        {
-          "name": "lower",
-          "kind": "variable",
-          "signature": "assignment:lower",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 445,
-          "end_line": 445
-        },
-        {
-          "name": "lower",
-          "kind": "variable",
-          "signature": "assignment:lower",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 446,
-          "end_line": 456
-        },
-        {
-          "name": "lower_path",
-          "kind": "variable",
-          "signature": "assignment:lower_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 444,
-          "end_line": 444
         },
         {
           "name": "match",
@@ -11065,68 +10976,12 @@
           "end_line": 46
         },
         {
-          "name": "mod",
-          "kind": "variable",
-          "signature": "assignment:mod",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 346,
-          "end_line": 346
-        },
-        {
-          "name": "mod",
-          "kind": "variable",
-          "signature": "assignment:mod",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 347,
-          "end_line": 352
-        },
-        {
-          "name": "mod_path",
-          "kind": "variable",
-          "signature": "assignment:mod_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 345,
-          "end_line": 345
-        },
-        {
           "name": "n",
           "kind": "variable",
           "signature": "assignment:n",
           "file": "scripts/parity_metric.py",
           "line": 161,
           "end_line": 161
-        },
-        {
-          "name": "node",
-          "kind": "variable",
-          "signature": "assignment:node",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 460,
-          "end_line": 460
-        },
-        {
-          "name": "node",
-          "kind": "variable",
-          "signature": "assignment:node",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 461,
-          "end_line": 471
-        },
-        {
-          "name": "node",
-          "kind": "variable",
-          "signature": "assignment:node",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 472,
-          "end_line": 484
-        },
-        {
-          "name": "node_path",
-          "kind": "variable",
-          "signature": "assignment:node_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 459,
-          "end_line": 459
         },
         {
           "name": "o[\"_artboard_start\"]",
@@ -11561,14 +11416,6 @@
           "end_line": 344
         },
         {
-          "name": "target",
-          "kind": "variable",
-          "signature": "assignment:target",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 15,
-          "end_line": 15
-        },
-        {
           "name": "text",
           "kind": "variable",
           "signature": "assignment:text",
@@ -11591,30 +11438,6 @@
           "file": "scripts/parity_metric.py",
           "line": 209,
           "end_line": 209
-        },
-        {
-          "name": "todo",
-          "kind": "variable",
-          "signature": "assignment:todo",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 625,
-          "end_line": 625
-        },
-        {
-          "name": "todo",
-          "kind": "variable",
-          "signature": "assignment:todo",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 626,
-          "end_line": 637
-        },
-        {
-          "name": "todo_path",
-          "kind": "variable",
-          "signature": "assignment:todo_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 624,
-          "end_line": 624
         },
         {
           "name": "total",
@@ -11649,38 +11472,6 @@
           "end_line": 153
         },
         {
-          "name": "validation",
-          "kind": "variable",
-          "signature": "assignment:validation",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 356,
-          "end_line": 356
-        },
-        {
-          "name": "validation",
-          "kind": "variable",
-          "signature": "assignment:validation",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 357,
-          "end_line": 376
-        },
-        {
-          "name": "validation",
-          "kind": "variable",
-          "signature": "assignment:validation",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 377,
-          "end_line": 389
-        },
-        {
-          "name": "validation_path",
-          "kind": "variable",
-          "signature": "assignment:validation_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 355,
-          "end_line": 355
-        },
-        {
           "name": "value_mismatch",
           "kind": "variable",
           "signature": "assignment:value_mismatch",
@@ -11695,62 +11486,6 @@
           "file": "scripts/vision_gate_orchestrator.py",
           "line": 357,
           "end_line": 357
-        },
-        {
-          "name": "visual",
-          "kind": "variable",
-          "signature": "assignment:visual",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 27,
-          "end_line": 27
-        },
-        {
-          "name": "visual",
-          "kind": "variable",
-          "signature": "assignment:visual",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 28,
-          "end_line": 47
-        },
-        {
-          "name": "visual",
-          "kind": "variable",
-          "signature": "assignment:visual",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 48,
-          "end_line": 67
-        },
-        {
-          "name": "visual",
-          "kind": "variable",
-          "signature": "assignment:visual",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 68,
-          "end_line": 78
-        },
-        {
-          "name": "visual",
-          "kind": "variable",
-          "signature": "assignment:visual",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 79,
-          "end_line": 89
-        },
-        {
-          "name": "visual",
-          "kind": "variable",
-          "signature": "assignment:visual",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 90,
-          "end_line": 119
-        },
-        {
-          "name": "visual_path",
-          "kind": "variable",
-          "signature": "assignment:visual_path",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 26,
-          "end_line": 26
         },
         {
           "name": "aggregate_results",
@@ -11857,22 +11592,6 @@
           "end_line": 68
         },
         {
-          "name": "read",
-          "kind": "function",
-          "signature": "function_definition:read",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 10,
-          "end_line": 11
-        },
-        {
-          "name": "replace_once",
-          "kind": "function",
-          "signature": "function_definition:replace_once",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 20,
-          "end_line": 23
-        },
-        {
           "name": "run",
           "kind": "function",
           "signature": "function_definition:run",
@@ -11895,14 +11614,6 @@
           "file": "scripts/parity_metric.py",
           "line": 113,
           "end_line": 135
-        },
-        {
-          "name": "write",
-          "kind": "function",
-          "signature": "function_definition:write",
-          "file": "scripts/stage_grid_pattern.py",
-          "line": 14,
-          "end_line": 17
         }
       ]
     },

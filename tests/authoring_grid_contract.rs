@@ -321,3 +321,69 @@ fn grid_schema_exposes_only_bounded_semantic_fields() {
     assert!(!serialized.contains("property_key"));
     assert!(!serialized.contains("runtime_name"));
 }
+
+#[test]
+fn grid_item_component_errors_resolve_to_definition_paths() {
+    let input = json!({
+        "authoring_format_version": 0,
+        "artboard": {
+            "id": "stage",
+            "width": { "value": 320.0, "unit": "px" },
+            "height": { "value": 220.0, "unit": "px" }
+        },
+        "components": [
+            {
+                "id": "grid-host",
+                "visual": [
+                    grid(
+                        "tiles",
+                        1,
+                        1,
+                        literal(10.0, "px"),
+                        literal(10.0, "px"),
+                        json!({
+                            "kind": "instance",
+                            "id": "nested",
+                            "component": "invalid-shape"
+                        })
+                    )
+                ]
+            },
+            {
+                "id": "invalid-shape",
+                "visual": [
+                    {
+                        "kind": "rectangle",
+                        "id": "bad-shape",
+                        "width": literal(1.0, "scalar"),
+                        "height": literal(10.0, "px"),
+                        "fill": "#111827"
+                    }
+                ]
+            }
+        ],
+        "visual": { "nodes": [] },
+        "motion": {},
+        "behavior": {}
+    })
+    .to_string();
+
+    let error =
+        lower_authoring_json(&input).expect_err("invalid nested component must fail validation");
+    assert!(
+        error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "unit_mismatch"
+                && diagnostic.path == "$.components[1].visual[0].width"
+        }),
+        "nested grid diagnostics were not rewritten to the component definition: {:#?}",
+        error.diagnostics
+    );
+    assert!(
+        error
+            .diagnostics
+            .iter()
+            .all(|diagnostic| !diagnostic.path.contains(".expanded[")),
+        "expanded implementation paths leaked into diagnostics: {:#?}",
+        error.diagnostics
+    );
+}

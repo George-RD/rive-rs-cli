@@ -1,6 +1,6 @@
 mod support;
 
-use std::collections::HashSet;
+use std::{collections::HashSet, fs, path::Path};
 
 use rive_cli::authoring::{authoring_schema, lower_authoring_json};
 use support::assert_builds;
@@ -207,6 +207,23 @@ fn schema_is_versioned_and_exposes_explicit_authored_graphs() {
     ] {
         assert!(text.contains(required), "schema is missing {required}");
     }
+}
+
+#[test]
+fn published_authoring_schema_matches_generated_contract() {
+    let schema_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/authoring.schema.v0.json");
+    let published: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(&schema_path).expect("read published authoring schema"),
+    )
+    .expect("published authoring schema must be valid JSON");
+    let generated = authoring_schema();
+
+    assert_eq!(
+        published,
+        generated,
+        "published authoring schema differs from authoring_schema(); regenerate {}",
+        schema_path.display()
+    );
 }
 
 #[test]

@@ -308,6 +308,16 @@ fn resolve_expanded_path(spec: &AuthoringSpec, path: &str) -> Option<String> {
             continue;
         }
 
+        if let Some(rest) = remainder.strip_prefix(".item") {
+            let VisualNode::Grid { item, .. } = node else {
+                return None;
+            };
+            node = item.as_ref();
+            resolved.push_str(".item");
+            remainder = rest;
+            continue;
+        }
+
         if let Some((child_index, rest)) = take_index(remainder, ".children[") {
             let VisualNode::Group { children, .. } = node else {
                 return None;

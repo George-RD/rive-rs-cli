@@ -882,6 +882,59 @@
         {
           "additionalProperties": false,
           "properties": {
+            "column_step": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "columns": {
+              "format": "uint64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "id": {
+              "type": "string"
+            },
+            "item": {
+              "$ref": "#/$defs/VisualNode"
+            },
+            "kind": {
+              "const": "grid",
+              "type": "string"
+            },
+            "row_step": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "rows": {
+              "format": "uint64",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "transform": {
+              "$ref": "#/$defs/TransformSpec",
+              "default": {
+                "rotation": null,
+                "scale_x": null,
+                "scale_y": null,
+                "x": null,
+                "y": null
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "columns",
+            "rows",
+            "column_step",
+            "row_step",
+            "item"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "children": {
               "default": [],
               "items": {
