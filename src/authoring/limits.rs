@@ -117,7 +117,7 @@ fn validate_nodes<'a>(
                 MAX_GENERATED_PATTERN_NODES,
                 expansion.pattern_budget_path.as_deref().unwrap_or(&path),
                 "pattern_expansion_node_limit",
-                "pattern expansion exceeds the maximum generated-item budget",
+                "pattern expansion exceeds the maximum generated-node budget",
             )?;
         }
 
