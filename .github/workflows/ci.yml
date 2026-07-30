@@ -43,27 +43,25 @@ jobs:
         run: |
           python3 scripts/stage_grid_pattern.py
           python3 - <<'PY'
+          import re
           from pathlib import Path
+
           path = Path('src/authoring/limits.rs')
           text = path.read_text()
-          text = text.replace(
-              '''budget
-                .generated_component_nodes
-                .checked_add(item.multiplicity)
-                .unwrap_or(u64::MAX)''',
-              '''budget
-                .generated_component_nodes
-                .saturating_add(item.multiplicity)''',
-          )
-          text = text.replace(
-              '''budget
-                .generated_pattern_cells
-                .checked_add(generated_cells)
-                .unwrap_or(u64::MAX)''',
-              '''budget
-                .generated_pattern_cells
-                .saturating_add(generated_cells)''',
-          )
+          rewrites = [
+              (
+                  r'\.checked_add\(item\.multiplicity\)\s*\.unwrap_or\(u64::MAX\)',
+                  '.saturating_add(item.multiplicity)',
+              ),
+              (
+                  r'\.checked_add\(generated_cells\)\s*\.unwrap_or\(u64::MAX\)',
+                  '.saturating_add(generated_cells)',
+              ),
+          ]
+          for pattern, replacement in rewrites:
+              text, count = re.subn(pattern, replacement, text)
+              if count != 1:
+                  raise SystemExit(f'expected one expansion-counter rewrite for {pattern}; found {count}')
           path.write_text(text)
           PY
       - name: Format and verify Rust behavior
