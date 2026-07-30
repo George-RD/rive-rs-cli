@@ -147,8 +147,8 @@ fn trim_offset_defaults_to_zero() {
         "sequential",
     ));
     let lowered = lower_authoring_json(&input).expect("trim path without offset");
-    let trim = &lowered.scene["artboard"]["children"][0]["children"][0]["children"][2]
-        ["children"][1];
+    let trim =
+        &lowered.scene["artboard"]["children"][0]["children"][0]["children"][2]["children"][1];
 
     assert_eq!(trim["offset"], 0.0);
     assert_eq!(trim["mode"], "sequential");
