@@ -1,8 +1,6 @@
 use serde_json::{Value, json};
 
-use super::super::expression::{
-    evaluate_expression, evaluate_transform, validate_scene_number,
-};
+use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, Unit};
 use super::super::visual::GridNodeRef;
 use super::{Lowerer, NodeContext, runtime_name};
@@ -32,15 +30,10 @@ impl<'a> Lowerer<'a> {
         } = context;
 
         let column_step_path = format!("{authored_path}.column_step");
-        let column_step = evaluate_expression(
-            column_step_expression,
-            &column_step_path,
-            scope,
-            Unit::Px,
-        )?;
+        let column_step =
+            evaluate_expression(column_step_expression, &column_step_path, scope, Unit::Px)?;
         let row_step_path = format!("{authored_path}.row_step");
-        let row_step =
-            evaluate_expression(row_step_expression, &row_step_path, scope, Unit::Px)?;
+        let row_step = evaluate_expression(row_step_expression, &row_step_path, scope, Unit::Px)?;
         validate_scene_number(
             columns.saturating_sub(1) as f64 * column_step,
             &column_step_path,
