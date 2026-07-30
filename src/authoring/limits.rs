@@ -97,6 +97,8 @@ fn validate_nodes<'a>(
             expansion,
         } = item;
 
+        validate_repeatable_pattern_node(node, &path, &expansion)?;
+
         if expansion.generated_by_component {
             charge_expansion_budget(
                 &mut budget.generated_component_nodes,
@@ -173,6 +175,24 @@ fn validate_nodes<'a>(
         );
     }
 
+    Ok(())
+}
+
+fn validate_repeatable_pattern_node(
+    node: &VisualNode,
+    path: &str,
+    expansion: &ExpansionContext,
+) -> Result<(), AuthoringError> {
+    if expansion.generated_by_pattern
+        && expansion.multiplicity > 1
+        && matches!(node, VisualNode::RawSceneObject { .. })
+    {
+        return Err(AuthoringError::one(AuthoringDiagnostic::new(
+            path,
+            "unsupported_repeated_raw_scene_object",
+            "raw SceneSpec objects cannot be repeated because embedded names and references cannot be safely namespaced",
+        )));
+    }
     Ok(())
 }
 
