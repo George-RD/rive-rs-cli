@@ -1,0 +1,96 @@
+name: Refine repeated raw item contract
+
+on:
+  push:
+    branches:
+      - agent/radial-pattern-v0
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/radial-pattern-v0
+      - name: Refine contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          path = Path("tests/authoring_radial_contract.rs")
+          text = path.read_text()
+          replacement = '''#[test]
+          fn radial_contract_rejects_repeated_raw_scene_items_at_authored_path() {
+              let raw_item = json!({
+                  "kind": "raw_scene_object",
+                  "id": "raw-tile",
+                  "object": {
+                      "type": "node",
+                      "name": "embedded-node",
+                      "x": 0.0,
+                      "y": 0.0,
+                      "rotation": 0.0,
+                      "scale_x": 1.0,
+                      "scale_y": 1.0,
+                      "children": []
+                  }
+              });
+              let single = document(vec![radial(
+                  "single-raw",
+                  1,
+                  literal(20.0, "px"),
+                  literal(0.0, "degrees"),
+                  literal(180.0, "degrees"),
+                  false,
+                  raw_item.clone(),
+              )]);
+              lower_authoring_json(&single).expect("a raw item used once remains valid");
+
+              let repeated = document(vec![radial(
+                  "raw-orbit",
+                  2,
+                  literal(20.0, "px"),
+                  literal(0.0, "degrees"),
+                  literal(180.0, "degrees"),
+                  false,
+                  raw_item,
+              )]);
+              let error = lower_authoring_json(&repeated)
+                  .expect_err("repeated raw scene items must fail before runtime-name registration");
+              assert!(
+                  error.diagnostics.iter().any(|diagnostic| {
+                      diagnostic.code == "unsupported_repeated_raw_scene_object"
+                          && diagnostic.path == "$.visual.nodes[0].item"
+                  }),
+                  "missing repeated raw item diagnostic: {:#?}",
+                  error.diagnostics
+              );
+          }
+
+          #[test]
+          fn radial_rejects_derived_angles_outside_scene_number_range() {'''.replace("          fn", "fn").replace("              ", "    ")
+          pattern = re.compile(
+              r'#\[test\]\nfn radial_contract_rejects_repeated_raw_scene_items_at_authored_path\(\) \{.*?\n\}\n\n#\[test\]\nfn radial_rejects_derived_angles_outside_scene_number_range\(\) \{',
+              re.S,
+          )
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f"expected one raw-item contract, replaced {count}")
+          path.write_text(text)
+          Path(".github/workflows/refine-radial-raw-item-contract.yml").unlink()
+          PY
+      - name: Format Rust
+        run: cargo fmt --all
+      - name: Commit refined contract
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test(authoring): preserve one-copy raw patterns"
+          git push origin HEAD:agent/radial-pattern-v0
