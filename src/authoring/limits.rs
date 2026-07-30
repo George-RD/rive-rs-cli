@@ -102,10 +102,7 @@ fn validate_nodes<'a>(
                 &mut budget.generated_component_nodes,
                 expansion.multiplicity,
                 MAX_GENERATED_COMPONENT_NODES,
-                expansion
-                    .component_budget_path
-                    .as_deref()
-                    .unwrap_or(&path),
+                expansion.component_budget_path.as_deref().unwrap_or(&path),
                 "component_expansion_node_limit",
                 "component expansion exceeds the maximum generated-node budget",
             )?;

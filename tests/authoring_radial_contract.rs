@@ -324,6 +324,37 @@ fn radial_contract_rejects_invalid_counts_units_radius_and_nested_expansion() {
 }
 
 #[test]
+fn radial_contract_counts_generated_descendants_against_global_budget() {
+    let children = (0..101)
+        .map(|index| rectangle(&format!("tile-{index}")))
+        .collect::<Vec<_>>();
+    let input = document(vec![radial(
+        "too-many-descendants",
+        100,
+        literal(20.0, "px"),
+        literal(0.0, "degrees"),
+        literal(3.6, "degrees"),
+        false,
+        json!({
+            "kind": "group",
+            "id": "bundle",
+            "children": children
+        }),
+    )]);
+
+    let error = lower_authoring_json(&input)
+        .expect_err("pattern descendants must share the generated-item budget");
+    assert!(
+        error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "pattern_expansion_node_limit"
+                && diagnostic.path == "$.visual.nodes[0].copies"
+        }),
+        "missing descendant expansion diagnostic: {:#?}",
+        error.diagnostics
+    );
+}
+
+#[test]
 fn radial_rejects_derived_angles_outside_scene_number_range() {
     let input = document(vec![radial(
         "too-far",
@@ -461,9 +492,6 @@ fn radial_zero_radius_is_valid_for_rotation_only_patterns() {
 
 #[test]
 fn radial_coordinates_use_pinned_deterministic_trigonometry() {
-    // The standard library produced different cosine bits for this exact angle
-    // across the Linux/Windows and macOS audit runners. The expected bits are
-    // pinned to the repository's pure-Rust trigonometric contract.
     let angle = f64::from_bits(0xbfe9_0003_ce1c_711f);
     let input = document(vec![radial(
         "deterministic-orbit",
