@@ -1,0 +1,953 @@
+name: Implement radial pattern contract v3
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+    paths:
+      - .github/workflows/implement-radial-pattern-v3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Confirm the contract remains red
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/radial-evidence
+          set +e
+          cargo test --locked --test authoring_radial_contract \
+            radial_patterns_expand_deterministically_and_build -- --exact --nocapture \
+            > target/radial-evidence/red.log 2>&1
+          status=$?
+          set -e
+          test "$status" -ne 0
+          grep -Eq 'unknown variant .radial.' target/radial-evidence/red.log
+
+      - name: Apply fail-fast structural edits
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_one(text: str, old: str, new: str, label: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one match, found {count}")
+              return text.replace(old, new, 1)
+
+          visual_path = Path("src/authoring/visual.rs")
+          visual = visual_path.read_text()
+          grid_variant = '''    Grid {
+              id: String,
+              #[schemars(range(min = 1, max = 100))]
+              columns: u64,
+              #[schemars(range(min = 1, max = 100))]
+              rows: u64,
+              column_step: ScalarExpr,
+              row_step: ScalarExpr,
+              item: Box<VisualNode>,
+              #[serde(default)]
+              transform: TransformSpec,
+          },
+          '''
+          radial_variant = '''    Radial {
+              id: String,
+              #[schemars(range(min = 1, max = 100))]
+              copies: u64,
+              radius: ScalarExpr,
+              start_angle: ScalarExpr,
+              angle_step: ScalarExpr,
+              #[serde(default)]
+              rotate_items: bool,
+              item: Box<VisualNode>,
+              #[serde(default)]
+              transform: TransformSpec,
+          },
+          '''
+          visual = replace_one(
+              visual,
+              grid_variant + "    Group {\n",
+              grid_variant + radial_variant + "    Group {\n",
+              "radial visual variant",
+          )
+          descriptors = '''#[derive(Clone, Copy)]
+          pub(crate) struct RadialNodeRef<'a> {
+              pub copies: u64,
+              pub radius: &'a ScalarExpr,
+              pub start_angle: &'a ScalarExpr,
+              pub angle_step: &'a ScalarExpr,
+              pub rotate_items: bool,
+              pub item: &'a VisualNode,
+              pub transform: &'a TransformSpec,
+          }
+
+          #[derive(Clone, Copy)]
+          pub(crate) enum PatternNodeRef<'a> {
+              Grid(GridNodeRef<'a>),
+              Radial(RadialNodeRef<'a>),
+          }
+
+          impl<'a> PatternNodeRef<'a> {
+              pub(crate) fn item(self) -> &'a VisualNode {
+                  match self {
+                      Self::Grid(grid) => grid.item,
+                      Self::Radial(radial) => radial.item,
+                  }
+              }
+          }
+
+          '''
+          visual = replace_one(
+              visual,
+              "impl VisualNode {\n",
+              descriptors + "impl VisualNode {\n",
+              "pattern descriptors",
+          )
+          visual = replace_one(
+              visual,
+              "            | Self::Grid { id, .. }\n",
+              "            | Self::Grid { id, .. }\n            | Self::Radial { id, .. }\n",
+              "radial id arm",
+          )
+          visual = replace_one(
+              visual,
+              "            | Self::Grid { .. }\n            | Self::Group { .. }\n",
+              "            | Self::Grid { .. }\n            | Self::Radial { .. }\n            | Self::Group { .. }\n",
+              "radial non-shape arm",
+          )
+          grid_accessor = '''    pub(crate) fn grid(&self) -> Option<GridNodeRef<'_>> {
+              match self {
+                  Self::Grid {
+                      columns,
+                      rows,
+                      column_step,
+                      row_step,
+                      item,
+                      transform,
+                      ..
+                  } => Some(GridNodeRef {
+                      columns: *columns,
+                      rows: *rows,
+                      column_step,
+                      row_step,
+                      item,
+                      transform,
+                  }),
+                  _ => None,
+              }
+          }
+          '''
+          pattern_accessor = '''    pub(crate) fn pattern(&self) -> Option<PatternNodeRef<'_>> {
+              match self {
+                  Self::Grid {
+                      columns,
+                      rows,
+                      column_step,
+                      row_step,
+                      item,
+                      transform,
+                      ..
+                  } => Some(PatternNodeRef::Grid(GridNodeRef {
+                      columns: *columns,
+                      rows: *rows,
+                      column_step,
+                      row_step,
+                      item,
+                      transform,
+                  })),
+                  Self::Radial {
+                      copies,
+                      radius,
+                      start_angle,
+                      angle_step,
+                      rotate_items,
+                      item,
+                      transform,
+                      ..
+                  } => Some(PatternNodeRef::Radial(RadialNodeRef {
+                      copies: *copies,
+                      radius,
+                      start_angle,
+                      angle_step,
+                      rotate_items: *rotate_items,
+                      item,
+                      transform,
+                  })),
+                  _ => None,
+              }
+          }
+          '''
+          visual = replace_one(
+              visual,
+              grid_accessor,
+              pattern_accessor,
+              "shared pattern accessor",
+          )
+          visual_path.write_text(visual)
+
+          node_path = Path("src/authoring/lower/node.rs")
+          node = node_path.read_text()
+          node = replace_one(
+              node,
+              '''        if let Some(grid) = node.grid() {
+                  return self.lower_grid(grid, context, component_stack);
+              }
+          ''',
+              '''        if let Some(pattern) = node.pattern() {
+                  return self.lower_pattern(pattern, context, component_stack);
+              }
+          ''',
+              "pattern dispatch",
+          )
+          node = replace_one(
+              node,
+              '''            | VisualNode::Text { .. }
+                      | VisualNode::Grid { .. } => {
+                  unreachable!("shape, text, and grid nodes are handled above")
+              }
+          ''',
+              '''            | VisualNode::Text { .. }
+                      | VisualNode::Grid { .. }
+                      | VisualNode::Radial { .. } => {
+                  unreachable!("shape, text, and pattern nodes are handled above")
+              }
+          ''',
+              "node exhaustiveness",
+          )
+          node_path.write_text(node)
+
+          validation_path = Path("src/authoring/validation.rs")
+          validation = validation_path.read_text()
+          validation = replace_one(
+              validation,
+              "use super::visual::VisualNode;",
+              "use super::visual::{PatternNodeRef, VisualNode};",
+              "validation pattern import",
+          )
+          grid_validation = '''    if let Some(grid) = node.grid() {
+              validate_expression(
+                  grid.column_step,
+                  &format!("{path}.column_step"),
+                  diagnostics,
+              );
+              validate_expression(grid.row_step, &format!("{path}.row_step"), diagnostics);
+              validate_transform(grid.transform, &format!("{path}.transform"), diagnostics);
+              validate_node(grid.item, &format!("{path}.item"), diagnostics);
+              return;
+          }
+          '''
+          pattern_validation = '''    if let Some(pattern) = node.pattern() {
+              match pattern {
+                  PatternNodeRef::Grid(grid) => {
+                      validate_expression(
+                          grid.column_step,
+                          &format!("{path}.column_step"),
+                          diagnostics,
+                      );
+                      validate_expression(
+                          grid.row_step,
+                          &format!("{path}.row_step"),
+                          diagnostics,
+                      );
+                      validate_transform(
+                          grid.transform,
+                          &format!("{path}.transform"),
+                          diagnostics,
+                      );
+                  }
+                  PatternNodeRef::Radial(radial) => {
+                      validate_expression(
+                          radial.radius,
+                          &format!("{path}.radius"),
+                          diagnostics,
+                      );
+                      validate_expression(
+                          radial.start_angle,
+                          &format!("{path}.start_angle"),
+                          diagnostics,
+                      );
+                      validate_expression(
+                          radial.angle_step,
+                          &format!("{path}.angle_step"),
+                          diagnostics,
+                      );
+                      validate_transform(
+                          radial.transform,
+                          &format!("{path}.transform"),
+                          diagnostics,
+                      );
+                  }
+              }
+              validate_node(pattern.item(), &format!("{path}.item"), diagnostics);
+              return;
+          }
+          '''
+          validation = replace_one(
+              validation,
+              grid_validation,
+              pattern_validation,
+              "numeric pattern validation",
+          )
+          validation = replace_one(
+              validation,
+              '''        | VisualNode::Text { .. }
+                  | VisualNode::Grid { .. } => {
+              unreachable!("shape, text, and grid nodes are handled above")
+          }
+          ''',
+              '''        | VisualNode::Text { .. }
+                  | VisualNode::Grid { .. }
+                  | VisualNode::Radial { .. } => {
+              unreachable!("shape, text, and pattern nodes are handled above")
+          }
+          ''',
+              "validation exhaustiveness",
+          )
+          validation_path.write_text(validation)
+
+          frontend_path = Path("src/authoring/frontend.rs")
+          frontend = frontend_path.read_text()
+          frontend = replace_one(
+              frontend,
+              '''    if let Some(grid) = node.grid() {
+              validate_node_name(grid.item, &format!("{path}.item"), diagnostics);
+          }
+          ''',
+              '''    if let Some(pattern) = node.pattern() {
+              validate_node_name(pattern.item(), &format!("{path}.item"), diagnostics);
+          }
+          ''',
+              "pattern item name validation",
+          )
+          frontend = replace_one(
+              frontend,
+              '''        if let Some(rest) = remainder.strip_prefix(".item") {
+                  let VisualNode::Grid { item, .. } = node else {
+                      return None;
+                  };
+                  node = item.as_ref();
+                  resolved.push_str(".item");
+                  remainder = rest;
+                  continue;
+              }
+          ''',
+              '''        if let Some(rest) = remainder.strip_prefix(".item") {
+                  let pattern = node.pattern()?;
+                  node = pattern.item();
+                  resolved.push_str(".item");
+                  remainder = rest;
+                  continue;
+              }
+          ''',
+              "shared pattern path traversal",
+          )
+          frontend_path.write_text(frontend)
+
+          blueprint_path = Path("cairn.blueprint")
+          blueprint = blueprint_path.read_text()
+          blueprint = replace_one(
+              blueprint,
+              '"./tests/authoring_grid_contract.rs", "./tests/authoring_stroke_contract.rs"',
+              '"./tests/authoring_grid_contract.rs", "./tests/authoring_radial_contract.rs", "./tests/authoring_stroke_contract.rs"',
+              "Cairn radial contract ownership",
+          )
+          blueprint_path.write_text(blueprint)
+
+          todo_path = Path("meta/todos/todo.visual-authoring-compiler.md")
+          todo = todo_path.read_text()
+          marker = "- Review hardening for PR #146 mechanically synchronizes the published AuthoringSpec schema and preserves component-definition diagnostic paths through nested grid items.\n"
+          progress = (
+              "- Bounded radial repetition now shares pattern traversal, expansion budgets, source-map lowering, "
+              "and authored-path rewriting with grids; radius and angular expressions flow through component overrides.\n"
+          )
+          todo = replace_one(todo, marker, marker + progress, "radial roadmap progress")
+          todo_path.write_text(todo)
+          PY
+
+          cat > src/authoring/limits.rs <<'RS'
+          use std::collections::HashMap;
+
+          use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec};
+          use super::visual::{PatternNodeRef, VisualNode};
+
+          const MAX_COMPONENT_EXPANSION_DEPTH: usize = 64;
+          const MAX_GENERATED_COMPONENT_NODES: u64 = 10_000;
+          const MAX_PATTERN_AXIS_COUNT: u64 = 100;
+          const MAX_GENERATED_PATTERN_ITEMS: u64 = 10_000;
+
+          #[derive(Clone, Copy)]
+          struct ComponentRef<'a> {
+              index: usize,
+              spec: &'a ComponentSpec,
+          }
+
+          #[derive(Default)]
+          struct ExpansionBudget {
+              generated_component_nodes: u64,
+              generated_pattern_items: u64,
+          }
+
+          #[derive(Clone)]
+          struct ExpansionContext {
+              active_components: Vec<usize>,
+              multiplicity: u64,
+              generated_by_component: bool,
+              component_budget_path: Option<String>,
+          }
+
+          struct WorkItem<'a> {
+              node: &'a VisualNode,
+              path: String,
+              expansion: ExpansionContext,
+          }
+
+          pub(crate) fn validate_expansion_limits(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
+              let mut components = HashMap::new();
+              for (index, component) in spec.components.iter().enumerate() {
+                  if components
+                      .insert(
+                          component.id.as_str(),
+                          ComponentRef {
+                              index,
+                              spec: component,
+                          },
+                      )
+                      .is_some()
+                  {
+                      return Ok(());
+                  }
+              }
+
+              for (index, component) in spec.components.iter().enumerate() {
+                  validate_nodes(
+                      &component.visual,
+                      &format!("$.components[{index}].visual"),
+                      vec![index],
+                      &components,
+                      &mut ExpansionBudget::default(),
+                  )?;
+              }
+
+              validate_nodes(
+                  &spec.visual.nodes,
+                  "$.visual.nodes",
+                  Vec::new(),
+                  &components,
+                  &mut ExpansionBudget::default(),
+              )
+          }
+
+          fn validate_nodes<'a>(
+              nodes: &'a [VisualNode],
+              list_path: &str,
+              active_components: Vec<usize>,
+              components: &HashMap<&'a str, ComponentRef<'a>>,
+              budget: &mut ExpansionBudget,
+          ) -> Result<(), AuthoringError> {
+              let mut work = Vec::new();
+              let root_expansion = ExpansionContext {
+                  active_components,
+                  multiplicity: 1,
+                  generated_by_component: false,
+                  component_budget_path: None,
+              };
+              push_nodes(&mut work, nodes, list_path, &root_expansion);
+
+              while let Some(item) = work.pop() {
+                  let WorkItem {
+                      node,
+                      path,
+                      expansion,
+                  } = item;
+
+                  if expansion.generated_by_component {
+                      budget.generated_component_nodes = budget
+                          .generated_component_nodes
+                          .saturating_add(expansion.multiplicity);
+                      if budget.generated_component_nodes > MAX_GENERATED_COMPONENT_NODES {
+                          return Err(AuthoringError::one(AuthoringDiagnostic::new(
+                              expansion
+                                  .component_budget_path
+                                  .clone()
+                                  .unwrap_or_else(|| path.clone()),
+                              "component_expansion_node_limit",
+                              format!(
+                                  "component expansion exceeds the maximum generated-node budget of {MAX_GENERATED_COMPONENT_NODES}"
+                              ),
+                          )));
+                      }
+                  }
+
+                  if let Some(children) = node.children() {
+                      push_nodes(
+                          &mut work,
+                          children,
+                          &format!("{path}.children"),
+                          &expansion,
+                      );
+                      continue;
+                  }
+
+                  if let Some(pattern) = node.pattern() {
+                      let (item_count, limit_path) = validate_pattern(pattern, &path)?;
+                      let generated_items = expansion
+                          .multiplicity
+                          .checked_mul(item_count)
+                          .unwrap_or(u64::MAX);
+                      budget.generated_pattern_items = budget
+                          .generated_pattern_items
+                          .saturating_add(generated_items);
+                      if budget.generated_pattern_items > MAX_GENERATED_PATTERN_ITEMS {
+                          return Err(AuthoringError::one(AuthoringDiagnostic::new(
+                              limit_path,
+                              "pattern_expansion_node_limit",
+                              format!(
+                                  "pattern expansion exceeds the maximum generated-item budget of {MAX_GENERATED_PATTERN_ITEMS}"
+                              ),
+                          )));
+                      }
+                      work.push(WorkItem {
+                          node: pattern.item(),
+                          path: format!("{path}.item"),
+                          expansion: ExpansionContext {
+                              multiplicity: generated_items,
+                              ..expansion
+                          },
+                      });
+                      continue;
+                  }
+
+                  let VisualNode::Instance { component, .. } = node else {
+                      continue;
+                  };
+                  let Some(component_ref) = components.get(component.as_str()).copied() else {
+                      continue;
+                  };
+                  if expansion.active_components.contains(&component_ref.index) {
+                      continue;
+                  }
+                  if expansion.active_components.len() >= MAX_COMPONENT_EXPANSION_DEPTH {
+                      return Err(AuthoringError::one(AuthoringDiagnostic::new(
+                          format!("{path}.component"),
+                          "component_expansion_depth_limit",
+                          format!(
+                              "component expansion exceeds the maximum depth of {MAX_COMPONENT_EXPANSION_DEPTH}"
+                          ),
+                      )));
+                  }
+
+                  let mut next_expansion = expansion;
+                  next_expansion.active_components.push(component_ref.index);
+                  next_expansion.generated_by_component = true;
+                  if next_expansion.component_budget_path.is_none() {
+                      next_expansion.component_budget_path = Some(format!("{path}.component"));
+                  }
+                  push_nodes(
+                      &mut work,
+                      &component_ref.spec.visual,
+                      &format!("$.components[{}].visual", component_ref.index),
+                      &next_expansion,
+                  );
+              }
+
+              Ok(())
+          }
+
+          fn validate_pattern(
+              pattern: PatternNodeRef<'_>,
+              path: &str,
+          ) -> Result<(u64, String), AuthoringError> {
+              match pattern {
+                  PatternNodeRef::Grid(grid) => {
+                      validate_pattern_count(grid.rows, &format!("{path}.rows"))?;
+                      validate_pattern_count(grid.columns, &format!("{path}.columns"))?;
+                      Ok((
+                          grid.rows.checked_mul(grid.columns).unwrap_or(u64::MAX),
+                          format!("{path}.rows"),
+                      ))
+                  }
+                  PatternNodeRef::Radial(radial) => {
+                      validate_pattern_count(radial.copies, &format!("{path}.copies"))?;
+                      Ok((radial.copies, format!("{path}.copies")))
+                  }
+              }
+          }
+
+          fn validate_pattern_count(value: u64, path: &str) -> Result<(), AuthoringError> {
+              if (1..=MAX_PATTERN_AXIS_COUNT).contains(&value) {
+                  return Ok(());
+              }
+              Err(AuthoringError::one(AuthoringDiagnostic::new(
+                  path,
+                  "invalid_pattern_count",
+                  format!("pattern counts must be between 1 and {MAX_PATTERN_AXIS_COUNT}"),
+              )))
+          }
+
+          fn push_nodes<'a>(
+              work: &mut Vec<WorkItem<'a>>,
+              nodes: &'a [VisualNode],
+              list_path: &str,
+              expansion: &ExpansionContext,
+          ) {
+              for (index, node) in nodes.iter().enumerate().rev() {
+                  work.push(WorkItem {
+                      node,
+                      path: format!("{list_path}[{index}]"),
+                      expansion: expansion.clone(),
+                  });
+              }
+          }
+          RS
+
+          cat > src/authoring/lower/pattern.rs <<'RS'
+          use serde_json::{Value, json};
+
+          use super::super::expression::{
+              evaluate_expression, evaluate_transform, validate_scene_number,
+          };
+          use super::super::spec::{
+              AuthoringDiagnostic, SourceMapEntry, TransformSpec, Unit,
+          };
+          use super::super::visual::{
+              GridNodeRef, PatternNodeRef, RadialNodeRef, VisualNode,
+          };
+          use super::{Lowerer, NodeContext, runtime_name};
+
+          struct PatternPlacement {
+              segment: String,
+              x: f64,
+              y: f64,
+              rotation: f64,
+          }
+
+          impl<'a> Lowerer<'a> {
+              pub(super) fn lower_pattern(
+                  &mut self,
+                  pattern: PatternNodeRef<'_>,
+                  context: NodeContext<'_>,
+                  component_stack: &mut Vec<String>,
+              ) -> Result<Value, AuthoringDiagnostic> {
+                  match pattern {
+                      PatternNodeRef::Grid(grid) => {
+                          self.lower_grid(grid, context, component_stack)
+                      }
+                      PatternNodeRef::Radial(radial) => {
+                          self.lower_radial(radial, context, component_stack)
+                      }
+                  }
+              }
+
+              fn lower_grid(
+                  &mut self,
+                  grid: GridNodeRef<'_>,
+                  context: NodeContext<'_>,
+                  component_stack: &mut Vec<String>,
+              ) -> Result<Value, AuthoringDiagnostic> {
+                  let GridNodeRef {
+                      columns,
+                      rows,
+                      column_step: column_step_expression,
+                      row_step: row_step_expression,
+                      item,
+                      transform,
+                  } = grid;
+                  let column_step_path = format!("{}.column_step", context.authored_path);
+                  let column_step = evaluate_expression(
+                      column_step_expression,
+                      &column_step_path,
+                      context.scope,
+                      Unit::Px,
+                  )?;
+                  let row_step_path = format!("{}.row_step", context.authored_path);
+                  let row_step = evaluate_expression(
+                      row_step_expression,
+                      &row_step_path,
+                      context.scope,
+                      Unit::Px,
+                  )?;
+                  validate_scene_number(
+                      columns.saturating_sub(1) as f64 * column_step,
+                      &column_step_path,
+                  )?;
+                  validate_scene_number(
+                      rows.saturating_sub(1) as f64 * row_step,
+                      &row_step_path,
+                  )?;
+
+                  let capacity = usize::try_from(rows.saturating_mul(columns)).unwrap_or_default();
+                  let mut placements = Vec::with_capacity(capacity);
+                  for row in 0..rows {
+                      for column in 0..columns {
+                          placements.push(PatternPlacement {
+                              segment: format!("r{row}c{column}"),
+                              x: column as f64 * column_step,
+                              y: row as f64 * row_step,
+                              rotation: 0.0,
+                          });
+                      }
+                  }
+
+                  self.lower_repeated_pattern(
+                      "grid",
+                      item,
+                      transform,
+                      context,
+                      placements,
+                      component_stack,
+                  )
+              }
+
+              fn lower_radial(
+                  &mut self,
+                  radial: RadialNodeRef<'_>,
+                  context: NodeContext<'_>,
+                  component_stack: &mut Vec<String>,
+              ) -> Result<Value, AuthoringDiagnostic> {
+                  let RadialNodeRef {
+                      copies,
+                      radius: radius_expression,
+                      start_angle: start_angle_expression,
+                      angle_step: angle_step_expression,
+                      rotate_items,
+                      item,
+                      transform,
+                  } = radial;
+                  let radius_path = format!("{}.radius", context.authored_path);
+                  let radius = evaluate_expression(
+                      radius_expression,
+                      &radius_path,
+                      context.scope,
+                      Unit::Px,
+                  )?;
+                  if radius < 0.0 {
+                      return Err(AuthoringDiagnostic::new(
+                          radius_path,
+                          "invalid_pattern_radius",
+                          "radial pattern radius must be non-negative",
+                      ));
+                  }
+                  let start_angle_path = format!("{}.start_angle", context.authored_path);
+                  let start_angle = evaluate_expression(
+                      start_angle_expression,
+                      &start_angle_path,
+                      context.scope,
+                      Unit::Radians,
+                  )?;
+                  let angle_step_path = format!("{}.angle_step", context.authored_path);
+                  let angle_step = evaluate_expression(
+                      angle_step_expression,
+                      &angle_step_path,
+                      context.scope,
+                      Unit::Radians,
+                  )?;
+
+                  let capacity = usize::try_from(copies).unwrap_or_default();
+                  let mut placements = Vec::with_capacity(capacity);
+                  for index in 0..copies {
+                      let angle = start_angle + index as f64 * angle_step;
+                      validate_scene_number(angle, &angle_step_path)?;
+                      let x = radius * angle.cos();
+                      let y = radius * angle.sin();
+                      validate_scene_number(x, &radius_path)?;
+                      validate_scene_number(y, &radius_path)?;
+                      placements.push(PatternPlacement {
+                          segment: format!("p{index}"),
+                          x,
+                          y,
+                          rotation: if rotate_items { angle } else { 0.0 },
+                      });
+                  }
+
+                  self.lower_repeated_pattern(
+                      "radial",
+                      item,
+                      transform,
+                      context,
+                      placements,
+                      component_stack,
+                  )
+              }
+
+              fn lower_repeated_pattern(
+                  &mut self,
+                  role: &str,
+                  item: &VisualNode,
+                  transform: &TransformSpec,
+                  context: NodeContext<'_>,
+                  placements: Vec<PatternPlacement>,
+                  component_stack: &mut Vec<String>,
+              ) -> Result<Value, AuthoringDiagnostic> {
+                  let NodeContext {
+                      authored_path,
+                      definition_path,
+                      authored_id,
+                      runtime_segments,
+                      scene_path,
+                      scope,
+                  } = context;
+                  let transform_values =
+                      evaluate_transform(transform, &format!("{authored_path}.transform"), scope)?;
+
+                  let wrapper_name = runtime_name(&runtime_segments, role);
+                  let mut plans = Vec::with_capacity(placements.len());
+                  let mut runtime_names = Vec::with_capacity(placements.len() + 1);
+                  let mut scene_paths = Vec::with_capacity(placements.len() + 1);
+                  runtime_names.push(wrapper_name.clone());
+                  scene_paths.push(scene_path.clone());
+
+                  for (index, placement) in placements.into_iter().enumerate() {
+                      let mut cell_runtime_segments = runtime_segments.clone();
+                      cell_runtime_segments.push(placement.segment.clone());
+                      let cell_name = runtime_name(&cell_runtime_segments, "cell");
+                      let cell_scene_path = format!("{scene_path}/children/{index}");
+                      runtime_names.push(cell_name.clone());
+                      scene_paths.push(cell_scene_path.clone());
+                      plans.push((placement, cell_name, cell_scene_path));
+                  }
+
+                  self.register_runtime_names(&runtime_names, &format!("{authored_path}.id"))?;
+                  self.source_map.entries.push(SourceMapEntry {
+                      authored_id: authored_id.clone(),
+                      authored_path: authored_path.clone(),
+                      definition_path: definition_path.clone(),
+                      runtime_names,
+                      scene_paths,
+                  });
+
+                  let item_authored_path = format!("{authored_path}.item");
+                  let item_definition_path = definition_path.as_ref().map(|path| format!("{path}.item"));
+                  let mut cells = Vec::with_capacity(plans.len());
+                  for (placement, cell_name, cell_scene_path) in plans {
+                      let mut item_runtime_segments = runtime_segments.clone();
+                      item_runtime_segments.push(placement.segment.clone());
+                      item_runtime_segments.push(item.id().to_string());
+                      let lowered_item = self.lower_node(
+                          item,
+                          NodeContext {
+                              authored_path: item_authored_path.clone(),
+                              definition_path: item_definition_path.clone(),
+                              authored_id: format!(
+                                  "{authored_id}/{}/{}",
+                                  placement.segment,
+                                  item.id()
+                              ),
+                              runtime_segments: item_runtime_segments,
+                              scene_path: format!("{cell_scene_path}/children/0"),
+                              scope,
+                          },
+                          component_stack,
+                      )?;
+                      cells.push(json!({
+                          "type": "node",
+                          "name": cell_name,
+                          "x": placement.x,
+                          "y": placement.y,
+                          "rotation": placement.rotation,
+                          "scale_x": 1.0,
+                          "scale_y": 1.0,
+                          "children": [lowered_item]
+                      }));
+                  }
+
+                  Ok(json!({
+                      "type": "node",
+                      "name": wrapper_name,
+                      "x": transform_values.x,
+                      "y": transform_values.y,
+                      "rotation": transform_values.rotation,
+                      "scale_x": transform_values.scale_x,
+                      "scale_y": transform_values.scale_y,
+                      "children": cells
+                  }))
+              }
+          }
+          RS
+
+          mkdir -p examples
+          cat > examples/export_authoring_schema.rs <<'RS'
+          fn main() {
+              let schema = rive_cli::authoring::authoring_schema();
+              println!(
+                  "{}",
+                  serde_json::to_string_pretty(&schema).expect("serialize authoring schema")
+              );
+          }
+          RS
+          cargo fmt --all
+          cargo run --quiet --example export_authoring_schema > docs/authoring.schema.v0.json
+          rm examples/export_authoring_schema.rs
+          cargo fmt --all
+
+      - name: Prove the radial contract is green
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --test authoring_radial_contract \
+            2>&1 | tee target/radial-evidence/targeted-green.log
+
+      - name: Run Rust quality gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings \
+            2>&1 | tee target/radial-evidence/clippy-green.log
+          cargo test --locked --all-features \
+            2>&1 | tee target/radial-evidence/rust-green.log
+
+      - name: Reconcile and lint Cairn
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn scan --json | tee target/radial-evidence/cairn-scan.json
+          cairn lint --json | tee target/radial-evidence/cairn-lint.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: radial-pattern-tdd-evidence-v3
+          path: target/radial-evidence
+          retention-days: 7
+
+      - name: Commit verified implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            cairn.blueprint \
+            docs/authoring.schema.v0.json \
+            map.json \
+            meta/todos/todo.visual-authoring-compiler.md \
+            src/authoring/frontend.rs \
+            src/authoring/limits.rs \
+            src/authoring/lower/node.rs \
+            src/authoring/lower/pattern.rs \
+            src/authoring/validation.rs \
+            src/authoring/visual.rs \
+            tests/authoring_radial_contract.rs
+          git diff --cached --stat
+          git commit -m "feat: add bounded radial patterns"
+          git push origin HEAD:${{ github.head_ref }}
