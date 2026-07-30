@@ -1,0 +1,78 @@
+name: Apply authored text implementation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.ref == 'agent/authoring-text-v0'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/authoring-text-v0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply implementation and remove branch-only tooling
+        run: |
+          python3 scripts/agent_apply_authoring_text.py
+          git rm .github/workflows/agent-authoring-text.yml
+          git rm scripts/agent_apply_authoring_text.py
+          cargo fmt --all
+      - name: Verify authored text contracts
+        run: |
+          cargo test --locked --all-features \
+            --test authoring_text_contract \
+            --test authoring_examples \
+            --test authoring_gradient_contract
+          cargo clippy --locked --all-targets --all-features -- -D warnings
+      - name: Regenerate AuthoringSpec schema
+        run: |
+          cat > examples/_dump_authoring_schema.rs <<'RS'
+          fn main() {
+              let schema = rive_cli::authoring::authoring_schema();
+              println!(
+                  "{}",
+                  serde_json::to_string_pretty(&schema).expect("serialize authoring schema")
+              );
+          }
+          RS
+          cargo run --quiet --example _dump_authoring_schema > docs/authoring.schema.v0.json
+          rm examples/_dump_authoring_schema.rs
+      - name: Install Cairn 0.9.0
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+      - name: Reconcile architecture and assert ownership
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn scan --json > /tmp/cairn-scan.json
+          cairn lint --json > /tmp/cairn-lint.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          findings = json.loads(Path('/tmp/cairn-scan.json').read_text())['findings']
+          blocked = [
+              finding
+              for finding in findings
+              if finding.get('code') == 'CAIRN_RECONCILE_ORPHANED_FILE'
+              and finding.get('path') == 'tests/authoring_text_contract.rs'
+          ]
+          if blocked:
+              raise SystemExit(f'authored text contract remains unowned: {blocked}')
+          print('authored text contract is owned by the Cairn verification module')
+          PY
+      - name: Commit verified implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: lower authored text nodes"
+          git push origin HEAD:agent/authoring-text-v0
