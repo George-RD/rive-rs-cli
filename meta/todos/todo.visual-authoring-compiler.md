@@ -45,7 +45,10 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   component parameter overrides, stable generated IDs, complete source maps, and a global
   nested-pattern cell budget are pinned by the authoring grid contract suite.
 - Review hardening for PR #146 mechanically synchronizes the published AuthoringSpec schema and preserves component-definition diagnostic paths through nested grid items.
-- Remaining work includes font and image assets, radial/mirror/distribute/along-path patterns,
+- Bounded radial repetition now shares pattern traversal, expansion budgets,
+  source-map lowering, and authored-path rewriting with grids; radius and angular
+  expressions flow through component overrides.
+- Remaining work includes font and image assets, mirror/distribute/along-path patterns,
   constraints, and
   a complex static showcase without raw escapes.
 

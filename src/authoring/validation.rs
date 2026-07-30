@@ -4,7 +4,7 @@ use super::expression::validate_scene_number;
 use super::spec::{
     AuthoringDiagnostic, AuthoringSpec, PaintSpec, Quantity, ScalarExpr, TransformSpec,
 };
-use super::visual::VisualNode;
+use super::visual::{PatternNodeRef, VisualNode};
 
 pub(super) fn validate_numeric_values(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();
@@ -105,15 +105,33 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         return;
     }
 
-    if let Some(grid) = node.grid() {
-        validate_expression(
-            grid.column_step,
-            &format!("{path}.column_step"),
-            diagnostics,
-        );
-        validate_expression(grid.row_step, &format!("{path}.row_step"), diagnostics);
-        validate_transform(grid.transform, &format!("{path}.transform"), diagnostics);
-        validate_node(grid.item, &format!("{path}.item"), diagnostics);
+    if let Some(pattern) = node.pattern() {
+        match pattern {
+            PatternNodeRef::Grid(grid) => {
+                validate_expression(
+                    grid.column_step,
+                    &format!("{path}.column_step"),
+                    diagnostics,
+                );
+                validate_expression(grid.row_step, &format!("{path}.row_step"), diagnostics);
+                validate_transform(grid.transform, &format!("{path}.transform"), diagnostics);
+            }
+            PatternNodeRef::Radial(radial) => {
+                validate_expression(radial.radius, &format!("{path}.radius"), diagnostics);
+                validate_expression(
+                    radial.start_angle,
+                    &format!("{path}.start_angle"),
+                    diagnostics,
+                );
+                validate_expression(
+                    radial.angle_step,
+                    &format!("{path}.angle_step"),
+                    diagnostics,
+                );
+                validate_transform(radial.transform, &format!("{path}.transform"), diagnostics);
+            }
+        }
+        validate_node(pattern.item(), &format!("{path}.item"), diagnostics);
         return;
     }
 
@@ -141,8 +159,9 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         | VisualNode::Polygon { .. }
         | VisualNode::Star { .. }
         | VisualNode::Text { .. }
-        | VisualNode::Grid { .. } => {
-            unreachable!("shape, text, and grid nodes are handled above")
+        | VisualNode::Grid { .. }
+        | VisualNode::Radial { .. } => {
+            unreachable!("shape, text, and pattern nodes are handled above")
         }
     }
 }

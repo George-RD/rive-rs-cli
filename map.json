@@ -12146,7 +12146,7 @@
           "signature": "pub enum VisualNode",
           "file": "src/authoring/visual.rs",
           "line": 13,
-          "end_line": 132
+          "end_line": 145
         },
         {
           "name": "authoring_schema",
@@ -12333,12 +12333,20 @@
           "end_line": 188
         },
         {
+          "name": "PatternNodeRef",
+          "kind": "enum",
+          "signature": "pub(crate) enum PatternNodeRef<'a>",
+          "file": "src/authoring/visual.rs",
+          "line": 199,
+          "end_line": 202
+        },
+        {
           "name": "children",
           "kind": "function",
           "signature": "pub(crate) fn children(&self) -> Option<&[VisualNode]>",
           "file": "src/authoring/visual.rs",
-          "line": 357,
-          "end_line": 362
+          "line": 416,
+          "end_line": 421
         },
         {
           "name": "evaluate_expression",
@@ -12365,20 +12373,20 @@
           "end_line": 74
         },
         {
-          "name": "grid",
-          "kind": "function",
-          "signature": "pub(crate) fn grid(&self) -> Option<GridNodeRef<'_>>",
-          "file": "src/authoring/visual.rs",
-          "line": 335,
-          "end_line": 355
-        },
-        {
           "name": "id",
           "kind": "function",
           "signature": "pub(crate) fn id(&self) -> &str",
           "file": "src/authoring/visual.rs",
-          "line": 175,
-          "end_line": 188
+          "line": 214,
+          "end_line": 228
+        },
+        {
+          "name": "item",
+          "kind": "function",
+          "signature": "pub(crate) fn item(self) -> &'a VisualNode",
+          "file": "src/authoring/visual.rs",
+          "line": 205,
+          "end_line": 210
         },
         {
           "name": "many",
@@ -12405,20 +12413,28 @@
           "end_line": 263
         },
         {
+          "name": "pattern",
+          "kind": "function",
+          "signature": "pub(crate) fn pattern(&self) -> Option<PatternNodeRef<'_>>",
+          "file": "src/authoring/visual.rs",
+          "line": 376,
+          "end_line": 414
+        },
+        {
           "name": "shape",
           "kind": "function",
           "signature": "pub(crate) fn shape(&self) -> Option<ShapeNodeRef<'_>>",
           "file": "src/authoring/visual.rs",
-          "line": 190,
-          "end_line": 297
+          "line": 230,
+          "end_line": 338
         },
         {
           "name": "text_node",
           "kind": "function",
           "signature": "pub(crate) fn text_node(&self) -> Option<TextNodeRef<'_>>",
           "file": "src/authoring/visual.rs",
-          "line": 299,
-          "end_line": 333
+          "line": 340,
+          "end_line": 374
         },
         {
           "name": "validate_scene_number",
@@ -12441,24 +12457,32 @@
           "kind": "struct",
           "signature": "pub(crate) struct GridNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 165,
-          "end_line": 172
+          "line": 178,
+          "end_line": 185
+        },
+        {
+          "name": "RadialNodeRef",
+          "kind": "struct",
+          "signature": "pub(crate) struct RadialNodeRef<'a>",
+          "file": "src/authoring/visual.rs",
+          "line": 188,
+          "end_line": 196
         },
         {
           "name": "ShapeNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct ShapeNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 135,
-          "end_line": 145
+          "line": 148,
+          "end_line": 158
         },
         {
           "name": "TextNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct TextNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 148,
-          "end_line": 162
+          "line": 161,
+          "end_line": 175
         },
         {
           "name": "TransformValues",
@@ -13209,6 +13233,7 @@
         "./tests/authoring_examples.rs",
         "./tests/authoring_gradient_contract.rs",
         "./tests/authoring_grid_contract.rs",
+        "./tests/authoring_radial_contract.rs",
         "./tests/authoring_stroke_contract.rs",
         "./tests/authoring_text_contract.rs",
         "./tests/authoring_trim_path_contract.rs",
@@ -13220,6 +13245,7 @@
         "tests/authoring_examples.rs",
         "tests/authoring_gradient_contract.rs",
         "tests/authoring_grid_contract.rs",
+        "tests/authoring_radial_contract.rs",
         "tests/authoring_stroke_contract.rs",
         "tests/authoring_text_contract.rs",
         "tests/authoring_trim_path_contract.rs",

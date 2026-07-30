@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, ComponentSpec};
-use super::visual::VisualNode;
+use super::visual::{PatternNodeRef, VisualNode};
 
 const MAX_COMPONENT_EXPANSION_DEPTH: usize = 64;
 const MAX_GENERATED_COMPONENT_NODES: u64 = 10_000;
 const MAX_PATTERN_AXIS_COUNT: u64 = 100;
-const MAX_GENERATED_PATTERN_CELLS: u64 = 10_000;
+const MAX_GENERATED_PATTERN_ITEMS: u64 = 10_000;
 
 #[derive(Clone, Copy)]
 struct ComponentRef<'a> {
@@ -17,16 +17,21 @@ struct ComponentRef<'a> {
 #[derive(Default)]
 struct ExpansionBudget {
     generated_component_nodes: u64,
-    generated_pattern_cells: u64,
+    generated_pattern_items: u64,
+}
+
+#[derive(Clone)]
+struct ExpansionContext {
+    active_components: Vec<usize>,
+    multiplicity: u64,
+    generated_by_component: bool,
+    component_budget_path: Option<String>,
 }
 
 struct WorkItem<'a> {
     node: &'a VisualNode,
     path: String,
-    active_components: Vec<usize>,
-    multiplicity: u64,
-    generated_by_component: bool,
-    component_budget_path: Option<String>,
+    expansion: ExpansionContext,
 }
 
 pub(crate) fn validate_expansion_limits(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
@@ -73,24 +78,31 @@ fn validate_nodes<'a>(
     budget: &mut ExpansionBudget,
 ) -> Result<(), AuthoringError> {
     let mut work = Vec::new();
-    push_nodes(
-        &mut work,
-        nodes,
-        list_path,
-        &active_components,
-        1,
-        false,
-        None,
-    );
+    let root_expansion = ExpansionContext {
+        active_components,
+        multiplicity: 1,
+        generated_by_component: false,
+        component_budget_path: None,
+    };
+    push_nodes(&mut work, nodes, list_path, &root_expansion);
 
     while let Some(item) = work.pop() {
-        if item.generated_by_component {
+        let WorkItem {
+            node,
+            path,
+            expansion,
+        } = item;
+
+        if expansion.generated_by_component {
             budget.generated_component_nodes = budget
                 .generated_component_nodes
-                .saturating_add(item.multiplicity);
+                .saturating_add(expansion.multiplicity);
             if budget.generated_component_nodes > MAX_GENERATED_COMPONENT_NODES {
                 return Err(AuthoringError::one(AuthoringDiagnostic::new(
-                    item.component_budget_path.unwrap_or(item.path),
+                    expansion
+                        .component_budget_path
+                        .clone()
+                        .unwrap_or_else(|| path.clone()),
                     "component_expansion_node_limit",
                     format!(
                         "component expansion exceeds the maximum generated-node budget of {MAX_GENERATED_COMPONENT_NODES}"
@@ -99,62 +111,49 @@ fn validate_nodes<'a>(
             }
         }
 
-        if let Some(children) = item.node.children() {
-            push_nodes(
-                &mut work,
-                children,
-                &format!("{}.children", item.path),
-                &item.active_components,
-                item.multiplicity,
-                item.generated_by_component,
-                item.component_budget_path.as_deref(),
-            );
+        if let Some(children) = node.children() {
+            push_nodes(&mut work, children, &format!("{path}.children"), &expansion);
             continue;
         }
 
-        if let Some(grid) = item.node.grid() {
-            validate_pattern_count(grid.rows, &format!("{}.rows", item.path))?;
-            validate_pattern_count(grid.columns, &format!("{}.columns", item.path))?;
-            let generated_cells = item
-                .multiplicity
-                .checked_mul(grid.rows)
-                .and_then(|count| count.checked_mul(grid.columns))
-                .unwrap_or(u64::MAX);
-            budget.generated_pattern_cells = budget
-                .generated_pattern_cells
-                .saturating_add(generated_cells);
-            if budget.generated_pattern_cells > MAX_GENERATED_PATTERN_CELLS {
+        if let Some(pattern) = node.pattern() {
+            let (item_count, limit_path) = validate_pattern(pattern, &path)?;
+            let generated_items = expansion.multiplicity.saturating_mul(item_count);
+            budget.generated_pattern_items = budget
+                .generated_pattern_items
+                .saturating_add(generated_items);
+            if budget.generated_pattern_items > MAX_GENERATED_PATTERN_ITEMS {
                 return Err(AuthoringError::one(AuthoringDiagnostic::new(
-                    format!("{}.rows", item.path),
+                    limit_path,
                     "pattern_expansion_node_limit",
                     format!(
-                        "pattern expansion exceeds the maximum generated-cell budget of {MAX_GENERATED_PATTERN_CELLS}"
+                        "pattern expansion exceeds the maximum generated-item budget of {MAX_GENERATED_PATTERN_ITEMS}"
                     ),
                 )));
             }
             work.push(WorkItem {
-                node: grid.item,
-                path: format!("{}.item", item.path),
-                active_components: item.active_components,
-                multiplicity: generated_cells,
-                generated_by_component: item.generated_by_component,
-                component_budget_path: item.component_budget_path,
+                node: pattern.item(),
+                path: format!("{path}.item"),
+                expansion: ExpansionContext {
+                    multiplicity: generated_items,
+                    ..expansion
+                },
             });
             continue;
         }
 
-        let VisualNode::Instance { component, .. } = item.node else {
+        let VisualNode::Instance { component, .. } = node else {
             continue;
         };
         let Some(component_ref) = components.get(component.as_str()).copied() else {
             continue;
         };
-        if item.active_components.contains(&component_ref.index) {
+        if expansion.active_components.contains(&component_ref.index) {
             continue;
         }
-        if item.active_components.len() >= MAX_COMPONENT_EXPANSION_DEPTH {
+        if expansion.active_components.len() >= MAX_COMPONENT_EXPANSION_DEPTH {
             return Err(AuthoringError::one(AuthoringDiagnostic::new(
-                format!("{}.component", item.path),
+                format!("{path}.component"),
                 "component_expansion_depth_limit",
                 format!(
                     "component expansion exceeds the maximum depth of {MAX_COMPONENT_EXPANSION_DEPTH}"
@@ -162,23 +161,41 @@ fn validate_nodes<'a>(
             )));
         }
 
-        let mut next_active = item.active_components;
-        next_active.push(component_ref.index);
-        let expansion_path = item
-            .component_budget_path
-            .unwrap_or_else(|| format!("{}.component", item.path));
+        let mut next_expansion = expansion;
+        next_expansion.active_components.push(component_ref.index);
+        next_expansion.generated_by_component = true;
+        if next_expansion.component_budget_path.is_none() {
+            next_expansion.component_budget_path = Some(format!("{path}.component"));
+        }
         push_nodes(
             &mut work,
             &component_ref.spec.visual,
             &format!("$.components[{}].visual", component_ref.index),
-            &next_active,
-            item.multiplicity,
-            true,
-            Some(&expansion_path),
+            &next_expansion,
         );
     }
 
     Ok(())
+}
+
+fn validate_pattern(
+    pattern: PatternNodeRef<'_>,
+    path: &str,
+) -> Result<(u64, String), AuthoringError> {
+    match pattern {
+        PatternNodeRef::Grid(grid) => {
+            validate_pattern_count(grid.rows, &format!("{path}.rows"))?;
+            validate_pattern_count(grid.columns, &format!("{path}.columns"))?;
+            Ok((
+                grid.rows.saturating_mul(grid.columns),
+                format!("{path}.rows"),
+            ))
+        }
+        PatternNodeRef::Radial(radial) => {
+            validate_pattern_count(radial.copies, &format!("{path}.copies"))?;
+            Ok((radial.copies, format!("{path}.copies")))
+        }
+    }
 }
 
 fn validate_pattern_count(value: u64, path: &str) -> Result<(), AuthoringError> {
@@ -188,28 +205,21 @@ fn validate_pattern_count(value: u64, path: &str) -> Result<(), AuthoringError> 
     Err(AuthoringError::one(AuthoringDiagnostic::new(
         path,
         "invalid_pattern_count",
-        format!("grid counts must be between 1 and {MAX_PATTERN_AXIS_COUNT}"),
+        format!("pattern counts must be between 1 and {MAX_PATTERN_AXIS_COUNT}"),
     )))
 }
 
-#[allow(clippy::too_many_arguments)]
 fn push_nodes<'a>(
     work: &mut Vec<WorkItem<'a>>,
     nodes: &'a [VisualNode],
     list_path: &str,
-    active_components: &[usize],
-    multiplicity: u64,
-    generated_by_component: bool,
-    component_budget_path: Option<&str>,
+    expansion: &ExpansionContext,
 ) {
     for (index, node) in nodes.iter().enumerate().rev() {
         work.push(WorkItem {
             node,
             path: format!("{list_path}[{index}]"),
-            active_components: active_components.to_vec(),
-            multiplicity,
-            generated_by_component,
-            component_budget_path: component_budget_path.map(str::to_string),
+            expansion: expansion.clone(),
         });
     }
 }

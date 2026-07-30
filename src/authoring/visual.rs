@@ -110,6 +110,19 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    Radial {
+        id: String,
+        #[schemars(range(min = 1, max = 100))]
+        copies: u64,
+        radius: ScalarExpr,
+        start_angle: ScalarExpr,
+        angle_step: ScalarExpr,
+        #[serde(default)]
+        rotate_items: bool,
+        item: Box<VisualNode>,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Group {
         id: String,
         #[serde(default)]
@@ -171,6 +184,32 @@ pub(crate) struct GridNodeRef<'a> {
     pub transform: &'a TransformSpec,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct RadialNodeRef<'a> {
+    pub copies: u64,
+    pub radius: &'a ScalarExpr,
+    pub start_angle: &'a ScalarExpr,
+    pub angle_step: &'a ScalarExpr,
+    pub rotate_items: bool,
+    pub item: &'a VisualNode,
+    pub transform: &'a TransformSpec,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum PatternNodeRef<'a> {
+    Grid(GridNodeRef<'a>),
+    Radial(RadialNodeRef<'a>),
+}
+
+impl<'a> PatternNodeRef<'a> {
+    pub(crate) fn item(self) -> &'a VisualNode {
+        match self {
+            Self::Grid(grid) => grid.item,
+            Self::Radial(radial) => radial.item,
+        }
+    }
+}
+
 impl VisualNode {
     pub(crate) fn id(&self) -> &str {
         match self {
@@ -181,6 +220,7 @@ impl VisualNode {
             | Self::Star { id, .. }
             | Self::Text { id, .. }
             | Self::Grid { id, .. }
+            | Self::Radial { id, .. }
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
@@ -287,6 +327,7 @@ impl VisualNode {
             },
             Self::Text { .. }
             | Self::Grid { .. }
+            | Self::Radial { .. }
             | Self::Group { .. }
             | Self::Instance { .. }
             | Self::RawSceneObject { .. } => {
@@ -332,7 +373,7 @@ impl VisualNode {
         }
     }
 
-    pub(crate) fn grid(&self) -> Option<GridNodeRef<'_>> {
+    pub(crate) fn pattern(&self) -> Option<PatternNodeRef<'_>> {
         match self {
             Self::Grid {
                 columns,
@@ -342,14 +383,32 @@ impl VisualNode {
                 item,
                 transform,
                 ..
-            } => Some(GridNodeRef {
+            } => Some(PatternNodeRef::Grid(GridNodeRef {
                 columns: *columns,
                 rows: *rows,
                 column_step,
                 row_step,
                 item,
                 transform,
-            }),
+            })),
+            Self::Radial {
+                copies,
+                radius,
+                start_angle,
+                angle_step,
+                rotate_items,
+                item,
+                transform,
+                ..
+            } => Some(PatternNodeRef::Radial(RadialNodeRef {
+                copies: *copies,
+                radius,
+                start_angle,
+                angle_step,
+                rotate_items: *rotate_items,
+                item,
+                transform,
+            })),
             _ => None,
         }
     }
