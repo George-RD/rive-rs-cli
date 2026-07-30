@@ -3,6 +3,7 @@ mod frontend;
 mod limits;
 mod lower;
 mod spec;
+mod validation;
 
 use schemars::schema_for;
 use serde_json::Value;
