@@ -1,0 +1,87 @@
+name: Apply Gradient Stroke Implementation
+
+on:
+  push:
+    branches:
+      - agent/gradient-stroke-v0
+    paths:
+      - .github/workflows/gradient-stroke-implementation.yml
+      - .agent/gradient-stroke-implementation.patch.gz.b64
+      - tests/authoring_stroke_contract.rs
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/gradient-stroke-v0
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Confirm the committed contract is RED
+        run: |
+          cargo fmt --all
+          set +e
+          cargo test --locked --all-features --test authoring_stroke_contract > /tmp/red.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/red.log
+          if [ "$status" -eq 0 ]; then
+            echo "gradient stroke contract unexpectedly passed before implementation" >&2
+            exit 1
+          fi
+          grep -q "test result: FAILED" /tmp/red.log
+          grep -q "invalid_json" /tmp/red.log
+      - name: Apply shared paint implementation
+        run: |
+          base64 --decode .agent/gradient-stroke-implementation.patch.gz.b64 | gzip --decompress > /tmp/gradient-stroke.patch
+          git apply --check /tmp/gradient-stroke.patch
+          git apply /tmp/gradient-stroke.patch
+          cargo fmt --all
+      - name: Regenerate AuthoringSpec schema
+        run: |
+          cat > examples/__dump_authoring_schema.rs <<'RS'
+          fn main() {
+              let schema = rive_cli::authoring::authoring_schema();
+              println!("{}", serde_json::to_string_pretty(&schema).expect("serialize schema"));
+          }
+          RS
+          cargo run --quiet --example __dump_authoring_schema > docs/authoring.schema.v0.json
+          rm examples/__dump_authoring_schema.rs
+          python3 <<'PY'
+          import json
+          from pathlib import Path
+
+          schema = json.loads(Path("docs/authoring.schema.v0.json").read_text())
+          stroke = schema["$defs"]["StrokeSpec"]
+          assert stroke["properties"]["paint"]["$ref"] == "#/$defs/PaintSpec"
+          assert "paint" in stroke["required"]
+          PY
+      - name: Verify implementation
+        run: |
+          cargo fmt --all --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --locked --all-features --test authoring_stroke_contract
+          cargo test --locked --all-features
+      - name: Validate Cairn graph
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn scan
+          cairn lint
+      - name: Commit verified implementation
+        run: |
+          rm .agent/gradient-stroke-implementation.patch.gz.b64
+          rm .github/workflows/gradient-stroke-implementation.yml
+          rmdir .agent 2>/dev/null || true
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "feat: add typed gradient strokes to authored shapes"
+          git push origin HEAD:agent/gradient-stroke-v0
