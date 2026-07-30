@@ -1,7 +1,9 @@
+mod support;
+
 use std::collections::HashSet;
 
 use rive_cli::authoring::{authoring_schema, lower_authoring_json};
-use rive_cli::builder::{SceneSpec, build_scene};
+use support::assert_builds;
 
 const COMPONENT_SCENE: &str = r##"
 {
@@ -134,12 +136,6 @@ const RAW_ESCAPE_SCENE: &str = r##"
   "behavior": {}
 }
 "##;
-
-fn assert_builds(scene: serde_json::Value) {
-    let scene: SceneSpec =
-        serde_json::from_value(scene).expect("lowered SceneSpec must deserialize");
-    build_scene(&scene, None).expect("lowered SceneSpec must pass the canonical builder");
-}
 
 #[test]
 fn component_scene_lowers_deterministically_and_builds() {

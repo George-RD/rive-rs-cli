@@ -38,9 +38,7 @@ generated: true
 - rive-cli.verification.parity
 
 ## Orphaned
-- tests/authoring_gradient_contract.rs
-- tests/authoring_stroke_contract.rs
-- tests/authoring_validation_contract.rs
+None
 
 ## Active changes
 
@@ -130,7 +128,4 @@ None in Phase 1.
 - warning: CAIRN_TEST_COVERAGE_MISSING synced module `rive-cli.interfaces.scaffold` has no #[cfg(test)] coverage in its reconciled source
 - warning: CAIRN_TEST_COVERAGE_MISSING synced module `rive-cli.verification.fuzz` has no #[cfg(test)] coverage in its reconciled source
 - warning: CAIRN_TEST_COVERAGE_MISSING synced module `rive-cli.verification.rust` has no #[cfg(test)] coverage in its reconciled source
-- info: CAIRN_RECONCILE_ORPHANED_FILE Rust file `tests/authoring_gradient_contract.rs` is not owned by any eligible node
-- info: CAIRN_RECONCILE_ORPHANED_FILE Rust file `tests/authoring_stroke_contract.rs` is not owned by any eligible node
-- info: CAIRN_RECONCILE_ORPHANED_FILE Rust file `tests/authoring_validation_contract.rs` is not owned by any eligible node
 - info: CAIRN_SOURCE_UNVERIFIED source `src.ai-authoring-discussion` is unverified

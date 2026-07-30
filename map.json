@@ -13135,13 +13135,21 @@
         "./tests/e2e.rs",
         "./tests/eval_contract.rs",
         "./tests/authoring_contract.rs",
-        "./tests/authoring_examples.rs"
+        "./tests/authoring_examples.rs",
+        "./tests/authoring_gradient_contract.rs",
+        "./tests/authoring_stroke_contract.rs",
+        "./tests/authoring_validation_contract.rs",
+        "./tests/support"
       ],
       "files": [
         "tests/authoring_contract.rs",
         "tests/authoring_examples.rs",
+        "tests/authoring_gradient_contract.rs",
+        "tests/authoring_stroke_contract.rs",
+        "tests/authoring_validation_contract.rs",
         "tests/e2e.rs",
-        "tests/eval_contract.rs"
+        "tests/eval_contract.rs",
+        "tests/support/mod.rs"
       ],
       "contracts": [],
       "symbols": []
@@ -13449,27 +13457,6 @@
       "node": "rive-cli.delivery.tooling",
       "target": "rive-cli.delivery.tooling:.github/workflows",
       "path": ".github/workflows"
-    },
-    {
-      "code": "CAIRN_RECONCILE_ORPHANED_FILE",
-      "severity": "info",
-      "message": "Rust file `tests/authoring_gradient_contract.rs` is not owned by any eligible node",
-      "node": null,
-      "path": "tests/authoring_gradient_contract.rs"
-    },
-    {
-      "code": "CAIRN_RECONCILE_ORPHANED_FILE",
-      "severity": "info",
-      "message": "Rust file `tests/authoring_stroke_contract.rs` is not owned by any eligible node",
-      "node": null,
-      "path": "tests/authoring_stroke_contract.rs"
-    },
-    {
-      "code": "CAIRN_RECONCILE_ORPHANED_FILE",
-      "severity": "info",
-      "message": "Rust file `tests/authoring_validation_contract.rs` is not owned by any eligible node",
-      "node": null,
-      "path": "tests/authoring_validation_contract.rs"
     },
     {
       "code": "CAIRN_TEST_COVERAGE_MISSING",
