@@ -14,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Archive working tree
-        run: tar --exclude=.git --exclude=target -czf source-snapshot.tar.gz .
+        run: tar --exclude=.git --exclude=target -czf /tmp/source-snapshot.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
           name: source-snapshot
-          path: source-snapshot.tar.gz
+          path: /tmp/source-snapshot.tar.gz
           retention-days: 1
