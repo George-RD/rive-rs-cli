@@ -91,6 +91,13 @@ pub struct TransformSpec {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct StrokeSpec {
+    pub color: String,
+    pub width: ScalarExpr,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct ComponentSpec {
     pub id: String,
     #[serde(default)]
@@ -114,6 +121,8 @@ pub enum VisualNode {
         height: ScalarExpr,
         fill: String,
         #[serde(default)]
+        stroke: Option<StrokeSpec>,
+        #[serde(default)]
         transform: TransformSpec,
     },
     Rectangle {
@@ -121,6 +130,8 @@ pub enum VisualNode {
         width: ScalarExpr,
         height: ScalarExpr,
         fill: String,
+        #[serde(default)]
+        stroke: Option<StrokeSpec>,
         #[serde(default)]
         corner_radius: Option<ScalarExpr>,
         #[serde(default)]
@@ -132,6 +143,8 @@ pub enum VisualNode {
         height: ScalarExpr,
         fill: String,
         #[serde(default)]
+        stroke: Option<StrokeSpec>,
+        #[serde(default)]
         transform: TransformSpec,
     },
     Polygon {
@@ -141,6 +154,8 @@ pub enum VisualNode {
         #[schemars(range(min = 3))]
         points: u64,
         fill: String,
+        #[serde(default)]
+        stroke: Option<StrokeSpec>,
         #[serde(default)]
         corner_radius: Option<ScalarExpr>,
         #[serde(default)]
@@ -154,6 +169,8 @@ pub enum VisualNode {
         points: u64,
         inner_radius: ScalarExpr,
         fill: String,
+        #[serde(default)]
+        stroke: Option<StrokeSpec>,
         #[serde(default)]
         corner_radius: Option<ScalarExpr>,
         #[serde(default)]
@@ -180,6 +197,19 @@ pub enum VisualNode {
     },
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct ShapeNodeRef<'a> {
+    pub geometry_type: &'static str,
+    pub width: &'a ScalarExpr,
+    pub height: &'a ScalarExpr,
+    pub points: Option<u64>,
+    pub corner_radius: Option<&'a ScalarExpr>,
+    pub inner_radius: Option<&'a ScalarExpr>,
+    pub fill: &'a str,
+    pub stroke: Option<&'a StrokeSpec>,
+    pub transform: &'a TransformSpec,
+}
+
 impl VisualNode {
     pub(crate) fn id(&self) -> &str {
         match self {
@@ -191,6 +221,118 @@ impl VisualNode {
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
+        }
+    }
+
+    pub(crate) fn shape(&self) -> Option<ShapeNodeRef<'_>> {
+        let shape = match self {
+            Self::Ellipse {
+                width,
+                height,
+                fill,
+                stroke,
+                transform,
+                ..
+            } => ShapeNodeRef {
+                geometry_type: "ellipse",
+                width,
+                height,
+                points: None,
+                corner_radius: None,
+                inner_radius: None,
+                fill,
+                stroke: stroke.as_ref(),
+                transform,
+            },
+            Self::Rectangle {
+                width,
+                height,
+                fill,
+                stroke,
+                corner_radius,
+                transform,
+                ..
+            } => ShapeNodeRef {
+                geometry_type: "rectangle",
+                width,
+                height,
+                points: None,
+                corner_radius: corner_radius.as_ref(),
+                inner_radius: None,
+                fill,
+                stroke: stroke.as_ref(),
+                transform,
+            },
+            Self::Triangle {
+                width,
+                height,
+                fill,
+                stroke,
+                transform,
+                ..
+            } => ShapeNodeRef {
+                geometry_type: "triangle",
+                width,
+                height,
+                points: None,
+                corner_radius: None,
+                inner_radius: None,
+                fill,
+                stroke: stroke.as_ref(),
+                transform,
+            },
+            Self::Polygon {
+                width,
+                height,
+                points,
+                fill,
+                stroke,
+                corner_radius,
+                transform,
+                ..
+            } => ShapeNodeRef {
+                geometry_type: "polygon",
+                width,
+                height,
+                points: Some(*points),
+                corner_radius: corner_radius.as_ref(),
+                inner_radius: None,
+                fill,
+                stroke: stroke.as_ref(),
+                transform,
+            },
+            Self::Star {
+                width,
+                height,
+                points,
+                inner_radius,
+                fill,
+                stroke,
+                corner_radius,
+                transform,
+                ..
+            } => ShapeNodeRef {
+                geometry_type: "star",
+                width,
+                height,
+                points: Some(*points),
+                corner_radius: corner_radius.as_ref(),
+                inner_radius: Some(inner_radius),
+                fill,
+                stroke: stroke.as_ref(),
+                transform,
+            },
+            Self::Group { .. } | Self::Instance { .. } | Self::RawSceneObject { .. } => {
+                return None;
+            }
+        };
+        Some(shape)
+    }
+
+    pub(crate) fn children(&self) -> Option<&[VisualNode]> {
+        match self {
+            Self::Group { children, .. } => Some(children),
+            _ => None,
         }
     }
 }

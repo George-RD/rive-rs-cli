@@ -25,7 +25,7 @@ A v0 document has four explicit graphs:
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, groups, component instances, and raw `SceneSpec` objects. Shapes require a solid `fill` colour and may add a typed solid `stroke` with a colour and positive pixel width. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
@@ -109,7 +109,11 @@ Semantic diagnostics point to authored paths. JSON syntax and unknown-field erro
           "id": "disc",
           "width": { "kind": "parameter", "name": "diameter" },
           "height": { "kind": "parameter", "name": "diameter" },
-          "fill": "#246BFD"
+          "fill": "#246BFD",
+          "stroke": {
+            "color": "#0F172A",
+            "width": { "kind": "literal", "value": 3, "unit": "px" }
+          }
         }
       ]
     }

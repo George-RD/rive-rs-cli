@@ -8,24 +8,6 @@ use super::spec::{
     ScalarExpr, TransformSpec, Unit, VisualNode, VisualSection,
 };
 
-pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError> {
-    let spec = serde_json::from_str::<AuthoringSpec>(input).map_err(|error| {
-        AuthoringError::one(AuthoringDiagnostic::new(
-            "$",
-            "invalid_json",
-            format!(
-                "{error} at line {}, column {}",
-                error.line(),
-                error.column()
-            ),
-        ))
-    })?;
-    validate_authoring(&spec)?;
-    let lowered =
-        lower::lower_authoring_json(input).map_err(|error| rewrite_error_paths(&spec, error))?;
-    validate_runtime_names(lowered)
-}
-
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     validate_authoring(spec)?;
     let lowered = lower::lower_authoring(spec).map_err(|error| rewrite_error_paths(spec, error))?;
@@ -211,19 +193,11 @@ fn validate_node_names(
     for (index, node) in nodes.iter().enumerate() {
         let path = format!("{list_path}[{index}]");
         validate_id(node.id(), &format!("{path}.id"), diagnostics);
-        match node {
-            VisualNode::Group { children, .. } => {
-                validate_node_names(children, &format!("{path}.children"), diagnostics);
-            }
-            VisualNode::Instance { overrides, .. } => {
-                validate_parameter_names(overrides, &format!("{path}.overrides"), diagnostics);
-            }
-            VisualNode::Ellipse { .. }
-            | VisualNode::Rectangle { .. }
-            | VisualNode::Triangle { .. }
-            | VisualNode::Polygon { .. }
-            | VisualNode::Star { .. }
-            | VisualNode::RawSceneObject { .. } => {}
+        if let Some(children) = node.children() {
+            validate_node_names(children, &format!("{path}.children"), diagnostics);
+        }
+        if let VisualNode::Instance { overrides, .. } = node {
+            validate_parameter_names(overrides, &format!("{path}.overrides"), diagnostics);
         }
     }
 }
@@ -344,60 +318,23 @@ fn validate_nodes(
 }
 
 fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>) {
-    match node {
-        VisualNode::Ellipse {
-            width,
-            height,
-            transform,
-            ..
+    if let Some(shape) = node.shape() {
+        validate_expression(shape.width, &format!("{path}.width"), diagnostics);
+        validate_expression(shape.height, &format!("{path}.height"), diagnostics);
+        if let Some(corner_radius) = shape.corner_radius {
+            validate_expression(corner_radius, &format!("{path}.corner_radius"), diagnostics);
         }
-        | VisualNode::Triangle {
-            width,
-            height,
-            transform,
-            ..
-        } => {
-            validate_expression(width, &format!("{path}.width"), diagnostics);
-            validate_expression(height, &format!("{path}.height"), diagnostics);
-            validate_transform(transform, &format!("{path}.transform"), diagnostics);
-        }
-        VisualNode::Rectangle {
-            width,
-            height,
-            corner_radius,
-            transform,
-            ..
-        }
-        | VisualNode::Polygon {
-            width,
-            height,
-            corner_radius,
-            transform,
-            ..
-        } => {
-            validate_expression(width, &format!("{path}.width"), diagnostics);
-            validate_expression(height, &format!("{path}.height"), diagnostics);
-            if let Some(corner_radius) = corner_radius {
-                validate_expression(corner_radius, &format!("{path}.corner_radius"), diagnostics);
-            }
-            validate_transform(transform, &format!("{path}.transform"), diagnostics);
-        }
-        VisualNode::Star {
-            width,
-            height,
-            inner_radius,
-            corner_radius,
-            transform,
-            ..
-        } => {
-            validate_expression(width, &format!("{path}.width"), diagnostics);
-            validate_expression(height, &format!("{path}.height"), diagnostics);
+        if let Some(inner_radius) = shape.inner_radius {
             validate_expression(inner_radius, &format!("{path}.inner_radius"), diagnostics);
-            if let Some(corner_radius) = corner_radius {
-                validate_expression(corner_radius, &format!("{path}.corner_radius"), diagnostics);
-            }
-            validate_transform(transform, &format!("{path}.transform"), diagnostics);
         }
+        if let Some(stroke) = shape.stroke {
+            validate_expression(&stroke.width, &format!("{path}.stroke.width"), diagnostics);
+        }
+        validate_transform(shape.transform, &format!("{path}.transform"), diagnostics);
+        return;
+    }
+
+    match node {
         VisualNode::Group {
             transform,
             children,
@@ -415,6 +352,11 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
             validate_transform(transform, &format!("{path}.transform"), diagnostics);
         }
         VisualNode::RawSceneObject { .. } => {}
+        VisualNode::Ellipse { .. }
+        | VisualNode::Rectangle { .. }
+        | VisualNode::Triangle { .. }
+        | VisualNode::Polygon { .. }
+        | VisualNode::Star { .. } => unreachable!("shape nodes are handled above"),
     }
 }
 
