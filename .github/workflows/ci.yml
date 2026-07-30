@@ -64,20 +64,29 @@ jobs:
                   raise SystemExit(f'expected one expansion-counter rewrite for {pattern}; found {count}')
           path.write_text(text)
           PY
+      - name: Reconcile and verify Cairn
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          set +e
+          set -o pipefail
+          cairn scan --json 2>&1 | tee /tmp/cairn-scan.log
+          SCAN_STATUS=${PIPESTATUS[0]}
+          cairn lint --json 2>&1 | tee /tmp/cairn-lint.log
+          LINT_STATUS=${PIPESTATUS[0]}
+          set -e
+          grep -q 'src/authoring/lower/pattern.rs' map.md
+          grep -q 'tests/authoring_grid_contract.rs' map.md
+          if [ "$SCAN_STATUS" -ne 0 ] || [ "$LINT_STATUS" -ne 0 ]; then
+            echo "Cairn failed: scan=$SCAN_STATUS lint=$LINT_STATUS" >&2
+            exit 1
+          fi
       - name: Format and verify Rust behavior
         run: |
           cargo fmt
           cargo fmt --check
           cargo clippy --all-targets --all-features -- -D warnings
           cargo test --locked --all-features
-      - name: Reconcile and verify Cairn
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
-          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-          cairn scan --json > /tmp/cairn-scan.json
-          cairn lint --json > /tmp/cairn-lint.json
-          grep -q 'src/authoring/lower/pattern.rs' map.md
-          grep -q 'tests/authoring_grid_contract.rs' map.md
       - name: Commit the verified implementation
         run: |
           git checkout origin/main -- .github/workflows/ci.yml
