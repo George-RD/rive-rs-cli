@@ -7,8 +7,8 @@ use crate::builder::{SceneSpec, build_scene};
 use super::expression::{evaluate_expression, evaluate_quantity, evaluate_transform};
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringDiagnostic, AuthoringError, AuthoringSourceMap,
-    AuthoringSpec, ComponentSpec, LoweredAuthoring, Quantity, ShapeNodeRef, SourceMapEntry, Unit,
-    VisualNode,
+    AuthoringSpec, ComponentSpec, GradientKind, LoweredAuthoring, PaintSpec, Quantity,
+    ShapeNodeRef, SourceMapEntry, Unit, VisualNode,
 };
 
 #[derive(Clone, Copy)]
@@ -31,6 +31,12 @@ struct NodeContext<'a> {
     runtime_segments: Vec<String>,
     scene_path: String,
     scope: &'a BTreeMap<String, Quantity>,
+}
+
+struct LoweredPaint {
+    object: Value,
+    runtime_names: Vec<String>,
+    scene_paths: Vec<String>,
 }
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
@@ -547,19 +553,25 @@ impl<'a> Lowerer<'a> {
         let shape_name = runtime_name(&runtime_segments, "shape");
         let geometry_name = runtime_name(&runtime_segments, "geometry");
         let fill_name = runtime_name(&runtime_segments, "fill");
-        let color_name = runtime_name(&runtime_segments, "color");
-        let mut runtime_names = vec![
-            shape_name.clone(),
-            geometry_name.clone(),
-            fill_name.clone(),
-            color_name.clone(),
-        ];
+        let LoweredPaint {
+            object: fill_paint,
+            runtime_names: fill_runtime_names,
+            scene_paths: fill_scene_paths,
+        } = self.lower_paint(
+            fill,
+            &format!("{authored_path}.fill"),
+            &runtime_segments,
+            &format!("{scene_path}/children/1/children/0"),
+            scope,
+        )?;
+        let mut runtime_names = vec![shape_name.clone(), geometry_name.clone(), fill_name.clone()];
+        runtime_names.extend(fill_runtime_names);
         let mut scene_paths = vec![
             scene_path.clone(),
             format!("{scene_path}/children/0"),
             format!("{scene_path}/children/1"),
-            format!("{scene_path}/children/1/children/0"),
         ];
+        scene_paths.extend(fill_scene_paths);
 
         let mut geometry = json!({
             "type": geometry_type,
@@ -589,13 +601,7 @@ impl<'a> Lowerer<'a> {
             json!({
                 "type": "fill",
                 "name": fill_name,
-                "children": [
-                    {
-                        "type": "solid_color",
-                        "name": color_name,
-                        "color": fill
-                    }
-                ]
+                "children": [fill_paint]
             }),
         ];
         if let (Some(stroke), Some(thickness)) = (stroke, stroke_thickness) {
@@ -639,6 +645,119 @@ impl<'a> Lowerer<'a> {
             "scale_y": transform_values.scale_y,
             "children": children
         }))
+    }
+
+    fn lower_paint(
+        &self,
+        paint: &PaintSpec,
+        authored_path: &str,
+        runtime_segments: &[String],
+        scene_path: &str,
+        scope: &BTreeMap<String, Quantity>,
+    ) -> Result<LoweredPaint, AuthoringDiagnostic> {
+        match paint {
+            PaintSpec::Solid(color) => {
+                let color_name = runtime_name(runtime_segments, "color");
+                Ok(LoweredPaint {
+                    object: json!({
+                        "type": "solid_color",
+                        "name": color_name.clone(),
+                        "color": color
+                    }),
+                    runtime_names: vec![color_name],
+                    scene_paths: vec![scene_path.to_string()],
+                })
+            }
+            PaintSpec::Gradient(gradient) => {
+                if gradient.stops.len() < 2 {
+                    return Err(AuthoringDiagnostic::new(
+                        format!("{authored_path}.stops"),
+                        "invalid_gradient_stops",
+                        "gradient fills require at least two stops",
+                    ));
+                }
+
+                let start_x = evaluate_expression(
+                    &gradient.start_x,
+                    &format!("{authored_path}.start_x"),
+                    scope,
+                    Unit::Px,
+                )?;
+                let start_y = evaluate_expression(
+                    &gradient.start_y,
+                    &format!("{authored_path}.start_y"),
+                    scope,
+                    Unit::Px,
+                )?;
+                let end_x = evaluate_expression(
+                    &gradient.end_x,
+                    &format!("{authored_path}.end_x"),
+                    scope,
+                    Unit::Px,
+                )?;
+                let end_y = evaluate_expression(
+                    &gradient.end_y,
+                    &format!("{authored_path}.end_y"),
+                    scope,
+                    Unit::Px,
+                )?;
+
+                let gradient_name = runtime_name(runtime_segments, "gradient");
+                let mut runtime_names = vec![gradient_name.clone()];
+                let mut scene_paths = vec![scene_path.to_string()];
+                let mut children = Vec::with_capacity(gradient.stops.len());
+                let mut previous_position = None;
+                for (index, stop) in gradient.stops.iter().enumerate() {
+                    let stop_path = format!("{authored_path}.stops[{index}].position");
+                    let position =
+                        evaluate_expression(&stop.position, &stop_path, scope, Unit::Scalar)?;
+                    if !(0.0..=1.0).contains(&position) {
+                        return Err(AuthoringDiagnostic::new(
+                            stop_path,
+                            "invalid_ratio",
+                            "gradient stop positions must be between zero and one",
+                        ));
+                    }
+                    if previous_position.is_some_and(|previous| position < previous) {
+                        return Err(AuthoringDiagnostic::new(
+                            stop_path,
+                            "invalid_gradient_stop_order",
+                            "gradient stop positions must be in non-decreasing order",
+                        ));
+                    }
+                    previous_position = Some(position);
+
+                    let stop_name =
+                        runtime_name(runtime_segments, &format!("gradient_stop_{index}"));
+                    runtime_names.push(stop_name.clone());
+                    scene_paths.push(format!("{scene_path}/children/{index}"));
+                    children.push(json!({
+                        "type": "gradient_stop",
+                        "name": stop_name,
+                        "color": stop.color.as_str(),
+                        "position": position
+                    }));
+                }
+
+                let gradient_type = match gradient.kind {
+                    GradientKind::LinearGradient => "linear_gradient",
+                    GradientKind::RadialGradient => "radial_gradient",
+                };
+                Ok(LoweredPaint {
+                    object: json!({
+                        "type": gradient_type,
+                        "name": gradient_name,
+                        "start_x": start_x,
+                        "start_y": start_y,
+                        "end_x": end_x,
+                        "end_y": end_y,
+                        "children": children
+                    }),
+                    runtime_names,
+                    scene_paths,
+                })
+            }
+        }
     }
 
     fn lower_raw_fragments(

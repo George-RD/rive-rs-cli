@@ -89,6 +89,38 @@ pub struct TransformSpec {
     pub scale_y: Option<ScalarExpr>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum GradientKind {
+    LinearGradient,
+    RadialGradient,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GradientStopSpec {
+    pub color: String,
+    pub position: ScalarExpr,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct GradientPaintSpec {
+    pub kind: GradientKind,
+    pub start_x: ScalarExpr,
+    pub start_y: ScalarExpr,
+    pub end_x: ScalarExpr,
+    pub end_y: ScalarExpr,
+    pub stops: Vec<GradientStopSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum PaintSpec {
+    Solid(String),
+    Gradient(GradientPaintSpec),
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct StrokeSpec {
@@ -119,7 +151,7 @@ pub enum VisualNode {
         id: String,
         width: ScalarExpr,
         height: ScalarExpr,
-        fill: String,
+        fill: PaintSpec,
         #[serde(default)]
         stroke: Option<StrokeSpec>,
         #[serde(default)]
@@ -129,7 +161,7 @@ pub enum VisualNode {
         id: String,
         width: ScalarExpr,
         height: ScalarExpr,
-        fill: String,
+        fill: PaintSpec,
         #[serde(default)]
         stroke: Option<StrokeSpec>,
         #[serde(default)]
@@ -141,7 +173,7 @@ pub enum VisualNode {
         id: String,
         width: ScalarExpr,
         height: ScalarExpr,
-        fill: String,
+        fill: PaintSpec,
         #[serde(default)]
         stroke: Option<StrokeSpec>,
         #[serde(default)]
@@ -153,7 +185,7 @@ pub enum VisualNode {
         height: ScalarExpr,
         #[schemars(range(min = 3))]
         points: u64,
-        fill: String,
+        fill: PaintSpec,
         #[serde(default)]
         stroke: Option<StrokeSpec>,
         #[serde(default)]
@@ -168,7 +200,7 @@ pub enum VisualNode {
         #[schemars(range(min = 3))]
         points: u64,
         inner_radius: ScalarExpr,
-        fill: String,
+        fill: PaintSpec,
         #[serde(default)]
         stroke: Option<StrokeSpec>,
         #[serde(default)]
@@ -205,7 +237,7 @@ pub(crate) struct ShapeNodeRef<'a> {
     pub points: Option<u64>,
     pub corner_radius: Option<&'a ScalarExpr>,
     pub inner_radius: Option<&'a ScalarExpr>,
-    pub fill: &'a str,
+    pub fill: &'a PaintSpec,
     pub stroke: Option<&'a StrokeSpec>,
     pub transform: &'a TransformSpec,
 }
