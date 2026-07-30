@@ -1,0 +1,269 @@
+name: Address grid review feedback
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+    paths:
+      - .github/workflows/address-grid-review.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Add contract-only tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          contract_path = Path("tests/authoring_contract.rs")
+          contract = contract_path.read_text()
+          contract = contract.replace(
+              "use std::collections::HashSet;",
+              "use std::{collections::HashSet, fs, path::Path};",
+          )
+          schema_test = r'''
+          #[test]
+          fn published_authoring_schema_matches_generated_contract() {
+              let schema_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                  .join("docs/authoring.schema.v0.json");
+              let published: serde_json::Value = serde_json::from_str(
+                  &fs::read_to_string(&schema_path).expect("read published authoring schema"),
+              )
+              .expect("published authoring schema must be valid JSON");
+              let generated = authoring_schema();
+
+              assert_eq!(
+                  published,
+                  generated,
+                  "published authoring schema differs from authoring_schema(); regenerate {}",
+                  schema_path.display()
+              );
+          }
+
+          '''
+          marker = "#[test]\nfn unknown_component_reports_the_authored_path()"
+          if "published_authoring_schema_matches_generated_contract" not in contract:
+              assert marker in contract
+              contract = contract.replace(marker, schema_test + marker, 1)
+          contract_path.write_text(contract)
+
+          grid_path = Path("tests/authoring_grid_contract.rs")
+          grid = grid_path.read_text()
+          diagnostic_test = r'''
+
+          #[test]
+          fn grid_item_component_errors_resolve_to_definition_paths() {
+              let input = json!({
+                  "authoring_format_version": 0,
+                  "artboard": {
+                      "id": "stage",
+                      "width": { "value": 320.0, "unit": "px" },
+                      "height": { "value": 220.0, "unit": "px" }
+                  },
+                  "components": [
+                      {
+                          "id": "grid-host",
+                          "visual": [
+                              grid(
+                                  "tiles",
+                                  1,
+                                  1,
+                                  literal(10.0, "px"),
+                                  literal(10.0, "px"),
+                                  json!({
+                                      "kind": "instance",
+                                      "id": "nested",
+                                      "component": "invalid-shape"
+                                  })
+                              )
+                          ]
+                      },
+                      {
+                          "id": "invalid-shape",
+                          "visual": [
+                              {
+                                  "kind": "rectangle",
+                                  "id": "bad-shape",
+                                  "width": literal(1.0, "scalar"),
+                                  "height": literal(10.0, "px"),
+                                  "fill": "#111827"
+                              }
+                          ]
+                      }
+                  ],
+                  "visual": { "nodes": [] },
+                  "motion": {},
+                  "behavior": {}
+              })
+              .to_string();
+
+              let error = lower_authoring_json(&input)
+                  .expect_err("invalid nested component must fail validation");
+              assert!(
+                  error.diagnostics.iter().any(|diagnostic| {
+                      diagnostic.code == "unit_mismatch"
+                          && diagnostic.path == "$.components[1].visual[0].width"
+                  }),
+                  "nested grid diagnostics were not rewritten to the component definition: {:#?}",
+                  error.diagnostics
+              );
+              assert!(
+                  error
+                      .diagnostics
+                      .iter()
+                      .all(|diagnostic| !diagnostic.path.contains(".expanded[")),
+                  "expanded implementation paths leaked into diagnostics: {:#?}",
+                  error.diagnostics
+              );
+          }
+          '''
+          if "grid_item_component_errors_resolve_to_definition_paths" not in grid:
+              grid += diagnostic_test
+          grid_path.write_text(grid)
+          PY
+          cargo fmt --all
+
+      - name: Prove both contracts fail before implementation
+        run: |
+          mkdir -p target/review-evidence
+          set +e
+          cargo test --locked --test authoring_contract \
+            published_authoring_schema_matches_generated_contract -- --exact --nocapture \
+            > target/review-evidence/schema-red.log 2>&1
+          schema_status=$?
+          cargo test --locked --test authoring_grid_contract \
+            grid_item_component_errors_resolve_to_definition_paths -- --exact --nocapture \
+            > target/review-evidence/path-red.log 2>&1
+          path_status=$?
+          set -e
+
+          if [ "$schema_status" -eq 0 ]; then
+            echo "schema contract unexpectedly passed before regeneration"
+            cat target/review-evidence/schema-red.log
+            exit 1
+          fi
+          if [ "$path_status" -eq 0 ]; then
+            echo "diagnostic-path contract unexpectedly passed before resolver fix"
+            cat target/review-evidence/path-red.log
+            exit 1
+          fi
+          grep -q "published authoring schema differs" target/review-evidence/schema-red.log
+          grep -q "item.expanded" target/review-evidence/path-red.log
+
+      - name: Implement resolver fix and regenerate the published schema
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          frontend_path = Path("src/authoring/frontend.rs")
+          frontend = frontend_path.read_text()
+          marker = '''        if let Some((child_index, rest)) = take_index(remainder, ".children[") {
+          '''
+          item_branch = '''        if let Some(rest) = remainder.strip_prefix(".item") {
+              let VisualNode::Grid { item, .. } = node else {
+                  return None;
+              };
+              node = item.as_ref();
+              resolved.push_str(".item");
+              remainder = rest;
+              continue;
+          }
+
+          '''
+          if item_branch not in frontend:
+              assert marker in frontend
+              frontend = frontend.replace(marker, item_branch + marker, 1)
+          frontend_path.write_text(frontend)
+
+          todo_path = Path("meta/todos/todo.visual-authoring-compiler.md")
+          todo = todo_path.read_text()
+          progress = (
+              "- Review hardening for PR #146 mechanically synchronizes the published AuthoringSpec "
+              "schema and preserves component-definition diagnostic paths through nested grid items.\n"
+          )
+          marker = "- Remaining work includes font and image assets, radial/mirror/distribute/along-path patterns,\n"
+          if progress not in todo:
+              assert marker in todo
+              todo = todo.replace(marker, progress + marker, 1)
+          todo_path.write_text(todo)
+          PY
+
+          mkdir -p examples
+          cat > examples/export_authoring_schema.rs <<'RS'
+          fn main() {
+              let schema = rive_cli::authoring::authoring_schema();
+              println!(
+                  "{}",
+                  serde_json::to_string_pretty(&schema).expect("serialize authoring schema")
+              );
+          }
+          RS
+          cargo run --quiet --example export_authoring_schema > docs/authoring.schema.v0.json
+          rm examples/export_authoring_schema.rs
+          rmdir examples 2>/dev/null || true
+          cargo fmt --all
+
+      - name: Prove targeted contracts are green
+        run: |
+          set -o pipefail
+          {
+            cargo test --locked --test authoring_contract \
+              published_authoring_schema_matches_generated_contract -- --exact
+            cargo test --locked --test authoring_grid_contract \
+              grid_item_component_errors_resolve_to_definition_paths -- --exact
+          } 2>&1 | tee target/review-evidence/targeted-green.log
+
+      - name: Run Rust quality gates
+        run: |
+          set -o pipefail
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings \
+            2>&1 | tee target/review-evidence/clippy-green.log
+          cargo test --locked --all-features \
+            2>&1 | tee target/review-evidence/rust-green.log
+
+      - name: Reconcile and lint Cairn
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          set -o pipefail
+          cairn scan --json | tee target/review-evidence/cairn-scan.json
+          cairn lint --json | tee target/review-evidence/cairn-lint.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grid-review-tdd-evidence
+          path: target/review-evidence
+          retention-days: 7
+
+      - name: Commit verified review fixes
+        run: |
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            docs/authoring.schema.v0.json \
+            map.json \
+            meta/todos/todo.visual-authoring-compiler.md \
+            src/authoring/frontend.rs \
+            tests/authoring_contract.rs \
+            tests/authoring_grid_contract.rs
+          git diff --cached --stat
+          git commit -m "fix: harden grid schema and diagnostic paths"
+          git push origin HEAD:${{ github.head_ref }}
