@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/source-snapshot.yml
       - .agent/stroke-implementation.patch.gz.b64
+      - tests/authoring_stroke_contract.rs
 
 permissions:
   contents: write
