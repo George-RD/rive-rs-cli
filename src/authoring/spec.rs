@@ -148,6 +148,27 @@ pub struct StrokeSpec {
     pub trim: Option<TrimPathSpec>,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TextAlign {
+    #[default]
+    Left,
+    Right,
+    Center,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum TextOverflow {
+    #[default]
+    Visible,
+    Hidden,
+    Clipped,
+    Ellipsis,
+    Fit,
+    FitFontSize,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ComponentSpec {
@@ -228,6 +249,32 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    Text {
+        id: String,
+        text: String,
+        font_size: ScalarExpr,
+        fill: PaintSpec,
+        #[serde(default)]
+        width: Option<ScalarExpr>,
+        #[serde(default)]
+        height: Option<ScalarExpr>,
+        #[serde(default)]
+        line_height: Option<ScalarExpr>,
+        #[serde(default)]
+        letter_spacing: Option<ScalarExpr>,
+        #[serde(default)]
+        paragraph_spacing: Option<ScalarExpr>,
+        #[serde(default)]
+        origin_x: Option<ScalarExpr>,
+        #[serde(default)]
+        origin_y: Option<ScalarExpr>,
+        #[serde(default)]
+        align: TextAlign,
+        #[serde(default)]
+        overflow: TextOverflow,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Group {
         id: String,
         #[serde(default)]
@@ -262,6 +309,23 @@ pub(crate) struct ShapeNodeRef<'a> {
     pub transform: &'a TransformSpec,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct TextNodeRef<'a> {
+    pub content: &'a str,
+    pub font_size: &'a ScalarExpr,
+    pub fill: &'a PaintSpec,
+    pub width: Option<&'a ScalarExpr>,
+    pub height: Option<&'a ScalarExpr>,
+    pub line_height: Option<&'a ScalarExpr>,
+    pub letter_spacing: Option<&'a ScalarExpr>,
+    pub paragraph_spacing: Option<&'a ScalarExpr>,
+    pub origin_x: Option<&'a ScalarExpr>,
+    pub origin_y: Option<&'a ScalarExpr>,
+    pub align: TextAlign,
+    pub overflow: TextOverflow,
+    pub transform: &'a TransformSpec,
+}
+
 impl VisualNode {
     pub(crate) fn id(&self) -> &str {
         match self {
@@ -270,6 +334,7 @@ impl VisualNode {
             | Self::Triangle { id, .. }
             | Self::Polygon { id, .. }
             | Self::Star { id, .. }
+            | Self::Text { id, .. }
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
@@ -374,11 +439,50 @@ impl VisualNode {
                 stroke: stroke.as_ref(),
                 transform,
             },
-            Self::Group { .. } | Self::Instance { .. } | Self::RawSceneObject { .. } => {
+            Self::Text { .. }
+            | Self::Group { .. }
+            | Self::Instance { .. }
+            | Self::RawSceneObject { .. } => {
                 return None;
             }
         };
         Some(shape)
+    }
+
+    pub(crate) fn text_node(&self) -> Option<TextNodeRef<'_>> {
+        match self {
+            Self::Text {
+                text,
+                font_size,
+                fill,
+                width,
+                height,
+                line_height,
+                letter_spacing,
+                paragraph_spacing,
+                origin_x,
+                origin_y,
+                align,
+                overflow,
+                transform,
+                ..
+            } => Some(TextNodeRef {
+                content: text,
+                font_size,
+                fill,
+                width: width.as_ref(),
+                height: height.as_ref(),
+                line_height: line_height.as_ref(),
+                letter_spacing: letter_spacing.as_ref(),
+                paragraph_spacing: paragraph_spacing.as_ref(),
+                origin_x: origin_x.as_ref(),
+                origin_y: origin_y.as_ref(),
+                align: *align,
+                overflow: *overflow,
+                transform,
+            }),
+            _ => None,
+        }
     }
 
     pub(crate) fn children(&self) -> Option<&[VisualNode]> {

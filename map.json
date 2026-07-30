@@ -12103,6 +12103,22 @@
           "end_line": 75
         },
         {
+          "name": "TextAlign",
+          "kind": "enum",
+          "signature": "pub enum TextAlign",
+          "file": "src/authoring/spec.rs",
+          "line": 153,
+          "end_line": 158
+        },
+        {
+          "name": "TextOverflow",
+          "kind": "enum",
+          "signature": "pub enum TextOverflow",
+          "file": "src/authoring/spec.rs",
+          "line": 162,
+          "end_line": 170
+        },
+        {
           "name": "TrimPathMode",
           "kind": "enum",
           "signature": "pub enum TrimPathMode",
@@ -12123,8 +12139,8 @@
           "kind": "enum",
           "signature": "pub enum VisualNode",
           "file": "src/authoring/spec.rs",
-          "line": 169,
-          "end_line": 250
+          "line": 190,
+          "end_line": 297
         },
         {
           "name": "authoring_schema",
@@ -12147,8 +12163,8 @@
           "kind": "function",
           "signature": "pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError>",
           "file": "src/authoring/lower.rs",
-          "line": 57,
-          "end_line": 130
+          "line": 60,
+          "end_line": 133
         },
         {
           "name": "lower_authoring",
@@ -12179,24 +12195,24 @@
           "kind": "struct",
           "signature": "pub struct AuthoringDiagnostic",
           "file": "src/authoring/spec.rs",
-          "line": 435,
-          "end_line": 439
+          "line": 539,
+          "end_line": 543
         },
         {
           "name": "AuthoringError",
           "kind": "struct",
           "signature": "pub struct AuthoringError",
           "file": "src/authoring/spec.rs",
-          "line": 456,
-          "end_line": 458
+          "line": 560,
+          "end_line": 562
         },
         {
           "name": "AuthoringSourceMap",
           "kind": "struct",
           "signature": "pub struct AuthoringSourceMap",
           "file": "src/authoring/spec.rs",
-          "line": 420,
-          "end_line": 422
+          "line": 524,
+          "end_line": 526
         },
         {
           "name": "AuthoringSpec",
@@ -12211,16 +12227,16 @@
           "kind": "struct",
           "signature": "pub struct BehaviorSection",
           "file": "src/authoring/spec.rs",
-          "line": 401,
-          "end_line": 404
+          "line": 505,
+          "end_line": 508
         },
         {
           "name": "ComponentSpec",
           "kind": "struct",
           "signature": "pub struct ComponentSpec",
           "file": "src/authoring/spec.rs",
-          "line": 153,
-          "end_line": 158
+          "line": 174,
+          "end_line": 179
         },
         {
           "name": "GradientPaintSpec",
@@ -12243,16 +12259,16 @@
           "kind": "struct",
           "signature": "pub struct LoweredAuthoring",
           "file": "src/authoring/spec.rs",
-          "line": 414,
-          "end_line": 417
+          "line": 518,
+          "end_line": 521
         },
         {
           "name": "MotionSection",
           "kind": "struct",
           "signature": "pub struct MotionSection",
           "file": "src/authoring/spec.rs",
-          "line": 394,
-          "end_line": 397
+          "line": 498,
+          "end_line": 501
         },
         {
           "name": "Quantity",
@@ -12267,16 +12283,16 @@
           "kind": "struct",
           "signature": "pub struct RawSceneFragment",
           "file": "src/authoring/spec.rs",
-          "line": 408,
-          "end_line": 411
+          "line": 512,
+          "end_line": 515
         },
         {
           "name": "SourceMapEntry",
           "kind": "struct",
           "signature": "pub struct SourceMapEntry",
           "file": "src/authoring/spec.rs",
-          "line": 425,
-          "end_line": 432
+          "line": 529,
+          "end_line": 536
         },
         {
           "name": "StrokeSpec",
@@ -12307,16 +12323,16 @@
           "kind": "struct",
           "signature": "pub struct VisualSection",
           "file": "src/authoring/spec.rs",
-          "line": 162,
-          "end_line": 165
+          "line": 183,
+          "end_line": 186
         },
         {
           "name": "children",
           "kind": "function",
           "signature": "pub(crate) fn children(&self) -> Option<&[VisualNode]>",
           "file": "src/authoring/spec.rs",
-          "line": 384,
-          "end_line": 389
+          "line": 488,
+          "end_line": 493
         },
         {
           "name": "evaluate_expression",
@@ -12347,40 +12363,48 @@
           "kind": "function",
           "signature": "pub(crate) fn id(&self) -> &str",
           "file": "src/authoring/spec.rs",
-          "line": 266,
-          "end_line": 277
+          "line": 330,
+          "end_line": 342
         },
         {
           "name": "many",
           "kind": "function",
           "signature": "pub(crate) fn many(diagnostics: Vec<AuthoringDiagnostic>) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 467,
-          "end_line": 469
+          "line": 571,
+          "end_line": 573
         },
         {
           "name": "new",
           "kind": "function",
           "signature": "pub(crate) fn new( path: impl Into<String>, code: impl Into<String>, message: impl Into<String>, ) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 442,
-          "end_line": 452
+          "line": 546,
+          "end_line": 556
         },
         {
           "name": "one",
           "kind": "function",
           "signature": "pub(crate) fn one(diagnostic: AuthoringDiagnostic) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 461,
-          "end_line": 465
+          "line": 565,
+          "end_line": 569
         },
         {
           "name": "shape",
           "kind": "function",
           "signature": "pub(crate) fn shape(&self) -> Option<ShapeNodeRef<'_>>",
           "file": "src/authoring/spec.rs",
-          "line": 279,
-          "end_line": 382
+          "line": 344,
+          "end_line": 450
+        },
+        {
+          "name": "text_node",
+          "kind": "function",
+          "signature": "pub(crate) fn text_node(&self) -> Option<TextNodeRef<'_>>",
+          "file": "src/authoring/spec.rs",
+          "line": 452,
+          "end_line": 486
         },
         {
           "name": "validate_scene_number",
@@ -12403,8 +12427,16 @@
           "kind": "struct",
           "signature": "pub(crate) struct ShapeNodeRef<'a>",
           "file": "src/authoring/spec.rs",
-          "line": 253,
-          "end_line": 263
+          "line": 300,
+          "end_line": 310
+        },
+        {
+          "name": "TextNodeRef",
+          "kind": "struct",
+          "signature": "pub(crate) struct TextNodeRef<'a>",
+          "file": "src/authoring/spec.rs",
+          "line": 313,
+          "end_line": 327
         },
         {
           "name": "TransformValues",
@@ -13155,6 +13187,7 @@
         "./tests/authoring_examples.rs",
         "./tests/authoring_gradient_contract.rs",
         "./tests/authoring_stroke_contract.rs",
+        "./tests/authoring_text_contract.rs",
         "./tests/authoring_trim_path_contract.rs",
         "./tests/authoring_validation_contract.rs",
         "./tests/support"
@@ -13164,6 +13197,7 @@
         "tests/authoring_examples.rs",
         "tests/authoring_gradient_contract.rs",
         "tests/authoring_stroke_contract.rs",
+        "tests/authoring_text_contract.rs",
         "tests/authoring_trim_path_contract.rs",
         "tests/authoring_validation_contract.rs",
         "tests/e2e.rs",
@@ -13774,9 +13808,16 @@
     {
       "code": "CAIRN_MODULE_OVERSIZED",
       "severity": "warning",
-      "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 1066 lines, over the 500-line guideline with no allow-list marker",
+      "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 1357 lines, over the 500-line guideline with no allow-list marker",
       "node": "rive-cli.intelligence.authoring",
       "path": "src/authoring/lower.rs"
+    },
+    {
+      "code": "CAIRN_MODULE_OVERSIZED",
+      "severity": "warning",
+      "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/spec.rs` at 590 lines, over the 500-line guideline with no allow-list marker",
+      "node": "rive-cli.intelligence.authoring",
+      "path": "src/authoring/spec.rs"
     },
     {
       "code": "CAIRN_MODULE_OVERSIZED",

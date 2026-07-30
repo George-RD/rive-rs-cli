@@ -60,7 +60,7 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
 
     Container Verification "Evidence that generated binaries are correct and usable" id "rive-cli.verification" @verification {
         Module RustTests "Unit, integration, and CLI end-to-end tests" id "rive-cli.verification.rust" @test {
-            path ["./tests/e2e.rs", "./tests/eval_contract.rs", "./tests/authoring_contract.rs", "./tests/authoring_examples.rs", "./tests/authoring_gradient_contract.rs", "./tests/authoring_stroke_contract.rs", "./tests/authoring_trim_path_contract.rs", "./tests/authoring_validation_contract.rs", "./tests/support"]
+            path ["./tests/e2e.rs", "./tests/eval_contract.rs", "./tests/authoring_contract.rs", "./tests/authoring_examples.rs", "./tests/authoring_gradient_contract.rs", "./tests/authoring_stroke_contract.rs", "./tests/authoring_text_contract.rs", "./tests/authoring_trim_path_contract.rs", "./tests/authoring_validation_contract.rs", "./tests/support"]
         }
         Module BrowserTests "Official-runtime, visual, demo, and site browser checks" id "rive-cli.verification.browser" @test {
             path "./tests/playwright"

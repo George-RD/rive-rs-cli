@@ -84,6 +84,26 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         return;
     }
 
+    if let Some(text) = node.text_node() {
+        validate_expression(text.font_size, &format!("{path}.font_size"), diagnostics);
+        validate_paint(text.fill, &format!("{path}.fill"), diagnostics);
+        for (name, expression) in [
+            ("width", text.width),
+            ("height", text.height),
+            ("line_height", text.line_height),
+            ("letter_spacing", text.letter_spacing),
+            ("paragraph_spacing", text.paragraph_spacing),
+            ("origin_x", text.origin_x),
+            ("origin_y", text.origin_y),
+        ] {
+            if let Some(expression) = expression {
+                validate_expression(expression, &format!("{path}.{name}"), diagnostics);
+            }
+        }
+        validate_transform(text.transform, &format!("{path}.transform"), diagnostics);
+        return;
+    }
+
     match node {
         VisualNode::Group {
             transform,
@@ -106,7 +126,8 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         | VisualNode::Rectangle { .. }
         | VisualNode::Triangle { .. }
         | VisualNode::Polygon { .. }
-        | VisualNode::Star { .. } => unreachable!("shape nodes are handled above"),
+        | VisualNode::Star { .. }
+        | VisualNode::Text { .. } => unreachable!("shape and text nodes are handled above"),
     }
 }
 
