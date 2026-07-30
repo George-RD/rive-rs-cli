@@ -52,6 +52,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - A Linux/macOS/Windows bit audit found platform-dependent standard-library trig output;
   authoring math now pins pure-Rust `libm` 0.2.16 and exact coordinate bits so radial
   SceneSpec output remains reproducible across supported build hosts.
+- Pattern expansion accounting now charges every recursively generated node at inherited
+  multiplicity, preventing grouped or component-backed radial items from bypassing the
+  shared 10,000-node budget.
 - Remaining work includes font and image assets, mirror/distribute/along-path patterns,
   constraints, and
   a complex static showcase without raw escapes.
