@@ -82,7 +82,7 @@ None in Phase 1.
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.core.objects` claims `src/objects/text.rs` at 1105 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.core.validator` claims `src/validator/parser.rs` at 501 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.ai` claims `src/ai/repair.rs` at 825 lines, over the 500-line guideline with no allow-list marker
-- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 966 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 987 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.discovery` claims `src/discovery/mod.rs` at 896 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.render` claims `src/render/mod.rs` at 782 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.scaffold` claims `src/scaffold/mod.rs` at 717 lines, over the 500-line guideline with no allow-list marker

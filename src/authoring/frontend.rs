@@ -329,6 +329,7 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         }
         validate_paint(shape.fill, &format!("{path}.fill"), diagnostics);
         if let Some(stroke) = shape.stroke {
+            validate_paint(&stroke.paint, &format!("{path}.stroke.paint"), diagnostics);
             validate_expression(&stroke.width, &format!("{path}.stroke.width"), diagnostics);
         }
         validate_transform(shape.transform, &format!("{path}.transform"), diagnostics);
@@ -379,7 +380,7 @@ fn validate_paint(paint: &PaintSpec, path: &str, diagnostics: &mut Vec<Authoring
         diagnostics.push(AuthoringDiagnostic::new(
             format!("{path}.stops"),
             "invalid_gradient_stops",
-            "gradient fills require at least two stops",
+            "gradient paints require at least two stops",
         ));
     }
     for (index, stop) in gradient.stops.iter().enumerate() {

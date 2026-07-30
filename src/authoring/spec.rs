@@ -124,7 +124,8 @@ pub enum PaintSpec {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct StrokeSpec {
-    pub color: String,
+    #[serde(alias = "color")]
+    pub paint: PaintSpec,
     pub width: ScalarExpr,
 }
 

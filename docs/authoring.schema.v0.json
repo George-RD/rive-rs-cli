@@ -303,15 +303,15 @@
     "StrokeSpec": {
       "additionalProperties": false,
       "properties": {
-        "color": {
-          "type": "string"
+        "paint": {
+          "$ref": "#/$defs/PaintSpec"
         },
         "width": {
           "$ref": "#/$defs/ScalarExpr"
         }
       },
       "required": [
-        "color",
+        "paint",
         "width"
       ],
       "type": "object"
