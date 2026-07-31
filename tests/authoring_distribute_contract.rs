@@ -174,7 +174,7 @@ fn distribute_endpoint_expressions_require_pixel_units() {
             literal(50.0, "px"),
             rectangle("tile"),
         );
-        pattern[field] = literal(1.0, "deg");
+        pattern[field] = literal(1.0, "degrees");
 
         let error = lower_authoring_json(&document(vec![pattern]))
             .expect_err("non-pixel distribute endpoint must fail");
