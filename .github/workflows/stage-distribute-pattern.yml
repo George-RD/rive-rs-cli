@@ -1,0 +1,48 @@
+name: Stage distribute pattern
+
+on:
+  push:
+    branches:
+      - agent/distribute-pattern-v0
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  stage:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/distribute-pattern-v0
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: python3 scripts/stage_distribute_pattern.py
+      - run: cargo fmt --all
+      - name: Regenerate the published AuthoringSpec schema
+        run: cargo test --locked --all-features --test authoring_contract regenerate_published_authoring_schema -- --ignored
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo test --locked --all-features --test authoring_distribute_contract
+      - run: cargo test --locked --all-features --test authoring_contract published_authoring_schema_matches_generated_contract
+      - run: cargo test --locked --all-features
+      - name: Commit the verified implementation without staging machinery
+        run: |
+          rm .github/workflows/stage-distribute-pattern.yml
+          rm scripts/stage_distribute_pattern.py
+          git diff --check
+          test ! -e .github/workflows/stage-distribute-pattern.yml
+          test ! -e scripts/stage_distribute_pattern.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: add deterministic distribute patterns"
+          git push origin HEAD:agent/distribute-pattern-v0
