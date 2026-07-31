@@ -100,6 +100,12 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    Image {
+        id: String,
+        asset: String,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Grid {
         id: String,
         #[schemars(range(min = 1, max = 100))]
@@ -178,6 +184,12 @@ pub(crate) struct TextNodeRef<'a> {
 }
 
 #[derive(Clone, Copy)]
+pub(crate) struct ImageNodeRef<'a> {
+    pub asset: &'a str,
+    pub transform: &'a TransformSpec,
+}
+
+#[derive(Clone, Copy)]
 pub(crate) struct GridNodeRef<'a> {
     pub columns: u64,
     pub rows: u64,
@@ -222,6 +234,7 @@ impl VisualNode {
             | Self::Polygon { id, .. }
             | Self::Star { id, .. }
             | Self::Text { id, .. }
+            | Self::Image { id, .. }
             | Self::Grid { id, .. }
             | Self::Radial { id, .. }
             | Self::Group { id, .. }
@@ -329,6 +342,7 @@ impl VisualNode {
                 transform,
             },
             Self::Text { .. }
+            | Self::Image { .. }
             | Self::Grid { .. }
             | Self::Radial { .. }
             | Self::Group { .. }
@@ -374,6 +388,15 @@ impl VisualNode {
                 overflow: *overflow,
                 transform,
             }),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn image_node(&self) -> Option<ImageNodeRef<'_>> {
+        match self {
+            Self::Image {
+                asset, transform, ..
+            } => Some(ImageNodeRef { asset, transform }),
             _ => None,
         }
     }
