@@ -27,7 +27,7 @@ A v0 document has four explicit graphs plus a deterministic file-scope asset reg
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, and mirror patterns, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Distribute/along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, mirror, and distribute patterns, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
@@ -219,6 +219,31 @@ A `mirror` node emits exactly two deterministic cells: `original` and `mirrored`
 ```
 
 Mirror items use the same component expansion, generated-node budget, runtime-name registry, source-map rewriting, and canonical builder path as grid and radial patterns. Nested repeat-safe authored nodes are supported. Raw `SceneSpec` objects are rejected when mirrored because embedded names and references cannot be safely namespaced across repeated copies.
+
+## Distribute patterns
+
+A `distribute` node places between two and 100 copies at equal intervals along a straight authored segment. Both endpoints are included. The four endpoint expressions use pixel units and may reference component parameters.
+
+```json
+{
+  "kind": "distribute",
+  "id": "steps",
+  "copies": 4,
+  "start_x": { "kind": "literal", "value": 0, "unit": "px" },
+  "start_y": { "kind": "literal", "value": 0, "unit": "px" },
+  "end_x": { "kind": "literal", "value": 120, "unit": "px" },
+  "end_y": { "kind": "literal", "value": 60, "unit": "px" },
+  "item": {
+    "kind": "ellipse",
+    "id": "dot",
+    "width": { "kind": "literal", "value": 16, "unit": "px" },
+    "height": { "kind": "literal", "value": 16, "unit": "px" },
+    "fill": "#2563EB"
+  }
+}
+```
+
+This example emits cells at `(0, 0)`, `(40, 20)`, `(80, 40)`, and `(120, 60)`. The pattern transform wraps the complete distribution, while the item keeps its own transform inside every cell. Distribution uses the same component expansion, runtime-name registry, source maps, raw-scene repetition safety, generated-node budget, and canonical builder path as the other bounded patterns.
 
 ## Raw canonical escapes
 

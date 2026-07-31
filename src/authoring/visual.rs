@@ -145,6 +145,18 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    Distribute {
+        id: String,
+        #[schemars(range(min = 2, max = 100))]
+        copies: u64,
+        start_x: ScalarExpr,
+        start_y: ScalarExpr,
+        end_x: ScalarExpr,
+        end_y: ScalarExpr,
+        item: Box<VisualNode>,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Group {
         id: String,
         #[serde(default)]
@@ -232,10 +244,22 @@ pub(crate) struct MirrorNodeRef<'a> {
 }
 
 #[derive(Clone, Copy)]
+pub(crate) struct DistributeNodeRef<'a> {
+    pub copies: u64,
+    pub start_x: &'a ScalarExpr,
+    pub start_y: &'a ScalarExpr,
+    pub end_x: &'a ScalarExpr,
+    pub end_y: &'a ScalarExpr,
+    pub item: &'a VisualNode,
+    pub transform: &'a TransformSpec,
+}
+
+#[derive(Clone, Copy)]
 pub(crate) enum PatternNodeRef<'a> {
     Grid(GridNodeRef<'a>),
     Radial(RadialNodeRef<'a>),
     Mirror(MirrorNodeRef<'a>),
+    Distribute(DistributeNodeRef<'a>),
 }
 
 impl<'a> PatternNodeRef<'a> {
@@ -244,6 +268,7 @@ impl<'a> PatternNodeRef<'a> {
             Self::Grid(grid) => grid.item,
             Self::Radial(radial) => radial.item,
             Self::Mirror(mirror) => mirror.item,
+            Self::Distribute(distribute) => distribute.item,
         }
     }
 }
@@ -261,6 +286,7 @@ impl VisualNode {
             | Self::Grid { id, .. }
             | Self::Radial { id, .. }
             | Self::Mirror { id, .. }
+            | Self::Distribute { id, .. }
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
@@ -370,6 +396,7 @@ impl VisualNode {
             | Self::Grid { .. }
             | Self::Radial { .. }
             | Self::Mirror { .. }
+            | Self::Distribute { .. }
             | Self::Group { .. }
             | Self::Instance { .. }
             | Self::RawSceneObject { .. } => {
@@ -469,6 +496,24 @@ impl VisualNode {
                 ..
             } => Some(PatternNodeRef::Mirror(MirrorNodeRef {
                 axis: *axis,
+                item,
+                transform,
+            })),
+            Self::Distribute {
+                copies,
+                start_x,
+                start_y,
+                end_x,
+                end_y,
+                item,
+                transform,
+                ..
+            } => Some(PatternNodeRef::Distribute(DistributeNodeRef {
+                copies: *copies,
+                start_x,
+                start_y,
+                end_x,
+                end_y,
                 item,
                 transform,
             })),

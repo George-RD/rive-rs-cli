@@ -1069,6 +1069,60 @@
         {
           "additionalProperties": false,
           "properties": {
+            "copies": {
+              "format": "uint64",
+              "maximum": 100,
+              "minimum": 2,
+              "type": "integer"
+            },
+            "end_x": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "end_y": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "id": {
+              "type": "string"
+            },
+            "item": {
+              "$ref": "#/$defs/VisualNode"
+            },
+            "kind": {
+              "const": "distribute",
+              "type": "string"
+            },
+            "start_x": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "start_y": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "transform": {
+              "$ref": "#/$defs/TransformSpec",
+              "default": {
+                "rotation": null,
+                "scale_x": null,
+                "scale_y": null,
+                "x": null,
+                "y": null
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "copies",
+            "start_x",
+            "start_y",
+            "end_x",
+            "end_y",
+            "item"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "children": {
               "default": [],
               "items": {

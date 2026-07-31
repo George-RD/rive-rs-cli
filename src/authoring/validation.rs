@@ -138,6 +138,21 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
             PatternNodeRef::Mirror(mirror) => {
                 validate_transform(mirror.transform, &format!("{path}.transform"), diagnostics);
             }
+            PatternNodeRef::Distribute(distribute) => {
+                for (name, expression) in [
+                    ("start_x", distribute.start_x),
+                    ("start_y", distribute.start_y),
+                    ("end_x", distribute.end_x),
+                    ("end_y", distribute.end_y),
+                ] {
+                    validate_expression(expression, &format!("{path}.{name}"), diagnostics);
+                }
+                validate_transform(
+                    distribute.transform,
+                    &format!("{path}.transform"),
+                    diagnostics,
+                );
+            }
         }
         validate_node(pattern.item(), &format!("{path}.item"), diagnostics);
         return;
@@ -170,7 +185,8 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         | VisualNode::Image { .. }
         | VisualNode::Grid { .. }
         | VisualNode::Radial { .. }
-        | VisualNode::Mirror { .. } => {
+        | VisualNode::Mirror { .. }
+        | VisualNode::Distribute { .. } => {
             unreachable!("shape, text, image, and pattern nodes are handled above")
         }
     }
