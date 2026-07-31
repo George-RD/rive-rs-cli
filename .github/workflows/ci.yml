@@ -22,6 +22,13 @@ jobs:
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
+      - name: Regenerate AuthoringSpec schema for branch evidence
+        run: cargo test --locked --all-features --test authoring_contract regenerate_published_authoring_schema -- --ignored
+      - uses: actions/upload-artifact@v4
+        with:
+          name: authoring-schema-v0
+          path: docs/authoring.schema.v0.json
+          retention-days: 1
       - run: cargo fmt --check
       - name: Run Clippy
         id: clippy
