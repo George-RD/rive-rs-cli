@@ -80,8 +80,10 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Grid, radial, and mirror placement lowering now share explicit position, rotation,
   and scale metadata instead of duplicating pattern-specific wrapper construction.
 - PR #151 hardens the merged mirror slice after delayed review by extracting the
-  axis-to-placement mapping into one documented pure helper and pinning it with an inline
+  axis-to-placement mapping into one pure helper and pinning it with an inline
   `#[cfg(test)]` unit contract while retaining the public end-to-end contract suite.
+- Review remediation keeps Rust source comment-free under the repository compliance
+  policy; durable explanation remains in this Cairn work item and the public contracts.
 - Remaining work includes distribute/along-path patterns, constraints, and a complex
   static showcase without raw escapes.
 
