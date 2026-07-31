@@ -31,14 +31,20 @@ jobs:
 
           path = Path("src/authoring/lower.rs")
           text = path.read_text()
-          old = """        if is_file_asset {
-              if let Some(object) = child.as_object_mut() {
-                  object.remove(\"source\");
-              }
-          }"""
-          new = """        if is_file_asset && let Some(object) = child.as_object_mut() {
-              object.remove(\"source\");
-          }"""
+          old = "\n".join([
+              "        if is_file_asset {",
+              "            if let Some(object) = child.as_object_mut() {",
+              '                object.remove("source");',
+              "            }",
+              "        }",
+          ])
+          new = "\n".join([
+              "        if is_file_asset && let Some(object) = child.as_object_mut() {",
+              '            object.remove("source");',
+              "        }",
+          ])
+          if new in text:
+              raise SystemExit(0)
           count = text.count(old)
           if count != 1:
               raise SystemExit(f"expected one collapsible-if replacement, found {count}")
@@ -47,6 +53,9 @@ jobs:
       - run: cargo fmt
       - name: Preserve Clippy fix
         run: |
+          if git diff --quiet; then
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/authoring/lower.rs
@@ -72,6 +81,8 @@ jobs:
           if git diff --quiet; then
             exit 0
           fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add map.json
           git commit -m "chore: refresh Cairn architecture map"
           git push origin HEAD:agent/font-asset-v0
