@@ -39,9 +39,16 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - PR #148 also proves actual vendored TTF byte embedding through the canonical
   builder with an explicit base directory. Pathless compiler validation preserves
   the returned asset source while avoiding filesystem-dependent lowering.
-- Font and parameter map keys share one strict validator instead of maintaining
-  duplicate identifier rules. The published AuthoringSpec schema now has a tested
-  regeneration path.
+- Semantic image assets and transformable static image nodes are implemented in PR
+  #149. Fonts lower before images, both registries are sorted by authored ID, and
+  named references flow through the canonical global asset-ordinal resolver.
+- PR #149 proves actual vendored PNG byte embedding and complete source maps for
+  root and component-expanded image nodes without exposing runtime indices.
+- Font and image declarations share one strict validator and deterministic lowering
+  loop instead of maintaining duplicate asset-specific helpers. Parameter keys use
+  the same accepted authored-key rule.
+- The published AuthoringSpec schema has a tested regeneration path and now exposes
+  both semantic asset registries and the static image node contract.
 - The authored visual model is split from the core document/error model in PR #144.
   The generated schema remains byte-identical while `spec.rs` and `visual.rs` are
   each below Cairn's module-size guideline.
@@ -65,8 +72,8 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Generated gradient stops now share the inherited pattern and component expansion budget.
 - Raw SceneSpec escapes remain valid as single nodes but are rejected when a pattern would
   repeat them, because arbitrary embedded names and references cannot be safely namespaced.
-- Remaining work includes image assets, mirror/distribute/along-path patterns,
-  constraints, and a complex static showcase without raw escapes.
+- Remaining work includes mirror/distribute/along-path patterns, constraints, and a
+  complex static showcase without raw escapes.
 
 ## Acceptance criteria
 
