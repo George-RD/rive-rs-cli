@@ -147,6 +147,22 @@
         }
       ]
     },
+    "PathPointSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "y": {
+          "$ref": "#/$defs/ScalarExpr"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "type": "object"
+    },
     "Quantity": {
       "additionalProperties": false,
       "properties": {
@@ -1116,6 +1132,57 @@
             "start_y",
             "end_x",
             "end_y",
+            "item"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "copies": {
+              "format": "uint64",
+              "maximum": 100,
+              "minimum": 2,
+              "type": "integer"
+            },
+            "id": {
+              "type": "string"
+            },
+            "item": {
+              "$ref": "#/$defs/VisualNode"
+            },
+            "kind": {
+              "const": "along_path",
+              "type": "string"
+            },
+            "points": {
+              "items": {
+                "$ref": "#/$defs/PathPointSpec"
+              },
+              "maxItems": 100,
+              "minItems": 2,
+              "type": "array"
+            },
+            "rotate_items": {
+              "default": false,
+              "type": "boolean"
+            },
+            "transform": {
+              "$ref": "#/$defs/TransformSpec",
+              "default": {
+                "rotation": null,
+                "scale_x": null,
+                "scale_y": null,
+                "x": null,
+                "y": null
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "copies",
+            "points",
             "item"
           ],
           "type": "object"

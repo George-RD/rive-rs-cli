@@ -230,7 +230,8 @@ impl<'a> Lowerer<'a> {
             | VisualNode::Grid { .. }
             | VisualNode::Radial { .. }
             | VisualNode::Mirror { .. }
-            | VisualNode::Distribute { .. } => {
+            | VisualNode::Distribute { .. }
+            | VisualNode::AlongPath { .. } => {
                 unreachable!("shape, text, image, and pattern nodes are handled above")
             }
         }

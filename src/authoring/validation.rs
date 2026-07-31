@@ -153,6 +153,25 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
                     diagnostics,
                 );
             }
+            PatternNodeRef::AlongPath(along_path) => {
+                for (index, point) in along_path.points.iter().enumerate() {
+                    validate_expression(
+                        &point.x,
+                        &format!("{path}.points[{index}].x"),
+                        diagnostics,
+                    );
+                    validate_expression(
+                        &point.y,
+                        &format!("{path}.points[{index}].y"),
+                        diagnostics,
+                    );
+                }
+                validate_transform(
+                    along_path.transform,
+                    &format!("{path}.transform"),
+                    diagnostics,
+                );
+            }
         }
         validate_node(pattern.item(), &format!("{path}.item"), diagnostics);
         return;
@@ -186,7 +205,8 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         | VisualNode::Grid { .. }
         | VisualNode::Radial { .. }
         | VisualNode::Mirror { .. }
-        | VisualNode::Distribute { .. } => {
+        | VisualNode::Distribute { .. }
+        | VisualNode::AlongPath { .. } => {
             unreachable!("shape, text, image, and pattern nodes are handled above")
         }
     }

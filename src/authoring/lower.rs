@@ -14,6 +14,7 @@ use super::visual::VisualNode;
 mod image;
 mod node;
 mod paint;
+mod path;
 mod pattern;
 mod shape;
 mod text;

@@ -91,8 +91,14 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Distribute lowering reuses the shared placement and repeated-pattern pipeline. Pattern
   count validation now accepts primitive-specific minimums instead of duplicating a
   separate bound check for the new node.
-- Remaining work includes along-path patterns, constraints, and a complex static showcase
-  without raw escapes.
+- Deterministic along-path patterns are implemented in PR #154. Two to 100 copies
+  are spaced by total arc length across a typed polyline with two to 100 points, including
+  both endpoints, optional tangent rotation, component overrides, stable source maps,
+  canonical builder validation, and the inherited generated-node budget.
+- Pure polyline sampling lives in a focused lowering helper with pinned `libm` distance
+  and tangent math. Shared bounded-count validation now covers both pattern copies and
+  path-point counts without duplicating range logic.
+- Remaining work includes constraints and a complex static showcase without raw escapes.
 
 ## Acceptance criteria
 
