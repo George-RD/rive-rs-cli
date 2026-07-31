@@ -1,3 +1,5 @@
+//! Deterministic lowering for bounded visual patterns.
+
 use serde_json::{Value, json};
 
 use super::super::deterministic_math::sin_cos;
@@ -8,6 +10,7 @@ use super::super::visual::{
 };
 use super::{Lowerer, NodeContext, runtime_name};
 
+/// Fully resolved transform data for one generated pattern cell.
 struct PatternPlacement {
     segment: String,
     x: f64,
@@ -18,6 +21,7 @@ struct PatternPlacement {
 }
 
 impl PatternPlacement {
+    /// Creates a translated or rotated placement with identity scale.
     fn positioned(segment: impl Into<String>, x: f64, y: f64, rotation: f64) -> Self {
         Self {
             segment: segment.into(),
@@ -29,6 +33,7 @@ impl PatternPlacement {
         }
     }
 
+    /// Creates an origin-centred placement with explicit reflection scales.
     fn reflected(segment: impl Into<String>, scale_x: f64, scale_y: f64) -> Self {
         Self {
             segment: segment.into(),
@@ -41,7 +46,20 @@ impl PatternPlacement {
     }
 }
 
+/// Returns the two stable cells generated for a semantic mirror axis.
+fn mirror_placements(axis: MirrorAxis) -> [PatternPlacement; 2] {
+    let (scale_x, scale_y) = match axis {
+        MirrorAxis::Vertical => (-1.0, 1.0),
+        MirrorAxis::Horizontal => (1.0, -1.0),
+    };
+    [
+        PatternPlacement::positioned("original", 0.0, 0.0, 0.0),
+        PatternPlacement::reflected("mirrored", scale_x, scale_y),
+    ]
+}
+
 impl<'a> Lowerer<'a> {
+    /// Dispatches a typed pattern through its deterministic lowering path.
     pub(super) fn lower_pattern(
         &mut self,
         pattern: PatternNodeRef<'_>,
@@ -55,6 +73,7 @@ impl<'a> Lowerer<'a> {
         }
     }
 
+    /// Resolves row-major grid coordinates before shared repeated-pattern lowering.
     fn lower_grid(
         &mut self,
         grid: GridNodeRef<'_>,
@@ -108,6 +127,7 @@ impl<'a> Lowerer<'a> {
         )
     }
 
+    /// Resolves deterministic polar coordinates before shared repeated-pattern lowering.
     fn lower_radial(
         &mut self,
         radial: RadialNodeRef<'_>,
@@ -175,6 +195,7 @@ impl<'a> Lowerer<'a> {
         )
     }
 
+    /// Lowers the two placements defined by a semantic mirror axis.
     fn lower_mirror(
         &mut self,
         mirror: MirrorNodeRef<'_>,
@@ -186,14 +207,7 @@ impl<'a> Lowerer<'a> {
             item,
             transform,
         } = mirror;
-        let (scale_x, scale_y) = match axis {
-            MirrorAxis::Vertical => (-1.0, 1.0),
-            MirrorAxis::Horizontal => (1.0, -1.0),
-        };
-        let placements = vec![
-            PatternPlacement::positioned("original", 0.0, 0.0, 0.0),
-            PatternPlacement::reflected("mirrored", scale_x, scale_y),
-        ];
+        let placements = Vec::from(mirror_placements(axis));
 
         self.lower_repeated_pattern(
             "mirror",
@@ -205,6 +219,7 @@ impl<'a> Lowerer<'a> {
         )
     }
 
+    /// Expands resolved cells while preserving names, source maps, and component context.
     fn lower_repeated_pattern(
         &mut self,
         role: &str,
