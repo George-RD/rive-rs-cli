@@ -145,8 +145,8 @@ fn distribute_supports_descending_segments() {
         literal(-15.0, "px"),
         rectangle("tile"),
     );
-    let lowered = lower_authoring_json(&document(vec![pattern]))
-        .expect("descending distribute lowering");
+    let lowered =
+        lower_authoring_json(&document(vec![pattern])).expect("descending distribute lowering");
     let cells = lowered.scene["artboard"]["children"][0]["children"]
         .as_array()
         .expect("descending distribute cells");
