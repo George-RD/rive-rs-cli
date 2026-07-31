@@ -72,8 +72,15 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Generated gradient stops now share the inherited pattern and component expansion budget.
 - Raw SceneSpec escapes remain valid as single nodes but are rejected when a pattern would
   repeat them, because arbitrary embedded names and references cannot be safely namespaced.
-- Remaining work includes mirror/distribute/along-path patterns, constraints, and a
-  complex static showcase without raw escapes.
+- Deterministic semantic mirror patterns are implemented in PR #150. Vertical and
+  horizontal axes lower to exactly two named cells through the shared repeated-pattern
+  pipeline, including component definition paths, source maps, runtime-name collision
+  checks, raw-scene repetition safety, canonical builder validation, and the inherited
+  10,000-node expansion budget.
+- Grid, radial, and mirror placement lowering now share explicit position, rotation,
+  and scale metadata instead of duplicating pattern-specific wrapper construction.
+- Remaining work includes distribute/along-path patterns, constraints, and a complex
+  static showcase without raw escapes.
 
 ## Acceptance criteria
 
