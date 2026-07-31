@@ -3,7 +3,9 @@ use serde_json::{Value, json};
 use super::super::deterministic_math::sin_cos;
 use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, TransformSpec, Unit};
-use super::super::visual::{GridNodeRef, MirrorNodeRef, PatternNodeRef, RadialNodeRef, VisualNode};
+use super::super::visual::{
+    GridNodeRef, MirrorAxis, MirrorNodeRef, PatternNodeRef, RadialNodeRef, VisualNode,
+};
 use super::{Lowerer, NodeContext, runtime_name};
 
 struct PatternPlacement {
@@ -185,15 +187,8 @@ impl<'a> Lowerer<'a> {
             transform,
         } = mirror;
         let (scale_x, scale_y) = match axis {
-            "vertical" => (-1.0, 1.0),
-            "horizontal" => (1.0, -1.0),
-            _ => {
-                return Err(AuthoringDiagnostic::new(
-                    format!("{}.axis", context.authored_path),
-                    "invalid_mirror_axis",
-                    "mirror axis must be horizontal or vertical",
-                ));
-            }
+            MirrorAxis::Vertical => (-1.0, 1.0),
+            MirrorAxis::Horizontal => (1.0, -1.0),
         };
         let placements = vec![
             PatternPlacement::positioned("original", 0.0, 0.0, 0.0),
