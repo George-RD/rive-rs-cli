@@ -1,12 +1,35 @@
 use std::collections::BTreeMap;
 
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 
 use super::spec::{
     PaintSpec, Quantity, ScalarExpr, StrokeSpec, TextAlign, TextOverflow, TransformSpec,
 };
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+enum MirrorAxis {
+    Horizontal,
+    Vertical,
+}
+
+impl MirrorAxis {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Horizontal => "horizontal",
+            Self::Vertical => "vertical",
+        }
+    }
+}
+
+fn deserialize_mirror_axis<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    MirrorAxis::deserialize(deserializer).map(|axis| axis.as_str().to_string())
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
@@ -131,6 +154,15 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    Mirror {
+        id: String,
+        #[serde(deserialize_with = "deserialize_mirror_axis")]
+        #[schemars(with = "MirrorAxis")]
+        axis: String,
+        item: Box<VisualNode>,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Group {
         id: String,
         #[serde(default)]
@@ -211,9 +243,17 @@ pub(crate) struct RadialNodeRef<'a> {
 }
 
 #[derive(Clone, Copy)]
+pub(crate) struct MirrorNodeRef<'a> {
+    pub axis: &'a str,
+    pub item: &'a VisualNode,
+    pub transform: &'a TransformSpec,
+}
+
+#[derive(Clone, Copy)]
 pub(crate) enum PatternNodeRef<'a> {
     Grid(GridNodeRef<'a>),
     Radial(RadialNodeRef<'a>),
+    Mirror(MirrorNodeRef<'a>),
 }
 
 impl<'a> PatternNodeRef<'a> {
@@ -221,6 +261,7 @@ impl<'a> PatternNodeRef<'a> {
         match self {
             Self::Grid(grid) => grid.item,
             Self::Radial(radial) => radial.item,
+            Self::Mirror(mirror) => mirror.item,
         }
     }
 }
@@ -237,6 +278,7 @@ impl VisualNode {
             | Self::Image { id, .. }
             | Self::Grid { id, .. }
             | Self::Radial { id, .. }
+            | Self::Mirror { id, .. }
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
@@ -345,6 +387,7 @@ impl VisualNode {
             | Self::Image { .. }
             | Self::Grid { .. }
             | Self::Radial { .. }
+            | Self::Mirror { .. }
             | Self::Group { .. }
             | Self::Instance { .. }
             | Self::RawSceneObject { .. } => {
@@ -434,6 +477,16 @@ impl VisualNode {
                 start_angle,
                 angle_step,
                 rotate_items: *rotate_items,
+                item,
+                transform,
+            })),
+            Self::Mirror {
+                axis,
+                item,
+                transform,
+                ..
+            } => Some(PatternNodeRef::Mirror(MirrorNodeRef {
+                axis,
                 item,
                 transform,
             })),
