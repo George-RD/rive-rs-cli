@@ -125,8 +125,7 @@ fn unknown_font_assets_report_root_and_component_authored_paths() {
     ))
     .expect_err("unknown root font must fail");
     assert!(root_error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "unknown_font_asset"
-            && diagnostic.path == "$.visual.nodes[0].font"
+        diagnostic.code == "unknown_font_asset" && diagnostic.path == "$.visual.nodes[0].font"
     }));
 
     let component = json!({
@@ -159,8 +158,8 @@ fn unknown_font_assets_report_root_and_component_authored_paths() {
         "motion": {},
         "behavior": {}
     });
-    let component_error = lower_authoring_json(&component.to_string())
-        .expect_err("unknown component font must fail");
+    let component_error =
+        lower_authoring_json(&component.to_string()).expect_err("unknown component font must fail");
     assert!(component_error.diagnostics.iter().any(|diagnostic| {
         diagnostic.code == "unknown_font_asset"
             && diagnostic.path == "$.components[0].visual[0].font"
@@ -172,8 +171,7 @@ fn font_asset_definitions_reject_invalid_ids_and_blank_sources() {
     let blank_error = lower_authoring_json(&font_document("inter", "   "))
         .expect_err("blank font source must fail");
     assert!(blank_error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "invalid_asset_source"
-            && diagnostic.path == "$.font_assets.inter"
+        diagnostic.code == "invalid_asset_source" && diagnostic.path == "$.font_assets.inter"
     }));
 
     let invalid = json!({
@@ -190,8 +188,8 @@ fn font_asset_definitions_reject_invalid_ids_and_blank_sources() {
         "motion": {},
         "behavior": {}
     });
-    let invalid_error = lower_authoring_json(&invalid.to_string())
-        .expect_err("ambiguous font id must fail");
+    let invalid_error =
+        lower_authoring_json(&invalid.to_string()).expect_err("ambiguous font id must fail");
     assert!(invalid_error.diagnostics.iter().any(|diagnostic| {
         diagnostic.code == "invalid_asset_id" && diagnostic.path == "$.font_assets"
     }));
