@@ -109,12 +109,7 @@ fn collect_declared_names(value: &serde_json::Value, names: &mut Vec<String>) {
 fn validate_authored_names(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();
     validate_id(&spec.artboard.id, "$.artboard.id", &mut diagnostics);
-    validate_file_assets(
-        &spec.font_assets,
-        "$.font_assets",
-        "font",
-        &mut diagnostics,
-    );
+    validate_file_assets(&spec.font_assets, "$.font_assets", "font", &mut diagnostics);
     validate_file_assets(
         &spec.image_assets,
         "$.image_assets",
