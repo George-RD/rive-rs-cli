@@ -109,6 +109,7 @@ fn collect_declared_names(value: &serde_json::Value, names: &mut Vec<String>) {
 fn validate_authored_names(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();
     validate_id(&spec.artboard.id, "$.artboard.id", &mut diagnostics);
+    validate_font_assets(&spec.font_assets, &mut diagnostics);
     validate_parameter_names(&spec.parameters, "$.parameters", &mut diagnostics);
 
     for (component_index, component) in spec.components.iter().enumerate() {
@@ -161,13 +162,35 @@ fn validate_id(id: &str, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>)
     }
 }
 
+fn validate_font_assets(
+    font_assets: &BTreeMap<String, String>,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    for (id, source) in font_assets {
+        if !is_authored_map_key(id) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                "$.font_assets",
+                "invalid_asset_id",
+                format!("font asset id '{id}' must contain only ASCII letters, digits, '_' or '-'"),
+            ));
+        }
+        if source.trim().is_empty() {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("$.font_assets.{id}"),
+                "invalid_asset_source",
+                "font asset source must not be empty",
+            ));
+        }
+    }
+}
+
 fn validate_parameter_names(
     parameters: &BTreeMap<String, Quantity>,
     path: &str,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
     for name in parameters.keys() {
-        if !is_parameter_name(name) {
+        if !is_authored_map_key(name) {
             diagnostics.push(AuthoringDiagnostic::new(
                 path,
                 "invalid_parameter",
@@ -179,7 +202,7 @@ fn validate_parameter_names(
     }
 }
 
-fn is_parameter_name(name: &str) -> bool {
+fn is_authored_map_key(name: &str) -> bool {
     !name.is_empty()
         && name
             .chars()
@@ -242,6 +265,7 @@ fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringE
                     unit: Unit::Px,
                 },
             },
+            font_assets: spec.font_assets.clone(),
             parameters: BTreeMap::new(),
             components: spec.components.clone(),
             visual: VisualSection {

@@ -75,6 +75,8 @@ pub enum VisualNode {
     Text {
         id: String,
         text: String,
+        #[serde(default)]
+        font: Option<String>,
         font_size: ScalarExpr,
         fill: PaintSpec,
         #[serde(default)]
@@ -160,6 +162,7 @@ pub(crate) struct ShapeNodeRef<'a> {
 #[derive(Clone, Copy)]
 pub(crate) struct TextNodeRef<'a> {
     pub content: &'a str,
+    pub font: Option<&'a str>,
     pub font_size: &'a ScalarExpr,
     pub fill: &'a PaintSpec,
     pub width: Option<&'a ScalarExpr>,
@@ -341,6 +344,7 @@ impl VisualNode {
         match self {
             Self::Text {
                 text,
+                font,
                 font_size,
                 fill,
                 width,
@@ -356,6 +360,7 @@ impl VisualNode {
                 ..
             } => Some(TextNodeRef {
                 content: text,
+                font: font.as_deref(),
                 font_size,
                 fill,
                 width: width.as_ref(),

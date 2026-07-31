@@ -1,4 +1,5 @@
 use rive_cli::authoring::lower_authoring_json;
+use serde_json::json;
 
 #[test]
 fn out_of_range_authoring_number_reports_the_authored_value_path() {
@@ -167,4 +168,40 @@ fn instantiated_component_errors_report_the_definition_path() {
         diagnostic.code == "unit_mismatch"
             && diagnostic.path == "$.components[0].visual[0].width.right"
     }));
+}
+
+#[test]
+fn raw_file_asset_sources_keep_canonical_type_validation() {
+    for asset_type in ["font_asset", "image_asset"] {
+        let input = json!({
+            "authoring_format_version": 0,
+            "artboard": {
+                "id": "raw-asset",
+                "width": { "value": 100.0, "unit": "px" },
+                "height": { "value": 100.0, "unit": "px" }
+            },
+            "visual": {
+                "nodes": [
+                    {
+                        "kind": "raw_scene_object",
+                        "id": "invalid-source",
+                        "object": {
+                            "type": asset_type,
+                            "name": "RawAsset",
+                            "source": 42
+                        }
+                    }
+                ]
+            },
+            "motion": {},
+            "behavior": {}
+        })
+        .to_string();
+
+        let error = lower_authoring_json(&input)
+            .expect_err("raw file asset source types must remain canonically validated");
+        assert!(error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "invalid_lowered_scene" && diagnostic.path == "$.lowered_scene"
+        }));
+    }
 }

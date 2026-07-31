@@ -12090,56 +12090,56 @@
           "kind": "enum",
           "signature": "pub enum GradientKind",
           "file": "src/authoring/spec.rs",
-          "line": 96,
-          "end_line": 99
+          "line": 98,
+          "end_line": 101
         },
         {
           "name": "PaintSpec",
           "kind": "enum",
           "signature": "pub enum PaintSpec",
           "file": "src/authoring/spec.rs",
-          "line": 121,
-          "end_line": 124
+          "line": 123,
+          "end_line": 126
         },
         {
           "name": "ScalarExpr",
           "kind": "enum",
           "signature": "pub enum ScalarExpr",
           "file": "src/authoring/spec.rs",
-          "line": 53,
-          "end_line": 77
+          "line": 55,
+          "end_line": 79
         },
         {
           "name": "TextAlign",
           "kind": "enum",
           "signature": "pub enum TextAlign",
           "file": "src/authoring/spec.rs",
-          "line": 155,
-          "end_line": 160
+          "line": 157,
+          "end_line": 162
         },
         {
           "name": "TextOverflow",
           "kind": "enum",
           "signature": "pub enum TextOverflow",
           "file": "src/authoring/spec.rs",
-          "line": 164,
-          "end_line": 172
+          "line": 166,
+          "end_line": 174
         },
         {
           "name": "TrimPathMode",
           "kind": "enum",
           "signature": "pub enum TrimPathMode",
           "file": "src/authoring/spec.rs",
-          "line": 128,
-          "end_line": 131
+          "line": 130,
+          "end_line": 133
         },
         {
           "name": "Unit",
           "kind": "enum",
           "signature": "pub enum Unit",
           "file": "src/authoring/spec.rs",
-          "line": 44,
-          "end_line": 49
+          "line": 46,
+          "end_line": 51
         },
         {
           "name": "VisualNode",
@@ -12147,7 +12147,7 @@
           "signature": "pub enum VisualNode",
           "file": "src/authoring/visual.rs",
           "line": 13,
-          "end_line": 145
+          "end_line": 147
         },
         {
           "name": "authoring_schema",
@@ -12194,32 +12194,32 @@
           "kind": "struct",
           "signature": "pub struct AuthoringArtboard",
           "file": "src/authoring/spec.rs",
-          "line": 29,
-          "end_line": 33
+          "line": 31,
+          "end_line": 35
         },
         {
           "name": "AuthoringDiagnostic",
           "kind": "struct",
           "signature": "pub struct AuthoringDiagnostic",
           "file": "src/authoring/spec.rs",
-          "line": 233,
-          "end_line": 237
+          "line": 235,
+          "end_line": 239
         },
         {
           "name": "AuthoringError",
           "kind": "struct",
           "signature": "pub struct AuthoringError",
           "file": "src/authoring/spec.rs",
-          "line": 254,
-          "end_line": 256
+          "line": 256,
+          "end_line": 258
         },
         {
           "name": "AuthoringSourceMap",
           "kind": "struct",
           "signature": "pub struct AuthoringSourceMap",
           "file": "src/authoring/spec.rs",
-          "line": 218,
-          "end_line": 220
+          "line": 220,
+          "end_line": 222
         },
         {
           "name": "AuthoringSpec",
@@ -12227,127 +12227,127 @@
           "signature": "pub struct AuthoringSpec",
           "file": "src/authoring/spec.rs",
           "line": 14,
-          "end_line": 25
+          "end_line": 27
         },
         {
           "name": "BehaviorSection",
           "kind": "struct",
           "signature": "pub struct BehaviorSection",
           "file": "src/authoring/spec.rs",
-          "line": 199,
-          "end_line": 202
+          "line": 201,
+          "end_line": 204
         },
         {
           "name": "ComponentSpec",
           "kind": "struct",
           "signature": "pub struct ComponentSpec",
           "file": "src/authoring/spec.rs",
-          "line": 176,
-          "end_line": 181
+          "line": 178,
+          "end_line": 183
         },
         {
           "name": "GradientPaintSpec",
           "kind": "struct",
           "signature": "pub struct GradientPaintSpec",
           "file": "src/authoring/spec.rs",
-          "line": 110,
-          "end_line": 117
+          "line": 112,
+          "end_line": 119
         },
         {
           "name": "GradientStopSpec",
           "kind": "struct",
           "signature": "pub struct GradientStopSpec",
           "file": "src/authoring/spec.rs",
-          "line": 103,
-          "end_line": 106
+          "line": 105,
+          "end_line": 108
         },
         {
           "name": "LoweredAuthoring",
           "kind": "struct",
           "signature": "pub struct LoweredAuthoring",
           "file": "src/authoring/spec.rs",
-          "line": 212,
-          "end_line": 215
+          "line": 214,
+          "end_line": 217
         },
         {
           "name": "MotionSection",
           "kind": "struct",
           "signature": "pub struct MotionSection",
           "file": "src/authoring/spec.rs",
-          "line": 192,
-          "end_line": 195
+          "line": 194,
+          "end_line": 197
         },
         {
           "name": "Quantity",
           "kind": "struct",
           "signature": "pub struct Quantity",
           "file": "src/authoring/spec.rs",
-          "line": 37,
-          "end_line": 40
+          "line": 39,
+          "end_line": 42
         },
         {
           "name": "RawSceneFragment",
           "kind": "struct",
           "signature": "pub struct RawSceneFragment",
           "file": "src/authoring/spec.rs",
-          "line": 206,
-          "end_line": 209
+          "line": 208,
+          "end_line": 211
         },
         {
           "name": "SourceMapEntry",
           "kind": "struct",
           "signature": "pub struct SourceMapEntry",
           "file": "src/authoring/spec.rs",
-          "line": 223,
-          "end_line": 230
+          "line": 225,
+          "end_line": 232
         },
         {
           "name": "StrokeSpec",
           "kind": "struct",
           "signature": "pub struct StrokeSpec",
           "file": "src/authoring/spec.rs",
-          "line": 145,
-          "end_line": 151
+          "line": 147,
+          "end_line": 153
         },
         {
           "name": "TransformSpec",
           "kind": "struct",
           "signature": "pub struct TransformSpec",
           "file": "src/authoring/spec.rs",
-          "line": 81,
-          "end_line": 92
+          "line": 83,
+          "end_line": 94
         },
         {
           "name": "TrimPathSpec",
           "kind": "struct",
           "signature": "pub struct TrimPathSpec",
           "file": "src/authoring/spec.rs",
-          "line": 135,
-          "end_line": 141
+          "line": 137,
+          "end_line": 143
         },
         {
           "name": "VisualSection",
           "kind": "struct",
           "signature": "pub struct VisualSection",
           "file": "src/authoring/spec.rs",
-          "line": 185,
-          "end_line": 188
+          "line": 187,
+          "end_line": 190
         },
         {
           "name": "PatternNodeRef",
           "kind": "enum",
           "signature": "pub(crate) enum PatternNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 199,
-          "end_line": 202
+          "line": 202,
+          "end_line": 205
         },
         {
           "name": "children",
           "kind": "function",
           "signature": "pub(crate) fn children(&self) -> Option<&[VisualNode]>",
           "file": "src/authoring/visual.rs",
-          "line": 416,
-          "end_line": 421
+          "line": 421,
+          "end_line": 426
         },
         {
           "name": "evaluate_expression",
@@ -12378,64 +12378,64 @@
           "kind": "function",
           "signature": "pub(crate) fn id(&self) -> &str",
           "file": "src/authoring/visual.rs",
-          "line": 214,
-          "end_line": 228
+          "line": 217,
+          "end_line": 231
         },
         {
           "name": "item",
           "kind": "function",
           "signature": "pub(crate) fn item(self) -> &'a VisualNode",
           "file": "src/authoring/visual.rs",
-          "line": 205,
-          "end_line": 210
+          "line": 208,
+          "end_line": 213
         },
         {
           "name": "many",
           "kind": "function",
           "signature": "pub(crate) fn many(diagnostics: Vec<AuthoringDiagnostic>) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 265,
-          "end_line": 267
+          "line": 267,
+          "end_line": 269
         },
         {
           "name": "new",
           "kind": "function",
           "signature": "pub(crate) fn new( path: impl Into<String>, code: impl Into<String>, message: impl Into<String>, ) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 240,
-          "end_line": 250
+          "line": 242,
+          "end_line": 252
         },
         {
           "name": "one",
           "kind": "function",
           "signature": "pub(crate) fn one(diagnostic: AuthoringDiagnostic) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 259,
-          "end_line": 263
+          "line": 261,
+          "end_line": 265
         },
         {
           "name": "pattern",
           "kind": "function",
           "signature": "pub(crate) fn pattern(&self) -> Option<PatternNodeRef<'_>>",
           "file": "src/authoring/visual.rs",
-          "line": 376,
-          "end_line": 414
+          "line": 381,
+          "end_line": 419
         },
         {
           "name": "shape",
           "kind": "function",
           "signature": "pub(crate) fn shape(&self) -> Option<ShapeNodeRef<'_>>",
           "file": "src/authoring/visual.rs",
-          "line": 230,
-          "end_line": 338
+          "line": 233,
+          "end_line": 341
         },
         {
           "name": "text_node",
           "kind": "function",
           "signature": "pub(crate) fn text_node(&self) -> Option<TextNodeRef<'_>>",
           "file": "src/authoring/visual.rs",
-          "line": 340,
-          "end_line": 374
+          "line": 343,
+          "end_line": 379
         },
         {
           "name": "validate_scene_number",
@@ -12458,32 +12458,32 @@
           "kind": "struct",
           "signature": "pub(crate) struct GridNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 178,
-          "end_line": 185
+          "line": 181,
+          "end_line": 188
         },
         {
           "name": "RadialNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct RadialNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 188,
-          "end_line": 196
+          "line": 191,
+          "end_line": 199
         },
         {
           "name": "ShapeNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct ShapeNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 148,
-          "end_line": 158
+          "line": 150,
+          "end_line": 160
         },
         {
           "name": "TextNodeRef",
           "kind": "struct",
           "signature": "pub(crate) struct TextNodeRef<'a>",
           "file": "src/authoring/visual.rs",
-          "line": 161,
-          "end_line": 175
+          "line": 163,
+          "end_line": 178
         },
         {
           "name": "TransformValues",
@@ -13232,6 +13232,7 @@
         "./tests/eval_contract.rs",
         "./tests/authoring_contract.rs",
         "./tests/authoring_examples.rs",
+        "./tests/authoring_font_asset_contract.rs",
         "./tests/authoring_gradient_contract.rs",
         "./tests/authoring_grid_contract.rs",
         "./tests/authoring_radial_contract.rs",
@@ -13244,6 +13245,7 @@
       "files": [
         "tests/authoring_contract.rs",
         "tests/authoring_examples.rs",
+        "tests/authoring_font_asset_contract.rs",
         "tests/authoring_gradient_contract.rs",
         "tests/authoring_grid_contract.rs",
         "tests/authoring_radial_contract.rs",
@@ -13859,6 +13861,13 @@
     {
       "code": "CAIRN_MODULE_OVERSIZED",
       "severity": "warning",
+      "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 520 lines, over the 500-line guideline with no allow-list marker",
+      "node": "rive-cli.intelligence.authoring",
+      "path": "src/authoring/lower.rs"
+    },
+    {
+      "code": "CAIRN_MODULE_OVERSIZED",
+      "severity": "warning",
       "message": "module `rive-cli.interfaces.discovery` claims `src/discovery/mod.rs` at 896 lines, over the 500-line guideline with no allow-list marker",
       "node": "rive-cli.interfaces.discovery",
       "path": "src/discovery/mod.rs"
@@ -13876,6 +13885,13 @@
       "message": "module `rive-cli.interfaces.scaffold` claims `src/scaffold/mod.rs` at 717 lines, over the 500-line guideline with no allow-list marker",
       "node": "rive-cli.interfaces.scaffold",
       "path": "src/scaffold/mod.rs"
+    },
+    {
+      "code": "CAIRN_MODULE_OVERSIZED",
+      "severity": "warning",
+      "message": "module `rive-cli.verification.rust` claims `tests/authoring_radial_contract.rs` at 566 lines, over the 500-line guideline with no allow-list marker",
+      "node": "rive-cli.verification.rust",
+      "path": "tests/authoring_radial_contract.rs"
     },
     {
       "code": "CAIRN_MODULE_OVERSIZED",
