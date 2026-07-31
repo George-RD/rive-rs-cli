@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,34 +18,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Expose the typed mirror axis
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("src/authoring/mod.rs")
-          content = path.read_text()
-          before = "pub use visual::VisualNode;"
-          after = "pub use visual::{MirrorAxis, VisualNode};"
-          if before in content:
-              path.write_text(content.replace(before, after, 1))
-          elif after not in content:
-              raise SystemExit("expected public VisualNode re-export was not found")
-          PY
-          if git diff --quiet -- src/authoring/mod.rs; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/authoring/mod.rs
-          git commit -m "refactor: expose typed mirror axis"
-          git push origin "HEAD:${GITHUB_HEAD_REF}"
       - run: cargo fmt --check
       - name: Run Clippy
         id: clippy
