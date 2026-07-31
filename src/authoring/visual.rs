@@ -1,34 +1,18 @@
 use std::collections::BTreeMap;
 
 use schemars::JsonSchema;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::spec::{
     PaintSpec, Quantity, ScalarExpr, StrokeSpec, TextAlign, TextOverflow, TransformSpec,
 };
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-enum MirrorAxis {
+pub enum MirrorAxis {
     Horizontal,
     Vertical,
-}
-
-impl MirrorAxis {
-    fn as_str(self) -> &'static str {
-        match self {
-            Self::Horizontal => "horizontal",
-            Self::Vertical => "vertical",
-        }
-    }
-}
-
-fn deserialize_mirror_axis<'de, D>(deserializer: D) -> Result<String, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    MirrorAxis::deserialize(deserializer).map(|axis| axis.as_str().to_string())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -156,9 +140,7 @@ pub enum VisualNode {
     },
     Mirror {
         id: String,
-        #[serde(deserialize_with = "deserialize_mirror_axis")]
-        #[schemars(with = "MirrorAxis")]
-        axis: String,
+        axis: MirrorAxis,
         item: Box<VisualNode>,
         #[serde(default)]
         transform: TransformSpec,
@@ -244,7 +226,7 @@ pub(crate) struct RadialNodeRef<'a> {
 
 #[derive(Clone, Copy)]
 pub(crate) struct MirrorNodeRef<'a> {
-    pub axis: &'a str,
+    pub axis: MirrorAxis,
     pub item: &'a VisualNode,
     pub transform: &'a TransformSpec,
 }
@@ -486,7 +468,7 @@ impl VisualNode {
                 transform,
                 ..
             } => Some(PatternNodeRef::Mirror(MirrorNodeRef {
-                axis,
+                axis: *axis,
                 item,
                 transform,
             })),
