@@ -3,9 +3,7 @@ use serde_json::{Value, json};
 use super::super::deterministic_math::sin_cos;
 use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, TransformSpec, Unit};
-use super::super::visual::{
-    GridNodeRef, MirrorNodeRef, PatternNodeRef, RadialNodeRef, VisualNode,
-};
+use super::super::visual::{GridNodeRef, MirrorNodeRef, PatternNodeRef, RadialNodeRef, VisualNode};
 use super::{Lowerer, NodeContext, runtime_name};
 
 struct PatternPlacement {
