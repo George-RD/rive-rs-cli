@@ -3,7 +3,9 @@ use serde_json::{Value, json};
 use super::super::deterministic_math::sin_cos;
 use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, TransformSpec, Unit};
-use super::super::visual::{GridNodeRef, PatternNodeRef, RadialNodeRef, VisualNode};
+use super::super::visual::{
+    GridNodeRef, MirrorNodeRef, PatternNodeRef, RadialNodeRef, VisualNode,
+};
 use super::{Lowerer, NodeContext, runtime_name};
 
 struct PatternPlacement {
@@ -11,6 +13,32 @@ struct PatternPlacement {
     x: f64,
     y: f64,
     rotation: f64,
+    scale_x: f64,
+    scale_y: f64,
+}
+
+impl PatternPlacement {
+    fn positioned(segment: impl Into<String>, x: f64, y: f64, rotation: f64) -> Self {
+        Self {
+            segment: segment.into(),
+            x,
+            y,
+            rotation,
+            scale_x: 1.0,
+            scale_y: 1.0,
+        }
+    }
+
+    fn reflected(segment: impl Into<String>, scale_x: f64, scale_y: f64) -> Self {
+        Self {
+            segment: segment.into(),
+            x: 0.0,
+            y: 0.0,
+            rotation: 0.0,
+            scale_x,
+            scale_y,
+        }
+    }
 }
 
 impl<'a> Lowerer<'a> {
@@ -23,6 +51,7 @@ impl<'a> Lowerer<'a> {
         match pattern {
             PatternNodeRef::Grid(grid) => self.lower_grid(grid, context, component_stack),
             PatternNodeRef::Radial(radial) => self.lower_radial(radial, context, component_stack),
+            PatternNodeRef::Mirror(mirror) => self.lower_mirror(mirror, context, component_stack),
         }
     }
 
@@ -60,12 +89,12 @@ impl<'a> Lowerer<'a> {
         let mut placements = Vec::with_capacity(capacity);
         for row in 0..rows {
             for column in 0..columns {
-                placements.push(PatternPlacement {
-                    segment: format!("r{row}c{column}"),
-                    x: column as f64 * column_step,
-                    y: row as f64 * row_step,
-                    rotation: 0.0,
-                });
+                placements.push(PatternPlacement::positioned(
+                    format!("r{row}c{column}"),
+                    column as f64 * column_step,
+                    row as f64 * row_step,
+                    0.0,
+                ));
             }
         }
 
@@ -128,16 +157,53 @@ impl<'a> Lowerer<'a> {
             let y = radius * sine;
             validate_scene_number(x, &radius_path)?;
             validate_scene_number(y, &radius_path)?;
-            placements.push(PatternPlacement {
-                segment: format!("p{index}"),
+            placements.push(PatternPlacement::positioned(
+                format!("p{index}"),
                 x,
                 y,
-                rotation: if rotate_items { angle } else { 0.0 },
-            });
+                if rotate_items { angle } else { 0.0 },
+            ));
         }
 
         self.lower_repeated_pattern(
             "radial",
+            item,
+            transform,
+            context,
+            placements,
+            component_stack,
+        )
+    }
+
+    fn lower_mirror(
+        &mut self,
+        mirror: MirrorNodeRef<'_>,
+        context: NodeContext<'_>,
+        component_stack: &mut Vec<String>,
+    ) -> Result<Value, AuthoringDiagnostic> {
+        let MirrorNodeRef {
+            axis,
+            item,
+            transform,
+        } = mirror;
+        let (scale_x, scale_y) = match axis {
+            "vertical" => (-1.0, 1.0),
+            "horizontal" => (1.0, -1.0),
+            _ => {
+                return Err(AuthoringDiagnostic::new(
+                    format!("{}.axis", context.authored_path),
+                    "invalid_mirror_axis",
+                    "mirror axis must be horizontal or vertical",
+                ));
+            }
+        };
+        let placements = vec![
+            PatternPlacement::positioned("original", 0.0, 0.0, 0.0),
+            PatternPlacement::reflected("mirrored", scale_x, scale_y),
+        ];
+
+        self.lower_repeated_pattern(
+            "mirror",
             item,
             transform,
             context,
@@ -217,8 +283,8 @@ impl<'a> Lowerer<'a> {
                 "x": placement.x,
                 "y": placement.y,
                 "rotation": placement.rotation,
-                "scale_x": 1.0,
-                "scale_y": 1.0,
+                "scale_x": placement.scale_x,
+                "scale_y": placement.scale_y,
                 "children": [lowered_item]
             }));
         }
