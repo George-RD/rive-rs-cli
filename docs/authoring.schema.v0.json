@@ -765,6 +765,13 @@
             "fill": {
               "$ref": "#/$defs/PaintSpec"
             },
+            "font": {
+              "default": null,
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "font_size": {
               "$ref": "#/$defs/ScalarExpr"
             },
@@ -1115,6 +1122,13 @@
         "$ref": "#/$defs/ComponentSpec"
       },
       "type": "array"
+    },
+    "font_assets": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "type": "object"
     },
     "motion": {
       "$ref": "#/$defs/MotionSection"

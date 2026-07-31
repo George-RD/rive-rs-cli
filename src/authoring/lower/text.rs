@@ -4,7 +4,8 @@ use super::super::expression::{evaluate_expression, evaluate_transform};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, TextAlign, TextOverflow, Unit};
 use super::super::visual::TextNodeRef;
 use super::{
-    LoweredObject, Lowerer, NodeContext, PaintTarget, evaluate_ratio_expression, runtime_name,
+    LoweredObject, Lowerer, NodeContext, PaintTarget, evaluate_ratio_expression,
+    font_asset_runtime_name, runtime_name,
 };
 
 impl<'a> Lowerer<'a> {
@@ -15,6 +16,7 @@ impl<'a> Lowerer<'a> {
     ) -> Result<Value, AuthoringDiagnostic> {
         let TextNodeRef {
             content,
+            font,
             font_size: font_size_expression,
             fill,
             width: width_expression,
@@ -36,6 +38,19 @@ impl<'a> Lowerer<'a> {
             scene_path,
             scope,
         } = context;
+
+        let font_asset = font
+            .map(|id| {
+                if !self.spec.font_assets.contains_key(id) {
+                    return Err(AuthoringDiagnostic::new(
+                        format!("{authored_path}.font"),
+                        "unknown_font_asset",
+                        format!("font asset '{id}' is not declared"),
+                    ));
+                }
+                Ok(font_asset_runtime_name(&self.spec.artboard.id, id))
+            })
+            .transpose()?;
 
         let font_size = evaluate_expression(
             font_size_expression,
@@ -228,6 +243,9 @@ impl<'a> Lowerer<'a> {
             }]
         });
         if let Some(object) = style.as_object_mut() {
+            if let Some(font_asset) = font_asset {
+                object.insert("font_asset".to_string(), Value::String(font_asset));
+            }
             if let Some(line_height) = line_height {
                 object.insert("line_height".to_string(), Value::from(line_height));
             }

@@ -169,13 +169,33 @@ impl<'a> Lowerer<'a> {
             scene_paths: vec!["/artboard".to_string()],
         });
 
-        let mut children = Vec::with_capacity(self.spec.visual.nodes.len());
+        let mut children =
+            Vec::with_capacity(self.spec.font_assets.len() + self.spec.visual.nodes.len());
+        for (index, (id, source)) in self.spec.font_assets.iter().enumerate() {
+            let runtime_name = font_asset_runtime_name(&self.spec.artboard.id, id);
+            let authored_path = format!("$.font_assets.{id}");
+            self.register_runtime_names(std::slice::from_ref(&runtime_name), &authored_path)
+                .map_err(AuthoringError::one)?;
+            self.source_map.entries.push(SourceMapEntry {
+                authored_id: id.clone(),
+                authored_path,
+                definition_path: None,
+                runtime_names: vec![runtime_name.clone()],
+                scene_paths: vec![format!("/artboard/children/{index}")],
+            });
+            children.push(json!({
+                "type": "font_asset",
+                "name": runtime_name,
+                "source": source
+            }));
+        }
+        let visual_offset = children.len();
         let mut component_stack = Vec::new();
         for (index, node) in self.spec.visual.nodes.iter().enumerate() {
             let authored_path = format!("$.visual.nodes[{index}]");
             let authored_id = node.id().to_string();
             let runtime_segments = vec![self.spec.artboard.id.clone(), authored_id.clone()];
-            let scene_path = format!("/artboard/children/{index}");
+            let scene_path = format!("/artboard/children/{}", visual_offset + index);
             let child = self
                 .lower_node(
                     node,
@@ -227,13 +247,15 @@ impl<'a> Lowerer<'a> {
             "artboard": artboard
         });
 
-        let scene_spec = serde_json::from_value::<SceneSpec>(scene.clone()).map_err(|error| {
-            AuthoringError::one(AuthoringDiagnostic::new(
-                "$.lowered_scene",
-                "invalid_lowered_scene",
-                error.to_string(),
-            ))
-        })?;
+        let validation_scene = without_asset_sources(&scene);
+        let scene_spec =
+            serde_json::from_value::<SceneSpec>(validation_scene).map_err(|error| {
+                AuthoringError::one(AuthoringDiagnostic::new(
+                    "$.lowered_scene",
+                    "invalid_lowered_scene",
+                    error.to_string(),
+                ))
+            })?;
         build_scene(&scene_spec, None).map_err(|error| {
             AuthoringError::one(AuthoringDiagnostic::new(
                 "$.lowered_scene",
@@ -402,6 +424,35 @@ fn validate_fragment_ids(
             ));
         }
     }
+}
+
+fn font_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {
+    runtime_name(
+        &[artboard_id.to_string(), asset_id.to_string()],
+        "font_asset",
+    )
+}
+
+fn without_asset_sources(scene: &Value) -> Value {
+    let mut validation_scene = scene.clone();
+    let Some(children) = validation_scene
+        .pointer_mut("/artboard/children")
+        .and_then(Value::as_array_mut)
+    else {
+        return validation_scene;
+    };
+    for child in children {
+        let is_file_asset = matches!(
+            child.get("type").and_then(Value::as_str),
+            Some("font_asset" | "image_asset")
+        );
+        if is_file_asset {
+            if let Some(object) = child.as_object_mut() {
+                object.remove("source");
+            }
+        }
+    }
+    validation_scene
 }
 
 fn runtime_name(segments: &[String], role: &str) -> String {

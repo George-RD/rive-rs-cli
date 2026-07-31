@@ -217,6 +217,18 @@ fn published_authoring_schema_matches_generated_contract() {
     )
     .expect("published authoring schema must be valid JSON");
     let generated = authoring_schema();
+    if std::env::var_os("UPDATE_AUTHORING_SCHEMA").is_some() {
+        fs::write(
+            &schema_path,
+            format!(
+                "{}\n",
+                serde_json::to_string_pretty(&generated)
+                    .expect("serialize generated authoring schema")
+            ),
+        )
+        .expect("write published authoring schema");
+        return;
+    }
 
     assert_eq!(
         published,

@@ -16,6 +16,8 @@ pub struct AuthoringSpec {
     pub authoring_format_version: u32,
     pub artboard: AuthoringArtboard,
     #[serde(default)]
+    pub font_assets: BTreeMap<String, String>,
+    #[serde(default)]
     pub parameters: BTreeMap<String, Quantity>,
     #[serde(default)]
     pub components: Vec<ComponentSpec>,
