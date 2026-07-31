@@ -109,10 +109,7 @@ fn image_assets_lower_deterministically_after_fonts_and_embed_bytes() {
     );
     assert_eq!(
         image_entry.scene_paths,
-        vec![
-            "/artboard/children/2",
-            "/artboard/children/2/children/0"
-        ]
+        vec!["/artboard/children/2", "/artboard/children/2/children/0"]
     );
 
     let scene: SceneSpec =
@@ -162,14 +159,10 @@ fn image_assets_lower_deterministically_after_fonts_and_embed_bytes() {
 
 #[test]
 fn unknown_image_assets_report_root_and_component_authored_paths() {
-    let root_error = lower_authoring_json(&image_document(
-        "missing",
-        "assets/textures/aurora.png",
-    ))
-    .expect_err("unknown root image asset must fail");
+    let root_error = lower_authoring_json(&image_document("missing", "assets/textures/aurora.png"))
+        .expect_err("unknown root image asset must fail");
     assert!(root_error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "unknown_image_asset"
-            && diagnostic.path == "$.visual.nodes[0].asset"
+        diagnostic.code == "unknown_image_asset" && diagnostic.path == "$.visual.nodes[0].asset"
     }));
 
     let component = json!({
@@ -212,8 +205,7 @@ fn image_asset_definitions_reject_invalid_ids_and_blank_sources() {
     let blank_error = lower_authoring_json(&image_document("aurora", "   "))
         .expect_err("blank image source must fail");
     assert!(blank_error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "invalid_asset_source"
-            && diagnostic.path == "$.image_assets.aurora"
+        diagnostic.code == "invalid_asset_source" && diagnostic.path == "$.image_assets.aurora"
     }));
 
     let invalid = json!({
