@@ -136,13 +136,6 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
                 validate_transform(radial.transform, &format!("{path}.transform"), diagnostics);
             }
             PatternNodeRef::Mirror(mirror) => {
-                if !matches!(mirror.axis, "horizontal" | "vertical") {
-                    diagnostics.push(AuthoringDiagnostic::new(
-                        format!("{path}.axis"),
-                        "invalid_mirror_axis",
-                        "mirror axis must be horizontal or vertical",
-                    ));
-                }
                 validate_transform(mirror.transform, &format!("{path}.transform"), diagnostics);
             }
         }
