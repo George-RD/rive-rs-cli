@@ -28,13 +28,7 @@ fn rectangle(id: &str) -> Value {
     })
 }
 
-fn along_path(
-    id: &str,
-    copies: u64,
-    points: Vec<Value>,
-    rotate_items: bool,
-    item: Value,
-) -> Value {
+fn along_path(id: &str, copies: u64, points: Vec<Value>, rotate_items: bool, item: Value) -> Value {
     json!({
         "kind": "along_path",
         "id": id,
@@ -237,8 +231,7 @@ fn along_path_rejects_invalid_units_and_zero_length_segments() {
             .expect_err("non-pixel along-path point must fail");
         assert!(error.diagnostics.iter().any(|diagnostic| {
             diagnostic.code == "unit_mismatch"
-                && diagnostic.path
-                    == format!("$.visual.nodes[0].points[{point_index}].{field}")
+                && diagnostic.path == format!("$.visual.nodes[0].points[{point_index}].{field}")
         }));
     }
 
@@ -366,13 +359,7 @@ fn along_path_schema_exposes_only_semantic_fields() {
     let properties = along_path["properties"]
         .as_object()
         .expect("along-path properties");
-    for field in [
-        "copies",
-        "points",
-        "rotate_items",
-        "item",
-        "transform",
-    ] {
+    for field in ["copies", "points", "rotate_items", "item", "transform"] {
         assert!(properties.contains_key(field));
     }
     for field in ["step", "path_length", "tangent", "rotation"] {
