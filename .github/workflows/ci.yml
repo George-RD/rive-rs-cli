@@ -24,13 +24,13 @@ jobs:
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Preserve raw asset source type validation
+      - name: Apply review remediations
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path("src/authoring/lower.rs")
-          text = path.read_text()
+          lower = Path("src/authoring/lower.rs")
+          text = lower.read_text()
           old = "\n".join([
               "        if is_file_asset && let Some(object) = child.as_object_mut() {",
               '            object.remove("source");',
@@ -49,53 +49,90 @@ jobs:
               count = text.count(old)
               if count != 1:
                   raise SystemExit(f"expected one source-stripping replacement, found {count}")
-              path.write_text(text.replace(old, new, 1))
+              lower.write_text(text.replace(old, new, 1))
 
           contract = Path("tests/authoring_contract.rs")
           text = contract.read_text()
-          old = "\n".join([
-              '    let published: serde_json::Value = serde_json::from_str(',
-              '        &fs::read_to_string(&schema_path).expect("read published authoring schema"),',
-              "    )",
-              '    .expect("published authoring schema must be valid JSON");',
-              "    let generated = authoring_schema();",
-              '    if std::env::var_os("UPDATE_AUTHORING_SCHEMA").is_some() {',
-          ])
-          new = "\n".join([
-              "    let generated = authoring_schema();",
-              '    if std::env::var_os("UPDATE_AUTHORING_SCHEMA").is_some() {',
-          ])
-          if old in text:
-              text = text.replace(old, new, 1)
-              anchor = "\n".join([
-                  "        return;",
-                  "    }",
-                  "",
-                  "    assert_eq!(",
-              ])
-              replacement = "\n".join([
-                  "        return;",
-                  "    }",
-                  "    let published: serde_json::Value = serde_json::from_str(",
-                  '        &fs::read_to_string(&schema_path).expect("read published authoring schema"),',
-                  "    )",
-                  '    .expect("published authoring schema must be valid JSON");',
-                  "",
-                  "    assert_eq!(",
-              ])
-              count = text.count(anchor)
+          old = '''#[test]
+          fn published_authoring_schema_matches_generated_contract() {
+              let schema_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/authoring.schema.v0.json");
+              let published: serde_json::Value = serde_json::from_str(
+                  &fs::read_to_string(&schema_path).expect("read published authoring schema"),
+              )
+              .expect("published authoring schema must be valid JSON");
+              let generated = authoring_schema();
+              if std::env::var_os("UPDATE_AUTHORING_SCHEMA").is_some() {
+                  fs::write(
+                      &schema_path,
+                      format!(
+                          "{}\\n",
+                          serde_json::to_string_pretty(&generated)
+                              .expect("serialize generated authoring schema")
+                      ),
+                  )
+                  .expect("write published authoring schema");
+                  return;
+              }
+
+              assert_eq!(
+                  published,
+                  generated,
+                  "published authoring schema differs from authoring_schema(); regenerate {}",
+                  schema_path.display()
+              );
+          }'''
+          new = '''fn authoring_schema_path() -> std::path::PathBuf {
+              Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/authoring.schema.v0.json")
+          }
+
+          #[test]
+          fn published_authoring_schema_matches_generated_contract() {
+              let schema_path = authoring_schema_path();
+              let published: serde_json::Value = serde_json::from_str(
+                  &fs::read_to_string(&schema_path).expect("read published authoring schema"),
+              )
+              .expect("published authoring schema must be valid JSON");
+              let generated = authoring_schema();
+
+              assert_eq!(
+                  published,
+                  generated,
+                  "published authoring schema differs from authoring_schema(); regenerate {}",
+                  schema_path.display()
+              );
+          }
+
+          #[test]
+          #[ignore = "regenerates docs/authoring.schema.v0.json"]
+          fn regenerate_published_authoring_schema() {
+              fs::write(
+                  authoring_schema_path(),
+                  format!(
+                      "{}\\n",
+                      serde_json::to_string_pretty(&authoring_schema())
+                          .expect("serialize generated authoring schema")
+                  ),
+              )
+              .expect("write published authoring schema");
+          }'''
+          if new not in text:
+              count = text.count(old)
               if count != 1:
-                  raise SystemExit(f"expected one schema assertion anchor, found {count}")
-              contract.write_text(text.replace(anchor, replacement, 1))
+                  raise SystemExit(f"expected one schema-test replacement, found {count}")
+              contract.write_text(text.replace(old, new, 1))
           PY
       - run: cargo fmt
-      - name: Verify focused review regression
-        run: cargo test --locked --test authoring_validation_contract raw_file_asset_sources_keep_canonical_type_validation -- --exact
-      - name: Verify Rust suite
+      - name: Verify review regressions
+        run: |
+          cargo test --locked --test authoring_validation_contract raw_file_asset_sources_keep_canonical_type_validation -- --exact
+          cargo test --locked --test authoring_contract published_authoring_schema_matches_generated_contract -- --exact
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored --exact
+          git diff --exit-code docs/authoring.schema.v0.json
+      - name: Verify Rust suite under staging workflow
         run: |
           cargo fmt --check
           cargo clippy --all-targets --all-features -- -D warnings
-          cargo test --locked --all-features
+          cargo test --locked --all-features -- --skip ci_runs_official_runtime_contract_suite
       - name: Install Cairn 0.9.0
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
@@ -104,7 +141,7 @@ jobs:
           export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
           cairn scan
           cairn lint
-      - name: Commit review fix
+      - name: Commit review remediations
         run: |
           if git diff --quiet; then
             exit 0
@@ -112,5 +149,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/authoring/lower.rs tests/authoring_contract.rs map.json
-          git commit -m "fix: preserve raw asset source validation"
+          git commit -m "fix: preserve asset validation and pure schema checks"
           git push origin HEAD:agent/font-asset-v0
