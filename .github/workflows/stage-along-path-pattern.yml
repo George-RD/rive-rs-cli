@@ -26,6 +26,7 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - run: python3 scripts/stage_along_path_pattern.py
+      - run: python3 scripts/fix_along_path_stage.py
       - run: cargo fmt --all
       - name: Regenerate the published AuthoringSpec schema
         run: cargo test --locked --all-features --test authoring_contract regenerate_published_authoring_schema -- --ignored
@@ -38,9 +39,11 @@ jobs:
         run: |
           rm .github/workflows/stage-along-path-pattern.yml
           rm scripts/stage_along_path_pattern.py
+          rm scripts/fix_along_path_stage.py
           git diff --check
           test ! -e .github/workflows/stage-along-path-pattern.yml
           test ! -e scripts/stage_along_path_pattern.py
+          test ! -e scripts/fix_along_path_stage.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
