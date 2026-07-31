@@ -209,26 +209,18 @@ fn schema_is_versioned_and_exposes_explicit_authored_graphs() {
     }
 }
 
+fn authoring_schema_path() -> std::path::PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/authoring.schema.v0.json")
+}
+
 #[test]
 fn published_authoring_schema_matches_generated_contract() {
-    let schema_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/authoring.schema.v0.json");
+    let schema_path = authoring_schema_path();
     let published: serde_json::Value = serde_json::from_str(
         &fs::read_to_string(&schema_path).expect("read published authoring schema"),
     )
     .expect("published authoring schema must be valid JSON");
     let generated = authoring_schema();
-    if std::env::var_os("UPDATE_AUTHORING_SCHEMA").is_some() {
-        fs::write(
-            &schema_path,
-            format!(
-                "{}\n",
-                serde_json::to_string_pretty(&generated)
-                    .expect("serialize generated authoring schema")
-            ),
-        )
-        .expect("write published authoring schema");
-        return;
-    }
 
     assert_eq!(
         published,
@@ -236,6 +228,20 @@ fn published_authoring_schema_matches_generated_contract() {
         "published authoring schema differs from authoring_schema(); regenerate {}",
         schema_path.display()
     );
+}
+
+#[test]
+#[ignore = "regenerates docs/authoring.schema.v0.json"]
+fn regenerate_published_authoring_schema() {
+    fs::write(
+        authoring_schema_path(),
+        format!(
+            "{}\n",
+            serde_json::to_string_pretty(&authoring_schema())
+                .expect("serialize generated authoring schema")
+        ),
+    )
+    .expect("write published authoring schema");
 }
 
 #[test]

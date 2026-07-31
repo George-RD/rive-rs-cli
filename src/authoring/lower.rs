@@ -446,7 +446,11 @@ fn without_asset_sources(scene: &Value) -> Value {
             child.get("type").and_then(Value::as_str),
             Some("font_asset" | "image_asset")
         );
-        if is_file_asset && let Some(object) = child.as_object_mut() {
+        let has_string_source = child.get("source").is_some_and(Value::is_string);
+        if is_file_asset
+            && has_string_source
+            && let Some(object) = child.as_object_mut()
+        {
             object.remove("source");
         }
     }
