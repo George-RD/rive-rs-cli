@@ -97,7 +97,10 @@ fn distribute_expands_endpoint_inclusive_placements_deterministically_and_builds
         .into_iter()
         .enumerate()
     {
-        assert_eq!(cells[index]["name"], format!("auth__stage__run__d{index}__cell"));
+        assert_eq!(
+            cells[index]["name"],
+            format!("auth__stage__run__d{index}__cell")
+        );
         assert_eq!(cells[index]["x"], x);
         assert_eq!(cells[index]["y"], y);
         assert_eq!(cells[index]["rotation"], 0.0);
