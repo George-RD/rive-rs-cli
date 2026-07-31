@@ -33,8 +33,15 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Literal text nodes are implemented in PR #143 with parameterized numeric styling,
   semantic alignment and overflow, derived sizing, shared paints, deterministic
   runtime names, and complete source maps.
-- The current text slice proves canonical structure and encoding. Official-runtime
-  glyph rendering remains gated on the separate font-asset embedding slice.
+- Semantic font assets are implemented in PR #148. A deterministic `font_assets`
+  registry lowers before visual nodes, text references assets by authored ID, and
+  source-map offsets remain complete for both root and component-expanded text.
+- PR #148 also proves actual vendored TTF byte embedding through the canonical
+  builder with an explicit base directory. Pathless compiler validation preserves
+  the returned asset source while avoiding filesystem-dependent lowering.
+- Font and parameter map keys share one strict validator instead of maintaining
+  duplicate identifier rules. The published AuthoringSpec schema now has a tested
+  regeneration path.
 - The authored visual model is split from the core document/error model in PR #144.
   The generated schema remains byte-identical while `spec.rs` and `visual.rs` are
   each below Cairn's module-size guideline.
@@ -58,9 +65,8 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Generated gradient stops now share the inherited pattern and component expansion budget.
 - Raw SceneSpec escapes remain valid as single nodes but are rejected when a pattern would
   repeat them, because arbitrary embedded names and references cannot be safely namespaced.
-- Remaining work includes font and image assets, mirror/distribute/along-path patterns,
-  constraints, and
-  a complex static showcase without raw escapes.
+- Remaining work includes image assets, mirror/distribute/along-path patterns,
+  constraints, and a complex static showcase without raw escapes.
 
 ## Acceptance criteria
 
