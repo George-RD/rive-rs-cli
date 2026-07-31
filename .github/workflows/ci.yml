@@ -1,77 +1,183 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
 
 jobs:
-  sync-font-asset-evidence:
-    if: github.event.pull_request.head.ref == 'agent/font-asset-v0'
+  check:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          ref: agent/font-asset-v0
-          fetch-depth: 0
-      - name: Synchronize AuthoringSpec guide
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - name: Run Clippy
+        id: clippy
+        continue-on-error: true
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
+          set -o pipefail
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee clippy.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clippy-diagnostics
+          path: clippy.log
+          retention-days: 1
+      - name: Fail when Clippy failed
+        if: steps.clippy.outcome == 'failure'
+        run: exit 1
+      - name: Run Rust tests
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo test --locked --all-features 2>&1 | tee rust-tests.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rust-test-diagnostics
+          path: rust-tests.log
+          retention-days: 1
+      - name: Fail when Rust tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
 
-          path = Path("docs/authoring-spec-v0.md")
-          text = path.read_text()
-          if "## Font assets" not in text:
-              replacements = [
-                  (
-                      "A v0 document has four explicit graphs:\n\n- `components`: reusable authored visual definitions with typed parameter defaults.",
-                      "A v0 document has four explicit graphs plus a deterministic file-scope asset registry:\n\n- `font_assets`: semantic font IDs mapped to file sources.\n- `components`: reusable authored visual definitions with typed parameter defaults.",
-                  ),
-                  (
-                      "The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, groups, component instances, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Font and image assets, bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.",
-                      "The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, groups, component instances, deterministic grid and radial patterns, semantic font assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Image assets, mirror/distribute/along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.",
-                  ),
-                  (
-                      "Parameter names must contain only ASCII letters, digits, `_`, or `-`. This keeps parameter references and diagnostic paths unambiguous.",
-                      "Parameter names and font asset IDs must contain only ASCII letters, digits, `_`, or `-`. This keeps semantic references and diagnostic paths unambiguous.",
-                  ),
-                  (
-                      "## Text\n",
-                      "## Font assets\n\nA document declares fonts by semantic ID rather than exposing a Rive runtime index:\n\n```json\n\"font_assets\": {\n  \"inter\": \"assets/fonts/Inter-Bold-Subset.ttf\"\n}\n```\n\nFont assets lower in sorted ID order before visual nodes. Each asset receives a deterministic runtime name and its own source-map entry. Text may reference the semantic ID through `font`; unknown IDs fail at the authored text path. Lowering preserves the source in returned `SceneSpec` while keeping compiler validation independent of the filesystem. The canonical builder embeds the file bytes when its caller supplies an explicit base directory.\n\n## Text\n",
-                  ),
-                  (
-                      '  "text": "Rive from data",\n  "font_size":',
-                      '  "text": "Rive from data",\n  "font": "inter",\n  "font_size":',
-                  ),
-                  (
-                      "Sizing is derived rather than exposed as a low-level numeric switch: no dimensions produce auto-width text, width alone produces auto-height wrapping, and width plus height produces a fixed box. A height without a width is rejected. Literal content is intentionally separate from future string parameters and view-model bindings. Font asset embedding is the next asset-focused slice.",
-                      "Sizing is derived rather than exposed as a low-level numeric switch: no dimensions produce auto-width text, width alone produces auto-height wrapping, and width plus height produces a fixed box. A height without a width is rejected. Literal content is intentionally separate from future string parameters and view-model bindings. The optional `font` field must reference `font_assets`; omitting it preserves the previous structure-only text behavior.",
-                  ),
-              ]
-              for old, new in replacements:
-                  count = text.count(old)
-                  if count != 1:
-                      raise SystemExit(f"expected one documentation replacement, found {count}: {old[:80]!r}")
-                  text = text.replace(old, new, 1)
-              path.write_text(text)
-          PY
+  browser-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/playwright/shared-contract.js
+      - run: node tests/playwright/visual-contract.js
+
+  runtime-eval-evidence:
+    needs: [check, browser-contracts]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Run official-runtime evaluation suite
+        run: |
+          set -o pipefail
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/runtime_contract.v1.json \
+            --provider template \
+            --output-dir target/eval-runtime 2>&1 | tee runtime-eval.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-eval-evidence
+          path: |
+            runtime-eval.log
+            target/eval-runtime
+          retention-days: 7
+
+  architecture:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
       - name: Install Cairn 0.9.0
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
-      - name: Validate and refresh architecture graph
+      - name: Validate architecture graph
         run: |
           export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-          cairn scan
-          cairn lint
-      - name: Preserve documentation and Cairn evidence
+          set -o pipefail
+          cairn scan --json | tee cairn-scan.json
+          cairn lint --json | tee cairn-lint.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cairn-diagnostics
+          path: |
+            cairn-scan.json
+            cairn-lint.json
+          retention-days: 7
+
+  playwright:
+    needs: [check, browser-contracts]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/regression.js
+      - name: Run visual regression
+        id: visual
+        continue-on-error: true
         run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/authoring-spec-v0.md map.json
-          git commit -m "docs: document semantic font asset authoring"
-          git push origin HEAD:agent/font-asset-v0
+          set -o pipefail
+          node tests/playwright/visual-regression.js 2>&1 | tee visual-regression.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-regression-diagnostics
+          path: |
+            visual-regression.log
+            target/playwright-visual
+          retention-days: 1
+      - name: Fail when visual regression failed
+        if: steps.visual.outcome == 'failure'
+        run: exit 1
+
+  demo:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npm install --no-save playwright@1.62.0 wait-on@8.0.1
+      - run: npx playwright install --with-deps chromium
+      - name: Run demo validation
+        run: |
+          node demo/serve.js &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          npx wait-on http://localhost:3021 --timeout 300000
+          node tests/playwright/demo-validation.js
+
+  site:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/site-validation.js
