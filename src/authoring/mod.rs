@@ -16,7 +16,7 @@ pub use spec::{
     GradientPaintSpec, GradientStopSpec, LoweredAuthoring, MotionSection, PaintSpec, Quantity,
     RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec, TransformSpec, Unit, VisualSection,
 };
-pub use visual::VisualNode;
+pub use visual::{MirrorAxis, VisualNode};
 
 pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringError> {
     let spec = serde_json::from_str::<AuthoringSpec>(input).map_err(|error| {
