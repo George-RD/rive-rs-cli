@@ -12,7 +12,7 @@ env:
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  implement-font-assets:
+  verify-font-assets:
     if: github.event.pull_request.head.ref == 'agent/font-asset-v0'
     runs-on: ubuntu-24.04
     steps:
@@ -24,361 +24,39 @@ jobs:
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Apply font asset implementation
+      - name: Apply Clippy fix
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          def lines(*items: str) -> str:
-              return "\n".join(items)
-
-          def replace_once(path: str, old: str, new: str) -> None:
-              file = Path(path)
-              text = file.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"{path}: expected one replacement, found {count}")
-              file.write_text(text.replace(old, new, 1))
-
-          spec = Path("src/authoring/spec.rs")
-          if "pub font_assets: BTreeMap<String, String>" in spec.read_text():
-              raise SystemExit(0)
-
-          replace_once(
-              "src/authoring/spec.rs",
-              lines(
-                  "    pub artboard: AuthoringArtboard,",
-                  "    #[serde(default)]",
-                  "    pub parameters: BTreeMap<String, Quantity>,",
-              ),
-              lines(
-                  "    pub artboard: AuthoringArtboard,",
-                  "    #[serde(default)]",
-                  "    pub font_assets: BTreeMap<String, String>,",
-                  "    #[serde(default)]",
-                  "    pub parameters: BTreeMap<String, Quantity>,",
-              ),
-          )
-
-          replace_once(
-              "src/authoring/visual.rs",
-              lines(
-                  "        id: String,",
-                  "        text: String,",
-                  "        font_size: ScalarExpr,",
-              ),
-              lines(
-                  "        id: String,",
-                  "        text: String,",
-                  "        #[serde(default)]",
-                  "        font: Option<String>,",
-                  "        font_size: ScalarExpr,",
-              ),
-          )
-          replace_once(
-              "src/authoring/visual.rs",
-              lines(
-                  "pub(crate) struct TextNodeRef<'a> {",
-                  "    pub content: &'a str,",
-                  "    pub font_size: &'a ScalarExpr,",
-              ),
-              lines(
-                  "pub(crate) struct TextNodeRef<'a> {",
-                  "    pub content: &'a str,",
-                  "    pub font: Option<&'a str>,",
-                  "    pub font_size: &'a ScalarExpr,",
-              ),
-          )
-          replace_once(
-              "src/authoring/visual.rs",
-              lines(
-                  "            Self::Text {",
-                  "                text,",
-                  "                font_size,",
-              ),
-              lines(
-                  "            Self::Text {",
-                  "                text,",
-                  "                font,",
-                  "                font_size,",
-              ),
-          )
-          replace_once(
-              "src/authoring/visual.rs",
-              lines(
-                  "            } => Some(TextNodeRef {",
-                  "                content: text,",
-                  "                font_size,",
-              ),
-              lines(
-                  "            } => Some(TextNodeRef {",
-                  "                content: text,",
-                  "                font: font.as_deref(),",
-                  "                font_size,",
-              ),
-          )
-
-          replace_once(
-              "src/authoring/frontend.rs",
-              lines(
-                  '    validate_id(&spec.artboard.id, "$.artboard.id", &mut diagnostics);',
-                  '    validate_parameter_names(&spec.parameters, "$.parameters", &mut diagnostics);',
-              ),
-              lines(
-                  '    validate_id(&spec.artboard.id, "$.artboard.id", &mut diagnostics);',
-                  "    validate_font_assets(&spec.font_assets, &mut diagnostics);",
-                  '    validate_parameter_names(&spec.parameters, "$.parameters", &mut diagnostics);',
-              ),
-          )
-          replace_once(
-              "src/authoring/frontend.rs",
-              lines(
-                  "fn validate_parameter_names(",
-                  "    parameters: &BTreeMap<String, Quantity>,",
-                  "    path: &str,",
-                  "    diagnostics: &mut Vec<AuthoringDiagnostic>,",
-                  ") {",
-              ),
-              lines(
-                  "fn validate_font_assets(",
-                  "    font_assets: &BTreeMap<String, String>,",
-                  "    diagnostics: &mut Vec<AuthoringDiagnostic>,",
-                  ") {",
-                  "    for (id, source) in font_assets {",
-                  "        if !is_authored_map_key(id) {",
-                  "            diagnostics.push(AuthoringDiagnostic::new(",
-                  '                "$.font_assets",',
-                  '                "invalid_asset_id",',
-                  "                format!(",
-                  '                    "font asset id \'{id}\' must contain only ASCII letters, digits, \'_\' or \'-\'"',
-                  "                ),",
-                  "            ));",
-                  "        }",
-                  "        if source.trim().is_empty() {",
-                  "            diagnostics.push(AuthoringDiagnostic::new(",
-                  '                format!("$.font_assets.{id}"),',
-                  '                "invalid_asset_source",',
-                  '                "font asset source must not be empty",',
-                  "            ));",
-                  "        }",
-                  "    }",
-                  "}",
-                  "",
-                  "fn validate_parameter_names(",
-                  "    parameters: &BTreeMap<String, Quantity>,",
-                  "    path: &str,",
-                  "    diagnostics: &mut Vec<AuthoringDiagnostic>,",
-                  ") {",
-              ),
-          )
-          replace_once(
-              "src/authoring/frontend.rs",
-              "        if !is_parameter_name(name) {",
-              "        if !is_authored_map_key(name) {",
-          )
-          replace_once(
-              "src/authoring/frontend.rs",
-              "fn is_parameter_name(name: &str) -> bool {",
-              "fn is_authored_map_key(name: &str) -> bool {",
-          )
-          replace_once(
-              "src/authoring/frontend.rs",
-              lines(
-                  "            },",
-                  "            parameters: BTreeMap::new(),",
-              ),
-              lines(
-                  "            },",
-                  "            font_assets: spec.font_assets.clone(),",
-                  "            parameters: BTreeMap::new(),",
-              ),
-          )
-
-          replace_once(
-              "src/authoring/lower.rs",
-              lines(
-                  "        let mut children = Vec::with_capacity(self.spec.visual.nodes.len());",
-                  "        let mut component_stack = Vec::new();",
-              ),
-              lines(
-                  "        let mut children =",
-                  "            Vec::with_capacity(self.spec.font_assets.len() + self.spec.visual.nodes.len());",
-                  "        for (index, (id, source)) in self.spec.font_assets.iter().enumerate() {",
-                  "            let runtime_name = font_asset_runtime_name(&self.spec.artboard.id, id);",
-                  '            let authored_path = format!("$.font_assets.{id}");',
-                  "            self.register_runtime_names(std::slice::from_ref(&runtime_name), &authored_path)",
-                  "                .map_err(AuthoringError::one)?;",
-                  "            self.source_map.entries.push(SourceMapEntry {",
-                  "                authored_id: id.clone(),",
-                  "                authored_path,",
-                  "                definition_path: None,",
-                  "                runtime_names: vec![runtime_name.clone()],",
-                  '                scene_paths: vec![format!("/artboard/children/{index}")],',
-                  "            });",
-                  "            children.push(json!({",
-                  '                "type": "font_asset",',
-                  '                "name": runtime_name,',
-                  '                "source": source',
-                  "            }));",
-                  "        }",
-                  "        let visual_offset = children.len();",
-                  "        let mut component_stack = Vec::new();",
-              ),
-          )
-          replace_once(
-              "src/authoring/lower.rs",
-              '            let scene_path = format!("/artboard/children/{index}");',
-              '            let scene_path = format!("/artboard/children/{}", visual_offset + index);',
-          )
-          replace_once(
-              "src/authoring/lower.rs",
-              "        let scene_spec = serde_json::from_value::<SceneSpec>(scene.clone()).map_err(|error| {",
-              lines(
-                  "        let validation_scene = without_asset_sources(&scene);",
-                  "        let scene_spec =",
-                  "            serde_json::from_value::<SceneSpec>(validation_scene).map_err(|error| {",
-              ),
-          )
-          replace_once(
-              "src/authoring/lower.rs",
-              "fn runtime_name(segments: &[String], role: &str) -> String {",
-              lines(
-                  "fn font_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {",
-                  "    runtime_name(",
-                  "        &[artboard_id.to_string(), asset_id.to_string()],",
-                  '        "font_asset",',
-                  "    )",
-                  "}",
-                  "",
-                  "fn without_asset_sources(scene: &Value) -> Value {",
-                  "    let mut validation_scene = scene.clone();",
-                  "    let Some(children) = validation_scene",
-                  '        .pointer_mut("/artboard/children")',
-                  "        .and_then(Value::as_array_mut)",
-                  "    else {",
-                  "        return validation_scene;",
-                  "    };",
-                  "    for child in children {",
-                  "        let is_file_asset = matches!(",
-                  '            child.get("type").and_then(Value::as_str),',
-                  '            Some("font_asset" | "image_asset")',
-                  "        );",
-                  "        if is_file_asset {",
-                  "            if let Some(object) = child.as_object_mut() {",
-                  '                object.remove("source");',
-                  "            }",
-                  "        }",
-                  "    }",
-                  "    validation_scene",
-                  "}",
-                  "",
-                  "fn runtime_name(segments: &[String], role: &str) -> String {",
-              ),
-          )
-
-          replace_once(
-              "src/authoring/lower/text.rs",
-              lines(
-                  "use super::{",
-                  "    LoweredObject, Lowerer, NodeContext, PaintTarget, evaluate_ratio_expression, runtime_name,",
-                  "};",
-              ),
-              lines(
-                  "use super::{",
-                  "    LoweredObject, Lowerer, NodeContext, PaintTarget, evaluate_ratio_expression,",
-                  "    font_asset_runtime_name, runtime_name,",
-                  "};",
-              ),
-          )
-          replace_once(
-              "src/authoring/lower/text.rs",
-              lines(
-                  "            content,",
-                  "            font_size: font_size_expression,",
-              ),
-              lines(
-                  "            content,",
-                  "            font,",
-                  "            font_size: font_size_expression,",
-              ),
-          )
-          replace_once(
-              "src/authoring/lower/text.rs",
-              lines(
-                  "            scope,",
-                  "        } = context;",
-                  "",
-                  "        let font_size = evaluate_expression(",
-              ),
-              lines(
-                  "            scope,",
-                  "        } = context;",
-                  "",
-                  "        let font_asset = font",
-                  "            .map(|id| {",
-                  "                if !self.spec.font_assets.contains_key(id) {",
-                  "                    return Err(AuthoringDiagnostic::new(",
-                  '                        format!("{authored_path}.font"),',
-                  '                        "unknown_font_asset",',
-                  '                        format!("font asset \'{id}\' is not declared"),',
-                  "                    ));",
-                  "                }",
-                  "                Ok(font_asset_runtime_name(&self.spec.artboard.id, id))",
-                  "            })",
-                  "            .transpose()?;",
-                  "",
-                  "        let font_size = evaluate_expression(",
-              ),
-          )
-          replace_once(
-              "src/authoring/lower/text.rs",
-              lines(
-                  "        if let Some(object) = style.as_object_mut() {",
-                  "            if let Some(line_height) = line_height {",
-              ),
-              lines(
-                  "        if let Some(object) = style.as_object_mut() {",
-                  "            if let Some(font_asset) = font_asset {",
-                  '                object.insert("font_asset".to_string(), Value::String(font_asset));',
-                  "            }",
-                  "            if let Some(line_height) = line_height {",
-              ),
-          )
-
-          replace_once(
-              "tests/authoring_contract.rs",
-              "    let generated = authoring_schema();",
-              lines(
-                  "    let generated = authoring_schema();",
-                  '    if std::env::var_os("UPDATE_AUTHORING_SCHEMA").is_some() {',
-                  "        fs::write(",
-                  "            &schema_path,",
-                  "            format!(",
-                  '                "{}\\n",',
-                  "                serde_json::to_string_pretty(&generated)",
-                  '                    .expect("serialize generated authoring schema")',
-                  "            ),",
-                  "        )",
-                  '        .expect("write published authoring schema");',
-                  "        return;",
-                  "    }",
-              ),
-          )
+          path = Path("src/authoring/lower.rs")
+          text = path.read_text()
+          old = """        if is_file_asset {
+              if let Some(object) = child.as_object_mut() {
+                  object.remove(\"source\");
+              }
+          }"""
+          new = """        if is_file_asset && let Some(object) = child.as_object_mut() {
+              object.remove(\"source\");
+          }"""
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f"expected one collapsible-if replacement, found {count}")
+          path.write_text(text.replace(old, new, 1))
           PY
       - run: cargo fmt
-      - name: Regenerate AuthoringSpec schema
-        run: UPDATE_AUTHORING_SCHEMA=1 cargo test --test authoring_contract published_authoring_schema_matches_generated_contract -- --exact
-      - name: Preserve implementation candidate
+      - name: Preserve Clippy fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/authoring tests/authoring_contract.rs docs/authoring.schema.v0.json
-          git commit -m "feat: add semantic font assets to authoring"
+          git add src/authoring/lower.rs
+          git commit -m "fix: satisfy font asset validation lint"
           git push origin HEAD:agent/font-asset-v0
-      - name: Verify focused font asset contract
+      - name: Verify focused contract
         run: cargo test --locked --test authoring_font_asset_contract
       - name: Verify Rust suite
         run: |
+          cargo fmt --check
           cargo clippy --all-targets --all-features -- -D warnings
           cargo test --locked --all-features
       - name: Install Cairn 0.9.0
