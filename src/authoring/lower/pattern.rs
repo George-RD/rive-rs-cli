@@ -41,6 +41,17 @@ impl PatternPlacement {
     }
 }
 
+fn mirror_placements(axis: MirrorAxis) -> [PatternPlacement; 2] {
+    let (scale_x, scale_y) = match axis {
+        MirrorAxis::Vertical => (-1.0, 1.0),
+        MirrorAxis::Horizontal => (1.0, -1.0),
+    };
+    [
+        PatternPlacement::positioned("original", 0.0, 0.0, 0.0),
+        PatternPlacement::reflected("mirrored", scale_x, scale_y),
+    ]
+}
+
 impl<'a> Lowerer<'a> {
     pub(super) fn lower_pattern(
         &mut self,
@@ -186,14 +197,7 @@ impl<'a> Lowerer<'a> {
             item,
             transform,
         } = mirror;
-        let (scale_x, scale_y) = match axis {
-            MirrorAxis::Vertical => (-1.0, 1.0),
-            MirrorAxis::Horizontal => (1.0, -1.0),
-        };
-        let placements = vec![
-            PatternPlacement::positioned("original", 0.0, 0.0, 0.0),
-            PatternPlacement::reflected("mirrored", scale_x, scale_y),
-        ];
+        let placements = Vec::from(mirror_placements(axis));
 
         self.lower_repeated_pattern(
             "mirror",
@@ -292,5 +296,32 @@ impl<'a> Lowerer<'a> {
             "scale_y": transform_values.scale_y,
             "children": cells
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{MirrorAxis, mirror_placements};
+
+    #[test]
+    fn mirror_placements_reflect_across_the_requested_axis() {
+        let vertical = mirror_placements(MirrorAxis::Vertical);
+        assert_eq!(vertical[0].segment, "original");
+        assert_eq!(vertical[0].x, 0.0);
+        assert_eq!(vertical[0].y, 0.0);
+        assert_eq!(vertical[0].rotation, 0.0);
+        assert_eq!(vertical[0].scale_x, 1.0);
+        assert_eq!(vertical[0].scale_y, 1.0);
+        assert_eq!(vertical[1].segment, "mirrored");
+        assert_eq!(vertical[1].scale_x, -1.0);
+        assert_eq!(vertical[1].scale_y, 1.0);
+
+        let horizontal = mirror_placements(MirrorAxis::Horizontal);
+        assert_eq!(horizontal[0].segment, "original");
+        assert_eq!(horizontal[0].scale_x, 1.0);
+        assert_eq!(horizontal[0].scale_y, 1.0);
+        assert_eq!(horizontal[1].segment, "mirrored");
+        assert_eq!(horizontal[1].scale_x, 1.0);
+        assert_eq!(horizontal[1].scale_y, -1.0);
     }
 }
