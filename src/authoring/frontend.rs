@@ -109,7 +109,18 @@ fn collect_declared_names(value: &serde_json::Value, names: &mut Vec<String>) {
 fn validate_authored_names(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();
     validate_id(&spec.artboard.id, "$.artboard.id", &mut diagnostics);
-    validate_font_assets(&spec.font_assets, &mut diagnostics);
+    validate_file_assets(
+        &spec.font_assets,
+        "$.font_assets",
+        "font",
+        &mut diagnostics,
+    );
+    validate_file_assets(
+        &spec.image_assets,
+        "$.image_assets",
+        "image",
+        &mut diagnostics,
+    );
     validate_parameter_names(&spec.parameters, "$.parameters", &mut diagnostics);
 
     for (component_index, component) in spec.components.iter().enumerate() {
@@ -162,23 +173,27 @@ fn validate_id(id: &str, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>)
     }
 }
 
-fn validate_font_assets(
-    font_assets: &BTreeMap<String, String>,
+fn validate_file_assets(
+    assets: &BTreeMap<String, String>,
+    list_path: &str,
+    kind: &str,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
-    for (id, source) in font_assets {
+    for (id, source) in assets {
         if !is_authored_map_key(id) {
             diagnostics.push(AuthoringDiagnostic::new(
-                "$.font_assets",
+                list_path,
                 "invalid_asset_id",
-                format!("font asset id '{id}' must contain only ASCII letters, digits, '_' or '-'"),
+                format!(
+                    "{kind} asset id '{id}' must contain only ASCII letters, digits, '_' or '-'"
+                ),
             ));
         }
         if source.trim().is_empty() {
             diagnostics.push(AuthoringDiagnostic::new(
-                format!("$.font_assets.{id}"),
+                format!("{list_path}.{id}"),
                 "invalid_asset_source",
-                "font asset source must not be empty",
+                format!("{kind} asset source must not be empty"),
             ));
         }
     }
@@ -266,6 +281,7 @@ fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringE
                 },
             },
             font_assets: spec.font_assets.clone(),
+            image_assets: spec.image_assets.clone(),
             parameters: BTreeMap::new(),
             components: spec.components.clone(),
             visual: VisualSection {
