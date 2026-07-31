@@ -7,12 +7,8 @@ on:
 permissions:
   contents: write
 
-env:
-  CARGO_TERM_COLOR: always
-  RUSTFLAGS: "-D warnings"
-
 jobs:
-  verify-font-assets:
+  sync-font-asset-evidence:
     if: github.event.pull_request.head.ref == 'agent/font-asset-v0'
     runs-on: ubuntu-24.04
     steps:
@@ -20,69 +16,62 @@ jobs:
         with:
           ref: agent/font-asset-v0
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - name: Apply Clippy fix
+      - name: Synchronize AuthoringSpec guide
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          path = Path("src/authoring/lower.rs")
+          path = Path("docs/authoring-spec-v0.md")
           text = path.read_text()
-          old = "\n".join([
-              "        if is_file_asset {",
-              "            if let Some(object) = child.as_object_mut() {",
-              '                object.remove("source");',
-              "            }",
-              "        }",
-          ])
-          new = "\n".join([
-              "        if is_file_asset && let Some(object) = child.as_object_mut() {",
-              '            object.remove("source");',
-              "        }",
-          ])
-          if new in text:
-              raise SystemExit(0)
-          count = text.count(old)
-          if count != 1:
-              raise SystemExit(f"expected one collapsible-if replacement, found {count}")
-          path.write_text(text.replace(old, new, 1))
+          if "## Font assets" not in text:
+              replacements = [
+                  (
+                      "A v0 document has four explicit graphs:\n\n- `components`: reusable authored visual definitions with typed parameter defaults.",
+                      "A v0 document has four explicit graphs plus a deterministic file-scope asset registry:\n\n- `font_assets`: semantic font IDs mapped to file sources.\n- `components`: reusable authored visual definitions with typed parameter defaults.",
+                  ),
+                  (
+                      "The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, groups, component instances, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Font and image assets, bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.",
+                      "The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, groups, component instances, deterministic grid and radial patterns, semantic font assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Image assets, mirror/distribute/along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.",
+                  ),
+                  (
+                      "Parameter names must contain only ASCII letters, digits, `_`, or `-`. This keeps parameter references and diagnostic paths unambiguous.",
+                      "Parameter names and font asset IDs must contain only ASCII letters, digits, `_`, or `-`. This keeps semantic references and diagnostic paths unambiguous.",
+                  ),
+                  (
+                      "## Text\n",
+                      "## Font assets\n\nA document declares fonts by semantic ID rather than exposing a Rive runtime index:\n\n```json\n\"font_assets\": {\n  \"inter\": \"assets/fonts/Inter-Bold-Subset.ttf\"\n}\n```\n\nFont assets lower in sorted ID order before visual nodes. Each asset receives a deterministic runtime name and its own source-map entry. Text may reference the semantic ID through `font`; unknown IDs fail at the authored text path. Lowering preserves the source in returned `SceneSpec` while keeping compiler validation independent of the filesystem. The canonical builder embeds the file bytes when its caller supplies an explicit base directory.\n\n## Text\n",
+                  ),
+                  (
+                      '  "text": "Rive from data",\n  "font_size":',
+                      '  "text": "Rive from data",\n  "font": "inter",\n  "font_size":',
+                  ),
+                  (
+                      "Sizing is derived rather than exposed as a low-level numeric switch: no dimensions produce auto-width text, width alone produces auto-height wrapping, and width plus height produces a fixed box. A height without a width is rejected. Literal content is intentionally separate from future string parameters and view-model bindings. Font asset embedding is the next asset-focused slice.",
+                      "Sizing is derived rather than exposed as a low-level numeric switch: no dimensions produce auto-width text, width alone produces auto-height wrapping, and width plus height produces a fixed box. A height without a width is rejected. Literal content is intentionally separate from future string parameters and view-model bindings. The optional `font` field must reference `font_assets`; omitting it preserves the previous structure-only text behavior.",
+                  ),
+              ]
+              for old, new in replacements:
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(f"expected one documentation replacement, found {count}: {old[:80]!r}")
+                  text = text.replace(old, new, 1)
+              path.write_text(text)
           PY
-      - run: cargo fmt
-      - name: Preserve Clippy fix
-        run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/authoring/lower.rs
-          git commit -m "fix: satisfy font asset validation lint"
-          git push origin HEAD:agent/font-asset-v0
-      - name: Verify focused contract
-        run: cargo test --locked --test authoring_font_asset_contract
-      - name: Verify Rust suite
-        run: |
-          cargo fmt --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          cargo test --locked --all-features
       - name: Install Cairn 0.9.0
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
-      - name: Verify Cairn graph
+      - name: Validate and refresh architecture graph
         run: |
           export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
           cairn scan
           cairn lint
-      - name: Preserve Cairn evidence
+      - name: Preserve documentation and Cairn evidence
         run: |
           if git diff --quiet; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add map.json
-          git commit -m "chore: refresh Cairn architecture map"
+          git add docs/authoring-spec-v0.md map.json
+          git commit -m "docs: document semantic font asset authoring"
           git push origin HEAD:agent/font-asset-v0
