@@ -294,3 +294,30 @@ impl<'a> Lowerer<'a> {
         }))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{MirrorAxis, mirror_placements};
+
+    #[test]
+    fn mirror_placements_reflect_across_the_requested_axis() {
+        let vertical = mirror_placements(MirrorAxis::Vertical);
+        assert_eq!(vertical[0].segment, "original");
+        assert_eq!(vertical[0].x, 0.0);
+        assert_eq!(vertical[0].y, 0.0);
+        assert_eq!(vertical[0].rotation, 0.0);
+        assert_eq!(vertical[0].scale_x, 1.0);
+        assert_eq!(vertical[0].scale_y, 1.0);
+        assert_eq!(vertical[1].segment, "mirrored");
+        assert_eq!(vertical[1].scale_x, -1.0);
+        assert_eq!(vertical[1].scale_y, 1.0);
+
+        let horizontal = mirror_placements(MirrorAxis::Horizontal);
+        assert_eq!(horizontal[0].segment, "original");
+        assert_eq!(horizontal[0].scale_x, 1.0);
+        assert_eq!(horizontal[0].scale_y, 1.0);
+        assert_eq!(horizontal[1].segment, "mirrored");
+        assert_eq!(horizontal[1].scale_x, 1.0);
+        assert_eq!(horizontal[1].scale_y, -1.0);
+    }
+}
