@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,12 +18,24 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - name: Regenerate AuthoringSpec schema for branch evidence
         run: cargo test --locked --all-features --test authoring_contract regenerate_published_authoring_schema -- --ignored
+      - name: Commit regenerated schema
+        run: |
+          if git diff --quiet -- docs/authoring.schema.v0.json; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/authoring.schema.v0.json
+          git commit -m "docs: regenerate AuthoringSpec schema"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
       - uses: actions/upload-artifact@v4
         with:
           name: authoring-schema-v0
