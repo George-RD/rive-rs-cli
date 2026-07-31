@@ -1,153 +1,183 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  address-review:
-    if: github.event.pull_request.head.ref == 'agent/font-asset-v0'
+  check:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/font-asset-v0
-          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Apply review remediations
+      - run: cargo fmt --check
+      - name: Run Clippy
+        id: clippy
+        continue-on-error: true
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          lower = Path("src/authoring/lower.rs")
-          text = lower.read_text()
-          old = "\n".join([
-              "        if is_file_asset && let Some(object) = child.as_object_mut() {",
-              '            object.remove("source");',
-              "        }",
-          ])
-          new = "\n".join([
-              '        let has_string_source = child.get("source").is_some_and(Value::is_string);',
-              "        if is_file_asset",
-              "            && has_string_source",
-              "            && let Some(object) = child.as_object_mut()",
-              "        {",
-              '            object.remove("source");',
-              "        }",
-          ])
-          if new not in text:
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"expected one source-stripping replacement, found {count}")
-              lower.write_text(text.replace(old, new, 1))
-
-          contract = Path("tests/authoring_contract.rs")
-          text = contract.read_text()
-          old = '''#[test]
-          fn published_authoring_schema_matches_generated_contract() {
-              let schema_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/authoring.schema.v0.json");
-              let published: serde_json::Value = serde_json::from_str(
-                  &fs::read_to_string(&schema_path).expect("read published authoring schema"),
-              )
-              .expect("published authoring schema must be valid JSON");
-              let generated = authoring_schema();
-              if std::env::var_os("UPDATE_AUTHORING_SCHEMA").is_some() {
-                  fs::write(
-                      &schema_path,
-                      format!(
-                          "{}\\n",
-                          serde_json::to_string_pretty(&generated)
-                              .expect("serialize generated authoring schema")
-                      ),
-                  )
-                  .expect("write published authoring schema");
-                  return;
-              }
-
-              assert_eq!(
-                  published,
-                  generated,
-                  "published authoring schema differs from authoring_schema(); regenerate {}",
-                  schema_path.display()
-              );
-          }'''
-          new = '''fn authoring_schema_path() -> std::path::PathBuf {
-              Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/authoring.schema.v0.json")
-          }
-
-          #[test]
-          fn published_authoring_schema_matches_generated_contract() {
-              let schema_path = authoring_schema_path();
-              let published: serde_json::Value = serde_json::from_str(
-                  &fs::read_to_string(&schema_path).expect("read published authoring schema"),
-              )
-              .expect("published authoring schema must be valid JSON");
-              let generated = authoring_schema();
-
-              assert_eq!(
-                  published,
-                  generated,
-                  "published authoring schema differs from authoring_schema(); regenerate {}",
-                  schema_path.display()
-              );
-          }
-
-          #[test]
-          #[ignore = "regenerates docs/authoring.schema.v0.json"]
-          fn regenerate_published_authoring_schema() {
-              fs::write(
-                  authoring_schema_path(),
-                  format!(
-                      "{}\\n",
-                      serde_json::to_string_pretty(&authoring_schema())
-                          .expect("serialize generated authoring schema")
-                  ),
-              )
-              .expect("write published authoring schema");
-          }'''
-          if new not in text:
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"expected one schema-test replacement, found {count}")
-              contract.write_text(text.replace(old, new, 1))
-          PY
-      - run: cargo fmt
-      - name: Verify review regressions
+          set -o pipefail
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee clippy.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clippy-diagnostics
+          path: clippy.log
+          retention-days: 1
+      - name: Fail when Clippy failed
+        if: steps.clippy.outcome == 'failure'
+        run: exit 1
+      - name: Run Rust tests
+        id: tests
+        continue-on-error: true
         run: |
-          cargo test --locked --test authoring_validation_contract raw_file_asset_sources_keep_canonical_type_validation -- --exact
-          cargo test --locked --test authoring_contract published_authoring_schema_matches_generated_contract -- --exact
-          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored --exact
-          git diff --exit-code docs/authoring.schema.v0.json
-      - name: Verify Rust suite under staging workflow
+          set -o pipefail
+          cargo test --locked --all-features 2>&1 | tee rust-tests.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rust-test-diagnostics
+          path: rust-tests.log
+          retention-days: 1
+      - name: Fail when Rust tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
+
+  browser-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/playwright/shared-contract.js
+      - run: node tests/playwright/visual-contract.js
+
+  runtime-eval-evidence:
+    needs: [check, browser-contracts]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Run official-runtime evaluation suite
         run: |
-          cargo fmt --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          cargo test --locked --all-features -- --skip ci_runs_official_runtime_contract_suite
+          set -o pipefail
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/runtime_contract.v1.json \
+            --provider template \
+            --output-dir target/eval-runtime 2>&1 | tee runtime-eval.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-eval-evidence
+          path: |
+            runtime-eval.log
+            target/eval-runtime
+          retention-days: 7
+
+  architecture:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
       - name: Install Cairn 0.9.0
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
-      - name: Verify Cairn graph
+      - name: Validate architecture graph
         run: |
           export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-          cairn scan
-          cairn lint
-      - name: Commit review remediations
+          set -o pipefail
+          cairn scan --json | tee cairn-scan.json
+          cairn lint --json | tee cairn-lint.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cairn-diagnostics
+          path: |
+            cairn-scan.json
+            cairn-lint.json
+          retention-days: 7
+
+  playwright:
+    needs: [check, browser-contracts]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/regression.js
+      - name: Run visual regression
+        id: visual
+        continue-on-error: true
         run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/authoring/lower.rs tests/authoring_contract.rs map.json
-          git commit -m "fix: preserve asset validation and pure schema checks"
-          git push origin HEAD:agent/font-asset-v0
+          set -o pipefail
+          node tests/playwright/visual-regression.js 2>&1 | tee visual-regression.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-regression-diagnostics
+          path: |
+            visual-regression.log
+            target/playwright-visual
+          retention-days: 1
+      - name: Fail when visual regression failed
+        if: steps.visual.outcome == 'failure'
+        run: exit 1
+
+  demo:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npm install --no-save playwright@1.62.0 wait-on@8.0.1
+      - run: npx playwright install --with-deps chromium
+      - name: Run demo validation
+        run: |
+          node demo/serve.js &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          npx wait-on http://localhost:3021 --timeout 300000
+          node tests/playwright/demo-validation.js
+
+  site:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/site-validation.js
