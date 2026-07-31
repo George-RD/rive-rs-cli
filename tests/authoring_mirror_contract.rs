@@ -210,7 +210,9 @@ fn mirror_schema_exposes_only_semantic_fields() {
     assert!(!properties.contains_key("scale_x"));
     assert!(!properties.contains_key("scale_y"));
 
-    let required = mirror["required"].as_array().expect("required mirror fields");
+    let required = mirror["required"]
+        .as_array()
+        .expect("required mirror fields");
     for field in ["kind", "id", "axis", "item"] {
         assert!(required.iter().any(|candidate| candidate == field));
     }
