@@ -38,6 +38,13 @@ jobs:
       - name: Fail when Clippy failed
         if: steps.clippy.outcome == 'failure'
         run: exit 1
+      - name: Regenerate AuthoringSpec schema
+        run: cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored --exact
+      - uses: actions/upload-artifact@v4
+        with:
+          name: generated-authoring-schema
+          path: docs/authoring.schema.v0.json
+          retention-days: 1
       - name: Run Rust tests
         id: tests
         continue-on-error: true
