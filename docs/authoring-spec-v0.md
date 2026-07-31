@@ -27,7 +27,7 @@ A v0 document has four explicit graphs plus a deterministic file-scope asset reg
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid and radial patterns, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Mirror/distribute/along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, and mirror patterns, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Distribute/along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
@@ -195,6 +195,30 @@ Sizing is derived rather than exposed as a low-level numeric switch: no dimensio
 Components define typed parameter defaults and a visual node list. A component body can reference only parameters declared by that component. Document-level parameters remain available to the root visual graph and instance transforms but do not leak into reusable component definitions. Instances may override only declared component parameters. Runtime names include the full instance expansion path, so repeated component contents remain unique and deterministic. Recursive component expansion is rejected with a `component_cycle` diagnostic.
 
 Expansion is preflighted iteratively before recursive lowering. An active component chain is limited to 64 definitions, and each component-validation or root-document traversal may generate at most 10,000 component nodes. The limits return `component_expansion_depth_limit` or `component_expansion_node_limit` diagnostics at the authored instance path instead of risking stack or memory exhaustion.
+
+## Mirror patterns
+
+A `mirror` node emits exactly two deterministic cells: `original` and `mirrored`. A vertical axis reflects the second cell through `scale_x: -1`; a horizontal axis reflects it through `scale_y: -1`. The pattern's transform wraps both cells, while the authored item keeps its own transform inside each cell.
+
+```json
+{
+  "kind": "mirror",
+  "id": "wings",
+  "axis": "vertical",
+  "item": {
+    "kind": "triangle",
+    "id": "wing",
+    "width": { "kind": "literal", "value": 48, "unit": "px" },
+    "height": { "kind": "literal", "value": 72, "unit": "px" },
+    "fill": "#2563EB",
+    "transform": {
+      "x": { "kind": "literal", "value": 28, "unit": "px" }
+    }
+  }
+}
+```
+
+Mirror items use the same component expansion, generated-node budget, runtime-name registry, source-map rewriting, and canonical builder path as grid and radial patterns. Nested repeat-safe authored nodes are supported. Raw `SceneSpec` objects are rejected when mirrored because embedded names and references cannot be safely namespaced across repeated copies.
 
 ## Raw canonical escapes
 

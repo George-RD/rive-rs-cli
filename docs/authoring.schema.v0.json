@@ -117,6 +117,13 @@
       ],
       "type": "object"
     },
+    "MirrorAxis": {
+      "enum": [
+        "horizontal",
+        "vertical"
+      ],
+      "type": "string"
+    },
     "MotionSection": {
       "additionalProperties": false,
       "properties": {
@@ -1020,6 +1027,41 @@
             "radius",
             "start_angle",
             "angle_step",
+            "item"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "axis": {
+              "$ref": "#/$defs/MirrorAxis"
+            },
+            "id": {
+              "type": "string"
+            },
+            "item": {
+              "$ref": "#/$defs/VisualNode"
+            },
+            "kind": {
+              "const": "mirror",
+              "type": "string"
+            },
+            "transform": {
+              "$ref": "#/$defs/TransformSpec",
+              "default": {
+                "rotation": null,
+                "scale_x": null,
+                "scale_y": null,
+                "x": null,
+                "y": null
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "axis",
             "item"
           ],
           "type": "object"

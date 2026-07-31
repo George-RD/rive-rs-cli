@@ -269,6 +269,7 @@ fn validate_pattern(
             validate_pattern_count(radial.copies, &format!("{path}.copies"))?;
             Ok((radial.copies, format!("{path}.copies")))
         }
+        PatternNodeRef::Mirror(_) => Ok((2, format!("{path}.item"))),
     }
 }
 
