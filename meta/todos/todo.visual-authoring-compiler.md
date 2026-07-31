@@ -84,8 +84,15 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   `#[cfg(test)]` unit contract while retaining the public end-to-end contract suite.
 - Review remediation keeps Rust source comment-free under the repository compliance
   policy; durable explanation remains in this Cairn work item and the public contracts.
-- Remaining work includes distribute/along-path patterns, constraints, and a complex
-  static showcase without raw escapes.
+- Endpoint-inclusive distribute patterns are implemented in PR #153. Two to 100
+  copies lower at equal intervals along a typed straight segment, including both authored
+  endpoints, component overrides, definition paths, source maps, runtime-name collision
+  checks, canonical builder validation, and the inherited generated-node budget.
+- Distribute lowering reuses the shared placement and repeated-pattern pipeline. Pattern
+  count validation now accepts primitive-specific minimums instead of duplicating a
+  separate bound check for the new node.
+- Remaining work includes along-path patterns, constraints, and a complex static showcase
+  without raw escapes.
 
 ## Acceptance criteria
 

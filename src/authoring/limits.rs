@@ -258,29 +258,33 @@ fn validate_pattern(
 ) -> Result<(u64, String), AuthoringError> {
     match pattern {
         PatternNodeRef::Grid(grid) => {
-            validate_pattern_count(grid.rows, &format!("{path}.rows"))?;
-            validate_pattern_count(grid.columns, &format!("{path}.columns"))?;
+            validate_pattern_count(grid.rows, 1, &format!("{path}.rows"))?;
+            validate_pattern_count(grid.columns, 1, &format!("{path}.columns"))?;
             Ok((
                 grid.rows.saturating_mul(grid.columns),
                 format!("{path}.rows"),
             ))
         }
         PatternNodeRef::Radial(radial) => {
-            validate_pattern_count(radial.copies, &format!("{path}.copies"))?;
+            validate_pattern_count(radial.copies, 1, &format!("{path}.copies"))?;
             Ok((radial.copies, format!("{path}.copies")))
         }
         PatternNodeRef::Mirror(_) => Ok((2, format!("{path}.item"))),
+        PatternNodeRef::Distribute(distribute) => {
+            validate_pattern_count(distribute.copies, 2, &format!("{path}.copies"))?;
+            Ok((distribute.copies, format!("{path}.copies")))
+        }
     }
 }
 
-fn validate_pattern_count(value: u64, path: &str) -> Result<(), AuthoringError> {
-    if (1..=MAX_PATTERN_AXIS_COUNT).contains(&value) {
+fn validate_pattern_count(value: u64, minimum: u64, path: &str) -> Result<(), AuthoringError> {
+    if (minimum..=MAX_PATTERN_AXIS_COUNT).contains(&value) {
         return Ok(());
     }
     Err(AuthoringError::one(AuthoringDiagnostic::new(
         path,
         "invalid_pattern_count",
-        format!("pattern counts must be between 1 and {MAX_PATTERN_AXIS_COUNT}"),
+        format!("pattern counts must be between {minimum} and {MAX_PATTERN_AXIS_COUNT}"),
     )))
 }
 

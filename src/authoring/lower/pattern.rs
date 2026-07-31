@@ -4,7 +4,8 @@ use super::super::deterministic_math::sin_cos;
 use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, TransformSpec, Unit};
 use super::super::visual::{
-    GridNodeRef, MirrorAxis, MirrorNodeRef, PatternNodeRef, RadialNodeRef, VisualNode,
+    DistributeNodeRef, GridNodeRef, MirrorAxis, MirrorNodeRef, PatternNodeRef, RadialNodeRef,
+    VisualNode,
 };
 use super::{Lowerer, NodeContext, runtime_name};
 
@@ -52,6 +53,33 @@ fn mirror_placements(axis: MirrorAxis) -> [PatternPlacement; 2] {
     ]
 }
 
+fn distribute_placements(
+    copies: u64,
+    start_x: f64,
+    start_y: f64,
+    end_x: f64,
+    end_y: f64,
+) -> Vec<PatternPlacement> {
+    let capacity = usize::try_from(copies).unwrap_or_default();
+    let mut placements = Vec::with_capacity(capacity);
+    let last = copies.saturating_sub(1);
+    for index in 0..copies {
+        let (x, y) = if index == 0 {
+            (start_x, start_y)
+        } else if index == last {
+            (end_x, end_y)
+        } else {
+            let progress = index as f64 / last as f64;
+            (
+                start_x + (end_x - start_x) * progress,
+                start_y + (end_y - start_y) * progress,
+            )
+        };
+        placements.push(PatternPlacement::positioned(format!("d{index}"), x, y, 0.0));
+    }
+    placements
+}
+
 impl<'a> Lowerer<'a> {
     pub(super) fn lower_pattern(
         &mut self,
@@ -63,6 +91,9 @@ impl<'a> Lowerer<'a> {
             PatternNodeRef::Grid(grid) => self.lower_grid(grid, context, component_stack),
             PatternNodeRef::Radial(radial) => self.lower_radial(radial, context, component_stack),
             PatternNodeRef::Mirror(mirror) => self.lower_mirror(mirror, context, component_stack),
+            PatternNodeRef::Distribute(distribute) => {
+                self.lower_distribute(distribute, context, component_stack)
+            }
         }
     }
 
@@ -186,6 +217,48 @@ impl<'a> Lowerer<'a> {
         )
     }
 
+    fn lower_distribute(
+        &mut self,
+        distribute: DistributeNodeRef<'_>,
+        context: NodeContext<'_>,
+        component_stack: &mut Vec<String>,
+    ) -> Result<Value, AuthoringDiagnostic> {
+        let DistributeNodeRef {
+            copies,
+            start_x: start_x_expression,
+            start_y: start_y_expression,
+            end_x: end_x_expression,
+            end_y: end_y_expression,
+            item,
+            transform,
+        } = distribute;
+        let start_x_path = format!("{}.start_x", context.authored_path);
+        let start_x =
+            evaluate_expression(start_x_expression, &start_x_path, context.scope, Unit::Px)?;
+        let start_y_path = format!("{}.start_y", context.authored_path);
+        let start_y =
+            evaluate_expression(start_y_expression, &start_y_path, context.scope, Unit::Px)?;
+        let end_x_path = format!("{}.end_x", context.authored_path);
+        let end_x = evaluate_expression(end_x_expression, &end_x_path, context.scope, Unit::Px)?;
+        let end_y_path = format!("{}.end_y", context.authored_path);
+        let end_y = evaluate_expression(end_y_expression, &end_y_path, context.scope, Unit::Px)?;
+
+        let placements = distribute_placements(copies, start_x, start_y, end_x, end_y);
+        for placement in &placements {
+            validate_scene_number(placement.x, &end_x_path)?;
+            validate_scene_number(placement.y, &end_y_path)?;
+        }
+
+        self.lower_repeated_pattern(
+            "distribute",
+            item,
+            transform,
+            context,
+            placements,
+            component_stack,
+        )
+    }
+
     fn lower_mirror(
         &mut self,
         mirror: MirrorNodeRef<'_>,
@@ -301,7 +374,25 @@ impl<'a> Lowerer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{MirrorAxis, mirror_placements};
+    use super::{MirrorAxis, distribute_placements, mirror_placements};
+
+    #[test]
+    fn distribute_placements_include_both_endpoints_and_equal_intervals() {
+        let placements = distribute_placements(4, 0.0, 10.0, 90.0, 55.0);
+        assert_eq!(placements.len(), 4);
+        assert_eq!(placements[0].segment, "d0");
+        assert_eq!(placements[0].x, 0.0);
+        assert_eq!(placements[0].y, 10.0);
+        assert_eq!(placements[1].segment, "d1");
+        assert_eq!(placements[1].x, 30.0);
+        assert_eq!(placements[1].y, 25.0);
+        assert_eq!(placements[2].segment, "d2");
+        assert_eq!(placements[2].x, 60.0);
+        assert_eq!(placements[2].y, 40.0);
+        assert_eq!(placements[3].segment, "d3");
+        assert_eq!(placements[3].x, 90.0);
+        assert_eq!(placements[3].y, 55.0);
+    }
 
     #[test]
     fn mirror_placements_reflect_across_the_requested_axis() {
