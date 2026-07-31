@@ -135,6 +135,57 @@ fn distribute_expands_endpoint_inclusive_placements_deterministically_and_builds
 }
 
 #[test]
+fn distribute_supports_descending_segments() {
+    let pattern = distribute(
+        "descending",
+        3,
+        literal(90.0, "px"),
+        literal(45.0, "px"),
+        literal(-30.0, "px"),
+        literal(-15.0, "px"),
+        rectangle("tile"),
+    );
+    let lowered = lower_authoring_json(&document(vec![pattern]))
+        .expect("descending distribute lowering");
+    let cells = lowered.scene["artboard"]["children"][0]["children"]
+        .as_array()
+        .expect("descending distribute cells");
+
+    for (index, (x, y)) in [(90.0, 45.0), (30.0, 15.0), (-30.0, -15.0)]
+        .into_iter()
+        .enumerate()
+    {
+        assert_eq!(cells[index]["x"], x);
+        assert_eq!(cells[index]["y"], y);
+    }
+
+    assert_builds(lowered.scene);
+}
+
+#[test]
+fn distribute_endpoint_expressions_require_pixel_units() {
+    for field in ["start_x", "start_y", "end_x", "end_y"] {
+        let mut pattern = distribute(
+            "invalid-unit",
+            2,
+            literal(0.0, "px"),
+            literal(0.0, "px"),
+            literal(100.0, "px"),
+            literal(50.0, "px"),
+            rectangle("tile"),
+        );
+        pattern[field] = literal(1.0, "deg");
+
+        let error = lower_authoring_json(&document(vec![pattern]))
+            .expect_err("non-pixel distribute endpoint must fail");
+        assert!(error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "unit_mismatch"
+                && diagnostic.path == format!("$.visual.nodes[0].{field}")
+        }));
+    }
+}
+
+#[test]
 fn distribute_preserves_component_definition_paths_and_parameter_overrides() {
     let input = json!({
         "authoring_format_version": 0,
