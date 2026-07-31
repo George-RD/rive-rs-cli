@@ -133,12 +133,8 @@ mod tests {
 
     #[test]
     fn spaces_copies_by_total_length_across_unequal_segments() {
-        let placements = along_path_placements(
-            4,
-            &[(0.0, 0.0), (20.0, 0.0), (20.0, 100.0)],
-            false,
-        )
-        .expect("valid unequal path sampling");
+        let placements = along_path_placements(4, &[(0.0, 0.0), (20.0, 0.0), (20.0, 100.0)], false)
+            .expect("valid unequal path sampling");
 
         let expected = [(0.0, 0.0), (20.0, 20.0), (20.0, 60.0), (20.0, 100.0)];
         for (placement, (x, y)) in placements.iter().zip(expected) {
