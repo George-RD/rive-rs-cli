@@ -79,6 +79,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   10,000-node expansion budget.
 - Grid, radial, and mirror placement lowering now share explicit position, rotation,
   and scale metadata instead of duplicating pattern-specific wrapper construction.
+- PR #151 hardens the merged mirror slice after delayed review by extracting the
+  axis-to-placement mapping into one documented pure helper and pinning it with an inline
+  `#[cfg(test)]` unit contract while retaining the public end-to-end contract suite.
 - Remaining work includes distribute/along-path patterns, constraints, and a complex
   static showcase without raw escapes.
 
