@@ -18,20 +18,21 @@ https://github.com/George-RD/rive-rs-cli/docs/authoring.schema.v0.json
 
 ## Document model
 
-A v0 document has four explicit graphs:
+A v0 document has four explicit graphs plus a deterministic file-scope asset registry:
 
+- `font_assets`: semantic font IDs mapped to file sources.
 - `components`: reusable authored visual definitions with typed parameter defaults.
 - `visual`: the root visual graph.
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, groups, component instances, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Font and image assets, bounded patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, groups, component instances, deterministic grid and radial patterns, semantic font assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Image assets, mirror/distribute/along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
 Every authored artboard, component, node, and raw fragment has an explicit stable `id`. The `/` character is reserved as the source-map expansion separator and is rejected in authored ids. Generated Rive runtime names are derived deterministically from the authored expansion path, including instance paths. The encoding is collision-resistant for distinct accepted ids and does not depend on hash-map iteration or process state.
 
-Parameter names must contain only ASCII letters, digits, `_`, or `-`. This keeps parameter references and diagnostic paths unambiguous.
+Parameter names and font asset IDs must contain only ASCII letters, digits, `_`, or `-`. This keeps semantic references and diagnostic paths unambiguous.
 
 Lowering returns an `AuthoringSourceMap`. Each entry links:
 
@@ -129,6 +130,18 @@ A stroke may optionally add a typed trim path after its paint child:
 
 `start` and `end` are normalized scalar expressions from zero to one. `offset` is an optional scalar expression that defaults to zero and is intentionally not clamped, allowing complete-cycle wrapping. `mode` is either `sequential` or `synchronized`. The generated trim object receives a deterministic runtime name and source-map path.
 
+## Font assets
+
+A document declares fonts by semantic ID rather than exposing a Rive runtime index:
+
+```json
+"font_assets": {
+  "inter": "assets/fonts/Inter-Bold-Subset.ttf"
+}
+```
+
+Font assets lower in sorted ID order before visual nodes. Each asset receives a deterministic runtime name and its own source-map entry. Text may reference the semantic ID through `font`; unknown IDs fail at the authored text path. Lowering preserves the source in returned `SceneSpec` while keeping compiler validation independent of the filesystem. The canonical builder embeds the file bytes when its caller supplies an explicit base directory.
+
 ## Text
 
 A `text` visual node lowers to a deterministic Rive text hierarchy: a transform anchor, text object, one text style with a fill, and one literal value run. Numeric styling uses the same typed expressions and component parameters as shapes:
@@ -138,6 +151,7 @@ A `text` visual node lowers to a deterministic Rive text hierarchy: a transform 
   "kind": "text",
   "id": "headline",
   "text": "Rive from data",
+  "font": "inter",
   "font_size": { "kind": "parameter", "name": "headline-size" },
   "fill": "#F8FAFC",
   "width": { "kind": "literal", "value": 280, "unit": "px" },
@@ -149,7 +163,7 @@ A `text` visual node lowers to a deterministic Rive text hierarchy: a transform 
 
 Font size and optional width, height, letter spacing, and paragraph spacing are pixel expressions. Line height is a positive scalar expression. Optional `origin_x` and `origin_y` are normalized scalar expressions from zero to one. Alignment is `left`, `right`, or `center`; overflow is `visible`, `hidden`, `clipped`, `ellipsis`, `fit`, or `fit_font_size`.
 
-Sizing is derived rather than exposed as a low-level numeric switch: no dimensions produce auto-width text, width alone produces auto-height wrapping, and width plus height produces a fixed box. A height without a width is rejected. Literal content is intentionally separate from future string parameters and view-model bindings. Font asset embedding is the next asset-focused slice.
+Sizing is derived rather than exposed as a low-level numeric switch: no dimensions produce auto-width text, width alone produces auto-height wrapping, and width plus height produces a fixed box. A height without a width is rejected. Literal content is intentionally separate from future string parameters and view-model bindings. The optional `font` field must reference `font_assets`; omitting it preserves the previous structure-only text behavior.
 
 ## Components and instances
 
