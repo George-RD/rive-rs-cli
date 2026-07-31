@@ -27,7 +27,7 @@ A v0 document has four explicit graphs plus a deterministic file-scope asset reg
 - `motion`: raw canonical animation escapes until the dedicated motion compiler lands.
 - `behavior`: raw canonical state-machine escapes until the dedicated behavior compiler lands.
 
-The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, mirror, and distribute patterns, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Along-path patterns, constraints, motion helpers, and statechart authoring remain separate roadmap items.
+The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, mirror, distribute, and along-path patterns, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Constraints, motion helpers, and statechart authoring remain separate roadmap items.
 
 ## Stable identity and runtime names
 
@@ -244,6 +244,44 @@ A `distribute` node places between two and 100 copies at equal intervals along a
 ```
 
 This example emits cells at `(0, 0)`, `(40, 20)`, `(80, 40)`, and `(120, 60)`. The pattern transform wraps the complete distribution, while the item keeps its own transform inside every cell. Distribution uses the same component expansion, runtime-name registry, source maps, raw-scene repetition safety, generated-node budget, and canonical builder path as the other bounded patterns.
+
+## Along-path patterns
+
+An `along_path` node places between two and 100 copies at equal distances along a polyline with between two and 100 authored points. Both path endpoints are included. Point coordinates use pixel expressions and may reference component parameters.
+
+```json
+{
+  "kind": "along_path",
+  "id": "route",
+  "copies": 5,
+  "points": [
+    {
+      "x": { "kind": "literal", "value": 0, "unit": "px" },
+      "y": { "kind": "literal", "value": 0, "unit": "px" }
+    },
+    {
+      "x": { "kind": "literal", "value": 80, "unit": "px" },
+      "y": { "kind": "literal", "value": 0, "unit": "px" }
+    },
+    {
+      "x": { "kind": "literal", "value": 80, "unit": "px" },
+      "y": { "kind": "literal", "value": 60, "unit": "px" }
+    }
+  ],
+  "rotate_items": true,
+  "item": {
+    "kind": "triangle",
+    "id": "marker",
+    "width": { "kind": "literal", "value": 18, "unit": "px" },
+    "height": { "kind": "literal", "value": 12, "unit": "px" },
+    "fill": "#2563EB"
+  }
+}
+```
+
+Spacing is measured across the complete polyline rather than independently per segment. When `rotate_items` is true, each cell follows the active segment tangent; an item exactly on an interior vertex uses the outgoing segment. The final item uses the last segment tangent. Consecutive duplicate points are rejected because they do not define a tangent. v0 intentionally models polylines only and does not infer or fit curves.
+
+Along-path patterns use the same component expansion, runtime-name registry, source maps, raw-scene repetition safety, generated-node budget, and canonical builder path as the other bounded patterns.
 
 ## Raw canonical escapes
 

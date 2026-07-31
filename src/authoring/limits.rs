@@ -274,17 +274,51 @@ fn validate_pattern(
             validate_pattern_count(distribute.copies, 2, &format!("{path}.copies"))?;
             Ok((distribute.copies, format!("{path}.copies")))
         }
+        PatternNodeRef::AlongPath(along_path) => {
+            validate_pattern_count(along_path.copies, 2, &format!("{path}.copies"))?;
+            validate_path_point_count(along_path.points.len(), &format!("{path}.points"))?;
+            Ok((along_path.copies, format!("{path}.copies")))
+        }
     }
 }
 
 fn validate_pattern_count(value: u64, minimum: u64, path: &str) -> Result<(), AuthoringError> {
-    if (minimum..=MAX_PATTERN_AXIS_COUNT).contains(&value) {
+    validate_bounded_count(
+        value,
+        minimum,
+        MAX_PATTERN_AXIS_COUNT,
+        path,
+        "invalid_pattern_count",
+        "pattern counts",
+    )
+}
+
+fn validate_path_point_count(value: usize, path: &str) -> Result<(), AuthoringError> {
+    validate_bounded_count(
+        u64::try_from(value).unwrap_or(u64::MAX),
+        2,
+        MAX_PATTERN_AXIS_COUNT,
+        path,
+        "invalid_path_point_count",
+        "path point counts",
+    )
+}
+
+fn validate_bounded_count(
+    value: u64,
+    minimum: u64,
+    maximum: u64,
+    path: &str,
+    code: &str,
+    label: &str,
+) -> Result<(), AuthoringError> {
+    if (minimum..=maximum).contains(&value) {
         return Ok(());
     }
     Err(AuthoringError::one(AuthoringDiagnostic::new(
         path,
-        "invalid_pattern_count",
-        format!("pattern counts must be between {minimum} and {MAX_PATTERN_AXIS_COUNT}"),
+        code,
+        format!("{label} must be between {minimum} and {maximum}"),
     )))
 }
 

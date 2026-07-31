@@ -4,9 +4,10 @@ use super::super::deterministic_math::sin_cos;
 use super::super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry, TransformSpec, Unit};
 use super::super::visual::{
-    DistributeNodeRef, GridNodeRef, MirrorAxis, MirrorNodeRef, PatternNodeRef, RadialNodeRef,
-    VisualNode,
+    AlongPathNodeRef, DistributeNodeRef, GridNodeRef, MirrorAxis, MirrorNodeRef, PatternNodeRef,
+    RadialNodeRef, VisualNode,
 };
+use super::path::{PathSamplingError, along_path_placements};
 use super::{Lowerer, NodeContext, runtime_name};
 
 struct PatternPlacement {
@@ -93,6 +94,9 @@ impl<'a> Lowerer<'a> {
             PatternNodeRef::Mirror(mirror) => self.lower_mirror(mirror, context, component_stack),
             PatternNodeRef::Distribute(distribute) => {
                 self.lower_distribute(distribute, context, component_stack)
+            }
+            PatternNodeRef::AlongPath(along_path) => {
+                self.lower_along_path(along_path, context, component_stack)
             }
         }
     }
@@ -209,6 +213,74 @@ impl<'a> Lowerer<'a> {
 
         self.lower_repeated_pattern(
             "radial",
+            item,
+            transform,
+            context,
+            placements,
+            component_stack,
+        )
+    }
+
+    fn lower_along_path(
+        &mut self,
+        along_path: AlongPathNodeRef<'_>,
+        context: NodeContext<'_>,
+        component_stack: &mut Vec<String>,
+    ) -> Result<Value, AuthoringDiagnostic> {
+        let AlongPathNodeRef {
+            copies,
+            points,
+            rotate_items,
+            item,
+            transform,
+        } = along_path;
+        let points_path = format!("{}.points", context.authored_path);
+        let mut evaluated_points = Vec::with_capacity(points.len());
+        for (index, point) in points.iter().enumerate() {
+            let x_path = format!("{points_path}[{index}].x");
+            let x = evaluate_expression(&point.x, &x_path, context.scope, Unit::Px)?;
+            let y_path = format!("{points_path}[{index}].y");
+            let y = evaluate_expression(&point.y, &y_path, context.scope, Unit::Px)?;
+            evaluated_points.push((x, y));
+        }
+
+        let sampled =
+            along_path_placements(copies, &evaluated_points, rotate_items).map_err(|error| {
+                match error {
+                    PathSamplingError::InvalidCopyCount => AuthoringDiagnostic::new(
+                        format!("{}.copies", context.authored_path),
+                        "invalid_pattern_count",
+                        "along-path copy count must be at least two",
+                    ),
+                    PathSamplingError::InvalidPointCount => AuthoringDiagnostic::new(
+                        points_path.clone(),
+                        "invalid_path_point_count",
+                        "along-path patterns require at least two points",
+                    ),
+                    PathSamplingError::ZeroLengthSegment { point_index } => {
+                        AuthoringDiagnostic::new(
+                            format!("{points_path}[{point_index}]"),
+                            "invalid_path_segment",
+                            "along-path points must not repeat consecutively",
+                        )
+                    }
+                }
+            })?;
+        let mut placements = Vec::with_capacity(sampled.len());
+        for (index, placement) in sampled.into_iter().enumerate() {
+            validate_scene_number(placement.x, &points_path)?;
+            validate_scene_number(placement.y, &points_path)?;
+            validate_scene_number(placement.rotation, &points_path)?;
+            placements.push(PatternPlacement::positioned(
+                format!("p{index}"),
+                placement.x,
+                placement.y,
+                placement.rotation,
+            ));
+        }
+
+        self.lower_repeated_pattern(
+            "along_path",
             item,
             transform,
             context,

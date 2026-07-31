@@ -16,6 +16,13 @@ pub enum MirrorAxis {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PathPointSpec {
+    pub x: ScalarExpr,
+    pub y: ScalarExpr,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum VisualNode {
     Ellipse {
@@ -157,6 +164,18 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
     },
+    AlongPath {
+        id: String,
+        #[schemars(range(min = 2, max = 100))]
+        copies: u64,
+        #[schemars(length(min = 2, max = 100))]
+        points: Vec<PathPointSpec>,
+        #[serde(default)]
+        rotate_items: bool,
+        item: Box<VisualNode>,
+        #[serde(default)]
+        transform: TransformSpec,
+    },
     Group {
         id: String,
         #[serde(default)]
@@ -255,11 +274,21 @@ pub(crate) struct DistributeNodeRef<'a> {
 }
 
 #[derive(Clone, Copy)]
+pub(crate) struct AlongPathNodeRef<'a> {
+    pub copies: u64,
+    pub points: &'a [PathPointSpec],
+    pub rotate_items: bool,
+    pub item: &'a VisualNode,
+    pub transform: &'a TransformSpec,
+}
+
+#[derive(Clone, Copy)]
 pub(crate) enum PatternNodeRef<'a> {
     Grid(GridNodeRef<'a>),
     Radial(RadialNodeRef<'a>),
     Mirror(MirrorNodeRef<'a>),
     Distribute(DistributeNodeRef<'a>),
+    AlongPath(AlongPathNodeRef<'a>),
 }
 
 impl<'a> PatternNodeRef<'a> {
@@ -269,6 +298,7 @@ impl<'a> PatternNodeRef<'a> {
             Self::Radial(radial) => radial.item,
             Self::Mirror(mirror) => mirror.item,
             Self::Distribute(distribute) => distribute.item,
+            Self::AlongPath(along_path) => along_path.item,
         }
     }
 }
@@ -287,6 +317,7 @@ impl VisualNode {
             | Self::Radial { id, .. }
             | Self::Mirror { id, .. }
             | Self::Distribute { id, .. }
+            | Self::AlongPath { id, .. }
             | Self::Group { id, .. }
             | Self::Instance { id, .. }
             | Self::RawSceneObject { id, .. } => id,
@@ -397,6 +428,7 @@ impl VisualNode {
             | Self::Radial { .. }
             | Self::Mirror { .. }
             | Self::Distribute { .. }
+            | Self::AlongPath { .. }
             | Self::Group { .. }
             | Self::Instance { .. }
             | Self::RawSceneObject { .. } => {
@@ -514,6 +546,20 @@ impl VisualNode {
                 start_y,
                 end_x,
                 end_y,
+                item,
+                transform,
+            })),
+            Self::AlongPath {
+                copies,
+                points,
+                rotate_items,
+                item,
+                transform,
+                ..
+            } => Some(PatternNodeRef::AlongPath(AlongPathNodeRef {
+                copies: *copies,
+                points,
+                rotate_items: *rotate_items,
                 item,
                 transform,
             })),
