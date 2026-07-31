@@ -105,6 +105,11 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         return;
     }
 
+    if let Some(image) = node.image_node() {
+        validate_transform(image.transform, &format!("{path}.transform"), diagnostics);
+        return;
+    }
+
     if let Some(pattern) = node.pattern() {
         match pattern {
             PatternNodeRef::Grid(grid) => {
@@ -159,9 +164,10 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
         | VisualNode::Polygon { .. }
         | VisualNode::Star { .. }
         | VisualNode::Text { .. }
+        | VisualNode::Image { .. }
         | VisualNode::Grid { .. }
         | VisualNode::Radial { .. } => {
-            unreachable!("shape, text, and pattern nodes are handled above")
+            unreachable!("shape, text, image, and pattern nodes are handled above")
         }
     }
 }

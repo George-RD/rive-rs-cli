@@ -889,6 +889,37 @@
         {
           "additionalProperties": false,
           "properties": {
+            "asset": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "image",
+              "type": "string"
+            },
+            "transform": {
+              "$ref": "#/$defs/TransformSpec",
+              "default": {
+                "rotation": null,
+                "scale_x": null,
+                "scale_y": null,
+                "x": null,
+                "y": null
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "asset"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "column_step": {
               "$ref": "#/$defs/ScalarExpr"
             },
@@ -1124,6 +1155,13 @@
       "type": "array"
     },
     "font_assets": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "type": "object"
+    },
+    "image_assets": {
       "additionalProperties": {
         "type": "string"
       },

@@ -11,6 +11,7 @@ use super::spec::{
 };
 use super::visual::VisualNode;
 
+mod image;
 mod node;
 mod paint;
 mod pattern;
@@ -169,25 +170,33 @@ impl<'a> Lowerer<'a> {
             scene_paths: vec!["/artboard".to_string()],
         });
 
-        let mut children =
-            Vec::with_capacity(self.spec.font_assets.len() + self.spec.visual.nodes.len());
-        for (index, (id, source)) in self.spec.font_assets.iter().enumerate() {
-            let runtime_name = font_asset_runtime_name(&self.spec.artboard.id, id);
-            let authored_path = format!("$.font_assets.{id}");
-            self.register_runtime_names(std::slice::from_ref(&runtime_name), &authored_path)
-                .map_err(AuthoringError::one)?;
-            self.source_map.entries.push(SourceMapEntry {
-                authored_id: id.clone(),
-                authored_path,
-                definition_path: None,
-                runtime_names: vec![runtime_name.clone()],
-                scene_paths: vec![format!("/artboard/children/{index}")],
-            });
-            children.push(json!({
-                "type": "font_asset",
-                "name": runtime_name,
-                "source": source
-            }));
+        let spec = self.spec;
+        let mut children = Vec::with_capacity(
+            spec.font_assets.len() + spec.image_assets.len() + spec.visual.nodes.len(),
+        );
+        for (list_path, role, assets) in [
+            ("$.font_assets", "font_asset", &spec.font_assets),
+            ("$.image_assets", "image_asset", &spec.image_assets),
+        ] {
+            for (id, source) in assets {
+                let index = children.len();
+                let runtime_name = file_asset_runtime_name(&spec.artboard.id, id, role);
+                let authored_path = format!("{list_path}.{id}");
+                self.register_runtime_names(std::slice::from_ref(&runtime_name), &authored_path)
+                    .map_err(AuthoringError::one)?;
+                self.source_map.entries.push(SourceMapEntry {
+                    authored_id: id.clone(),
+                    authored_path,
+                    definition_path: None,
+                    runtime_names: vec![runtime_name.clone()],
+                    scene_paths: vec![format!("/artboard/children/{index}")],
+                });
+                children.push(json!({
+                    "type": role,
+                    "name": runtime_name,
+                    "source": source
+                }));
+            }
         }
         let visual_offset = children.len();
         let mut component_stack = Vec::new();
@@ -426,11 +435,16 @@ fn validate_fragment_ids(
     }
 }
 
+fn file_asset_runtime_name(artboard_id: &str, asset_id: &str, role: &str) -> String {
+    runtime_name(&[artboard_id.to_string(), asset_id.to_string()], role)
+}
+
 fn font_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {
-    runtime_name(
-        &[artboard_id.to_string(), asset_id.to_string()],
-        "font_asset",
-    )
+    file_asset_runtime_name(artboard_id, asset_id, "font_asset")
+}
+
+fn image_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {
+    file_asset_runtime_name(artboard_id, asset_id, "image_asset")
 }
 
 fn without_asset_sources(scene: &Value) -> Value {

@@ -21,6 +21,9 @@ impl<'a> Lowerer<'a> {
         if let Some(text) = node.text_node() {
             return self.lower_text(text, context);
         }
+        if let Some(image) = node.image_node() {
+            return self.lower_image(image, context);
+        }
 
         let NodeContext {
             authored_path,
@@ -223,9 +226,10 @@ impl<'a> Lowerer<'a> {
             | VisualNode::Polygon { .. }
             | VisualNode::Star { .. }
             | VisualNode::Text { .. }
+            | VisualNode::Image { .. }
             | VisualNode::Grid { .. }
             | VisualNode::Radial { .. } => {
-                unreachable!("shape, text, and pattern nodes are handled above")
+                unreachable!("shape, text, image, and pattern nodes are handled above")
             }
         }
     }

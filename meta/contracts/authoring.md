@@ -13,6 +13,7 @@ It must provide:
 - typed units and safe expression trees, not arbitrary executable strings;
 - reusable components, instances, bounded patterns, and simple constraints;
 - semantic font asset IDs that text can reference without runtime indices;
+- semantic image asset IDs that static image nodes can reference without runtime indices;
 - deterministic file-scope asset ordering and collision-checked runtime names;
 - preservation of asset sources in lowered `SceneSpec`, with actual file embedding
   performed only when the canonical builder receives an explicit base directory;
