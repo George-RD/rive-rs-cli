@@ -1,6 +1,8 @@
 mod support;
 
-use rive_cli::authoring::{authoring_schema, lower_authoring_json};
+use rive_cli::authoring::{
+    AuthoringDiagnostic, AuthoringError, authoring_schema, lower_authoring_json,
+};
 use serde_json::{Value, json};
 use support::assert_builds;
 
@@ -47,15 +49,17 @@ fn document(nodes: Vec<Value>) -> String {
     .to_string()
 }
 
-fn diagnostic<'a>(
-    error: &'a rive_cli::authoring::AuthoringError,
-    code: &str,
-) -> &'a rive_cli::authoring::AuthoringDiagnostic {
+fn diagnostic<'a>(error: &'a AuthoringError, code: &str) -> &'a AuthoringDiagnostic {
     error
         .diagnostics
         .iter()
         .find(|diagnostic| diagnostic.code == code)
         .unwrap_or_else(|| panic!("missing diagnostic {code}: {:?}", error.diagnostics))
+}
+
+fn constrained_error(children: Vec<Value>, constraints: Vec<Value>) -> AuthoringError {
+    lower_authoring_json(&document(vec![group("invalid", children, constraints)]))
+        .expect_err("invalid constraint must fail")
 }
 
 #[test]
@@ -244,121 +248,114 @@ fn constraint_cycles_report_the_authored_chain() {
     let error = lower_authoring_json(&document(vec![constrained_group]))
         .expect_err("constraint cycle must fail");
     let diagnostic = diagnostic(&error, "constraint_cycle");
-    assert!(diagnostic.path.starts_with("$.visual.nodes[0].constraints["));
+    assert!(
+        diagnostic
+            .path
+            .starts_with("$.visual.nodes[0].constraints[")
+    );
     assert!(diagnostic.message.contains("a.x"));
     assert!(diagnostic.message.contains("b.x"));
 }
 
 #[test]
 fn constraint_diagnostics_are_actionable() {
-    let cases = vec![
-        (
-            "unknown_constraint_node",
-            ".target",
-            vec![json!({
+    let error = constrained_error(
+        vec![rectangle("a", literal(0.0, "px"), literal(0.0, "px"))],
+        vec![json!({
+            "kind": "align",
+            "id": "missing-target",
+            "subject": "a",
+            "target": "missing",
+            "axis": "x"
+        })],
+    );
+    assert!(
+        diagnostic(&error, "unknown_constraint_node")
+            .path
+            .ends_with(".target")
+    );
+
+    let error = constrained_error(
+        vec![
+            rectangle("a", literal(0.0, "px"), literal(0.0, "px")),
+            rectangle("b", literal(10.0, "px"), literal(0.0, "px")),
+            rectangle("c", literal(20.0, "px"), literal(0.0, "px")),
+        ],
+        vec![
+            json!({
                 "kind": "align",
-                "id": "missing-target",
+                "id": "first",
                 "subject": "a",
-                "target": "missing",
+                "target": "b",
                 "axis": "x"
-            })],
-            vec![rectangle(
-                "a",
-                literal(0.0, "px"),
-                literal(0.0, "px")
-            )],
-        ),
-        (
-            "constraint_conflict",
-            ".subject",
-            vec![
-                json!({
-                    "kind": "align",
-                    "id": "first",
-                    "subject": "a",
-                    "target": "b",
-                    "axis": "x"
-                }),
-                json!({
-                    "kind": "align",
-                    "id": "second",
-                    "subject": "a",
-                    "target": "c",
-                    "axis": "x"
-                }),
-            ],
-            vec![
-                rectangle("a", literal(0.0, "px"), literal(0.0, "px")),
-                rectangle("b", literal(10.0, "px"), literal(0.0, "px")),
-                rectangle("c", literal(20.0, "px"), literal(0.0, "px")),
-            ],
-        ),
-        (
-            "invalid_constraint_items",
-            ".items",
-            vec![json!({
-                "kind": "spacing",
-                "id": "too-short",
-                "items": ["a"],
-                "axis": "x",
-                "gap": literal(10.0, "px")
-            })],
-            vec![rectangle(
-                "a",
-                literal(0.0, "px"),
-                literal(0.0, "px")
-            )],
-        ),
-        (
-            "duplicate_constraint_node",
-            ".items[1]",
-            vec![json!({
-                "kind": "spacing",
-                "id": "duplicate",
-                "items": ["a", "a"],
-                "axis": "x",
-                "gap": literal(10.0, "px")
-            })],
-            vec![rectangle(
-                "a",
-                literal(0.0, "px"),
-                literal(0.0, "px")
-            )],
-        ),
-        (
-            "unit_mismatch",
-            ".gap",
-            vec![json!({
-                "kind": "spacing",
-                "id": "bad-gap",
-                "items": ["a", "b"],
-                "axis": "x",
-                "gap": literal(10.0, "degrees")
-            })],
-            vec![
-                rectangle("a", literal(0.0, "px"), literal(0.0, "px")),
-                rectangle("b", literal(0.0, "px"), literal(0.0, "px")),
-            ],
-        ),
-    ];
+            }),
+            json!({
+                "kind": "align",
+                "id": "second",
+                "subject": "a",
+                "target": "c",
+                "axis": "x"
+            }),
+        ],
+    );
+    assert!(
+        diagnostic(&error, "constraint_conflict")
+            .path
+            .ends_with(".subject")
+    );
 
-    for (code, path_suffix, constraints, children) in cases {
-        let error = lower_authoring_json(&document(vec![group(
-            "invalid",
-            children,
-            constraints,
-        )]))
-        .expect_err("invalid constraint must fail");
-        let diagnostic = diagnostic(&error, code);
-        assert!(
-            diagnostic.path.ends_with(path_suffix),
-            "unexpected path for {code}: {}",
-            diagnostic.path
-        );
-    }
+    let error = constrained_error(
+        vec![rectangle("a", literal(0.0, "px"), literal(0.0, "px"))],
+        vec![json!({
+            "kind": "spacing",
+            "id": "too-short",
+            "items": ["a"],
+            "axis": "x",
+            "gap": literal(10.0, "px")
+        })],
+    );
+    assert!(
+        diagnostic(&error, "invalid_constraint_items")
+            .path
+            .ends_with(".items")
+    );
 
-    let raw_group = group(
-        "raw",
+    let error = constrained_error(
+        vec![rectangle("a", literal(0.0, "px"), literal(0.0, "px"))],
+        vec![json!({
+            "kind": "spacing",
+            "id": "duplicate",
+            "items": ["a", "a"],
+            "axis": "x",
+            "gap": literal(10.0, "px")
+        })],
+    );
+    assert!(
+        diagnostic(&error, "duplicate_constraint_node")
+            .path
+            .ends_with(".items[1]")
+    );
+
+    let error = constrained_error(
+        vec![
+            rectangle("a", literal(0.0, "px"), literal(0.0, "px")),
+            rectangle("b", literal(0.0, "px"), literal(0.0, "px")),
+        ],
+        vec![json!({
+            "kind": "spacing",
+            "id": "bad-gap",
+            "items": ["a", "b"],
+            "axis": "x",
+            "gap": literal(10.0, "degrees")
+        })],
+    );
+    assert!(
+        diagnostic(&error, "unit_mismatch")
+            .path
+            .ends_with(".gap")
+    );
+
+    let error = constrained_error(
         vec![
             json!({
                 "kind": "raw_scene_object",
@@ -384,10 +381,11 @@ fn constraint_diagnostics_are_actionable() {
             "axis": "x"
         })],
     );
-    let error = lower_authoring_json(&document(vec![raw_group]))
-        .expect_err("raw nodes cannot participate in typed constraints");
-    let diagnostic = diagnostic(&error, "unsupported_constraint_node");
-    assert!(diagnostic.path.ends_with(".subject"));
+    assert!(
+        diagnostic(&error, "unsupported_constraint_node")
+            .path
+            .ends_with(".subject")
+    );
 }
 
 #[test]
@@ -402,11 +400,13 @@ fn constraint_schema_exposes_only_semantic_fields() {
     let group_properties = group["properties"].as_object().expect("group properties");
     assert!(group_properties.contains_key("constraints"));
     assert_eq!(group_properties["constraints"]["default"], json!([]));
-    assert!(!group["required"]
-        .as_array()
-        .expect("group required fields")
-        .iter()
-        .any(|field| field == "constraints"));
+    assert!(
+        !group["required"]
+            .as_array()
+            .expect("group required fields")
+            .iter()
+            .any(|field| field == "constraints")
+    );
 
     let variants = schema["$defs"]["ConstraintSpec"]["oneOf"]
         .as_array()
@@ -435,8 +435,5 @@ fn constraint_schema_exposes_only_semantic_fields() {
         }
     }
 
-    assert_eq!(
-        schema["$defs"]["ConstraintAxis"]["enum"],
-        json!(["x", "y"])
-    );
+    assert_eq!(schema["$defs"]["ConstraintAxis"]["enum"], json!(["x", "y"]));
 }
