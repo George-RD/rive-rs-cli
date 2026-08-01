@@ -1,6 +1,6 @@
 ---
 node: rive-cli.intelligence.authoring
-status: in_progress
+status: complete
 created: 2026-07-29
 ---
 
@@ -112,7 +112,19 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Final PR #155 remediation adds a RED/GREEN contract for memoized-prefix traversal,
   validates dependency depth before memoized value evaluation, and centralizes immutable
   and mutable typed-node transform access behind one variant mapping.
-- Remaining work is the complex static showcase without raw escapes.
+- PR #156 completes the slice with `complex-static-showcase.v0.json`, a typed static
+  composition combining reusable components, parameter overrides, expression math,
+  linear and radial gradients, trimmed strokes, text, grid, radial, mirror, distribute,
+  along-path patterns, and align, center, offset, and spacing constraints without raw
+  SceneSpec, motion, or behavior escapes.
+- The showcase contract proves deterministic lowering and source maps, expanded authored
+  IDs, canonical SceneSpec construction, `.riv` encoding, and structural validation. Its
+  test helper also removes duplicated deterministic-lowering setup from the existing
+  authoring examples.
+- TDD run `30691630011` passed formatting, Clippy, all 614 library tests, and every prior
+  integration suite before failing only because the showcase fixture did not yet exist.
+  GREEN run `30691846841` then passed the full Rust, browser, Cairn, official-runtime,
+  demo, site, Playwright, and visual-regression matrix.
 
 ## Acceptance criteria
 
