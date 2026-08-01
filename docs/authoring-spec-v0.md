@@ -322,7 +322,7 @@ A `group` may declare an optional `constraints` array. Constraints reference dir
 ]
 ```
 
-`align` copies one sibling anchor on one axis. `center` places an anchor at the midpoint between two sibling anchors. `offset` derives both axes from one sibling plus pixel expressions. `spacing` preserves the first item's authored anchor and places each later item one pixel gap after the previous item on the selected axis; the perpendicular authored coordinate is unchanged. Constraint expressions use the normal component parameter scope, so instance overrides remain deterministic.
+`align` copies one sibling anchor on one axis. `center` places an anchor at the midpoint between two sibling anchors. `offset` derives both axes from one sibling plus pixel expressions. `spacing` preserves the first item's authored anchor and places each later item the evaluated pixel gap after the previous item on the selected axis; the perpendicular authored coordinate is unchanged. Constraint expressions use the normal component parameter scope, so instance overrides remain deterministic.
 
 Constraints are intentionally group-local and anchor-based. They do not inspect rendered bounds, infer edges, or act as a general CAD solver. Raw `SceneSpec` nodes cannot participate because they have no typed authoring transform. Unknown siblings, duplicate spacing entries, conflicting assignments, invalid units, and dependency cycles return authored-path diagnostics such as `unknown_constraint_node`, `constraint_conflict`, and `constraint_cycle`. Cycle messages include the stable authored anchor chain.
 
