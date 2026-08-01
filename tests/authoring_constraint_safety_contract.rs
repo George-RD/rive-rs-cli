@@ -256,3 +256,42 @@ fn constraint_dependency_depth_is_bounded() {
     assert_eq!(diagnostic.path, "$.visual.nodes[0].constraints[0].items[1]");
     assert!(diagnostic.message.contains("100"));
 }
+
+#[test]
+fn constraint_dependency_depth_is_bounded_after_memoized_prefixes() {
+    let children = (0..=101)
+        .map(|index| rectangle(&format!("node-{index}")))
+        .collect::<Vec<_>>();
+    let spacing_items = (0..100)
+        .map(|index| format!("node-{index}"))
+        .collect::<Vec<_>>();
+    let constraints = vec![
+        json!({
+            "kind": "spacing",
+            "id": "memoized-prefix",
+            "items": spacing_items,
+            "axis": "x",
+            "gap": literal(1.0, "px")
+        }),
+        json!({
+            "kind": "align",
+            "id": "link-one-hundred",
+            "subject": "node-100",
+            "target": "node-99",
+            "axis": "x"
+        }),
+        json!({
+            "kind": "align",
+            "id": "link-one-hundred-one",
+            "subject": "node-101",
+            "target": "node-100",
+            "axis": "x"
+        }),
+    ];
+
+    let error = lower_authoring_json(&document(children, constraints))
+        .expect_err("memoized prefixes must not hide an overlong dependency chain");
+    let diagnostic = diagnostic(&error, "constraint_resolution_depth_limit");
+    assert_eq!(diagnostic.path, "$.visual.nodes[0].constraints[0].items[1]");
+    assert!(diagnostic.message.contains("100"));
+}
