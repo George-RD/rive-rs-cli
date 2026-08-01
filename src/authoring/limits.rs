@@ -5,7 +5,7 @@ use super::visual::{PatternNodeRef, VisualNode};
 
 const MAX_COMPONENT_EXPANSION_DEPTH: usize = 64;
 const MAX_GENERATED_COMPONENT_NODES: u64 = 10_000;
-pub(crate) const MAX_AUTHORING_ITEM_COUNT: usize = 100;
+const MAX_PATTERN_AXIS_COUNT: u64 = 100;
 const MAX_GENERATED_PATTERN_NODES: u64 = 10_000;
 
 #[derive(Clone, Copy)]
@@ -286,7 +286,7 @@ fn validate_pattern_count(value: u64, minimum: u64, path: &str) -> Result<(), Au
     validate_bounded_count(
         value,
         minimum,
-        MAX_AUTHORING_ITEM_COUNT as u64,
+        MAX_PATTERN_AXIS_COUNT,
         path,
         "invalid_pattern_count",
         "pattern counts",
@@ -297,7 +297,7 @@ fn validate_path_point_count(value: usize, path: &str) -> Result<(), AuthoringEr
     validate_bounded_count(
         u64::try_from(value).unwrap_or(u64::MAX),
         2,
-        MAX_AUTHORING_ITEM_COUNT as u64,
+        MAX_PATTERN_AXIS_COUNT,
         path,
         "invalid_path_point_count",
         "path point counts",

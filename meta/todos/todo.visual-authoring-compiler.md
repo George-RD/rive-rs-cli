@@ -105,9 +105,10 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   diagnostics for unknown or raw siblings, invalid or duplicate constraint IDs,
   duplicate entries, conflicting writes, invalid units, malformed spacing lists, and
   cycles with the authored anchor chain.
-- PR #155 review hardening bounds dependency resolution and each group's constraint
-  list to 100, reuses the shared authoring item limit, avoids cloning groups that declare
-  no constraints, and pins align, center, and spacing behavior on both axes.
+- PR #155 review hardening independently bounds dependency resolution, spacing lists,
+  and each group's constraint declarations to 100, keeps those limits separate from
+  pattern and path bounds, avoids cloning unconstrained groups, and pins align, center,
+  and spacing behavior on both axes.
 - Remaining work is the complex static showcase without raw escapes.
 
 ## Acceptance criteria

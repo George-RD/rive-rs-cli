@@ -2,11 +2,14 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
-use super::limits::MAX_AUTHORING_ITEM_COUNT;
 use super::spec::{
     AuthoringDiagnostic, ConstraintAxis, ConstraintSpec, Quantity, ScalarExpr, TransformSpec, Unit,
 };
 use super::visual::VisualNode;
+
+const MAX_GROUP_CONSTRAINTS: usize = 100;
+const MAX_SPACING_ITEMS: usize = 100;
+const MAX_CONSTRAINT_RESOLUTION_DEPTH: usize = 100;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct Anchor {
@@ -37,11 +40,11 @@ pub(crate) fn resolve_group_constraints<'a>(
     if constraints.is_empty() {
         return Ok(Cow::Borrowed(children));
     }
-    if constraints.len() > MAX_AUTHORING_ITEM_COUNT {
+    if constraints.len() > MAX_GROUP_CONSTRAINTS {
         return Err(AuthoringDiagnostic::new(
             format!("{group_path}.constraints"),
             "invalid_constraint_count",
-            format!("groups support at most {MAX_AUTHORING_ITEM_COUNT} constraints"),
+            format!("groups support at most {MAX_GROUP_CONSTRAINTS} constraints"),
         ));
     }
 
@@ -190,12 +193,12 @@ pub(crate) fn resolve_group_constraints<'a>(
                 axis,
                 gap,
             } => {
-                if !(2..=MAX_AUTHORING_ITEM_COUNT).contains(&items.len()) {
+                if !(2..=MAX_SPACING_ITEMS).contains(&items.len()) {
                     return Err(AuthoringDiagnostic::new(
                         format!("{path}.items"),
                         "invalid_constraint_items",
                         format!(
-                            "spacing constraints require between 2 and {MAX_AUTHORING_ITEM_COUNT} ordered sibling ids"
+                            "spacing constraints require between 2 and {MAX_SPACING_ITEMS} ordered sibling ids"
                         ),
                     ));
                 }
@@ -402,12 +405,12 @@ fn resolve_anchor(
         });
     };
 
-    if depth >= MAX_AUTHORING_ITEM_COUNT {
+    if depth >= MAX_CONSTRAINT_RESOLUTION_DEPTH {
         return Err(AuthoringDiagnostic::new(
             &assignment.path,
             "constraint_resolution_depth_limit",
             format!(
-                "constraint dependency chains must not exceed {MAX_AUTHORING_ITEM_COUNT} assignments"
+                "constraint dependency chains must not exceed {MAX_CONSTRAINT_RESOLUTION_DEPTH} assignments"
             ),
         ));
     }
