@@ -1,5 +1,3 @@
-mod support;
-
 use rive_cli::authoring::{AuthoringError, lower_authoring_json};
 use serde_json::{Value, json};
 
