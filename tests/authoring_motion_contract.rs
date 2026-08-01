@@ -165,11 +165,7 @@ fn named_poses_lower_to_deterministic_canonical_tracks() {
     assert_eq!(panel_x["frames"][1]["value"], 112.0);
     assert_eq!(panel_x["frames"][0]["interpolation"], "linear");
 
-    let orb_scale = keyframe_group(
-        animation,
-        "auth__motion_2dstage__orb__shape",
-        "scale_x",
-    );
+    let orb_scale = keyframe_group(animation, "auth__motion_2dstage__orb__shape", "scale_x");
     assert_eq!(orb_scale["frames"][0]["value"], 0.5);
     assert_eq!(orb_scale["frames"][1]["value"], 1.0);
 
