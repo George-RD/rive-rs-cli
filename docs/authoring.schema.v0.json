@@ -59,6 +59,146 @@
       ],
       "type": "object"
     },
+    "ConstraintAxis": {
+      "enum": [
+        "x",
+        "y"
+      ],
+      "type": "string"
+    },
+    "ConstraintSpec": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "axis": {
+              "$ref": "#/$defs/ConstraintAxis"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "align",
+              "type": "string"
+            },
+            "subject": {
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "subject",
+            "target",
+            "axis"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "axis": {
+              "$ref": "#/$defs/ConstraintAxis"
+            },
+            "end": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "center",
+              "type": "string"
+            },
+            "start": {
+              "type": "string"
+            },
+            "subject": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "subject",
+            "start",
+            "end",
+            "axis"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "offset",
+              "type": "string"
+            },
+            "subject": {
+              "type": "string"
+            },
+            "target": {
+              "type": "string"
+            },
+            "x": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "y": {
+              "$ref": "#/$defs/ScalarExpr"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "subject",
+            "target",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "axis": {
+              "$ref": "#/$defs/ConstraintAxis"
+            },
+            "gap": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "id": {
+              "type": "string"
+            },
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 100,
+              "minItems": 2,
+              "type": "array"
+            },
+            "kind": {
+              "const": "spacing",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "items",
+            "axis",
+            "gap"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "GradientKind": {
       "enum": [
         "linear_gradient",
@@ -1194,6 +1334,13 @@
               "default": [],
               "items": {
                 "$ref": "#/$defs/VisualNode"
+              },
+              "type": "array"
+            },
+            "constraints": {
+              "default": [],
+              "items": {
+                "$ref": "#/$defs/ConstraintSpec"
               },
               "type": "array"
             },
