@@ -1,6 +1,6 @@
 ---
 node: rive-cli.intelligence.authoring
-status: open
+status: in_progress
 created: 2026-07-29
 ---
 
@@ -17,6 +17,25 @@ animations and blend endpoints.
 - Motion targets use authored IDs and typed property paths.
 - Generated animations render deterministically at required evaluation frames.
 - The control-panel level and button motion can be represented materially more compactly than raw SceneSpec.
+
+## Evidence
+
+PR #157 establishes the first cohesive motion-compiler slice:
+
+- named transform poses target visual nodes by authored ID;
+- compact pose tracks lower deterministically to canonical SceneSpec keyframe groups;
+- scalar expressions provide parameter-backed integer frame timing;
+- `hold` and `linear` interpolation plus `oneshot`, `loop`, and `pingpong` loop modes are schema-bounded;
+- typed tracks coexist with raw animation escapes without corrupting source-map indices;
+- `tests/authoring_motion_contract.rs` covers deterministic lowering, canonical builder acceptance, exact authored-path diagnostics, schema exposure, and raw-animation offsets;
+- the generated `docs/authoring.schema.v0.json` records the public JSON contract.
+
+## Remaining
+
+- Shared easing definitions and deterministic easing reuse.
+- Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
+- Color and other non-transform property tracks.
+- A complex animated showcase with retained official-runtime frame evidence.
 
 ## Dependency
 
