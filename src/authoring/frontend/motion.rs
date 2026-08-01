@@ -219,13 +219,16 @@ fn lower_tracks(
                     format!("motion frame {frame} exceeds duration {duration}"),
                 ));
             }
-            let pose_index = pose_lookup.get(keyframe.pose.as_str()).copied().ok_or_else(|| {
-                AuthoringDiagnostic::new(
-                    format!("{keyframe_path}.pose"),
-                    "unknown_pose",
-                    format!("pose '{}' is not defined", keyframe.pose),
-                )
-            })?;
+            let pose_index = pose_lookup
+                .get(keyframe.pose.as_str())
+                .copied()
+                .ok_or_else(|| {
+                    AuthoringDiagnostic::new(
+                        format!("{keyframe_path}.pose"),
+                        "unknown_pose",
+                        format!("pose '{}' is not defined", keyframe.pose),
+                    )
+                })?;
             frames.push(ResolvedFrame {
                 authored_index: keyframe_index,
                 frame,
@@ -237,10 +240,7 @@ fn lower_tracks(
         for pair in frames.windows(2) {
             if pair[0].frame == pair[1].frame {
                 return Err(AuthoringDiagnostic::new(
-                    format!(
-                        "{track_path}.keyframes[{}].frame",
-                        pair[1].authored_index
-                    ),
+                    format!("{track_path}.keyframes[{}].frame", pair[1].authored_index),
                     "duplicate_frame",
                     format!("motion frame {} is declared more than once", pair[1].frame),
                 ));
