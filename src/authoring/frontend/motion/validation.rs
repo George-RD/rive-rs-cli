@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use super::super::super::spec::{AuthoringDiagnostic, MotionSection};
+use super::super::validate_id;
 
 const MAX_POSES: usize = 1_000;
 const MAX_POSE_TARGETS: usize = 1_000;
@@ -139,23 +140,6 @@ fn validate_count(
             path,
             code,
             format!("{label} must be between {minimum} and {maximum}"),
-        ));
-    }
-}
-
-fn validate_id(id: &str, path: &str, diagnostics: &mut Vec<AuthoringDiagnostic>) {
-    if id.trim().is_empty() {
-        diagnostics.push(AuthoringDiagnostic::new(
-            path,
-            "invalid_id",
-            "authored ids must not be empty",
-        ));
-    }
-    if id.contains('/') {
-        diagnostics.push(AuthoringDiagnostic::new(
-            path,
-            "invalid_id",
-            "authored ids must not contain the reserved '/' source-map separator",
         ));
     }
 }

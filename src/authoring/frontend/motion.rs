@@ -294,7 +294,10 @@ fn lower_tracks(
         fragments.push(RawSceneFragment {
             id: track.id.clone(),
             value: json!({
-                "name": animation_runtime_name(&spec.artboard.id, &track.id),
+                "name": lower::runtime_name(
+                    &[spec.artboard.id.clone(), track.id.clone()],
+                    "animation",
+                ),
                 "fps": track.fps,
                 "duration": duration,
                 "loop_type": loop_name(track.loop_type),
@@ -365,32 +368,5 @@ fn loop_name(loop_type: MotionLoop) -> &'static str {
         MotionLoop::Oneshot => "oneshot",
         MotionLoop::Loop => "loop",
         MotionLoop::Pingpong => "pingpong",
-    }
-}
-
-fn animation_runtime_name(artboard_id: &str, track_id: &str) -> String {
-    format!(
-        "auth__{}__{}__animation",
-        encode_name_part(artboard_id),
-        encode_name_part(track_id)
-    )
-}
-
-fn encode_name_part(input: &str) -> String {
-    const HEX: &[u8; 16] = b"0123456789abcdef";
-    let mut encoded = String::new();
-    for byte in input.bytes() {
-        if byte.is_ascii_alphanumeric() {
-            encoded.push(char::from(byte));
-        } else {
-            encoded.push('_');
-            encoded.push(char::from(HEX[usize::from(byte >> 4)]));
-            encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
-        }
-    }
-    if encoded.is_empty() {
-        "empty".to_string()
-    } else {
-        encoded
     }
 }
