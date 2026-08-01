@@ -1,3 +1,5 @@
+mod motion;
+
 use std::collections::{BTreeMap, HashSet};
 
 use super::lower;
@@ -12,11 +14,14 @@ use super::visual::VisualNode;
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     validate_authoring(spec)?;
     let lowered = lower::lower_authoring(spec).map_err(|error| rewrite_error_paths(spec, error))?;
+    let lowered =
+        motion::lower_motion(spec, lowered).map_err(|error| rewrite_error_paths(spec, error))?;
     validate_runtime_names(lowered)
 }
 
 fn validate_authoring(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
-    let name_diagnostics = validate_authored_names(spec);
+    let mut name_diagnostics = validate_authored_names(spec);
+    name_diagnostics.extend(motion::validate_motion(&spec.motion));
     if !name_diagnostics.is_empty() {
         return Err(AuthoringError::many(name_diagnostics));
     }

@@ -232,9 +232,69 @@ pub struct VisualSection {
     pub nodes: Vec<VisualNode>,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MotionInterpolation {
+    Hold,
+    #[default]
+    Linear,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MotionLoop {
+    #[default]
+    Oneshot,
+    Loop,
+    Pingpong,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PoseTargetSpec {
+    pub target: String,
+    pub transform: TransformSpec,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PoseSpec {
+    pub id: String,
+    #[schemars(length(min = 1, max = 1000))]
+    pub targets: Vec<PoseTargetSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct PoseKeyframeSpec {
+    pub frame: ScalarExpr,
+    pub pose: String,
+    #[serde(default)]
+    pub interpolation: MotionInterpolation,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct MotionTrackSpec {
+    pub id: String,
+    #[schemars(range(min = 1, max = 240))]
+    pub fps: u64,
+    pub duration_frames: ScalarExpr,
+    #[serde(default)]
+    pub loop_type: MotionLoop,
+    #[schemars(length(min = 2, max = 1000))]
+    pub keyframes: Vec<PoseKeyframeSpec>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MotionSection {
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub poses: Vec<PoseSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub tracks: Vec<MotionTrackSpec>,
     #[serde(default)]
     pub raw_animations: Vec<RawSceneFragment>,
 }
