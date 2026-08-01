@@ -95,6 +95,47 @@ pub struct TransformSpec {
     pub scale_y: Option<ScalarExpr>,
 }
 
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum ConstraintAxis {
+    X,
+    Y,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ConstraintSpec {
+    Align {
+        id: String,
+        subject: String,
+        target: String,
+        axis: ConstraintAxis,
+    },
+    Center {
+        id: String,
+        subject: String,
+        start: String,
+        end: String,
+        axis: ConstraintAxis,
+    },
+    Offset {
+        id: String,
+        subject: String,
+        target: String,
+        x: ScalarExpr,
+        y: ScalarExpr,
+    },
+    Spacing {
+        id: String,
+        #[schemars(length(min = 2, max = 100))]
+        items: Vec<String>,
+        axis: ConstraintAxis,
+        gap: ScalarExpr,
+    },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GradientKind {

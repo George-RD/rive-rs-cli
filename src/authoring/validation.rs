@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use super::expression::validate_scene_number;
 use super::spec::{
-    AuthoringDiagnostic, AuthoringSpec, PaintSpec, Quantity, ScalarExpr, TransformSpec,
+    AuthoringDiagnostic, AuthoringSpec, ConstraintSpec, PaintSpec, Quantity, ScalarExpr,
+    TransformSpec,
 };
 use super::visual::{PatternNodeRef, VisualNode};
 
@@ -180,10 +181,24 @@ fn validate_node(node: &VisualNode, path: &str, diagnostics: &mut Vec<AuthoringD
     match node {
         VisualNode::Group {
             transform,
+            constraints,
             children,
             ..
         } => {
             validate_transform(transform, &format!("{path}.transform"), diagnostics);
+            for (index, constraint) in constraints.iter().enumerate() {
+                let constraint_path = format!("{path}.constraints[{index}]");
+                match constraint {
+                    ConstraintSpec::Offset { x, y, .. } => {
+                        validate_expression(x, &format!("{constraint_path}.x"), diagnostics);
+                        validate_expression(y, &format!("{constraint_path}.y"), diagnostics);
+                    }
+                    ConstraintSpec::Spacing { gap, .. } => {
+                        validate_expression(gap, &format!("{constraint_path}.gap"), diagnostics);
+                    }
+                    ConstraintSpec::Align { .. } | ConstraintSpec::Center { .. } => {}
+                }
+            }
             validate_nodes(children, &format!("{path}.children"), diagnostics);
         }
         VisualNode::Instance {

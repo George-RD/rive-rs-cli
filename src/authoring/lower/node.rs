@@ -1,5 +1,6 @@
 use serde_json::{Value, json};
 
+use super::super::constraint::resolve_group_constraints;
 use super::super::expression::evaluate_transform;
 use super::super::spec::{AuthoringDiagnostic, SourceMapEntry};
 use super::super::visual::VisualNode;
@@ -37,10 +38,13 @@ impl<'a> Lowerer<'a> {
         match node {
             VisualNode::Group {
                 transform,
+                constraints,
                 children,
                 ..
             } => {
                 validate_sibling_ids_result(children, &format!("{authored_path}.children"))?;
+                let children =
+                    resolve_group_constraints(children, constraints, &authored_path, scope)?;
                 let transform_values =
                     evaluate_transform(transform, &format!("{authored_path}.transform"), scope)?;
                 let wrapper_name = runtime_name(&runtime_segments, "group");
