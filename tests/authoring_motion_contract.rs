@@ -153,7 +153,10 @@ fn named_poses_lower_to_deterministic_canonical_tracks() {
         .expect("typed animation list");
     assert_eq!(animations.len(), 1);
     let animation = &animations[0];
-    assert_eq!(animation["name"], "auth__motion_2dstage__entrance__animation");
+    assert_eq!(
+        animation["name"],
+        "auth__motion_2dstage__entrance__animation"
+    );
     assert_eq!(animation["fps"], 60);
     assert_eq!(animation["duration"], 36);
     assert_eq!(animation["loop_type"], "oneshot");
