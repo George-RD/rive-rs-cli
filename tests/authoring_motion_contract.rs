@@ -153,10 +153,7 @@ fn named_poses_lower_to_deterministic_canonical_tracks() {
         .expect("typed animation list");
     assert_eq!(animations.len(), 1);
     let animation = &animations[0];
-    assert_eq!(
-        animation["name"],
-        "auth__motion_2dstage__entrance__animation"
-    );
+    assert_eq!(animation["name"], "auth__motion_2dstage__entrance__animation");
     assert_eq!(animation["fps"], 60);
     assert_eq!(animation["duration"], 36);
     assert_eq!(animation["loop_type"], "oneshot");
@@ -258,8 +255,7 @@ fn motion_diagnostics_point_to_authored_pose_and_track_paths() {
     ));
 
     let mut fractional_frame = document();
-    fractional_frame["motion"]["tracks"][0]["keyframes"][1]["frame"] =
-        literal(12.5, "scalar");
+    fractional_frame["motion"]["tracks"][0]["keyframes"][1]["frame"] = literal(12.5, "scalar");
     cases.push((
         fractional_frame,
         "invalid_frame",
