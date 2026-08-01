@@ -98,7 +98,13 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Pure polyline sampling lives in a focused lowering helper with pinned `libm` distance
   and tangent math. Shared bounded-count validation now covers both pattern copies and
   path-point counts without duplicating range logic.
-- Remaining work includes constraints and a complex static showcase without raw escapes.
+- PR #155 implements deterministic group-scoped align, center, offset, and ordered
+  spacing constraints over direct-child `x` and `y` transform anchors. Component
+  parameters and instance overrides flow through the same typed expression scope.
+- Constraint assignments share one stable dependency graph and emit authored-path
+  diagnostics for unknown or raw siblings, duplicate entries, conflicting writes,
+  invalid units, malformed spacing lists, and cycles with the authored anchor chain.
+- Remaining work is the complex static showcase without raw escapes.
 
 ## Acceptance criteria
 

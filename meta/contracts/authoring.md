@@ -11,7 +11,8 @@ It must provide:
 - stable author IDs and generated runtime names;
 - a source map from authored concepts to expanded SceneSpec objects;
 - typed units and safe expression trees, not arbitrary executable strings;
-- reusable components, instances, bounded deterministic grid, radial, mirror, distribute, and along-path patterns, and simple constraints;
+- reusable components, instances, bounded deterministic grid, radial, mirror, distribute, and along-path patterns, and group-scoped transform-anchor constraints;
+- constraints that reference direct typed siblings by stable authored ID, preserve component parameter and instance override semantics, and report conflicts or cycles at authored paths;
 - semantic font asset IDs that text can reference without runtime indices;
 - semantic image asset IDs that static image nodes can reference without runtime indices;
 - deterministic file-scope asset ordering and collision-checked runtime names;
@@ -22,5 +23,7 @@ It must provide:
 - a raw SceneSpec escape hatch for unsupported advanced Rive objects;
 - validation at each lowering stage and no direct binary encoding path.
 
-The first version stays JSON. A custom textual DSL or general CAD constraint
-solver requires separate evidence and an accepted decision.
+The first version stays JSON. Its constraints align or derive direct-child `x` and
+`y` transform anchors; they are not a rendered-bounds or general CAD solver. A
+custom textual DSL or broader constraint system requires separate evidence and an
+accepted decision.
