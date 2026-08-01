@@ -275,6 +275,7 @@ fn motion_diagnostics_point_to_authored_pose_and_track_paths() {
     ));
 
     let mut unknown_target = document();
+    unknown_target["motion"]["tracks"] = json!([]);
     unknown_target["motion"]["poses"][0]["targets"][0]["target"] = json!("missing");
     cases.push((
         unknown_target,
