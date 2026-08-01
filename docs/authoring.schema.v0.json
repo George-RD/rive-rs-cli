@@ -264,17 +264,84 @@
       ],
       "type": "string"
     },
+    "MotionInterpolation": {
+      "enum": [
+        "hold",
+        "linear"
+      ],
+      "type": "string"
+    },
+    "MotionLoop": {
+      "enum": [
+        "oneshot",
+        "loop",
+        "pingpong"
+      ],
+      "type": "string"
+    },
     "MotionSection": {
       "additionalProperties": false,
       "properties": {
+        "poses": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/PoseSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
         "raw_animations": {
           "default": [],
           "items": {
             "$ref": "#/$defs/RawSceneFragment"
           },
           "type": "array"
+        },
+        "tracks": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MotionTrackSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
         }
       },
+      "type": "object"
+    },
+    "MotionTrackSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_frames": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "fps": {
+          "format": "uint64",
+          "maximum": 240,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "id": {
+          "type": "string"
+        },
+        "keyframes": {
+          "items": {
+            "$ref": "#/$defs/PoseKeyframeSpec"
+          },
+          "maxItems": 1000,
+          "minItems": 2,
+          "type": "array"
+        },
+        "loop_type": {
+          "$ref": "#/$defs/MotionLoop",
+          "default": "oneshot"
+        }
+      },
+      "required": [
+        "id",
+        "fps",
+        "duration_frames",
+        "keyframes"
+      ],
       "type": "object"
     },
     "PaintSpec": {
@@ -300,6 +367,63 @@
       "required": [
         "x",
         "y"
+      ],
+      "type": "object"
+    },
+    "PoseKeyframeSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "frame": {
+          "$ref": "#/$defs/ScalarExpr"
+        },
+        "interpolation": {
+          "$ref": "#/$defs/MotionInterpolation",
+          "default": "linear"
+        },
+        "pose": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "frame",
+        "pose"
+      ],
+      "type": "object"
+    },
+    "PoseSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "targets": {
+          "items": {
+            "$ref": "#/$defs/PoseTargetSpec"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "targets"
+      ],
+      "type": "object"
+    },
+    "PoseTargetSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "type": "string"
+        },
+        "transform": {
+          "$ref": "#/$defs/TransformSpec"
+        }
+      },
+      "required": [
+        "target",
+        "transform"
       ],
       "type": "object"
     },
