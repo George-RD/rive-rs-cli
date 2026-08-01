@@ -1342,6 +1342,7 @@
               "items": {
                 "$ref": "#/$defs/ConstraintSpec"
               },
+              "maxItems": 100,
               "type": "array"
             },
             "id": {
