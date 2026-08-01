@@ -28,9 +28,11 @@ with authored visual targets, scalar-expression frame timing, `hold` or `linear`
 interpolation, and `oneshot`, `loop`, or `pingpong` loop behavior. Every pose used
 by one track declares the same target/property shape. Tracks lower through the
 canonical builder, retain deterministic runtime names, and map errors and runtime
-objects back to `$.motion.tracks` and `$.motion.poses`. Shared easing definitions,
-semantic motion helpers, non-transform property tracks, and statecharts remain
-separate roadmap slices.
+objects back to `$.motion.tracks` and `$.motion.poses`. Raw state-machine escapes
+may reference generated track runtime names in the same document because final
+canonical validation occurs only after typed animations are present. Shared easing
+definitions, semantic motion helpers, non-transform property tracks, and typed
+statecharts remain separate roadmap slices.
 
 The first version stays JSON. Its constraints align or derive direct-child `x` and
 `y` transform anchors; they are not a rendered-bounds or general CAD solver. A

@@ -27,8 +27,10 @@ PR #157 establishes the first cohesive motion-compiler slice:
 - scalar expressions provide parameter-backed integer frame timing;
 - `hold` and `linear` interpolation plus `oneshot`, `loop`, and `pingpong` loop modes are schema-bounded;
 - typed tracks coexist with raw animation escapes without corrupting source-map indices;
-- `tests/authoring_motion_contract.rs` covers deterministic lowering, canonical builder acceptance, exact authored-path diagnostics, schema exposure, and raw-animation offsets;
-- the generated `docs/authoring.schema.v0.json` records the public JSON contract.
+- raw state-machine escapes can reference generated track runtime names in the same document;
+- `tests/authoring_motion_contract.rs` covers deterministic lowering, canonical builder acceptance, exact authored-path diagnostics, schema exposure, raw-animation offsets, and behavior-reference integration;
+- the generated `docs/authoring.schema.v0.json` records the public JSON contract;
+- CI run 688 passed formatting, Clippy, Rust, browser, official-runtime, Cairn, visual-regression, demo, and site gates.
 
 ## Remaining
 
