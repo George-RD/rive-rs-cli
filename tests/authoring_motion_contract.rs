@@ -123,11 +123,7 @@ fn lower(input: &Value) -> rive_cli::authoring::LoweredAuthoring {
     lower_authoring_json(&input.to_string()).expect("motion authoring must lower")
 }
 
-fn has_diagnostic(
-    error: &rive_cli::authoring::AuthoringError,
-    code: &str,
-    path: &str,
-) -> bool {
+fn has_diagnostic(error: &rive_cli::authoring::AuthoringError, code: &str, path: &str) -> bool {
     error
         .diagnostics
         .iter()
@@ -157,16 +153,15 @@ fn named_poses_lower_to_deterministic_canonical_tracks() {
         .expect("typed animation list");
     assert_eq!(animations.len(), 1);
     let animation = &animations[0];
-    assert_eq!(animation["name"], "auth__motion-stage__entrance__animation");
+    assert_eq!(
+        animation["name"],
+        "auth__motion_2dstage__entrance__animation"
+    );
     assert_eq!(animation["fps"], 60);
     assert_eq!(animation["duration"], 36);
     assert_eq!(animation["loop_type"], "oneshot");
 
-    let panel_x = keyframe_group(
-        animation,
-        "auth__motion-stage__panel__group",
-        "x",
-    );
+    let panel_x = keyframe_group(animation, "auth__motion_2dstage__panel__group", "x");
     assert_eq!(panel_x["frames"][0]["frame"], 0);
     assert_eq!(panel_x["frames"][0]["value"], 20.0);
     assert_eq!(panel_x["frames"][1]["frame"], 36);
@@ -175,7 +170,7 @@ fn named_poses_lower_to_deterministic_canonical_tracks() {
 
     let orb_scale = keyframe_group(
         animation,
-        "auth__motion-stage__orb__shape",
+        "auth__motion_2dstage__orb__shape",
         "scale_x",
     );
     assert_eq!(orb_scale["frames"][0]["value"], 0.5);
@@ -190,7 +185,7 @@ fn named_poses_lower_to_deterministic_canonical_tracks() {
     assert_eq!(source.authored_path, "$.motion.tracks[0]");
     assert_eq!(
         source.runtime_names,
-        vec!["auth__motion-stage__entrance__animation"]
+        vec!["auth__motion_2dstage__entrance__animation"]
     );
     assert_eq!(source.scene_paths, vec!["/artboard/animations/0"]);
 
@@ -213,7 +208,10 @@ fn typed_tracks_keep_raw_animation_source_paths_at_their_real_offset() {
     ]);
 
     let lowered = lower(&input);
-    assert_eq!(lowered.scene["artboard"]["animations"][1]["name"], "raw_tail");
+    assert_eq!(
+        lowered.scene["artboard"]["animations"][1]["name"],
+        "raw_tail"
+    );
     let raw = lowered
         .source_map
         .entries
@@ -230,11 +228,7 @@ fn motion_diagnostics_point_to_authored_pose_and_track_paths() {
 
     let mut duplicate_pose = document();
     duplicate_pose["motion"]["poses"][1]["id"] = json!("rest");
-    cases.push((
-        duplicate_pose,
-        "duplicate_pose",
-        "$.motion.poses[1].id",
-    ));
+    cases.push((duplicate_pose, "duplicate_pose", "$.motion.poses[1].id"));
 
     let mut unknown_pose = document();
     unknown_pose["motion"]["tracks"][0]["keyframes"][1]["pose"] = json!("missing");
