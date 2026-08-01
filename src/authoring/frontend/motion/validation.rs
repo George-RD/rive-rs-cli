@@ -8,7 +8,9 @@ const MAX_TRACKS: usize = 1_000;
 const MAX_TRACK_KEYFRAMES: usize = 1_000;
 const MAX_FPS: u64 = 240;
 
-pub(super) fn validate_motion(motion: &MotionSection) -> Vec<AuthoringDiagnostic> {
+pub(in crate::authoring::frontend) fn validate_motion(
+    motion: &MotionSection,
+) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();
     validate_count(
         motion.poses.len(),
