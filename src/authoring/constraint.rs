@@ -398,9 +398,8 @@ fn validate_anchor_dependency_depth(
             validate_anchor_dependency_depth(source, assignments, stack, depth + 1)
         }
         Formula::Midpoint(start, end) => {
-            validate_anchor_dependency_depth(start, assignments, stack, depth + 1).and_then(|()| {
-                validate_anchor_dependency_depth(end, assignments, stack, depth + 1)
-            })
+            validate_anchor_dependency_depth(start, assignments, stack, depth + 1)
+                .and_then(|()| validate_anchor_dependency_depth(end, assignments, stack, depth + 1))
         }
     };
     stack.pop();
