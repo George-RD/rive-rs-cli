@@ -102,8 +102,11 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   spacing constraints over direct-child `x` and `y` transform anchors. Component
   parameters and instance overrides flow through the same typed expression scope.
 - Constraint assignments share one stable dependency graph and emit authored-path
-  diagnostics for unknown or raw siblings, duplicate entries, conflicting writes,
-  invalid units, malformed spacing lists, and cycles with the authored anchor chain.
+  diagnostics for unknown or raw siblings, invalid or duplicate constraint IDs,
+  duplicate entries, conflicting writes, invalid units, malformed spacing lists, and
+  cycles with the authored anchor chain.
+- PR #155 review hardening bounds dependency resolution to 100 assignments, reuses
+  the shared authoring item limit, and avoids cloning groups that declare no constraints.
 - Remaining work is the complex static showcase without raw escapes.
 
 ## Acceptance criteria

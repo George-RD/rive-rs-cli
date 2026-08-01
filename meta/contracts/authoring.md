@@ -12,7 +12,7 @@ It must provide:
 - a source map from authored concepts to expanded SceneSpec objects;
 - typed units and safe expression trees, not arbitrary executable strings;
 - reusable components, instances, bounded deterministic grid, radial, mirror, distribute, and along-path patterns, and group-scoped transform-anchor constraints;
-- constraints that reference direct typed siblings by stable authored ID, preserve component parameter and instance override semantics, and report conflicts or cycles at authored paths;
+- constraints that reference direct typed siblings by stable authored ID, preserve component parameter and instance override semantics, and report invalid IDs, conflicts, bounded dependency depth, or cycles at authored paths;
 - semantic font asset IDs that text can reference without runtime indices;
 - semantic image asset IDs that static image nodes can reference without runtime indices;
 - deterministic file-scope asset ordering and collision-checked runtime names;

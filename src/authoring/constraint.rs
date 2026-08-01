@@ -1,6 +1,8 @@
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::expression::{evaluate_expression, evaluate_transform, validate_scene_number};
+use super::limits::MAX_AUTHORING_ITEM_COUNT;
 use super::spec::{
     AuthoringDiagnostic, ConstraintAxis, ConstraintSpec, Quantity, ScalarExpr, TransformSpec, Unit,
 };
@@ -26,14 +28,14 @@ enum Formula {
     Offset(Anchor, f64),
 }
 
-pub(crate) fn resolve_group_constraints(
-    children: &[VisualNode],
+pub(crate) fn resolve_group_constraints<'a>(
+    children: &'a [VisualNode],
     constraints: &[ConstraintSpec],
     group_path: &str,
     scope: &BTreeMap<String, Quantity>,
-) -> Result<Vec<VisualNode>, AuthoringDiagnostic> {
+) -> Result<Cow<'a, [VisualNode]>, AuthoringDiagnostic> {
     if constraints.is_empty() {
-        return Ok(children.to_vec());
+        return Ok(Cow::Borrowed(children));
     }
 
     validate_constraint_ids(constraints, group_path)?;
@@ -181,11 +183,13 @@ pub(crate) fn resolve_group_constraints(
                 axis,
                 gap,
             } => {
-                if !(2..=100).contains(&items.len()) {
+                if !(2..=MAX_AUTHORING_ITEM_COUNT).contains(&items.len()) {
                     return Err(AuthoringDiagnostic::new(
                         format!("{path}.items"),
                         "invalid_constraint_items",
-                        "spacing constraints require between 2 and 100 ordered sibling ids",
+                        format!(
+                            "spacing constraints require between 2 and {MAX_AUTHORING_ITEM_COUNT} ordered sibling ids"
+                        ),
                     ));
                 }
                 let mut seen = BTreeSet::new();
@@ -235,6 +239,7 @@ pub(crate) fn resolve_group_constraints(
             &mut memo,
             &mut stack,
             children,
+            0,
         )?;
     }
 
@@ -260,7 +265,7 @@ pub(crate) fn resolve_group_constraints(
         }
     }
 
-    Ok(resolved)
+    Ok(Cow::Owned(resolved))
 }
 
 fn validate_constraint_ids(
@@ -351,6 +356,7 @@ fn resolve_anchor(
     memo: &mut BTreeMap<Anchor, f64>,
     stack: &mut Vec<Anchor>,
     children: &[VisualNode],
+    depth: usize,
 ) -> Result<f64, AuthoringDiagnostic> {
     if let Some(value) = memo.get(&anchor) {
         return Ok(*value);
@@ -389,20 +395,58 @@ fn resolve_anchor(
         });
     };
 
+    if depth >= MAX_AUTHORING_ITEM_COUNT {
+        return Err(AuthoringDiagnostic::new(
+            &assignment.path,
+            "constraint_resolution_depth_limit",
+            format!(
+                "constraint dependency chains must not exceed {MAX_AUTHORING_ITEM_COUNT} assignments"
+            ),
+        ));
+    }
+
     stack.push(anchor);
     let result = match assignment.formula {
-        Formula::Alias(source) => {
-            resolve_anchor(source, assignments, base_values, memo, stack, children)
-        }
+        Formula::Alias(source) => resolve_anchor(
+            source,
+            assignments,
+            base_values,
+            memo,
+            stack,
+            children,
+            depth + 1,
+        ),
         Formula::Midpoint(start, end) => {
-            let start = resolve_anchor(start, assignments, base_values, memo, stack, children)?;
-            let end = resolve_anchor(end, assignments, base_values, memo, stack, children)?;
+            let start = resolve_anchor(
+                start,
+                assignments,
+                base_values,
+                memo,
+                stack,
+                children,
+                depth + 1,
+            )?;
+            let end = resolve_anchor(
+                end,
+                assignments,
+                base_values,
+                memo,
+                stack,
+                children,
+                depth + 1,
+            )?;
             Ok((start + end) / 2.0)
         }
-        Formula::Offset(source, amount) => {
-            resolve_anchor(source, assignments, base_values, memo, stack, children)
-                .map(|value| value + amount)
-        }
+        Formula::Offset(source, amount) => resolve_anchor(
+            source,
+            assignments,
+            base_values,
+            memo,
+            stack,
+            children,
+            depth + 1,
+        )
+        .map(|value| value + amount),
     };
     stack.pop();
     let value = result?;
