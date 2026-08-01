@@ -219,6 +219,45 @@ fn typed_tracks_keep_raw_animation_source_paths_at_their_real_offset() {
 }
 
 #[test]
+fn raw_state_machine_can_reference_typed_track_runtime_name() {
+    let mut input = document();
+    input["behavior"]["raw_state_machines"] = json!([
+        {
+            "id": "entrance-machine",
+            "value": {
+                "name": "entrance_machine",
+                "layers": [
+                    {
+                        "states": [
+                            { "type": "entry" },
+                            {
+                                "type": "animation",
+                                "animation": "auth__motion_2dstage__entrance__animation"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]);
+
+    let lowered = lower(&input);
+    assert_eq!(
+        lowered.scene["artboard"]["state_machines"][0]["name"],
+        "entrance_machine"
+    );
+    let source = lowered
+        .source_map
+        .entries
+        .iter()
+        .find(|entry| entry.authored_id == "entrance-machine")
+        .expect("raw state-machine source map");
+    assert_eq!(source.authored_path, "$.behavior.raw_state_machines[0]");
+    assert_eq!(source.scene_paths, vec!["/artboard/state_machines/0"]);
+    assert_builds(lowered.scene);
+}
+
+#[test]
 fn motion_diagnostics_point_to_authored_pose_and_track_paths() {
     let mut cases = Vec::new();
 
