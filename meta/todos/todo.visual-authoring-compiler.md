@@ -109,6 +109,9 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
   and each group's constraint declarations to 100, keeps those limits separate from
   pattern and path bounds, avoids cloning unconstrained groups, and pins align, center,
   and spacing behavior on both axes.
+- Final PR #155 remediation adds a RED/GREEN contract for memoized-prefix traversal,
+  validates dependency depth before memoized value evaluation, and centralizes immutable
+  and mutable typed-node transform access behind one variant mapping.
 - Remaining work is the complex static showcase without raw escapes.
 
 ## Acceptance criteria
