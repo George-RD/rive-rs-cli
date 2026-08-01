@@ -239,6 +239,8 @@ pub(crate) fn resolve_group_constraints<'a>(
         }
     }
 
+    validate_constraint_dependency_depth(&assignments)?;
+
     let mut memo = BTreeMap::new();
     let mut stack = Vec::new();
     for anchor in assignments.keys().copied().collect::<Vec<_>>() {
@@ -359,6 +361,52 @@ fn insert_assignment(
     Ok(())
 }
 
+fn validate_constraint_dependency_depth(
+    assignments: &BTreeMap<Anchor, Assignment>,
+) -> Result<(), AuthoringDiagnostic> {
+    for anchor in assignments.keys().copied() {
+        validate_anchor_dependency_depth(anchor, assignments, &mut Vec::new(), 0)?;
+    }
+    Ok(())
+}
+
+fn validate_anchor_dependency_depth(
+    anchor: Anchor,
+    assignments: &BTreeMap<Anchor, Assignment>,
+    stack: &mut Vec<Anchor>,
+    depth: usize,
+) -> Result<(), AuthoringDiagnostic> {
+    if stack.contains(&anchor) {
+        return Ok(());
+    }
+    let Some(assignment) = assignments.get(&anchor) else {
+        return Ok(());
+    };
+    if depth >= MAX_CONSTRAINT_RESOLUTION_DEPTH {
+        return Err(AuthoringDiagnostic::new(
+            &assignment.path,
+            "constraint_resolution_depth_limit",
+            format!(
+                "constraint dependency chains must not exceed {MAX_CONSTRAINT_RESOLUTION_DEPTH} assignments"
+            ),
+        ));
+    }
+
+    stack.push(anchor);
+    let result = match assignment.formula {
+        Formula::Alias(source) | Formula::Offset(source, _) => {
+            validate_anchor_dependency_depth(source, assignments, stack, depth + 1)
+        }
+        Formula::Midpoint(start, end) => {
+            validate_anchor_dependency_depth(start, assignments, stack, depth + 1).and_then(|()| {
+                validate_anchor_dependency_depth(end, assignments, stack, depth + 1)
+            })
+        }
+    };
+    stack.pop();
+    result
+}
+
 fn resolve_anchor(
     anchor: Anchor,
     assignments: &BTreeMap<Anchor, Assignment>,
@@ -476,42 +524,32 @@ fn anchor_label(anchor: Anchor, children: &[VisualNode]) -> String {
     )
 }
 
+macro_rules! typed_node_transform {
+    ($node:expr) => {
+        match $node {
+            VisualNode::Ellipse { transform, .. }
+            | VisualNode::Rectangle { transform, .. }
+            | VisualNode::Triangle { transform, .. }
+            | VisualNode::Polygon { transform, .. }
+            | VisualNode::Star { transform, .. }
+            | VisualNode::Text { transform, .. }
+            | VisualNode::Image { transform, .. }
+            | VisualNode::Grid { transform, .. }
+            | VisualNode::Radial { transform, .. }
+            | VisualNode::Mirror { transform, .. }
+            | VisualNode::Distribute { transform, .. }
+            | VisualNode::AlongPath { transform, .. }
+            | VisualNode::Group { transform, .. }
+            | VisualNode::Instance { transform, .. } => Some(transform),
+            VisualNode::RawSceneObject { .. } => None,
+        }
+    };
+}
+
 fn node_transform(node: &VisualNode) -> Option<&TransformSpec> {
-    match node {
-        VisualNode::Ellipse { transform, .. }
-        | VisualNode::Rectangle { transform, .. }
-        | VisualNode::Triangle { transform, .. }
-        | VisualNode::Polygon { transform, .. }
-        | VisualNode::Star { transform, .. }
-        | VisualNode::Text { transform, .. }
-        | VisualNode::Image { transform, .. }
-        | VisualNode::Grid { transform, .. }
-        | VisualNode::Radial { transform, .. }
-        | VisualNode::Mirror { transform, .. }
-        | VisualNode::Distribute { transform, .. }
-        | VisualNode::AlongPath { transform, .. }
-        | VisualNode::Group { transform, .. }
-        | VisualNode::Instance { transform, .. } => Some(transform),
-        VisualNode::RawSceneObject { .. } => None,
-    }
+    typed_node_transform!(node)
 }
 
 fn node_transform_mut(node: &mut VisualNode) -> Option<&mut TransformSpec> {
-    match node {
-        VisualNode::Ellipse { transform, .. }
-        | VisualNode::Rectangle { transform, .. }
-        | VisualNode::Triangle { transform, .. }
-        | VisualNode::Polygon { transform, .. }
-        | VisualNode::Star { transform, .. }
-        | VisualNode::Text { transform, .. }
-        | VisualNode::Image { transform, .. }
-        | VisualNode::Grid { transform, .. }
-        | VisualNode::Radial { transform, .. }
-        | VisualNode::Mirror { transform, .. }
-        | VisualNode::Distribute { transform, .. }
-        | VisualNode::AlongPath { transform, .. }
-        | VisualNode::Group { transform, .. }
-        | VisualNode::Instance { transform, .. } => Some(transform),
-        VisualNode::RawSceneObject { .. } => None,
-    }
+    typed_node_transform!(node)
 }
