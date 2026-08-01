@@ -253,9 +253,6 @@ fn constraint_dependency_depth_is_bounded() {
     let error = lower_authoring_json(&document(children, constraints))
         .expect_err("deep dependency chains must be bounded");
     let diagnostic = diagnostic(&error, "constraint_resolution_depth_limit");
-    assert_eq!(
-        diagnostic.path,
-        "$.visual.nodes[0].constraints[0].items[1]"
-    );
+    assert_eq!(diagnostic.path, "$.visual.nodes[0].constraints[0].items[1]");
     assert!(diagnostic.message.contains("100"));
 }
