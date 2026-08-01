@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -38,13 +38,6 @@ jobs:
       - name: Fail when Clippy failed
         if: steps.clippy.outcome == 'failure'
         run: exit 1
-      - name: Generate AuthoringSpec schema
-        run: cargo test --locked --all-features --test authoring_contract regenerate_published_authoring_schema -- --ignored
-      - uses: actions/upload-artifact@v4
-        with:
-          name: authoring-schema
-          path: docs/authoring.schema.v0.json
-          retention-days: 1
       - name: Run Rust tests
         id: tests
         continue-on-error: true
@@ -60,27 +53,6 @@ jobs:
       - name: Fail when Rust tests failed
         if: steps.tests.outcome == 'failure'
         run: exit 1
-
-  persist-authoring-schema:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo test --locked --all-features --test authoring_contract regenerate_published_authoring_schema -- --ignored
-      - name: Commit generated schema
-        run: |
-          if git diff --quiet -- docs/authoring.schema.v0.json; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/authoring.schema.v0.json
-          git commit -m "docs(authoring): regenerate published schema"
-          git push origin "HEAD:${{ github.head_ref }}"
 
   browser-contracts:
     runs-on: ubuntu-24.04
