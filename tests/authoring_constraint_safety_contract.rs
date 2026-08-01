@@ -41,7 +41,10 @@ fn document(children: Vec<Value>, constraints: Vec<Value>) -> String {
     .to_string()
 }
 
-fn diagnostic<'a>(error: &'a AuthoringError, code: &str) -> &'a rive_cli::authoring::AuthoringDiagnostic {
+fn diagnostic<'a>(
+    error: &'a AuthoringError,
+    code: &str,
+) -> &'a rive_cli::authoring::AuthoringDiagnostic {
     error
         .diagnostics
         .iter()
