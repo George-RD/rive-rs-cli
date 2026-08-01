@@ -230,6 +230,7 @@ fn raw_state_machine_can_reference_typed_track_runtime_name() {
                     {
                         "states": [
                             { "type": "entry" },
+                            { "type": "exit" },
                             {
                                 "type": "animation",
                                 "animation": "auth__motion_2dstage__entrance__animation"
