@@ -22,7 +22,7 @@ until that frontend and its evidence gates exist.
 | P0 | Foundation refactor, Cairn map, roadmap, and deterministic CI | complete in PR #133 | all Rust, browser, visual, and Cairn gates green; merged to `main` |
 | P0 | Official-runtime evidence in `ai lab` | complete in PR #134 | per-case frames and runtime pass rate retained separately from structural validity |
 | P0 | [AuthoringSpec v0 and lowering boundary](meta/todos/todo.authoring-spec-v0.md) | complete in PR #135 | strict schema, deterministic lowering, source map, two validated examples |
-| P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | in progress | components, parameters, patterns, simple constraints, complex static showcase |
+| P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | open | compact tracks and poses reproduce complex motion with runtime proof |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open | view-model bindings and named statecharts reproduce interaction with runtime proof |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open | semantic evidence reported separately from structural and runtime results |
