@@ -349,11 +349,7 @@ fn constraint_diagnostics_are_actionable() {
             "gap": literal(10.0, "degrees")
         })],
     );
-    assert!(
-        diagnostic(&error, "unit_mismatch")
-            .path
-            .ends_with(".gap")
-    );
+    assert!(diagnostic(&error, "unit_mismatch").path.ends_with(".gap"));
 
     let error = constrained_error(
         vec![
