@@ -1,3 +1,4 @@
+mod constraint;
 mod deterministic_math;
 mod expression;
 mod frontend;
@@ -12,9 +13,10 @@ use serde_json::Value;
 
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, GradientKind,
-    GradientPaintSpec, GradientStopSpec, LoweredAuthoring, MotionSection, PaintSpec, Quantity,
-    RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec, TransformSpec, Unit, VisualSection,
+    AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, ConstraintAxis,
+    ConstraintSpec, GradientKind, GradientPaintSpec, GradientStopSpec, LoweredAuthoring,
+    MotionSection, PaintSpec, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec,
+    TransformSpec, Unit, VisualSection,
 };
 pub use visual::{MirrorAxis, PathPointSpec, VisualNode};
 

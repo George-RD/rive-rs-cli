@@ -125,13 +125,8 @@ pub(crate) fn resolve_group_constraints(
                     children,
                     &node_indices,
                 )?;
-                let end = resolve_reference(
-                    end,
-                    *axis,
-                    &format!("{path}.end"),
-                    children,
-                    &node_indices,
-                )?;
+                let end =
+                    resolve_reference(end, *axis, &format!("{path}.end"), children, &node_indices)?;
                 insert_assignment(
                     &mut assignments,
                     subject,
@@ -152,10 +147,8 @@ pub(crate) fn resolve_group_constraints(
             } => {
                 let x_offset = evaluate_expression(x, &format!("{path}.x"), scope, Unit::Px)?;
                 let y_offset = evaluate_expression(y, &format!("{path}.y"), scope, Unit::Px)?;
-                for (axis, offset) in [
-                    (ConstraintAxis::X, x_offset),
-                    (ConstraintAxis::Y, y_offset),
-                ] {
+                for (axis, offset) in [(ConstraintAxis::X, x_offset), (ConstraintAxis::Y, y_offset)]
+                {
                     let subject = resolve_reference(
                         subject,
                         axis,
@@ -202,7 +195,9 @@ pub(crate) fn resolve_group_constraints(
                         return Err(AuthoringDiagnostic::new(
                             format!("{path}.items[{item_index}]"),
                             "duplicate_constraint_node",
-                            format!("spacing constraint '{id}' names sibling '{item}' more than once"),
+                            format!(
+                                "spacing constraint '{id}' names sibling '{item}' more than once"
+                            ),
                         ));
                     }
                     anchors.push(resolve_reference(
@@ -386,49 +381,28 @@ fn resolve_anchor(
             AuthoringDiagnostic::new(
                 "$",
                 "unsupported_constraint_node",
-                format!("{} has no typed transform anchor", anchor_label(anchor, children)),
+                format!(
+                    "{} has no typed transform anchor",
+                    anchor_label(anchor, children)
+                ),
             )
         });
     };
 
     stack.push(anchor);
     let result = match assignment.formula {
-        Formula::Alias(source) => resolve_anchor(
-            source,
-            assignments,
-            base_values,
-            memo,
-            stack,
-            children,
-        ),
+        Formula::Alias(source) => {
+            resolve_anchor(source, assignments, base_values, memo, stack, children)
+        }
         Formula::Midpoint(start, end) => {
-            let start = resolve_anchor(
-                start,
-                assignments,
-                base_values,
-                memo,
-                stack,
-                children,
-            )?;
-            let end = resolve_anchor(
-                end,
-                assignments,
-                base_values,
-                memo,
-                stack,
-                children,
-            )?;
+            let start = resolve_anchor(start, assignments, base_values, memo, stack, children)?;
+            let end = resolve_anchor(end, assignments, base_values, memo, stack, children)?;
             Ok((start + end) / 2.0)
         }
-        Formula::Offset(source, amount) => resolve_anchor(
-            source,
-            assignments,
-            base_values,
-            memo,
-            stack,
-            children,
-        )
-        .map(|value| value + amount),
+        Formula::Offset(source, amount) => {
+            resolve_anchor(source, assignments, base_values, memo, stack, children)
+                .map(|value| value + amount)
+        }
     };
     stack.pop();
     let value = result?;
