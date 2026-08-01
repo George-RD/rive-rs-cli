@@ -57,35 +57,35 @@ const MAX_CONSTRAINT_RESOLUTION_DEPTH: usize = 100;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]""",
 )
-replace_count(
+replace_once(
     "src/authoring/constraint.rs",
-    "MAX_AUTHORING_ITEM_COUNT",
-    "MAX_GROUP_CONSTRAINTS",
-    2,
+    "constraints.len() > MAX_AUTHORING_ITEM_COUNT",
+    "constraints.len() > MAX_GROUP_CONSTRAINTS",
 )
-replace_count(
+replace_once(
     "src/authoring/constraint.rs",
-    "MAX_GROUP_CONSTRAINTS).contains(&items.len())",
-    "MAX_SPACING_ITEMS).contains(&items.len())",
-    1,
+    "groups support at most {MAX_AUTHORING_ITEM_COUNT} constraints",
+    "groups support at most {MAX_GROUP_CONSTRAINTS} constraints",
 )
-replace_count(
+replace_once(
     "src/authoring/constraint.rs",
-    "{MAX_GROUP_CONSTRAINTS} ordered sibling ids",
-    "{MAX_SPACING_ITEMS} ordered sibling ids",
-    1,
+    "(2..=MAX_AUTHORING_ITEM_COUNT).contains(&items.len())",
+    "(2..=MAX_SPACING_ITEMS).contains(&items.len())",
 )
-replace_count(
+replace_once(
     "src/authoring/constraint.rs",
-    "depth >= MAX_GROUP_CONSTRAINTS",
+    "between 2 and {MAX_AUTHORING_ITEM_COUNT} ordered sibling ids",
+    "between 2 and {MAX_SPACING_ITEMS} ordered sibling ids",
+)
+replace_once(
+    "src/authoring/constraint.rs",
+    "depth >= MAX_AUTHORING_ITEM_COUNT",
     "depth >= MAX_CONSTRAINT_RESOLUTION_DEPTH",
-    1,
 )
-replace_count(
+replace_once(
     "src/authoring/constraint.rs",
-    "exceed {MAX_GROUP_CONSTRAINTS} assignments",
+    "exceed {MAX_AUTHORING_ITEM_COUNT} assignments",
     "exceed {MAX_CONSTRAINT_RESOLUTION_DEPTH} assignments",
-    1,
 )
 
 replace_once(
