@@ -1,0 +1,45 @@
+name: Apply bounded group constraints
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/simple-constraints-v0'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/simple-constraints-v0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - run: python .github/apply-constraint-count.py
+      - run: cargo fmt --all
+      - run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - run: cargo test --locked --all-features --test authoring_constraint_contract --test authoring_constraint_safety_contract
+      - name: Commit verified bound and contract updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/authoring/constraint.rs src/authoring/visual.rs docs/authoring-spec-v0.md meta/contracts/authoring.md meta/todos/todo.visual-authoring-compiler.md
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Bound group constraint declarations"
+          git push
+      - name: Regenerate published schema
+        run: cargo test --locked --all-features regenerate_published_authoring_schema -- --ignored
+      - name: Commit generated schema
+        run: |
+          if git diff --quiet -- docs/authoring.schema.v0.json; then
+            exit 0
+          fi
+          git add docs/authoring.schema.v0.json
+          git commit -m "Regenerate authoring schema"
+          git push
