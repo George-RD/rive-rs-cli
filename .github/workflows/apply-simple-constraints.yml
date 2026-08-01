@@ -20,6 +20,7 @@ jobs:
         with:
           components: rustfmt
       - run: python .github/apply-simple-constraints.py
+      - run: python .github/apply-simple-constraint-docs.py
       - run: cargo fmt --all
       - run: cargo test --locked --all-features --test authoring_constraint_contract
       - name: Commit implementation and contract
