@@ -37,6 +37,13 @@ pub(crate) fn resolve_group_constraints<'a>(
     if constraints.is_empty() {
         return Ok(Cow::Borrowed(children));
     }
+    if constraints.len() > MAX_AUTHORING_ITEM_COUNT {
+        return Err(AuthoringDiagnostic::new(
+            format!("{group_path}.constraints"),
+            "invalid_constraint_count",
+            format!("groups support at most {MAX_AUTHORING_ITEM_COUNT} constraints"),
+        ));
+    }
 
     validate_constraint_ids(constraints, group_path)?;
 

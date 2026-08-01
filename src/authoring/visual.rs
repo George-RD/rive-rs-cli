@@ -182,6 +182,7 @@ pub enum VisualNode {
         #[serde(default)]
         transform: TransformSpec,
         #[serde(default)]
+        #[schemars(length(max = 100))]
         constraints: Vec<ConstraintSpec>,
         #[serde(default)]
         children: Vec<VisualNode>,
