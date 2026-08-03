@@ -109,7 +109,7 @@ fn resolve_poses(
     spec: &AuthoringSpec,
     source_map: &AuthoringSourceMap,
 ) -> Result<Vec<PoseValues>, AuthoringDiagnostic> {
-    let target_index = index_motion_targets(source_map);
+    let motion_targets = index_motion_targets(source_map);
     let mut poses = Vec::with_capacity(spec.motion.poses.len());
     for (pose_index, pose) in spec.motion.poses.iter().enumerate() {
         let pose_path = format!("$.motion.poses[{pose_index}]");
@@ -117,7 +117,7 @@ fn resolve_poses(
         for (target_index, target) in pose.targets.iter().enumerate() {
             let target_path = format!("{pose_path}.targets[{target_index}]");
             let runtime_name = resolve_target_runtime_name(
-                &target_index,
+                &motion_targets,
                 &target.target,
                 &format!("{target_path}.target"),
             )?;
