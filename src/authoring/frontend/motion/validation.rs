@@ -1,12 +1,13 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use super::super::super::spec::{AuthoringDiagnostic, MotionSection};
+use super::super::super::spec::{AuthoringDiagnostic, MotionSection, TransformSpec};
 use super::super::validate_id;
 
 const MAX_POSES: usize = 1_000;
 const MAX_POSE_TARGETS: usize = 1_000;
 const MAX_TRACKS: usize = 1_000;
 const MAX_TRACK_KEYFRAMES: usize = 1_000;
+const MAX_EXPANDED_MOTION_KEYFRAMES: u64 = 10_000;
 const MAX_FPS: u64 = 240;
 
 pub(in crate::authoring::frontend) fn validate_motion(
@@ -24,6 +25,7 @@ pub(in crate::authoring::frontend) fn validate_motion(
     );
 
     let mut pose_ids = HashSet::new();
+    let mut pose_property_counts = HashMap::new();
     for (pose_index, pose) in motion.poses.iter().enumerate() {
         let pose_path = format!("$.motion.poses[{pose_index}]");
         validate_id(&pose.id, &format!("{pose_path}.id"), &mut diagnostics);
@@ -45,6 +47,7 @@ pub(in crate::authoring::frontend) fn validate_motion(
         );
 
         let mut target_ids = HashSet::new();
+        let mut property_count = 0_u64;
         for (target_index, target) in pose.targets.iter().enumerate() {
             let target_path = format!("{pose_path}.targets[{target_index}]");
             if target.target.trim().is_empty() {
@@ -73,7 +76,13 @@ pub(in crate::authoring::frontend) fn validate_motion(
                     "pose targets must declare at least one transform property",
                 ));
             }
+            property_count =
+                property_count.saturating_add(transform_property_count(&target.transform));
         }
+        pose_property_counts
+            .entry(pose.id.as_str())
+            .and_modify(|existing| *existing = (*existing).max(property_count))
+            .or_insert(property_count);
     }
 
     validate_count(
@@ -86,6 +95,7 @@ pub(in crate::authoring::frontend) fn validate_motion(
         &mut diagnostics,
     );
     let mut track_ids = HashSet::new();
+    let mut expanded_keyframe_count = 0_u64;
     for (track_index, track) in motion.tracks.iter().enumerate() {
         let track_path = format!("$.motion.tracks[{track_index}]");
         validate_id(&track.id, &format!("{track_path}.id"), &mut diagnostics);
@@ -121,9 +131,41 @@ pub(in crate::authoring::frontend) fn validate_motion(
                 ));
             }
         }
+
+        let property_count = track
+            .keyframes
+            .iter()
+            .filter_map(|keyframe| pose_property_counts.get(keyframe.pose.as_str()).copied())
+            .max()
+            .unwrap_or(0);
+        expanded_keyframe_count = expanded_keyframe_count.saturating_add(
+            property_count.saturating_mul(track.keyframes.len() as u64),
+        );
+        if expanded_keyframe_count > MAX_EXPANDED_MOTION_KEYFRAMES {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("{track_path}.keyframes"),
+                "motion_keyframe_expansion_limit",
+                format!(
+                    "expanded motion keyframe count must not exceed {MAX_EXPANDED_MOTION_KEYFRAMES}"
+                ),
+            ));
+        }
     }
 
     diagnostics
+}
+
+fn transform_property_count(transform: &TransformSpec) -> u64 {
+    [
+        transform.x.is_some(),
+        transform.y.is_some(),
+        transform.rotation.is_some(),
+        transform.scale_x.is_some(),
+        transform.scale_y.is_some(),
+    ]
+    .into_iter()
+    .filter(|present| *present)
+    .count() as u64
 }
 
 fn validate_count(
