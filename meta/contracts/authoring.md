@@ -33,10 +33,12 @@ multi-ULP window that never becomes narrower than one representable step at the
 evaluated magnitude, while material fractional values are rejected. The complete
 typed-motion document may expand to at most 10,000 canonical property-keyframe
 values, preventing individually valid poses and tracks from creating an unbounded
-Cartesian expansion. Tracks lower through the canonical builder, retain
-deterministic runtime names, and map errors and runtime objects back to
-`$.motion.tracks` and `$.motion.poses`. Visual motion targets are indexed once from
-the authored source map, and failed invariants return structured authored
+Cartesian expansion. The validator reports this aggregate limit once, at the first
+track that causes the document to cross the budget, while continuing to validate
+later tracks for unrelated authored errors. Tracks lower through the canonical
+builder, retain deterministic runtime names, and map errors and runtime objects
+back to `$.motion.tracks` and `$.motion.poses`. Visual motion targets are indexed
+once from the authored source map, and failed invariants return structured authored
 diagnostics rather than panicking. Raw state-machine escapes may reference
 generated track runtime names in the same document because final canonical
 validation occurs only after typed animations are present. Shared easing
