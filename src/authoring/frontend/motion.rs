@@ -73,11 +73,11 @@ pub(super) fn lower_motion(
     spec: &AuthoringSpec,
     lowered: LoweredAuthoring,
 ) -> Result<LoweredAuthoring, AuthoringError> {
+    let poses = resolve_poses(spec, &lowered.source_map).map_err(AuthoringError::one)?;
     if spec.motion.tracks.is_empty() {
         return Ok(lowered);
     }
 
-    let poses = resolve_poses(spec, &lowered.source_map).map_err(AuthoringError::one)?;
     let fragments = lower_tracks(spec, &poses).map_err(AuthoringError::one)?;
     let typed_count = fragments.len();
 
