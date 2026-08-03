@@ -39,7 +39,8 @@ TDD and review hardening:
 - CI run 688 passed the feature slice before the final unused-pose diagnostic case was added.
 - RED CI run 690 then proved that the no-track fast path skipped semantic target validation for declared poses.
 - Commit `a3b793f` resolves every declared pose before the no-track return, preserving the fast path while enforcing authored-target and expression diagnostics.
-- Exact-head CI must pass before PR #157 is marked ready or merged.
+- Exact head `eb7216e` passed CI run 694 across formatting, Clippy, Rust, browser contracts, Cairn, official-runtime evidence, demo, site, Playwright, and visual regression.
+- PR #157 merged to `main` as `7034e4f` on 2026-08-03.
 
 The roadmap now tracks incremental typed authoring operations as a separate P3
 milestone rather than leaving that AI-skill unblock condition implicit.
