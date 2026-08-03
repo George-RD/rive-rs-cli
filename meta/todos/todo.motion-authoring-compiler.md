@@ -1,6 +1,6 @@
 ---
 node: rive-cli.intelligence.authoring
-status: open
+status: in_progress
 created: 2026-07-29
 ---
 
@@ -17,6 +17,39 @@ animations and blend endpoints.
 - Motion targets use authored IDs and typed property paths.
 - Generated animations render deterministically at required evaluation frames.
 - The control-panel level and button motion can be represented materially more compactly than raw SceneSpec.
+
+## Evidence
+
+PR #157 establishes the first cohesive motion-compiler slice:
+
+- named transform poses target visual nodes by authored ID;
+- compact pose tracks lower deterministically to canonical SceneSpec keyframe groups;
+- scalar expressions provide parameter-backed integer frame timing;
+- `hold` and `linear` interpolation plus `oneshot`, `loop`, and `pingpong` loop modes are schema-bounded;
+- typed tracks coexist with raw animation escapes without corrupting source-map indices;
+- raw state-machine escapes can reference generated track runtime names in the same document;
+- `tests/authoring_motion_contract.rs` covers deterministic lowering, canonical builder acceptance, exact authored-path diagnostics, schema exposure, raw-animation offsets, and behavior-reference integration;
+- the generated `docs/authoring.schema.v0.json` records the public JSON contract.
+
+TDD and review hardening:
+
+- RED `76a30fe` proved the strict frontend did not yet accept poses or tracks.
+- RED `aaae4dd` proved preliminary lowering could not resolve a generated typed animation from a raw state-machine escape.
+- GREEN `51ee8cc` separated visual-target discovery from final canonical validation so motion and behavior resolve together.
+- CI run 688 passed the feature slice before the final unused-pose diagnostic case was added.
+- RED CI run 690 then proved that the no-track fast path skipped semantic target validation for declared poses.
+- Commit `a3b793f` resolves every declared pose before the no-track return, preserving the fast path while enforcing authored-target and expression diagnostics.
+- Exact-head CI must pass before PR #157 is marked ready or merged.
+
+The roadmap now tracks incremental typed authoring operations as a separate P3
+milestone rather than leaving that AI-skill unblock condition implicit.
+
+## Remaining
+
+- Shared easing definitions and deterministic easing reuse.
+- Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
+- Color and other non-transform property tracks.
+- A complex animated showcase with retained official-runtime frame evidence.
 
 ## Dependency
 

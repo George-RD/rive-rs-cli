@@ -15,7 +15,8 @@ pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, ConstraintAxis,
     ConstraintSpec, GradientKind, GradientPaintSpec, GradientStopSpec, LoweredAuthoring,
-    MotionSection, PaintSpec, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec,
+    MotionInterpolation, MotionLoop, MotionSection, MotionTrackSpec, PaintSpec, PoseKeyframeSpec,
+    PoseSpec, PoseTargetSpec, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec,
     TransformSpec, Unit, VisualSection,
 };
 pub use visual::{MirrorAxis, PathPointSpec, VisualNode};

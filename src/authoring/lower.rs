@@ -472,7 +472,7 @@ fn without_asset_sources(scene: &Value) -> Value {
     validation_scene
 }
 
-fn runtime_name(segments: &[String], role: &str) -> String {
+pub(super) fn runtime_name(segments: &[String], role: &str) -> String {
     let mut name = String::from("auth");
     for segment in segments {
         name.push_str("__");
