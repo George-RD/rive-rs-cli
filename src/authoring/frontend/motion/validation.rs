@@ -138,9 +138,12 @@ pub(in crate::authoring::frontend) fn validate_motion(
             .filter_map(|keyframe| pose_property_counts.get(keyframe.pose.as_str()).copied())
             .max()
             .unwrap_or(0);
+        let previous_expanded_keyframe_count = expanded_keyframe_count;
         expanded_keyframe_count = expanded_keyframe_count
             .saturating_add(property_count.saturating_mul(track.keyframes.len() as u64));
-        if expanded_keyframe_count > MAX_EXPANDED_MOTION_KEYFRAMES {
+        if previous_expanded_keyframe_count <= MAX_EXPANDED_MOTION_KEYFRAMES
+            && expanded_keyframe_count > MAX_EXPANDED_MOTION_KEYFRAMES
+        {
             diagnostics.push(AuthoringDiagnostic::new(
                 format!("{track_path}.keyframes"),
                 "motion_keyframe_expansion_limit",
