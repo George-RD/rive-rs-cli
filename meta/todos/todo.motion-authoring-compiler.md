@@ -54,6 +54,15 @@ PR #159 records that follow-up:
 - the checked pose-shape invariant now returns an authored `pose_shape_mismatch` diagnostic rather than using a panic shortcut;
 - exact implementation head `197d4cd` passed rustfmt, Clippy, the complete Rust suite, browser contracts, and Cairn scan/lint in CI run 704 before the durable contract evidence was committed.
 
+A review arriving immediately after #159 merged found that its absolute `1e-9`
+rounding cap could be smaller than one floating-point ULP for large supported frame
+values. PR #160 continues the same P2 hardening rather than opening a roadmap item:
+
+- exact-head RED `4fd80d7` in CI run 708 passed formatting, Clippy, browser contracts, and every pre-existing Rust test, while the new large-frame regression failed with `invalid_frame`;
+- the regression evaluates `(0.1 + 0.2) × 1_000_000_000`, which is one representable step above frame `300_000_000`;
+- frame normalization now derives the actual ULP at the evaluated magnitude, retains the bounded eight-ULP/`1e-9` window at ordinary magnitudes, and floors that window at one ULP only when representable spacing is larger;
+- exact implementation head `210929e` passed rustfmt, Clippy, the complete Rust suite, browser contracts, and Cairn scan/lint in CI run 709 before this durable contract evidence was committed.
+
 The roadmap tracks incremental typed authoring operations as a separate P3
 milestone rather than leaving that AI-skill unblock condition implicit.
 
