@@ -314,6 +314,99 @@ fn motion_diagnostics_point_to_authored_pose_and_track_paths() {
 }
 
 #[test]
+fn near_integer_frame_expressions_round_deterministically() {
+    let mut input = document();
+    input["motion"]["tracks"][0]["keyframes"][1]["frame"] = json!({
+        "kind": "multiply",
+        "value": {
+            "kind": "add",
+            "left": literal(0.1, "scalar"),
+            "right": literal(0.2, "scalar")
+        },
+        "factor": 10.0
+    });
+
+    let lowered = lower(&input);
+    let animation = &lowered.scene["artboard"]["animations"][0];
+    let panel_x = keyframe_group(animation, "auth__motion_2dstage__panel__group", "x");
+    assert_eq!(panel_x["frames"][1]["frame"], 3);
+    assert_builds(lowered.scene);
+}
+
+#[test]
+fn aggregate_motion_keyframe_expansion_is_bounded() {
+    const TARGET_COUNT: usize = 50;
+    const LAST_FRAME: u64 = 20;
+
+    let mut input = document();
+    input["visual"]["nodes"] = Value::Array(
+        (0..TARGET_COUNT)
+            .map(|index| {
+                json!({
+                    "kind": "rectangle",
+                    "id": format!("target-{index}"),
+                    "width": literal(8.0, "px"),
+                    "height": literal(8.0, "px"),
+                    "fill": "#172554"
+                })
+            })
+            .collect(),
+    );
+
+    let pose = |id: &str, offset: f64| {
+        let targets = (0..TARGET_COUNT)
+            .map(|index| {
+                json!({
+                    "target": format!("target-{index}"),
+                    "transform": {
+                        "x": literal(index as f64 + offset, "px"),
+                        "y": literal(index as f64, "px"),
+                        "rotation": literal(offset, "degrees"),
+                        "scale_x": literal(1.0 + offset / 100.0, "scalar"),
+                        "scale_y": literal(1.0 + offset / 100.0, "scalar")
+                    }
+                })
+            })
+            .collect::<Vec<_>>();
+        json!({ "id": id, "targets": targets })
+    };
+    input["motion"]["poses"] =
+        Value::Array(vec![pose("first-pose", 0.0), pose("second-pose", 1.0)]);
+
+    let track = |id: &str| {
+        let keyframes = (0..=LAST_FRAME)
+            .map(|frame| {
+                json!({
+                    "frame": literal(frame as f64, "scalar"),
+                    "pose": if frame % 2 == 0 { "first-pose" } else { "second-pose" },
+                    "interpolation": "linear"
+                })
+            })
+            .collect::<Vec<_>>();
+        json!({
+            "id": id,
+            "fps": 60,
+            "duration_frames": literal(LAST_FRAME as f64, "scalar"),
+            "loop_type": "oneshot",
+            "keyframes": keyframes
+        })
+    };
+    input["motion"]["tracks"] = Value::Array(vec![track("first-track"), track("second-track")]);
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("aggregate motion expansion must be rejected before lowering");
+    assert!(
+        has_diagnostic(
+            &error,
+            "motion_keyframe_expansion_limit",
+            "$.motion.tracks[1].keyframes"
+        ),
+        "missing aggregate motion expansion diagnostic: {:#?}",
+        error.diagnostics
+    );
+}
+
+#[test]
 fn schema_exposes_typed_pose_tracks_and_bounded_motion_enums() {
     let schema = authoring_schema();
     let motion = &schema["$defs"]["MotionSection"];

@@ -31,7 +31,7 @@ PR #157 establishes the first cohesive motion-compiler slice:
 - `tests/authoring_motion_contract.rs` covers deterministic lowering, canonical builder acceptance, exact authored-path diagnostics, schema exposure, raw-animation offsets, and behavior-reference integration;
 - the generated `docs/authoring.schema.v0.json` records the public JSON contract.
 
-TDD and review hardening:
+TDD and review hardening for PR #157:
 
 - RED `76a30fe` proved the strict frontend did not yet accept poses or tracks.
 - RED `aaae4dd` proved preliminary lowering could not resolve a generated typed animation from a raw state-machine escape.
@@ -42,7 +42,19 @@ TDD and review hardening:
 - Exact head `eb7216e` passed CI run 694 across formatting, Clippy, Rust, browser contracts, Cairn, official-runtime evidence, demo, site, Playwright, and visual regression.
 - PR #157 merged to `main` as `7034e4f` on 2026-08-03.
 
-The roadmap now tracks incremental typed authoring operations as a separate P3
+The post-merge audit reconciled `ROADMAP.md`, this Cairn todo, open and merged
+pull requests, retained branches, delayed reviews, and exact-head CI. It found no
+new roadmap gap: the review remediation is hardening of this existing P2 todo.
+PR #159 records that follow-up:
+
+- exact-head RED `35a70b0` in CI run `30818628328` proved that aggregate pose/track expansion was unbounded and arithmetic expressions resolving within floating-point noise of a whole frame were rejected;
+- validation now caps the complete typed-motion document at 10,000 generated property-keyframe values before Cartesian lowering;
+- frame and duration expressions normalize only bounded round-off around whole numbers and continue to reject material fractional values;
+- visual motion targets are indexed once instead of rescanning the full source map for every pose target;
+- the checked pose-shape invariant now returns an authored `pose_shape_mismatch` diagnostic rather than using a panic shortcut;
+- exact implementation head `197d4cd` passed rustfmt, Clippy, the complete Rust suite, browser contracts, and Cairn scan/lint in CI run 704 before the durable contract evidence was committed.
+
+The roadmap tracks incremental typed authoring operations as a separate P3
 milestone rather than leaving that AI-skill unblock condition implicit.
 
 ## Remaining
