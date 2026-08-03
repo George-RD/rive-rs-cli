@@ -61,7 +61,7 @@ const TRANSFORM_PROPERTIES: [TransformProperty; 5] = [
     TransformProperty::ScaleY,
 ];
 const FRAME_ROUNDING_ULPS: f64 = 8.0;
-const MAX_FRAME_ROUNDING_ERROR: f64 = 1e-9;
+const MAX_FRAME_ROUNDING_WINDOW: f64 = 1e-9;
 
 type PoseValues = BTreeMap<(String, TransformProperty), f64>;
 type MotionTargetIndex<'a> = HashMap<&'a str, IndexedMotionTarget<'a>>;
@@ -340,6 +340,14 @@ fn pose_shape_mismatch(track_path: &str, authored_index: usize) -> AuthoringDiag
     )
 }
 
+fn frame_rounding_tolerance(value: f64) -> f64 {
+    let magnitude = value.abs().max(1.0);
+    let one_ulp = f64::from_bits(magnitude.to_bits() + 1) - magnitude;
+    (one_ulp * FRAME_ROUNDING_ULPS)
+        .min(MAX_FRAME_ROUNDING_WINDOW)
+        .max(one_ulp)
+}
+
 fn evaluate_frame_value(
     expression: &ScalarExpr,
     path: &str,
@@ -349,13 +357,10 @@ fn evaluate_frame_value(
 ) -> Result<u64, AuthoringDiagnostic> {
     let value = evaluate_expression(expression, path, scope, Unit::Scalar)?;
     let rounded = value.round();
-    let rounding_tolerance =
-        (value.abs().max(1.0) * f64::EPSILON * FRAME_ROUNDING_ULPS).min(MAX_FRAME_ROUNDING_ERROR);
-    if !value.is_finite()
-        || rounded < 0.0
-        || (value - rounded).abs() > rounding_tolerance
-        || rounded >= u64::MAX as f64
-    {
+    if !value.is_finite() || rounded < 0.0 || rounded >= u64::MAX as f64 {
+        return Err(AuthoringDiagnostic::new(path, code, message));
+    }
+    if (value - rounded).abs() > frame_rounding_tolerance(value) {
         return Err(AuthoringDiagnostic::new(path, code, message));
     }
     Ok(rounded as u64)
