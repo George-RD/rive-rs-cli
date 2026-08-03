@@ -1,5 +1,6 @@
 mod validation;
 
+use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap};
 
 use serde_json::json;
@@ -59,8 +60,17 @@ const TRANSFORM_PROPERTIES: [TransformProperty; 5] = [
     TransformProperty::ScaleX,
     TransformProperty::ScaleY,
 ];
+const FRAME_ROUNDING_ULPS: f64 = 8.0;
+const MAX_FRAME_ROUNDING_ERROR: f64 = 1e-9;
 
 type PoseValues = BTreeMap<(String, TransformProperty), f64>;
+type MotionTargetIndex<'a> = HashMap<&'a str, IndexedMotionTarget<'a>>;
+
+#[derive(Clone, Copy)]
+enum IndexedMotionTarget<'a> {
+    Unique(Option<&'a str>),
+    Ambiguous,
+}
 
 struct ResolvedFrame {
     authored_index: usize,
@@ -99,6 +109,7 @@ fn resolve_poses(
     spec: &AuthoringSpec,
     source_map: &AuthoringSourceMap,
 ) -> Result<Vec<PoseValues>, AuthoringDiagnostic> {
+    let target_index = index_motion_targets(source_map);
     let mut poses = Vec::with_capacity(spec.motion.poses.len());
     for (pose_index, pose) in spec.motion.poses.iter().enumerate() {
         let pose_path = format!("$.motion.poses[{pose_index}]");
@@ -106,7 +117,7 @@ fn resolve_poses(
         for (target_index, target) in pose.targets.iter().enumerate() {
             let target_path = format!("{pose_path}.targets[{target_index}]");
             let runtime_name = resolve_target_runtime_name(
-                source_map,
+                &target_index,
                 &target.target,
                 &format!("{target_path}.target"),
             )?;
@@ -141,35 +152,49 @@ fn resolve_poses(
     Ok(poses)
 }
 
+fn index_motion_targets(source_map: &AuthoringSourceMap) -> MotionTargetIndex<'_> {
+    let mut targets = HashMap::new();
+    for entry in source_map
+        .entries
+        .iter()
+        .filter(|entry| entry.authored_path.starts_with("$.visual.nodes["))
+    {
+        let indexed = IndexedMotionTarget::Unique(entry.runtime_names.first().map(String::as_str));
+        match targets.entry(entry.authored_id.as_str()) {
+            Entry::Vacant(slot) => {
+                slot.insert(indexed);
+            }
+            Entry::Occupied(mut slot) => {
+                slot.insert(IndexedMotionTarget::Ambiguous);
+            }
+        }
+    }
+    targets
+}
+
 fn resolve_target_runtime_name(
-    source_map: &AuthoringSourceMap,
+    target_index: &MotionTargetIndex<'_>,
     target: &str,
     path: &str,
 ) -> Result<String, AuthoringDiagnostic> {
-    let mut matches = source_map.entries.iter().filter(|entry| {
-        entry.authored_id == target && entry.authored_path.starts_with("$.visual.nodes[")
-    });
-    let Some(entry) = matches.next() else {
-        return Err(AuthoringDiagnostic::new(
+    match target_index.get(target).copied() {
+        None => Err(AuthoringDiagnostic::new(
             path,
             "unknown_motion_target",
             format!("visual target '{target}' is not defined"),
-        ));
-    };
-    if matches.next().is_some() {
-        return Err(AuthoringDiagnostic::new(
+        )),
+        Some(IndexedMotionTarget::Ambiguous) => Err(AuthoringDiagnostic::new(
             path,
             "ambiguous_motion_target",
             format!("visual target '{target}' resolves to more than one authored node"),
-        ));
-    }
-    entry.runtime_names.first().cloned().ok_or_else(|| {
-        AuthoringDiagnostic::new(
+        )),
+        Some(IndexedMotionTarget::Unique(None)) => Err(AuthoringDiagnostic::new(
             path,
             "unsupported_motion_target",
             format!("visual target '{target}' has no animatable runtime object"),
-        )
-    })
+        )),
+        Some(IndexedMotionTarget::Unique(Some(runtime_name))) => Ok(runtime_name.to_owned()),
+    }
 }
 
 fn lower_tracks(
@@ -254,42 +279,40 @@ fn lower_tracks(
                 "motion tracks require at least two keyframes",
             )
         })?;
-        let expected_pose = &poses[first.pose_index];
-        for frame in &frames[1..] {
-            if !expected_pose.keys().eq(poses[frame.pose_index].keys()) {
-                return Err(AuthoringDiagnostic::new(
-                    format!("{track_path}.keyframes[{}].pose", frame.authored_index),
-                    "pose_shape_mismatch",
-                    "all poses referenced by a motion track must declare the same targets and transform properties",
-                ));
+        let expected_pose = poses
+            .get(first.pose_index)
+            .ok_or_else(|| pose_shape_mismatch(&track_path, first.authored_index))?;
+        for frame in frames.iter().skip(1) {
+            let pose = poses
+                .get(frame.pose_index)
+                .ok_or_else(|| pose_shape_mismatch(&track_path, frame.authored_index))?;
+            if !expected_pose.keys().eq(pose.keys()) {
+                return Err(pose_shape_mismatch(&track_path, frame.authored_index));
             }
         }
 
-        let keyframes = expected_pose
-            .keys()
-            .map(|(object, property)| {
-                let frames = frames
-                    .iter()
-                    .map(|frame| {
-                        let key = (object.clone(), *property);
-                        let value = poses[frame.pose_index]
-                            .get(&key)
-                            .copied()
-                            .expect("pose shapes were checked before lowering");
-                        json!({
-                            "frame": frame.frame,
-                            "value": value,
-                            "interpolation": interpolation_name(frame.interpolation)
-                        })
-                    })
-                    .collect::<Vec<_>>();
-                json!({
-                    "object": object,
-                    "property": property.name(),
-                    "frames": frames
-                })
-            })
-            .collect::<Vec<_>>();
+        let mut keyframes = Vec::with_capacity(expected_pose.len());
+        for key in expected_pose.keys() {
+            let (object, property) = key;
+            let mut property_frames = Vec::with_capacity(frames.len());
+            for frame in &frames {
+                let value = poses
+                    .get(frame.pose_index)
+                    .and_then(|pose| pose.get(key))
+                    .copied()
+                    .ok_or_else(|| pose_shape_mismatch(&track_path, frame.authored_index))?;
+                property_frames.push(json!({
+                    "frame": frame.frame,
+                    "value": value,
+                    "interpolation": interpolation_name(frame.interpolation)
+                }));
+            }
+            keyframes.push(json!({
+                "object": object,
+                "property": property.name(),
+                "frames": property_frames
+            }));
+        }
 
         fragments.push(RawSceneFragment {
             id: track.id.clone(),
@@ -309,6 +332,14 @@ fn lower_tracks(
     Ok(fragments)
 }
 
+fn pose_shape_mismatch(track_path: &str, authored_index: usize) -> AuthoringDiagnostic {
+    AuthoringDiagnostic::new(
+        format!("{track_path}.keyframes[{authored_index}].pose"),
+        "pose_shape_mismatch",
+        "all poses referenced by a motion track must declare the same targets and transform properties",
+    )
+}
+
 fn evaluate_frame_value(
     expression: &ScalarExpr,
     path: &str,
@@ -317,10 +348,17 @@ fn evaluate_frame_value(
     message: &str,
 ) -> Result<u64, AuthoringDiagnostic> {
     let value = evaluate_expression(expression, path, scope, Unit::Scalar)?;
-    if value < 0.0 || value.fract() != 0.0 || value > u64::MAX as f64 {
+    let rounded = value.round();
+    let rounding_tolerance =
+        (value.abs().max(1.0) * f64::EPSILON * FRAME_ROUNDING_ULPS).min(MAX_FRAME_ROUNDING_ERROR);
+    if !value.is_finite()
+        || rounded < 0.0
+        || (value - rounded).abs() > rounding_tolerance
+        || rounded >= u64::MAX as f64
+    {
         return Err(AuthoringDiagnostic::new(path, code, message));
     }
-    Ok(value as u64)
+    Ok(rounded as u64)
 }
 
 fn rewrite_motion_error_paths(mut error: AuthoringError, typed_count: usize) -> AuthoringError {
