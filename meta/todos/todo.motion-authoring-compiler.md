@@ -63,6 +63,15 @@ values. PR #160 continues the same P2 hardening rather than opening a roadmap it
 - frame normalization now derives the actual ULP at the evaluated magnitude, retains the bounded eight-ULP/`1e-9` window at ordinary magnitudes, and floors that window at one ULP only when representable spacing is larger;
 - exact implementation head `210929e` passed rustfmt, Clippy, the complete Rust suite, browser contracts, and Cairn scan/lint in CI run 709 before this durable contract evidence was committed.
 
+A final unresolved Qodo thread on #159 found that the monotonic aggregate budget
+emitted the same limit diagnostic for every track after the first crossing. PR #161
+continues the same P2 diagnostic hardening:
+
+- exact-head RED `4541ade` in CI run 713 passed rustfmt, Clippy, browser contracts, every pre-existing Rust test, and the existing 10,500-value rejection contract; only the new three-track regression failed because it received two limit diagnostics instead of one;
+- the regression uses three individually valid 5,250-value tracks and requires exactly one `motion_keyframe_expansion_limit` at the second track, which first crosses the 10,000-value budget;
+- validation now compares the aggregate count before and after each track, reports only the first threshold crossing, and continues validating later tracks for unrelated diagnostics;
+- exact implementation head `e67bb23` passed rustfmt, Clippy, the complete Rust suite, browser contracts, and Cairn scan/lint in CI run 714 before this durable contract evidence was committed.
+
 The roadmap tracks incremental typed authoring operations as a separate P3
 milestone rather than leaving that AI-skill unblock condition implicit.
 
