@@ -334,6 +334,28 @@ fn near_integer_frame_expressions_round_deterministically() {
 }
 
 #[test]
+fn large_near_integer_frame_expressions_accept_one_ulp_roundoff() {
+    let mut input = document();
+    input["motion"]["tracks"][0]["duration_frames"] = literal(300_000_000.0, "scalar");
+    input["motion"]["tracks"][0]["keyframes"][1]["frame"] = json!({
+        "kind": "multiply",
+        "value": {
+            "kind": "add",
+            "left": literal(0.1, "scalar"),
+            "right": literal(0.2, "scalar")
+        },
+        "factor": 1_000_000_000.0
+    });
+
+    let lowered = lower(&input);
+    let animation = &lowered.scene["artboard"]["animations"][0];
+    let panel_x = keyframe_group(animation, "auth__motion_2dstage__panel__group", "x");
+    assert_eq!(animation["duration"], 300_000_000);
+    assert_eq!(panel_x["frames"][1]["frame"], 300_000_000);
+    assert_builds(lowered.scene);
+}
+
+#[test]
 fn aggregate_motion_keyframe_expansion_is_bounded() {
     const TARGET_COUNT: usize = 50;
     const LAST_FRAME: u64 = 20;
