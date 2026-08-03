@@ -29,8 +29,20 @@ PR #157 establishes the first cohesive motion-compiler slice:
 - typed tracks coexist with raw animation escapes without corrupting source-map indices;
 - raw state-machine escapes can reference generated track runtime names in the same document;
 - `tests/authoring_motion_contract.rs` covers deterministic lowering, canonical builder acceptance, exact authored-path diagnostics, schema exposure, raw-animation offsets, and behavior-reference integration;
-- the generated `docs/authoring.schema.v0.json` records the public JSON contract;
-- CI run 688 passed formatting, Clippy, Rust, browser, official-runtime, Cairn, visual-regression, demo, and site gates.
+- the generated `docs/authoring.schema.v0.json` records the public JSON contract.
+
+TDD and review hardening:
+
+- RED `76a30fe` proved the strict frontend did not yet accept poses or tracks.
+- RED `aaae4dd` proved preliminary lowering could not resolve a generated typed animation from a raw state-machine escape.
+- GREEN `51ee8cc` separated visual-target discovery from final canonical validation so motion and behavior resolve together.
+- CI run 688 passed the feature slice before the final unused-pose diagnostic case was added.
+- RED CI run 690 then proved that the no-track fast path skipped semantic target validation for declared poses.
+- Commit `a3b793f` resolves every declared pose before the no-track return, preserving the fast path while enforcing authored-target and expression diagnostics.
+- Exact-head CI must pass before PR #157 is marked ready or merged.
+
+The roadmap now tracks incremental typed authoring operations as a separate P3
+milestone rather than leaving that AI-skill unblock condition implicit.
 
 ## Remaining
 
