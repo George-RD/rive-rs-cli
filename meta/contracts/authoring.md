@@ -26,9 +26,16 @@ It must provide:
 The current motion subset supports named transform poses and compact pose tracks
 with authored visual targets, scalar-expression frame timing, `hold` or `linear`
 interpolation, and `oneshot`, `loop`, or `pingpong` loop behavior. Every pose used
-by one track declares the same target/property shape. Tracks lower through the
-canonical builder, retain deterministic runtime names, and map errors and runtime
-objects back to `$.motion.tracks` and `$.motion.poses`. Raw state-machine escapes
+by one track declares the same target/property shape. Frame and duration
+expressions must resolve to non-negative whole numbers; bounded floating-point
+round-off around a whole number is normalized deterministically, while material
+fractional values are rejected. The complete typed-motion document may expand to
+at most 10,000 canonical property-keyframe values, preventing individually valid
+poses and tracks from creating an unbounded Cartesian expansion. Tracks lower
+through the canonical builder, retain deterministic runtime names, and map errors
+and runtime objects back to `$.motion.tracks` and `$.motion.poses`. Visual motion
+targets are indexed once from the authored source map, and failed invariants return
+structured authored diagnostics rather than panicking. Raw state-machine escapes
 may reference generated track runtime names in the same document because final
 canonical validation occurs only after typed animations are present. Shared easing
 definitions, semantic motion helpers, non-transform property tracks, and typed
