@@ -25,7 +25,7 @@ pub(in crate::authoring::frontend) fn validate_motion(
     );
 
     let mut pose_ids = HashSet::new();
-    let mut pose_property_counts = HashMap::new();
+    let mut pose_property_counts: HashMap<&str, u64> = HashMap::new();
     for (pose_index, pose) in motion.poses.iter().enumerate() {
         let pose_path = format!("$.motion.poses[{pose_index}]");
         validate_id(&pose.id, &format!("{pose_path}.id"), &mut diagnostics);
