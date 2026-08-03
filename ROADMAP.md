@@ -26,8 +26,16 @@ until that frontend and its evidence gates exist.
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress in PR #157 | compact tracks and poses reproduce complex motion with runtime proof |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open | view-model bindings and named statecharts reproduce interaction with runtime proof |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open | semantic evidence reported separately from structural and runtime results |
+| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open | characterization-preserving split aligned to authored source maps |
+
+## Delivery dependencies
+
+- Complete the motion compiler before behavior/statechart lowering relies on poses, animations, or blend endpoints.
+- Semantic evaluation can advance in parallel, but its animated and interactive exit cases require the motion and behavior showcases.
+- Add incremental operations only after the typed visual, motion, and behavior contracts are stable enough to preserve unchanged authored identity.
+- AI-generation skills remain blocked until the frontend, retained runtime and semantic evidence, and incremental operations are complete.
 
 ## Readiness gate for complex AI generation
 
