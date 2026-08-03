@@ -295,8 +295,7 @@ fn motion_diagnostics_point_to_authored_pose_and_track_paths() {
     ));
 
     let mut fractional_frame = document();
-    fractional_frame["motion"]["tracks"][0]["keyframes"][1]["frame"] =
-        literal(12.5, "scalar");
+    fractional_frame["motion"]["tracks"][0]["keyframes"][1]["frame"] = literal(12.5, "scalar");
     cases.push((
         fractional_frame,
         "invalid_frame",
@@ -371,10 +370,8 @@ fn aggregate_motion_keyframe_expansion_is_bounded() {
             .collect::<Vec<_>>();
         json!({ "id": id, "targets": targets })
     };
-    input["motion"]["poses"] = Value::Array(vec![
-        pose("first-pose", 0.0),
-        pose("second-pose", 1.0),
-    ]);
+    input["motion"]["poses"] =
+        Value::Array(vec![pose("first-pose", 0.0), pose("second-pose", 1.0)]);
 
     let track = |id: &str| {
         let keyframes = (0..=LAST_FRAME)
@@ -394,8 +391,7 @@ fn aggregate_motion_keyframe_expansion_is_bounded() {
             "keyframes": keyframes
         })
     };
-    input["motion"]["tracks"] =
-        Value::Array(vec![track("first-track"), track("second-track")]);
+    input["motion"]["tracks"] = Value::Array(vec![track("first-track"), track("second-track")]);
 
     let error = lower_authoring_json(&input.to_string())
         .expect_err("aggregate motion expansion must be rejected before lowering");
