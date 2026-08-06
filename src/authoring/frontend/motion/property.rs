@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+use crate::builder::property_key_for_object;
+
 use super::super::super::expression::evaluate_expression;
 use super::super::super::lower::evaluate_ratio_expression;
 use super::super::super::spec::{
@@ -95,6 +97,7 @@ pub(super) fn resolve_target_values(
     target: &PoseTargetSpec,
     target_path: &str,
     runtime_name: &str,
+    object_type: &str,
     values: &mut PoseValues,
 ) -> Result<(), AuthoringDiagnostic> {
     for property in POSE_PROPERTIES {
@@ -102,6 +105,17 @@ pub(super) fn resolve_target_values(
             continue;
         };
         let path = property.authored_path(target_path);
+        if property_key_for_object(object_type, property.name()).is_none() {
+            return Err(AuthoringDiagnostic::new(
+                path,
+                "unsupported_motion_property",
+                format!(
+                    "motion target '{}' resolves to a {object_type}, which does not support property '{}'",
+                    target.target,
+                    property.name()
+                ),
+            ));
+        }
         let value = property.evaluate(expression, &path, spec)?;
         if values
             .insert((runtime_name.to_owned(), property), value)
