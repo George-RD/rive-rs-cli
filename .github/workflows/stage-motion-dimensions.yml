@@ -12,13 +12,18 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/motion-dimensions
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
+      - name: Checkout branch without marketplace actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git init .
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin agent/motion-dimensions
+          git checkout -B agent/motion-dimensions FETCH_HEAD
+      - name: Prepare Rust toolchain
+        run: |
+          rustup default stable
+          rustup component add clippy rustfmt
       - name: Apply focused implementation
         run: python3 scripts/stage_motion_dimensions.py
       - name: Format and regenerate schema
