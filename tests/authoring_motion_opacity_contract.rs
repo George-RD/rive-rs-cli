@@ -110,11 +110,7 @@ fn opacity_pose_tracks_lower_deterministically_and_build() {
     assert_eq!(first.source_map, second.source_map);
 
     let animation = &first.scene["artboard"]["animations"][0];
-    let opacity = keyframe_group(
-        animation,
-        "auth__opacity_2dstage__card__shape",
-        "opacity",
-    );
+    let opacity = keyframe_group(animation, "auth__opacity_2dstage__card__shape", "opacity");
     assert_eq!(opacity["frames"][0]["value"], 0.0);
     assert_eq!(opacity["frames"][1]["value"], 1.0);
     assert_eq!(opacity["frames"][0]["interpolation"], "linear");
@@ -145,8 +141,7 @@ fn opacity_diagnostics_preserve_authored_paths() {
     assert_diagnostic(&wrong_unit, "unit_mismatch", path);
 
     let mut out_of_range = document();
-    out_of_range["motion"]["poses"][0]["targets"][0]["opacity"] =
-        literal(1.01, "scalar");
+    out_of_range["motion"]["poses"][0]["targets"][0]["opacity"] = literal(1.01, "scalar");
     assert_diagnostic(&out_of_range, "invalid_ratio", path);
 
     let mut mismatched_pose = document();
@@ -154,10 +149,7 @@ fn opacity_diagnostics_preserve_authored_paths() {
         .as_object_mut()
         .expect("shown target");
     target.remove("opacity");
-    target.insert(
-        "transform".to_string(),
-        json!({ "x": literal(0.0, "px") }),
-    );
+    target.insert("transform".to_string(), json!({ "x": literal(0.0, "px") }));
     assert_diagnostic(
         &mismatched_pose,
         "pose_shape_mismatch",
