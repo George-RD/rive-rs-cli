@@ -250,6 +250,26 @@ pub enum MotionLoop {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum MotionEasingSpec {
+    Cubic {
+        id: String,
+        x1: ScalarExpr,
+        y1: ScalarExpr,
+        x2: ScalarExpr,
+        y2: ScalarExpr,
+    },
+}
+
+impl MotionEasingSpec {
+    pub(crate) fn id(&self) -> &str {
+        match self {
+            Self::Cubic { id, .. } => id,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct PoseTargetSpec {
     pub target: String,
@@ -271,6 +291,8 @@ pub struct PoseKeyframeSpec {
     pub pose: String,
     #[serde(default)]
     pub interpolation: MotionInterpolation,
+    #[serde(default)]
+    pub easing: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -289,6 +311,9 @@ pub struct MotionTrackSpec {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct MotionSection {
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub easings: Vec<MotionEasingSpec>,
     #[serde(default)]
     #[schemars(length(max = 1000))]
     pub poses: Vec<PoseSpec>,

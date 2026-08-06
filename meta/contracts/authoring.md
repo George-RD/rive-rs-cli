@@ -23,10 +23,15 @@ It must provide:
 - a raw SceneSpec escape hatch for unsupported advanced Rive objects;
 - validation at each lowering stage and no direct binary encoding path.
 
-The current motion subset supports named transform poses and compact pose tracks
-with authored visual targets, scalar-expression frame timing, `hold` or `linear`
-interpolation, and `oneshot`, `loop`, or `pingpong` loop behavior. Every pose used
-by one track declares the same target/property shape. Frame and duration
+The current motion subset supports named transform poses, compact pose tracks, and
+shared cubic Bézier easing definitions with authored visual targets,
+scalar-expression frame timing and control points, `hold` or `linear`
+interpolation, and `oneshot`, `loop`, or `pingpong` loop behavior. Easing time-axis
+control points remain within zero and one, while value-axis control points may
+overshoot. A keyframe may reference one named easing unless it uses `hold`;
+each referencing animation receives the same stable local declaration required by
+SceneSpec validation, the canonical builder deduplicates those declarations into one
+runtime interpolator, and the authored source-map entry records every declaration. Every pose used by one track declares the same target/property shape. Frame and duration
 expressions must resolve to non-negative whole numbers. Bounded floating-point
 round-off around a whole number is normalized deterministically through a capped
 multi-ULP window while representable spacing remains below half a frame. Once one
@@ -43,9 +48,9 @@ back to `$.motion.tracks` and `$.motion.poses`. Visual motion targets are indexe
 once from the authored source map, and failed invariants return structured authored
 diagnostics rather than panicking. Raw state-machine escapes may reference
 generated track runtime names in the same document because final canonical
-validation occurs only after typed animations are present. Shared easing
-definitions, semantic motion helpers, non-transform property tracks, and typed
-statecharts remain separate roadmap slices.
+validation occurs only after typed animations are present. Semantic motion helpers,
+non-transform property tracks, and typed statecharts remain separate roadmap
+slices.
 
 The first version stays JSON. Its constraints align or derive direct-child `x` and
 `y` transform anchors; they are not a rendered-bounds or general CAD solver. A

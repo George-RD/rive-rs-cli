@@ -1,7 +1,9 @@
+mod easing;
+mod timing;
 mod validation;
 
 use std::collections::hash_map::Entry;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use serde_json::json;
 
@@ -9,8 +11,11 @@ use super::super::expression::evaluate_expression;
 use super::super::lower;
 use super::super::spec::{
     AuthoringDiagnostic, AuthoringError, AuthoringSourceMap, AuthoringSpec, LoweredAuthoring,
-    MotionInterpolation, MotionLoop, Quantity, RawSceneFragment, ScalarExpr, TransformSpec, Unit,
+    MotionInterpolation, MotionLoop, RawSceneFragment, ScalarExpr, TransformSpec, Unit,
 };
+
+use easing::{EasingEmission, ResolvedEasing};
+use timing::evaluate_frame_value;
 
 pub(super) use validation::validate_motion;
 
@@ -60,11 +65,6 @@ const TRANSFORM_PROPERTIES: [TransformProperty; 5] = [
     TransformProperty::ScaleX,
     TransformProperty::ScaleY,
 ];
-const FRAME_ROUNDING_ULPS: f64 = 8.0;
-const HALF_FRAME: f64 = 0.5;
-const MAX_FRAME_ROUNDING_WINDOW: f64 = 1e-9;
-const WHOLE_FRAME: f64 = 1.0;
-
 type PoseValues = BTreeMap<(String, TransformProperty), f64>;
 type MotionTargetIndex<'a> = HashMap<&'a str, IndexedMotionTarget<'a>>;
 
@@ -79,21 +79,32 @@ struct ResolvedFrame {
     frame: u64,
     pose_index: usize,
     interpolation: MotionInterpolation,
+    easing_index: Option<usize>,
+}
+
+struct LoweredTracks {
+    fragments: Vec<RawSceneFragment>,
+    easing_emissions: Vec<EasingEmission>,
 }
 
 pub(super) fn lower_motion(
     spec: &AuthoringSpec,
     lowered: LoweredAuthoring,
 ) -> Result<LoweredAuthoring, AuthoringError> {
+    let easings = easing::resolve(spec).map_err(AuthoringError::one)?;
     let poses = resolve_poses(spec, &lowered.source_map).map_err(AuthoringError::one)?;
     if spec.motion.tracks.is_empty() {
         return Ok(lowered);
     }
 
-    let fragments = lower_tracks(spec, &poses).map_err(AuthoringError::one)?;
+    let LoweredTracks {
+        fragments,
+        easing_emissions,
+    } = lower_tracks(spec, &poses, &easings).map_err(AuthoringError::one)?;
     let typed_count = fragments.len();
 
     let mut expanded = spec.clone();
+    expanded.motion.easings.clear();
     expanded.motion.poses.clear();
     expanded.motion.tracks.clear();
     expanded.motion.raw_animations = fragments
@@ -104,6 +115,7 @@ pub(super) fn lower_motion(
     let mut lowered = lower::lower_authoring(&expanded)
         .map_err(|error| rewrite_motion_error_paths(error, typed_count))?;
     rewrite_motion_source_paths(&mut lowered, typed_count);
+    easing::append_source_entries(&mut lowered, easing_emissions);
     Ok(lowered)
 }
 
@@ -202,7 +214,8 @@ fn resolve_target_runtime_name(
 fn lower_tracks(
     spec: &AuthoringSpec,
     poses: &[PoseValues],
-) -> Result<Vec<RawSceneFragment>, AuthoringDiagnostic> {
+    easings: &[ResolvedEasing],
+) -> Result<LoweredTracks, AuthoringDiagnostic> {
     let pose_lookup = spec
         .motion
         .poses
@@ -210,7 +223,13 @@ fn lower_tracks(
         .enumerate()
         .map(|(index, pose)| (pose.id.as_str(), index))
         .collect::<HashMap<_, _>>();
+    let easing_lookup = easings
+        .iter()
+        .enumerate()
+        .map(|(index, easing)| (easing.id.as_str(), index))
+        .collect::<HashMap<_, _>>();
     let mut fragments = Vec::with_capacity(spec.motion.tracks.len());
+    let mut easing_emissions = easings.iter().map(EasingEmission::new).collect::<Vec<_>>();
 
     for (track_index, track) in spec.motion.tracks.iter().enumerate() {
         let track_path = format!("$.motion.tracks[{track_index}]");
@@ -256,11 +275,32 @@ fn lower_tracks(
                         format!("pose '{}' is not defined", keyframe.pose),
                     )
                 })?;
+            let easing_index = keyframe
+                .easing
+                .as_deref()
+                .map(|easing| {
+                    easing_lookup.get(easing).copied().ok_or_else(|| {
+                        AuthoringDiagnostic::new(
+                            format!("{keyframe_path}.easing"),
+                            "unknown_easing",
+                            format!("motion easing '{easing}' is not defined"),
+                        )
+                    })
+                })
+                .transpose()?;
+            if easing_index.is_some() && keyframe.interpolation == MotionInterpolation::Hold {
+                return Err(AuthoringDiagnostic::new(
+                    format!("{keyframe_path}.easing"),
+                    "easing_with_hold",
+                    "hold keyframes cannot reference a continuous easing",
+                ));
+            }
             frames.push(ResolvedFrame {
                 authored_index: keyframe_index,
                 frame,
                 pose_index,
                 interpolation: keyframe.interpolation,
+                easing_index,
             });
         }
         frames.sort_by_key(|frame| (frame.frame, frame.authored_index));
@@ -293,6 +333,19 @@ fn lower_tracks(
             }
         }
 
+        let referenced_easings = frames
+            .iter()
+            .filter_map(|frame| frame.easing_index)
+            .collect::<HashSet<_>>();
+        let mut interpolators = Vec::new();
+        for (easing_index, easing) in easings.iter().enumerate() {
+            if referenced_easings.contains(&easing_index) {
+                let interpolator_index = interpolators.len();
+                interpolators.push(easing::definition(easing));
+                easing_emissions[easing_index].record_declaration(track_index, interpolator_index);
+            }
+        }
+
         let mut keyframes = Vec::with_capacity(expected_pose.len());
         for key in expected_pose.keys() {
             let (object, property) = key;
@@ -303,11 +356,28 @@ fn lower_tracks(
                     .and_then(|pose| pose.get(key))
                     .copied()
                     .ok_or_else(|| pose_shape_mismatch(&track_path, frame.authored_index))?;
-                property_frames.push(json!({
+                let mut property_frame = json!({
                     "frame": frame.frame,
                     "value": value,
-                    "interpolation": interpolation_name(frame.interpolation)
-                }));
+                    "interpolation": if frame.easing_index.is_some() {
+                        "cubic"
+                    } else {
+                        interpolation_name(frame.interpolation)
+                    }
+                });
+                if let Some(easing_index) = frame.easing_index {
+                    let easing = easings.get(easing_index).ok_or_else(|| {
+                        AuthoringDiagnostic::new(
+                            format!("{track_path}.keyframes[{}].easing", frame.authored_index),
+                            "unknown_easing",
+                            "motion easing could not be resolved",
+                        )
+                    })?;
+                    if let Some(object) = property_frame.as_object_mut() {
+                        object.insert("interpolator".to_string(), json!(easing.runtime_name));
+                    }
+                }
+                property_frames.push(property_frame);
             }
             keyframes.push(json!({
                 "object": object,
@@ -316,22 +386,31 @@ fn lower_tracks(
             }));
         }
 
+        let mut value = json!({
+            "name": lower::runtime_name(
+                &[spec.artboard.id.clone(), track.id.clone()],
+                "animation",
+            ),
+            "fps": track.fps,
+            "duration": duration,
+            "loop_type": loop_name(track.loop_type),
+            "keyframes": keyframes
+        });
+        if !interpolators.is_empty()
+            && let Some(object) = value.as_object_mut()
+        {
+            object.insert("interpolators".to_string(), json!(interpolators));
+        }
         fragments.push(RawSceneFragment {
             id: track.id.clone(),
-            value: json!({
-                "name": lower::runtime_name(
-                    &[spec.artboard.id.clone(), track.id.clone()],
-                    "animation",
-                ),
-                "fps": track.fps,
-                "duration": duration,
-                "loop_type": loop_name(track.loop_type),
-                "keyframes": keyframes
-            }),
+            value,
         });
     }
 
-    Ok(fragments)
+    Ok(LoweredTracks {
+        fragments,
+        easing_emissions,
+    })
 }
 
 fn pose_shape_mismatch(track_path: &str, authored_index: usize) -> AuthoringDiagnostic {
@@ -340,43 +419,6 @@ fn pose_shape_mismatch(track_path: &str, authored_index: usize) -> AuthoringDiag
         "pose_shape_mismatch",
         "all poses referenced by a motion track must declare the same targets and transform properties",
     )
-}
-
-fn frame_rounding_tolerance(value: f64) -> Option<f64> {
-    let magnitude = value.abs().max(1.0);
-    let one_ulp = f64::from_bits(magnitude.to_bits() + 1) - magnitude;
-    if one_ulp >= WHOLE_FRAME {
-        return None;
-    }
-    if one_ulp >= HALF_FRAME {
-        return Some(0.0);
-    }
-    Some(
-        (one_ulp * FRAME_ROUNDING_ULPS)
-            .min(MAX_FRAME_ROUNDING_WINDOW)
-            .max(one_ulp),
-    )
-}
-
-fn evaluate_frame_value(
-    expression: &ScalarExpr,
-    path: &str,
-    scope: &BTreeMap<String, Quantity>,
-    code: &str,
-    message: &str,
-) -> Result<u64, AuthoringDiagnostic> {
-    let value = evaluate_expression(expression, path, scope, Unit::Scalar)?;
-    let rounded = value.round();
-    if !value.is_finite() || rounded < 0.0 || rounded >= u64::MAX as f64 {
-        return Err(AuthoringDiagnostic::new(path, code, message));
-    }
-    let Some(rounding_tolerance) = frame_rounding_tolerance(value) else {
-        return Err(AuthoringDiagnostic::new(path, code, message));
-    };
-    if (value - rounded).abs() > rounding_tolerance {
-        return Err(AuthoringDiagnostic::new(path, code, message));
-    }
-    Ok(rounded as u64)
 }
 
 fn rewrite_motion_error_paths(mut error: AuthoringError, typed_count: usize) -> AuthoringError {
