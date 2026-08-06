@@ -39,6 +39,23 @@ jobs:
             | gzip --decompress \
             > /tmp/stage_shared_motion_easings.py
 
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("/tmp/stage_shared_motion_easings.py")
+          content = path.read_text()
+          content = content.replace(
+              '"./tests/authoring_mirror_contract.rs", "./tests/authoring_motion_contract.rs", "./tests/authoring_motion_easing_contract.rs", "./tests/authoring_motion_expansion_contract.rs", "./tests/authoring_radial_contract.rs"',
+              '"./tests/authoring_mirror_contract.rs", "./tests/authoring_motion_contract.rs", "./tests/authoring_radial_contract.rs"',
+              1,
+          )
+          content = content.replace(
+              '"./tests/authoring_mirror_contract.rs", "./tests/authoring_motion_contract.rs", "./tests/authoring_motion_easing_contract.rs", "./tests/authoring_radial_contract.rs"',
+              '"./tests/authoring_mirror_contract.rs", "./tests/authoring_motion_contract.rs", "./tests/authoring_motion_easing_contract.rs", "./tests/authoring_motion_expansion_contract.rs", "./tests/authoring_radial_contract.rs"',
+              1,
+          )
+          path.write_text(content)
+          PY
+
           python3 /tmp/stage_shared_motion_easings.py red
           git add cairn.blueprint tests/authoring_motion_easing_contract.rs
           git commit -m "test(authoring): define shared motion easing contract"
