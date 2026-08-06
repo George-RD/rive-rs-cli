@@ -91,7 +91,7 @@ pub(in crate::authoring::frontend) fn validate_motion(
             let target_property_count = property::count(target);
             if target_property_count == 0 {
                 diagnostics.push(AuthoringDiagnostic::new(
-                    format!("{target_path}.transform"),
+                    target_path,
                     "empty_pose_target",
                     "pose targets must declare at least one transform or opacity property",
                 ));
