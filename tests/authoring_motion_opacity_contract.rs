@@ -165,11 +165,7 @@ fn empty_pose_target_diagnostic_uses_existing_authored_path() {
         .expect("hidden target")
         .remove("opacity");
 
-    assert_diagnostic(
-        &input,
-        "empty_pose_target",
-        "$.motion.poses[0].targets[0]",
-    );
+    assert_diagnostic(&input, "empty_pose_target", "$.motion.poses[0].targets[0]");
 }
 
 #[test]
