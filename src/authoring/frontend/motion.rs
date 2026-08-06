@@ -6,12 +6,12 @@ mod validation;
 use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use serde_json::json;
+use serde_json::{Value, json};
 
 use super::super::lower;
 use super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSourceMap, AuthoringSpec, LoweredAuthoring,
-    MotionInterpolation, MotionLoop, RawSceneFragment,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, LoweredAuthoring, MotionInterpolation,
+    MotionLoop, RawSceneFragment,
 };
 
 use easing::{EasingEmission, ResolvedEasing};
@@ -23,8 +23,14 @@ pub(super) use validation::validate_motion;
 type MotionTargetIndex<'a> = HashMap<&'a str, IndexedMotionTarget<'a>>;
 
 #[derive(Clone, Copy)]
+struct MotionTarget<'a> {
+    runtime_name: &'a str,
+    object_type: &'a str,
+}
+
+#[derive(Clone, Copy)]
 enum IndexedMotionTarget<'a> {
-    Unique(Option<&'a str>),
+    Unique(Option<MotionTarget<'a>>),
     Ambiguous,
 }
 
@@ -46,7 +52,7 @@ pub(super) fn lower_motion(
     lowered: LoweredAuthoring,
 ) -> Result<LoweredAuthoring, AuthoringError> {
     let easings = easing::resolve(spec).map_err(AuthoringError::one)?;
-    let poses = resolve_poses(spec, &lowered.source_map).map_err(AuthoringError::one)?;
+    let poses = resolve_poses(spec, &lowered).map_err(AuthoringError::one)?;
     if spec.motion.tracks.is_empty() {
         return Ok(lowered);
     }
@@ -75,16 +81,16 @@ pub(super) fn lower_motion(
 
 fn resolve_poses(
     spec: &AuthoringSpec,
-    source_map: &AuthoringSourceMap,
+    lowered: &LoweredAuthoring,
 ) -> Result<Vec<PoseValues>, AuthoringDiagnostic> {
-    let motion_targets = index_motion_targets(source_map);
+    let motion_targets = index_motion_targets(lowered);
     let mut poses = Vec::with_capacity(spec.motion.poses.len());
     for (pose_index, pose) in spec.motion.poses.iter().enumerate() {
         let pose_path = format!("$.motion.poses[{pose_index}]");
         let mut values = BTreeMap::new();
         for (target_index, target) in pose.targets.iter().enumerate() {
             let target_path = format!("{pose_path}.targets[{target_index}]");
-            let runtime_name = resolve_target_runtime_name(
+            let resolved_target = resolve_motion_target(
                 &motion_targets,
                 &target.target,
                 &format!("{target_path}.target"),
@@ -93,7 +99,8 @@ fn resolve_poses(
                 spec,
                 target,
                 &target_path,
-                &runtime_name,
+                resolved_target.runtime_name,
+                resolved_target.object_type,
                 &mut values,
             )?;
         }
@@ -102,14 +109,30 @@ fn resolve_poses(
     Ok(poses)
 }
 
-fn index_motion_targets(source_map: &AuthoringSourceMap) -> MotionTargetIndex<'_> {
+fn index_motion_targets(lowered: &LoweredAuthoring) -> MotionTargetIndex<'_> {
     let mut targets = HashMap::new();
-    for entry in source_map
+    for entry in lowered
+        .source_map
         .entries
         .iter()
         .filter(|entry| entry.authored_path.starts_with("$.visual.nodes["))
     {
-        let indexed = IndexedMotionTarget::Unique(entry.runtime_names.first().map(String::as_str));
+        let target = entry
+            .runtime_names
+            .first()
+            .zip(entry.scene_paths.first())
+            .and_then(|(runtime_name, scene_path)| {
+                lowered
+                    .scene
+                    .pointer(scene_path)
+                    .and_then(|object| object.get("type"))
+                    .and_then(Value::as_str)
+                    .map(|object_type| MotionTarget {
+                        runtime_name,
+                        object_type,
+                    })
+            });
+        let indexed = IndexedMotionTarget::Unique(target);
         match targets.entry(entry.authored_id.as_str()) {
             Entry::Vacant(slot) => {
                 slot.insert(indexed);
@@ -122,11 +145,11 @@ fn index_motion_targets(source_map: &AuthoringSourceMap) -> MotionTargetIndex<'_
     targets
 }
 
-fn resolve_target_runtime_name(
-    target_index: &MotionTargetIndex<'_>,
+fn resolve_motion_target<'a>(
+    target_index: &MotionTargetIndex<'a>,
     target: &str,
     path: &str,
-) -> Result<String, AuthoringDiagnostic> {
+) -> Result<MotionTarget<'a>, AuthoringDiagnostic> {
     match target_index.get(target).copied() {
         None => Err(AuthoringDiagnostic::new(
             path,
@@ -143,7 +166,7 @@ fn resolve_target_runtime_name(
             "unsupported_motion_target",
             format!("visual target '{target}' has no animatable runtime object"),
         )),
-        Some(IndexedMotionTarget::Unique(Some(runtime_name))) => Ok(runtime_name.to_owned()),
+        Some(IndexedMotionTarget::Unique(Some(target))) => Ok(target),
     }
 }
 
