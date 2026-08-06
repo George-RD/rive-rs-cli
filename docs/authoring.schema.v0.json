@@ -466,16 +466,33 @@
     "PoseTargetSpec": {
       "additionalProperties": false,
       "properties": {
+        "opacity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "target": {
           "type": "string"
         },
         "transform": {
-          "$ref": "#/$defs/TransformSpec"
+          "$ref": "#/$defs/TransformSpec",
+          "default": {
+            "rotation": null,
+            "scale_x": null,
+            "scale_y": null,
+            "x": null,
+            "y": null
+          }
         }
       },
       "required": [
-        "target",
-        "transform"
+        "target"
       ],
       "type": "object"
     },

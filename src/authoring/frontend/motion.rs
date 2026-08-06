@@ -1,4 +1,5 @@
 mod easing;
+mod property;
 mod timing;
 mod validation;
 
@@ -7,65 +8,18 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use serde_json::json;
 
-use super::super::expression::evaluate_expression;
 use super::super::lower;
 use super::super::spec::{
     AuthoringDiagnostic, AuthoringError, AuthoringSourceMap, AuthoringSpec, LoweredAuthoring,
-    MotionInterpolation, MotionLoop, RawSceneFragment, ScalarExpr, TransformSpec, Unit,
+    MotionInterpolation, MotionLoop, RawSceneFragment,
 };
 
 use easing::{EasingEmission, ResolvedEasing};
+use property::PoseValues;
 use timing::evaluate_frame_value;
 
 pub(super) use validation::validate_motion;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum TransformProperty {
-    X,
-    Y,
-    Rotation,
-    ScaleX,
-    ScaleY,
-}
-
-impl TransformProperty {
-    fn name(self) -> &'static str {
-        match self {
-            Self::X => "x",
-            Self::Y => "y",
-            Self::Rotation => "rotation",
-            Self::ScaleX => "scale_x",
-            Self::ScaleY => "scale_y",
-        }
-    }
-
-    fn unit(self) -> Unit {
-        match self {
-            Self::X | Self::Y => Unit::Px,
-            Self::Rotation => Unit::Radians,
-            Self::ScaleX | Self::ScaleY => Unit::Scalar,
-        }
-    }
-
-    fn expression(self, transform: &TransformSpec) -> Option<&ScalarExpr> {
-        match self {
-            Self::X => transform.x.as_ref(),
-            Self::Y => transform.y.as_ref(),
-            Self::Rotation => transform.rotation.as_ref(),
-            Self::ScaleX => transform.scale_x.as_ref(),
-            Self::ScaleY => transform.scale_y.as_ref(),
-        }
-    }
-}
-
-const TRANSFORM_PROPERTIES: [TransformProperty; 5] = [
-    TransformProperty::X,
-    TransformProperty::Y,
-    TransformProperty::Rotation,
-    TransformProperty::ScaleX,
-    TransformProperty::ScaleY,
-];
-type PoseValues = BTreeMap<(String, TransformProperty), f64>;
 type MotionTargetIndex<'a> = HashMap<&'a str, IndexedMotionTarget<'a>>;
 
 #[derive(Clone, Copy)]
@@ -135,31 +89,13 @@ fn resolve_poses(
                 &target.target,
                 &format!("{target_path}.target"),
             )?;
-            for property in TRANSFORM_PROPERTIES {
-                let Some(expression) = property.expression(&target.transform) else {
-                    continue;
-                };
-                let value = evaluate_expression(
-                    expression,
-                    &format!("{target_path}.transform.{}", property.name()),
-                    &spec.parameters,
-                    property.unit(),
-                )?;
-                if values
-                    .insert((runtime_name.clone(), property), value)
-                    .is_some()
-                {
-                    return Err(AuthoringDiagnostic::new(
-                        format!("{target_path}.transform.{}", property.name()),
-                        "duplicate_motion_property",
-                        format!(
-                            "motion target '{}' declares property '{}' more than once",
-                            target.target,
-                            property.name()
-                        ),
-                    ));
-                }
-            }
+            property::resolve_target_values(
+                spec,
+                target,
+                &target_path,
+                &runtime_name,
+                &mut values,
+            )?;
         }
         poses.push(values);
     }
@@ -417,7 +353,7 @@ fn pose_shape_mismatch(track_path: &str, authored_index: usize) -> AuthoringDiag
     AuthoringDiagnostic::new(
         format!("{track_path}.keyframes[{authored_index}].pose"),
         "pose_shape_mismatch",
-        "all poses referenced by a motion track must declare the same targets and transform properties",
+        "all poses referenced by a motion track must declare the same targets and properties",
     )
 }
 

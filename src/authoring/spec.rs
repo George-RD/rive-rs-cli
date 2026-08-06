@@ -273,7 +273,10 @@ impl MotionEasingSpec {
 #[serde(deny_unknown_fields)]
 pub struct PoseTargetSpec {
     pub target: String,
+    #[serde(default)]
     pub transform: TransformSpec,
+    #[serde(default)]
+    pub opacity: Option<ScalarExpr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

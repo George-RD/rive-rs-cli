@@ -98,10 +98,17 @@ Review hardening for PR #163 remains within this P2 slice:
 - preflight workflow run `31094134192` passed the typed API regression, Rust 1.88 library check, formatting, Clippy, Cairn scan, and Cairn lint before durable evidence was committed;
 - the existing oversized warnings for `constraint.rs`, `visual.rs`, and `lower.rs` predate this slice and remain separate architecture cleanup rather than expanding the easing PR.
 
+The opacity continuation remains within this P2 todo:
+
+- exact-head RED `cb9334a` in CI run `31110782636` passed formatting, Clippy, the Rust 1.88 minimum check, browser contracts, and every pre-existing Rust test; only the four new opacity contracts failed because the strict pose-target schema rejected `opacity`;
+- pose targets may declare optional scalar opacity without a redundant transform object;
+- opacity reuses the canonical SceneSpec `opacity` property-keyframe path, the shared ratio validator, easing resolution, deterministic naming, pose-shape checks, and expansion budget;
+- transform and opacity property discovery is centralized in `motion/property.rs`, reducing duplicate counting and lowering logic while keeping `motion.rs` below the Cairn module-size guideline.
+
 ## Remaining
 
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
-- Color and other non-transform property tracks.
+- Color and additional non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.
 
 ## Dependency

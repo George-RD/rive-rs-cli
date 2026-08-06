@@ -18,17 +18,18 @@ It must provide:
 - deterministic file-scope asset ordering and collision-checked runtime names;
 - preservation of asset sources in lowered `SceneSpec`, with actual file embedding
   performed only when the canonical builder receives an explicit base directory;
-- poses, compact motion tracks, shared easing definitions, and named statecharts;
+- poses with transform and opacity properties, compact motion tracks, shared easing definitions, and named statecharts;
 - view-model-first data bindings and events;
 - a raw SceneSpec escape hatch for unsupported advanced Rive objects;
 - validation at each lowering stage and no direct binary encoding path.
 
-The current motion subset supports named transform poses, compact pose tracks, and
-shared cubic Bézier easing definitions with authored visual targets,
+The current motion subset supports named transform and opacity poses, compact pose
+tracks, and shared cubic Bézier easing definitions with authored visual targets,
 scalar-expression frame timing and control points, `hold` or `linear`
 interpolation, and `oneshot`, `loop`, or `pingpong` loop behavior. Easing time-axis
 control points remain within zero and one, while value-axis control points may
-overshoot. A keyframe may reference one named easing unless it uses `hold`;
+overshoot. Authored opacity expressions resolve to scalar ratios in the inclusive
+zero-to-one range. A keyframe may reference one named easing unless it uses `hold`;
 each referencing animation receives the same stable local declaration required by
 SceneSpec validation, the canonical builder deduplicates those declarations into one
 runtime interpolator, and the authored source-map entry records every declaration. Every pose used by one track declares the same target/property shape. Frame and duration
@@ -48,9 +49,8 @@ back to `$.motion.tracks` and `$.motion.poses`. Visual motion targets are indexe
 once from the authored source map, and failed invariants return structured authored
 diagnostics rather than panicking. Raw state-machine escapes may reference
 generated track runtime names in the same document because final canonical
-validation occurs only after typed animations are present. Semantic motion helpers,
-non-transform property tracks, and typed statecharts remain separate roadmap
-slices.
+validation occurs only after typed animations are present. Semantic motion helpers, color and additional non-transform property tracks, and
+typed statecharts remain separate roadmap slices.
 
 The first version stays JSON. Its constraints align or derive direct-child `x` and
 `y` transform anchors; they are not a rendered-bounds or general CAD solver. A

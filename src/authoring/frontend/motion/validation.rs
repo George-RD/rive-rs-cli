@@ -1,9 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use super::super::super::spec::{
-    AuthoringDiagnostic, MotionInterpolation, MotionSection, TransformSpec,
-};
+use super::super::super::spec::{AuthoringDiagnostic, MotionInterpolation, MotionSection};
 use super::super::validate_id;
+use super::property;
 
 const MAX_EASINGS: usize = 1_000;
 const MAX_POSES: usize = 1_000;
@@ -89,20 +88,14 @@ pub(in crate::authoring::frontend) fn validate_motion(
                     format!("pose target '{}' is duplicated", target.target),
                 ));
             }
-            if target.transform.x.is_none()
-                && target.transform.y.is_none()
-                && target.transform.rotation.is_none()
-                && target.transform.scale_x.is_none()
-                && target.transform.scale_y.is_none()
-            {
+            if property::count(target) == 0 {
                 diagnostics.push(AuthoringDiagnostic::new(
                     format!("{target_path}.transform"),
                     "empty_pose_target",
-                    "pose targets must declare at least one transform property",
+                    "pose targets must declare at least one transform or opacity property",
                 ));
             }
-            property_count =
-                property_count.saturating_add(transform_property_count(&target.transform));
+            property_count = property_count.saturating_add(property::count(target));
         }
         pose_property_counts
             .entry(pose.id.as_str())
@@ -197,19 +190,6 @@ pub(in crate::authoring::frontend) fn validate_motion(
     }
 
     diagnostics
-}
-
-fn transform_property_count(transform: &TransformSpec) -> u64 {
-    [
-        transform.x.is_some(),
-        transform.y.is_some(),
-        transform.rotation.is_some(),
-        transform.scale_x.is_some(),
-        transform.scale_y.is_some(),
-    ]
-    .into_iter()
-    .filter(|present| *present)
-    .count() as u64
 }
 
 fn validate_count(
