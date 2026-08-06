@@ -35,9 +35,7 @@ jobs:
           cargo fmt
           rustup toolchain install 1.88.0 --profile minimal --no-self-update
 
-          git rm \
-            .github/workflows/apply-shared-easing-review-fixes.yml \
-            scripts/apply_shared_easing_review_fixes.py
+          git rm scripts/apply_shared_easing_review_fixes.py
 
           curl --proto '=https' --tlsv1.2 -LsSf \
             https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh \

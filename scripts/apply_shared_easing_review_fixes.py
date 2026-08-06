@@ -27,12 +27,6 @@ replace_once(
     "- **Edition 2024** with a declared Rust 1.88 minimum",
 )
 
-msrv_path = Path(".github/workflows/msrv.yml")
-msrv = msrv_path.read_text()
-if msrv.count("1.85") != 2:
-    raise SystemExit(f"expected two Rust 1.85 anchors, found {msrv.count('1.85')}")
-msrv_path.write_text(msrv.replace("1.85", "1.88"))
-
 motion_path = Path("src/authoring/frontend/motion.rs")
 motion = motion_path.read_text()
 motion = motion.replace("mod easing;\nmod validation;\n", "mod easing;\nmod timing;\nmod validation;\n", 1)
