@@ -1,9 +1,6 @@
 name: Stage shared motion easings
 
 on:
-  push:
-    branches:
-      - agent/shared-motion-easings
   pull_request:
     branches:
       - main
@@ -21,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: agent/shared-motion-easings
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
         with:
