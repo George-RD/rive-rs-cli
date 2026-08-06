@@ -88,14 +88,15 @@ pub(in crate::authoring::frontend) fn validate_motion(
                     format!("pose target '{}' is duplicated", target.target),
                 ));
             }
-            if property::count(target) == 0 {
+            let target_property_count = property::count(target);
+            if target_property_count == 0 {
                 diagnostics.push(AuthoringDiagnostic::new(
                     format!("{target_path}.transform"),
                     "empty_pose_target",
                     "pose targets must declare at least one transform or opacity property",
                 ));
             }
-            property_count = property_count.saturating_add(property::count(target));
+            property_count = property_count.saturating_add(target_property_count);
         }
         pose_property_counts
             .entry(pose.id.as_str())
