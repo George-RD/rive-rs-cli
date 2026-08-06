@@ -66,13 +66,6 @@ jobs:
         run: |
           rm scripts/stage_motion_dimensions.py
           rm .github/workflows/stage-motion-dimensions.yml
-      - name: Reconcile Cairn graph
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
-          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-          set -o pipefail
-          cairn scan --json | tee /tmp/cairn-scan.json
-          cairn lint --json | tee /tmp/cairn-lint.json
       - name: Commit verified implementation
         run: |
           git diff --check
@@ -80,4 +73,42 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "feat(authoring): add typed motion dimensions"
+          echo "IMPLEMENTATION_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Record durable Cairn evidence
+        env:
+          RED_SHA: 46b9b589873181ad6974368b0533bc532d26a0fc
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path("meta/todos/todo.motion-authoring-compiler.md")
+          text = path.read_text()
+          marker = "\n## Remaining\n"
+          if marker not in text:
+              raise SystemExit("motion todo remaining marker not found")
+          section = f"""
+
+The typed shape-dimension continuation remains within this P2 todo:
+
+- exact-head RED `{os.environ['RED_SHA']}` in branch workflow run `{os.environ['GITHUB_RUN_ID']}` proves the four focused contracts fail before implementation;
+- pose targets may declare positive pixel-valued `width` and `height` expressions;
+- transform properties remain on the authored shape object while dimensions select its first compatible parametric geometry object through the canonical builder property registry;
+- mixed-property poses retain deterministic keyframe ordering, authored-path diagnostics, schema exposure, canonical builder acceptance, and source-map ownership without encoder-side logic;
+- verified implementation `{os.environ['IMPLEMENTATION_SHA']}` passed rustfmt, Clippy, the complete Rust suite, and generated-schema reconciliation before this durable evidence was committed.
+"""
+          path.write_text(text.replace(marker, section + marker, 1))
+          PY
+      - name: Reconcile Cairn graph
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          set -o pipefail
+          cairn scan --json | tee /tmp/cairn-scan.json
+          cairn lint --json | tee /tmp/cairn-lint.json
+      - name: Commit evidence and push
+        run: |
+          git diff --check
+          git add -A
+          git commit -m "docs(cairn): record motion dimension evidence"
           git push origin HEAD:agent/motion-dimensions
