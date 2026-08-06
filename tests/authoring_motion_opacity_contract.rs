@@ -169,6 +169,38 @@ fn empty_pose_target_diagnostic_uses_existing_authored_path() {
 }
 
 #[test]
+fn opacity_rejects_raw_target_without_opacity_property() {
+    let mut input = document();
+    input["visual"]["nodes"][0] = json!({
+        "kind": "raw_scene_object",
+        "id": "paint",
+        "object": {
+            "type": "fill",
+            "name": "RawFill",
+            "children": [
+                {
+                    "type": "solid_color",
+                    "name": "RawColor",
+                    "color": "#172554"
+                }
+            ]
+        }
+    });
+    for pose in input["motion"]["poses"]
+        .as_array_mut()
+        .expect("motion poses")
+    {
+        pose["targets"][0]["target"] = json!("paint");
+    }
+
+    assert_diagnostic(
+        &input,
+        "unsupported_motion_property",
+        "$.motion.poses[0].targets[0].opacity",
+    );
+}
+
+#[test]
 fn opacity_counts_toward_motion_expansion_budget() {
     const TARGET_COUNT: usize = 501;
     const KEYFRAME_COUNT: usize = 20;
