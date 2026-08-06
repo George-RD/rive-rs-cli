@@ -130,6 +130,16 @@ fn has_diagnostic(error: &rive_cli::authoring::AuthoringError, code: &str, path:
         .any(|diagnostic| diagnostic.code == code && diagnostic.path == path)
 }
 
+fn assert_diagnostic(input: &Value, code: &str, path: &str) {
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("invalid typed motion must fail at the authored boundary");
+    assert!(
+        has_diagnostic(&error, code, path),
+        "missing {code} at {path}; diagnostics: {:#?}",
+        error.diagnostics
+    );
+}
+
 fn keyframe_group<'a>(animation: &'a Value, object: &str, property: &str) -> &'a Value {
     animation["keyframes"]
         .as_array()
@@ -303,13 +313,7 @@ fn motion_diagnostics_point_to_authored_pose_and_track_paths() {
     ));
 
     for (input, expected_code, expected_path) in cases {
-        let error = lower_authoring_json(&input.to_string())
-            .expect_err("invalid typed motion must fail at the authored boundary");
-        assert!(
-            has_diagnostic(&error, expected_code, expected_path),
-            "missing {expected_code} at {expected_path}; diagnostics: {:#?}",
-            error.diagnostics
-        );
+        assert_diagnostic(&input, expected_code, expected_path);
     }
 }
 
@@ -353,6 +357,36 @@ fn large_near_integer_frame_expressions_accept_one_ulp_roundoff() {
     assert_eq!(animation["duration"], 300_000_000);
     assert_eq!(panel_x["frames"][1]["frame"], 300_000_000);
     assert_builds(lowered.scene);
+}
+
+#[test]
+fn exact_half_frame_is_rejected_when_one_ulp_is_half_a_frame() {
+    const HALF_FRAME: f64 = 2_251_799_813_685_248.5;
+    const NEXT_WHOLE_FRAME: f64 = 2_251_799_813_685_249.0;
+
+    let mut input = document();
+    input["motion"]["tracks"][0]["duration_frames"] = literal(NEXT_WHOLE_FRAME, "scalar");
+    input["motion"]["tracks"][0]["keyframes"][1]["frame"] = literal(HALF_FRAME, "scalar");
+
+    assert_diagnostic(
+        &input,
+        "invalid_frame",
+        "$.motion.tracks[0].keyframes[1].frame",
+    );
+}
+
+#[test]
+fn magnitudes_that_cannot_distinguish_half_frames_are_rejected() {
+    const FIRST_WHOLE_FRAME_ULP: f64 = 4_503_599_627_370_496.0;
+
+    let mut input = document();
+    input["motion"]["tracks"][0]["duration_frames"] = literal(FIRST_WHOLE_FRAME_ULP, "scalar");
+
+    assert_diagnostic(
+        &input,
+        "invalid_duration_frames",
+        "$.motion.tracks[0].duration_frames",
+    );
 }
 
 #[test]

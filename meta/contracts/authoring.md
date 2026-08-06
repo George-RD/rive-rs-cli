@@ -27,10 +27,12 @@ The current motion subset supports named transform poses and compact pose tracks
 with authored visual targets, scalar-expression frame timing, `hold` or `linear`
 interpolation, and `oneshot`, `loop`, or `pingpong` loop behavior. Every pose used
 by one track declares the same target/property shape. Frame and duration
-expressions must resolve to non-negative whole numbers; bounded floating-point
+expressions must resolve to non-negative whole numbers. Bounded floating-point
 round-off around a whole number is normalized deterministically through a capped
-multi-ULP window that never becomes narrower than one representable step at the
-evaluated magnitude, while material fractional values are rejected. The complete
+multi-ULP window while representable spacing remains below half a frame. Once one
+ULP reaches half a frame, exact whole-frame equality is required; magnitudes where
+one ULP reaches a whole frame are rejected because authored half-frame intent can
+no longer be represented. Material fractional values are rejected. The complete
 typed-motion document may expand to at most 10,000 canonical property-keyframe
 values, preventing individually valid poses and tracks from creating an unbounded
 Cartesian expansion. The validator reports this aggregate limit once, at the first
