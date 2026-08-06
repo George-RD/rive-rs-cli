@@ -38,7 +38,7 @@ motion = motion_path.read_text()
 motion = motion.replace("mod easing;\nmod validation;\n", "mod easing;\nmod timing;\nmod validation;\n", 1)
 motion = motion.replace(
     "    MotionInterpolation, MotionLoop, Quantity, RawSceneFragment, ScalarExpr, TransformSpec, Unit,\n",
-    "    MotionInterpolation, MotionLoop, RawSceneFragment, TransformSpec, Unit,\n",
+    "    MotionInterpolation, MotionLoop, RawSceneFragment, ScalarExpr, TransformSpec, Unit,\n",
     1,
 )
 motion = motion.replace(
