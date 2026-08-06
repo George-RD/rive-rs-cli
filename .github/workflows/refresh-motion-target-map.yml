@@ -1,0 +1,54 @@
+name: Refresh motion target architecture evidence
+
+on:
+  push:
+    branches: [agent/motion-opacity]
+    paths:
+      - .github/workflows/refresh-motion-target-map.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-motion-target-map
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/motion-opacity
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Format Rust sources
+        run: cargo fmt
+      - name: Install Cairn 0.9.0
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+      - name: Regenerate and validate architecture evidence
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn scan --json | tee /tmp/cairn-scan.json
+          cairn lint --json | tee /tmp/cairn-lint.json
+      - name: Run focused motion opacity contract
+        run: cargo test --test authoring_motion_opacity_contract
+      - name: Run formatting and Clippy gates
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run complete Rust suite
+        run: cargo test --locked --all-features
+      - name: Commit verified architecture evidence
+        run: |
+          rm .github/workflows/refresh-motion-target-map.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --stat
+          git commit -m "chore(authoring): refresh motion target architecture map"
+          git push origin HEAD:agent/motion-opacity
