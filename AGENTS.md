@@ -127,7 +127,7 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 ## Code Conventions & Common Patterns
 
 ### Style
-- **Edition 2024** (requires Rust 1.84+)
+- **Edition 2024** with a declared Rust 1.88 minimum
 - **No comments or docstrings** — code must be self-documenting
 - **No magic numbers** — use `type_keys::*` and `property_keys::*` constants
 - **Warnings are errors** — `.cargo/config.toml` sets `RUSTFLAGS = ["-D", "warnings"]` locally and CI sets the same

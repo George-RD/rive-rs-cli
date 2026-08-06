@@ -2,6 +2,7 @@
 name = "rive-cli"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.88"
 description = "Feature-complete CLI for programmatic creation and manipulation of Rive (.riv) animation files"
 license = "MIT"
 repository = "https://github.com/George-RD/rive-rs-cli"

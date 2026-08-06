@@ -12064,6 +12064,7 @@
         "src/authoring/frontend.rs",
         "src/authoring/frontend/motion.rs",
         "src/authoring/frontend/motion/easing.rs",
+        "src/authoring/frontend/motion/timing.rs",
         "src/authoring/frontend/motion/validation.rs",
         "src/authoring/limits.rs",
         "src/authoring/lower.rs",
@@ -13418,6 +13419,7 @@
         "./tests/authoring_motion_contract.rs",
         "./tests/authoring_motion_easing_contract.rs",
         "./tests/authoring_motion_expansion_contract.rs",
+        "./tests/authoring_motion_typed_api_contract.rs",
         "./tests/authoring_radial_contract.rs",
         "./tests/authoring_stroke_contract.rs",
         "./tests/authoring_text_contract.rs",
@@ -13440,6 +13442,7 @@
         "tests/authoring_motion_contract.rs",
         "tests/authoring_motion_easing_contract.rs",
         "tests/authoring_motion_expansion_contract.rs",
+        "tests/authoring_motion_typed_api_contract.rs",
         "tests/authoring_radial_contract.rs",
         "tests/authoring_stroke_contract.rs",
         "tests/authoring_text_contract.rs",
@@ -14056,13 +14059,6 @@
       "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/constraint.rs` at 554 lines, over the 500-line guideline with no allow-list marker",
       "node": "rive-cli.intelligence.authoring",
       "path": "src/authoring/constraint.rs"
-    },
-    {
-      "code": "CAIRN_MODULE_OVERSIZED",
-      "severity": "warning",
-      "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/motion.rs` at 510 lines, over the 500-line guideline with no allow-list marker",
-      "node": "rive-cli.intelligence.authoring",
-      "path": "src/authoring/frontend/motion.rs"
     },
     {
       "code": "CAIRN_MODULE_OVERSIZED",
