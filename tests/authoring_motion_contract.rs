@@ -365,10 +365,8 @@ fn exact_half_frame_is_rejected_when_one_ulp_is_half_a_frame() {
     const NEXT_WHOLE_FRAME: f64 = 2_251_799_813_685_249.0;
 
     let mut input = document();
-    input["motion"]["tracks"][0]["duration_frames"] =
-        literal(NEXT_WHOLE_FRAME, "scalar");
-    input["motion"]["tracks"][0]["keyframes"][1]["frame"] =
-        literal(HALF_FRAME, "scalar");
+    input["motion"]["tracks"][0]["duration_frames"] = literal(NEXT_WHOLE_FRAME, "scalar");
+    input["motion"]["tracks"][0]["keyframes"][1]["frame"] = literal(HALF_FRAME, "scalar");
 
     assert_diagnostic(
         &input,
@@ -382,8 +380,7 @@ fn magnitudes_that_cannot_distinguish_half_frames_are_rejected() {
     const FIRST_WHOLE_FRAME_ULP: f64 = 4_503_599_627_370_496.0;
 
     let mut input = document();
-    input["motion"]["tracks"][0]["duration_frames"] =
-        literal(FIRST_WHOLE_FRAME_ULP, "scalar");
+    input["motion"]["tracks"][0]["duration_frames"] = literal(FIRST_WHOLE_FRAME_ULP, "scalar");
 
     assert_diagnostic(
         &input,
