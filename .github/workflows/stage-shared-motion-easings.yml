@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/shared-motion-easings
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
