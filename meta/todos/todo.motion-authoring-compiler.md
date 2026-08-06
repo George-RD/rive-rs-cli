@@ -90,6 +90,14 @@ The shared-easing continuation remains within this P2 todo:
 - the frontend resolves every declared easing before the no-track return, bounds cubic time-axis control points, rejects hold/easing conflicts and unknown references, declares each referenced interpolator locally with one stable generated name, records every declaration path, and relies on the canonical builder to deduplicate identical definitions into one runtime object;
 - implementation reuses the canonical SceneSpec interpolator path rather than adding encoder logic or exposing runtime indices.
 
+Review hardening for PR #163 remains within this P2 slice:
+
+- exact-head RED `ed94807` in CI run `31092625558` proves the JSON contract was exposed while Rust callers could not name `MotionEasingSpec` through the public typed API;
+- the Rust 1.85 compatibility probe at `8ce6f23` in workflow run `31093299020` instead stopped at the locked dependency graph because `darling` 0.23 already requires Rust 1.88, so the repository now declares and continuously checks its actual Rust 1.88 minimum;
+- implementation `adcf857` publicly re-exports `MotionEasingSpec`, retains the typed construction regression under Cairn ownership, and extracts frame timing into `motion/timing.rs` so this slice no longer pushes `motion.rs` beyond the module-size guideline;
+- preflight workflow run `31094134192` passed the typed API regression, Rust 1.88 library check, formatting, Clippy, Cairn scan, and Cairn lint before durable evidence was committed;
+- the existing oversized warnings for `constraint.rs`, `visual.rs`, and `lower.rs` predate this slice and remain separate architecture cleanup rather than expanding the easing PR.
+
 ## Remaining
 
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
