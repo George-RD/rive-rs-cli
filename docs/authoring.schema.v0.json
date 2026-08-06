@@ -466,6 +466,17 @@
     "PoseTargetSpec": {
       "additionalProperties": false,
       "properties": {
+        "height": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "opacity": {
           "anyOf": [
             {
@@ -489,6 +500,17 @@
             "x": null,
             "y": null
           }
+        },
+        "width": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [

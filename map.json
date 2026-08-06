@@ -12258,24 +12258,24 @@
           "kind": "struct",
           "signature": "pub struct AuthoringDiagnostic",
           "file": "src/authoring/spec.rs",
-          "line": 366,
-          "end_line": 370
+          "line": 370,
+          "end_line": 374
         },
         {
           "name": "AuthoringError",
           "kind": "struct",
           "signature": "pub struct AuthoringError",
           "file": "src/authoring/spec.rs",
-          "line": 387,
-          "end_line": 389
+          "line": 391,
+          "end_line": 393
         },
         {
           "name": "AuthoringSourceMap",
           "kind": "struct",
           "signature": "pub struct AuthoringSourceMap",
           "file": "src/authoring/spec.rs",
-          "line": 351,
-          "end_line": 353
+          "line": 355,
+          "end_line": 357
         },
         {
           "name": "AuthoringSpec",
@@ -12290,8 +12290,8 @@
           "kind": "struct",
           "signature": "pub struct BehaviorSection",
           "file": "src/authoring/spec.rs",
-          "line": 332,
-          "end_line": 335
+          "line": 336,
+          "end_line": 339
         },
         {
           "name": "ComponentSpec",
@@ -12322,24 +12322,24 @@
           "kind": "struct",
           "signature": "pub struct LoweredAuthoring",
           "file": "src/authoring/spec.rs",
-          "line": 345,
-          "end_line": 348
+          "line": 349,
+          "end_line": 352
         },
         {
           "name": "MotionSection",
           "kind": "struct",
           "signature": "pub struct MotionSection",
           "file": "src/authoring/spec.rs",
-          "line": 316,
-          "end_line": 328
+          "line": 320,
+          "end_line": 332
         },
         {
           "name": "MotionTrackSpec",
           "kind": "struct",
           "signature": "pub struct MotionTrackSpec",
           "file": "src/authoring/spec.rs",
-          "line": 303,
-          "end_line": 312
+          "line": 307,
+          "end_line": 316
         },
         {
           "name": "PathPointSpec",
@@ -12354,16 +12354,16 @@
           "kind": "struct",
           "signature": "pub struct PoseKeyframeSpec",
           "file": "src/authoring/spec.rs",
-          "line": 292,
-          "end_line": 299
+          "line": 296,
+          "end_line": 303
         },
         {
           "name": "PoseSpec",
           "kind": "struct",
           "signature": "pub struct PoseSpec",
           "file": "src/authoring/spec.rs",
-          "line": 284,
-          "end_line": 288
+          "line": 288,
+          "end_line": 292
         },
         {
           "name": "PoseTargetSpec",
@@ -12371,7 +12371,7 @@
           "signature": "pub struct PoseTargetSpec",
           "file": "src/authoring/spec.rs",
           "line": 274,
-          "end_line": 280
+          "end_line": 284
         },
         {
           "name": "Quantity",
@@ -12386,16 +12386,16 @@
           "kind": "struct",
           "signature": "pub struct RawSceneFragment",
           "file": "src/authoring/spec.rs",
-          "line": 339,
-          "end_line": 342
+          "line": 343,
+          "end_line": 346
         },
         {
           "name": "SourceMapEntry",
           "kind": "struct",
           "signature": "pub struct SourceMapEntry",
           "file": "src/authoring/spec.rs",
-          "line": 356,
-          "end_line": 363
+          "line": 360,
+          "end_line": 367
         },
         {
           "name": "StrokeSpec",
@@ -12506,24 +12506,24 @@
           "kind": "function",
           "signature": "pub(crate) fn many(diagnostics: Vec<AuthoringDiagnostic>) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 398,
-          "end_line": 400
+          "line": 402,
+          "end_line": 404
         },
         {
           "name": "new",
           "kind": "function",
           "signature": "pub(crate) fn new( path: impl Into<String>, code: impl Into<String>, message: impl Into<String>, ) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 373,
-          "end_line": 383
+          "line": 377,
+          "end_line": 387
         },
         {
           "name": "one",
           "kind": "function",
           "signature": "pub(crate) fn one(diagnostic: AuthoringDiagnostic) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 392,
-          "end_line": 396
+          "line": 396,
+          "end_line": 400
         },
         {
           "name": "pattern",
@@ -13426,6 +13426,7 @@
         "./tests/authoring_grid_contract.rs",
         "./tests/authoring_mirror_contract.rs",
         "./tests/authoring_motion_contract.rs",
+        "./tests/authoring_motion_dimension_contract.rs",
         "./tests/authoring_motion_easing_contract.rs",
         "./tests/authoring_motion_expansion_contract.rs",
         "./tests/authoring_motion_opacity_contract.rs",
@@ -13450,6 +13451,7 @@
         "tests/authoring_image_asset_contract.rs",
         "tests/authoring_mirror_contract.rs",
         "tests/authoring_motion_contract.rs",
+        "tests/authoring_motion_dimension_contract.rs",
         "tests/authoring_motion_easing_contract.rs",
         "tests/authoring_motion_expansion_contract.rs",
         "tests/authoring_motion_opacity_contract.rs",
