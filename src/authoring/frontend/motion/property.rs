@@ -120,3 +120,42 @@ pub(super) fn resolve_target_values(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::authoring::spec::TransformSpec;
+
+    fn literal(value: f64, unit: Unit) -> ScalarExpr {
+        ScalarExpr::Literal { value, unit }
+    }
+
+    #[test]
+    fn property_count_includes_transform_and_opacity_values() {
+        let target = PoseTargetSpec {
+            target: "card".to_string(),
+            transform: TransformSpec {
+                x: Some(literal(10.0, Unit::Px)),
+                rotation: Some(literal(0.5, Unit::Radians)),
+                ..TransformSpec::default()
+            },
+            opacity: Some(literal(0.75, Unit::Scalar)),
+        };
+
+        assert_eq!(count(&target), 3);
+    }
+
+    #[test]
+    fn authored_paths_follow_each_property_shape() {
+        let target_path = "$.motion.poses[0].targets[0]";
+
+        assert_eq!(
+            PoseProperty::X.authored_path(target_path),
+            "$.motion.poses[0].targets[0].transform.x"
+        );
+        assert_eq!(
+            PoseProperty::Opacity.authored_path(target_path),
+            "$.motion.poses[0].targets[0].opacity"
+        );
+    }
+}
