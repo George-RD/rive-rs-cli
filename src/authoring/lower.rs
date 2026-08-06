@@ -339,7 +339,7 @@ impl<'a> Lowerer<'a> {
     }
 }
 
-fn evaluate_ratio_expression(
+pub(super) fn evaluate_ratio_expression(
     expression: &ScalarExpr,
     path: &str,
     scope: &BTreeMap<String, Quantity>,

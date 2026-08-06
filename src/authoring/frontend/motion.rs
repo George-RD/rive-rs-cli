@@ -1,76 +1,36 @@
 mod easing;
+mod property;
 mod timing;
 mod validation;
 
 use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use serde_json::json;
+use serde_json::{Value, json};
 
-use super::super::expression::evaluate_expression;
 use super::super::lower;
 use super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSourceMap, AuthoringSpec, LoweredAuthoring,
-    MotionInterpolation, MotionLoop, RawSceneFragment, ScalarExpr, TransformSpec, Unit,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, LoweredAuthoring, MotionInterpolation,
+    MotionLoop, RawSceneFragment,
 };
 
 use easing::{EasingEmission, ResolvedEasing};
+use property::PoseValues;
 use timing::evaluate_frame_value;
 
 pub(super) use validation::validate_motion;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum TransformProperty {
-    X,
-    Y,
-    Rotation,
-    ScaleX,
-    ScaleY,
-}
-
-impl TransformProperty {
-    fn name(self) -> &'static str {
-        match self {
-            Self::X => "x",
-            Self::Y => "y",
-            Self::Rotation => "rotation",
-            Self::ScaleX => "scale_x",
-            Self::ScaleY => "scale_y",
-        }
-    }
-
-    fn unit(self) -> Unit {
-        match self {
-            Self::X | Self::Y => Unit::Px,
-            Self::Rotation => Unit::Radians,
-            Self::ScaleX | Self::ScaleY => Unit::Scalar,
-        }
-    }
-
-    fn expression(self, transform: &TransformSpec) -> Option<&ScalarExpr> {
-        match self {
-            Self::X => transform.x.as_ref(),
-            Self::Y => transform.y.as_ref(),
-            Self::Rotation => transform.rotation.as_ref(),
-            Self::ScaleX => transform.scale_x.as_ref(),
-            Self::ScaleY => transform.scale_y.as_ref(),
-        }
-    }
-}
-
-const TRANSFORM_PROPERTIES: [TransformProperty; 5] = [
-    TransformProperty::X,
-    TransformProperty::Y,
-    TransformProperty::Rotation,
-    TransformProperty::ScaleX,
-    TransformProperty::ScaleY,
-];
-type PoseValues = BTreeMap<(String, TransformProperty), f64>;
 type MotionTargetIndex<'a> = HashMap<&'a str, IndexedMotionTarget<'a>>;
 
 #[derive(Clone, Copy)]
+struct MotionTarget<'a> {
+    runtime_name: &'a str,
+    object_type: &'a str,
+}
+
+#[derive(Clone, Copy)]
 enum IndexedMotionTarget<'a> {
-    Unique(Option<&'a str>),
+    Unique(Option<MotionTarget<'a>>),
     Ambiguous,
 }
 
@@ -92,7 +52,7 @@ pub(super) fn lower_motion(
     lowered: LoweredAuthoring,
 ) -> Result<LoweredAuthoring, AuthoringError> {
     let easings = easing::resolve(spec).map_err(AuthoringError::one)?;
-    let poses = resolve_poses(spec, &lowered.source_map).map_err(AuthoringError::one)?;
+    let poses = resolve_poses(spec, &lowered).map_err(AuthoringError::one)?;
     if spec.motion.tracks.is_empty() {
         return Ok(lowered);
     }
@@ -121,59 +81,58 @@ pub(super) fn lower_motion(
 
 fn resolve_poses(
     spec: &AuthoringSpec,
-    source_map: &AuthoringSourceMap,
+    lowered: &LoweredAuthoring,
 ) -> Result<Vec<PoseValues>, AuthoringDiagnostic> {
-    let motion_targets = index_motion_targets(source_map);
+    let motion_targets = index_motion_targets(lowered);
     let mut poses = Vec::with_capacity(spec.motion.poses.len());
     for (pose_index, pose) in spec.motion.poses.iter().enumerate() {
         let pose_path = format!("$.motion.poses[{pose_index}]");
         let mut values = BTreeMap::new();
         for (target_index, target) in pose.targets.iter().enumerate() {
             let target_path = format!("{pose_path}.targets[{target_index}]");
-            let runtime_name = resolve_target_runtime_name(
+            let resolved_target = resolve_motion_target(
                 &motion_targets,
                 &target.target,
                 &format!("{target_path}.target"),
             )?;
-            for property in TRANSFORM_PROPERTIES {
-                let Some(expression) = property.expression(&target.transform) else {
-                    continue;
-                };
-                let value = evaluate_expression(
-                    expression,
-                    &format!("{target_path}.transform.{}", property.name()),
-                    &spec.parameters,
-                    property.unit(),
-                )?;
-                if values
-                    .insert((runtime_name.clone(), property), value)
-                    .is_some()
-                {
-                    return Err(AuthoringDiagnostic::new(
-                        format!("{target_path}.transform.{}", property.name()),
-                        "duplicate_motion_property",
-                        format!(
-                            "motion target '{}' declares property '{}' more than once",
-                            target.target,
-                            property.name()
-                        ),
-                    ));
-                }
-            }
+            property::resolve_target_values(
+                spec,
+                target,
+                &target_path,
+                resolved_target.runtime_name,
+                resolved_target.object_type,
+                &mut values,
+            )?;
         }
         poses.push(values);
     }
     Ok(poses)
 }
 
-fn index_motion_targets(source_map: &AuthoringSourceMap) -> MotionTargetIndex<'_> {
+fn index_motion_targets(lowered: &LoweredAuthoring) -> MotionTargetIndex<'_> {
     let mut targets = HashMap::new();
-    for entry in source_map
+    for entry in lowered
+        .source_map
         .entries
         .iter()
         .filter(|entry| entry.authored_path.starts_with("$.visual.nodes["))
     {
-        let indexed = IndexedMotionTarget::Unique(entry.runtime_names.first().map(String::as_str));
+        let target = entry
+            .runtime_names
+            .first()
+            .zip(entry.scene_paths.first())
+            .and_then(|(runtime_name, scene_path)| {
+                lowered
+                    .scene
+                    .pointer(scene_path)
+                    .and_then(|object| object.get("type"))
+                    .and_then(Value::as_str)
+                    .map(|object_type| MotionTarget {
+                        runtime_name,
+                        object_type,
+                    })
+            });
+        let indexed = IndexedMotionTarget::Unique(target);
         match targets.entry(entry.authored_id.as_str()) {
             Entry::Vacant(slot) => {
                 slot.insert(indexed);
@@ -186,11 +145,11 @@ fn index_motion_targets(source_map: &AuthoringSourceMap) -> MotionTargetIndex<'_
     targets
 }
 
-fn resolve_target_runtime_name(
-    target_index: &MotionTargetIndex<'_>,
+fn resolve_motion_target<'a>(
+    target_index: &MotionTargetIndex<'a>,
     target: &str,
     path: &str,
-) -> Result<String, AuthoringDiagnostic> {
+) -> Result<MotionTarget<'a>, AuthoringDiagnostic> {
     match target_index.get(target).copied() {
         None => Err(AuthoringDiagnostic::new(
             path,
@@ -207,7 +166,7 @@ fn resolve_target_runtime_name(
             "unsupported_motion_target",
             format!("visual target '{target}' has no animatable runtime object"),
         )),
-        Some(IndexedMotionTarget::Unique(Some(runtime_name))) => Ok(runtime_name.to_owned()),
+        Some(IndexedMotionTarget::Unique(Some(target))) => Ok(target),
     }
 }
 
@@ -417,7 +376,7 @@ fn pose_shape_mismatch(track_path: &str, authored_index: usize) -> AuthoringDiag
     AuthoringDiagnostic::new(
         format!("{track_path}.keyframes[{authored_index}].pose"),
         "pose_shape_mismatch",
-        "all poses referenced by a motion track must declare the same targets and transform properties",
+        "all poses referenced by a motion track must declare the same targets and properties",
     )
 }
 

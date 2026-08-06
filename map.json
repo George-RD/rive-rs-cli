@@ -12064,6 +12064,7 @@
         "src/authoring/frontend.rs",
         "src/authoring/frontend/motion.rs",
         "src/authoring/frontend/motion/easing.rs",
+        "src/authoring/frontend/motion/property.rs",
         "src/authoring/frontend/motion/timing.rs",
         "src/authoring/frontend/motion/validation.rs",
         "src/authoring/limits.rs",
@@ -12257,24 +12258,24 @@
           "kind": "struct",
           "signature": "pub struct AuthoringDiagnostic",
           "file": "src/authoring/spec.rs",
-          "line": 363,
-          "end_line": 367
+          "line": 366,
+          "end_line": 370
         },
         {
           "name": "AuthoringError",
           "kind": "struct",
           "signature": "pub struct AuthoringError",
           "file": "src/authoring/spec.rs",
-          "line": 384,
-          "end_line": 386
+          "line": 387,
+          "end_line": 389
         },
         {
           "name": "AuthoringSourceMap",
           "kind": "struct",
           "signature": "pub struct AuthoringSourceMap",
           "file": "src/authoring/spec.rs",
-          "line": 348,
-          "end_line": 350
+          "line": 351,
+          "end_line": 353
         },
         {
           "name": "AuthoringSpec",
@@ -12289,8 +12290,8 @@
           "kind": "struct",
           "signature": "pub struct BehaviorSection",
           "file": "src/authoring/spec.rs",
-          "line": 329,
-          "end_line": 332
+          "line": 332,
+          "end_line": 335
         },
         {
           "name": "ComponentSpec",
@@ -12321,24 +12322,24 @@
           "kind": "struct",
           "signature": "pub struct LoweredAuthoring",
           "file": "src/authoring/spec.rs",
-          "line": 342,
-          "end_line": 345
+          "line": 345,
+          "end_line": 348
         },
         {
           "name": "MotionSection",
           "kind": "struct",
           "signature": "pub struct MotionSection",
           "file": "src/authoring/spec.rs",
-          "line": 313,
-          "end_line": 325
+          "line": 316,
+          "end_line": 328
         },
         {
           "name": "MotionTrackSpec",
           "kind": "struct",
           "signature": "pub struct MotionTrackSpec",
           "file": "src/authoring/spec.rs",
-          "line": 300,
-          "end_line": 309
+          "line": 303,
+          "end_line": 312
         },
         {
           "name": "PathPointSpec",
@@ -12353,16 +12354,16 @@
           "kind": "struct",
           "signature": "pub struct PoseKeyframeSpec",
           "file": "src/authoring/spec.rs",
-          "line": 289,
-          "end_line": 296
+          "line": 292,
+          "end_line": 299
         },
         {
           "name": "PoseSpec",
           "kind": "struct",
           "signature": "pub struct PoseSpec",
           "file": "src/authoring/spec.rs",
-          "line": 281,
-          "end_line": 285
+          "line": 284,
+          "end_line": 288
         },
         {
           "name": "PoseTargetSpec",
@@ -12370,7 +12371,7 @@
           "signature": "pub struct PoseTargetSpec",
           "file": "src/authoring/spec.rs",
           "line": 274,
-          "end_line": 277
+          "end_line": 280
         },
         {
           "name": "Quantity",
@@ -12385,16 +12386,16 @@
           "kind": "struct",
           "signature": "pub struct RawSceneFragment",
           "file": "src/authoring/spec.rs",
-          "line": 336,
-          "end_line": 339
+          "line": 339,
+          "end_line": 342
         },
         {
           "name": "SourceMapEntry",
           "kind": "struct",
           "signature": "pub struct SourceMapEntry",
           "file": "src/authoring/spec.rs",
-          "line": 353,
-          "end_line": 360
+          "line": 356,
+          "end_line": 363
         },
         {
           "name": "StrokeSpec",
@@ -12505,24 +12506,24 @@
           "kind": "function",
           "signature": "pub(crate) fn many(diagnostics: Vec<AuthoringDiagnostic>) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 395,
-          "end_line": 397
+          "line": 398,
+          "end_line": 400
         },
         {
           "name": "new",
           "kind": "function",
           "signature": "pub(crate) fn new( path: impl Into<String>, code: impl Into<String>, message: impl Into<String>, ) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 370,
-          "end_line": 380
+          "line": 373,
+          "end_line": 383
         },
         {
           "name": "one",
           "kind": "function",
           "signature": "pub(crate) fn one(diagnostic: AuthoringDiagnostic) -> Self",
           "file": "src/authoring/spec.rs",
-          "line": 389,
-          "end_line": 393
+          "line": 392,
+          "end_line": 396
         },
         {
           "name": "pattern",
@@ -12651,6 +12652,14 @@
           "file": "src/authoring/lower/path.rs",
           "line": 28,
           "end_line": 107
+        },
+        {
+          "name": "evaluate_ratio_expression",
+          "kind": "function",
+          "signature": "pub(super) fn evaluate_ratio_expression( expression: &ScalarExpr, path: &str, scope: &BTreeMap<String, Quantity>, message: &str, ) -> Result<f64, AuthoringDiagnostic>",
+          "file": "src/authoring/lower.rs",
+          "line": 342,
+          "end_line": 353
         },
         {
           "name": "runtime_name",
@@ -13419,6 +13428,7 @@
         "./tests/authoring_motion_contract.rs",
         "./tests/authoring_motion_easing_contract.rs",
         "./tests/authoring_motion_expansion_contract.rs",
+        "./tests/authoring_motion_opacity_contract.rs",
         "./tests/authoring_motion_typed_api_contract.rs",
         "./tests/authoring_radial_contract.rs",
         "./tests/authoring_stroke_contract.rs",
@@ -13442,6 +13452,7 @@
         "tests/authoring_motion_contract.rs",
         "tests/authoring_motion_easing_contract.rs",
         "tests/authoring_motion_expansion_contract.rs",
+        "tests/authoring_motion_opacity_contract.rs",
         "tests/authoring_motion_typed_api_contract.rs",
         "tests/authoring_radial_contract.rs",
         "tests/authoring_stroke_contract.rs",
