@@ -18,8 +18,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
         with:
           key: msrv-1.88
-      - run: cargo check --locked --lib --all-features
+      - run: cargo check --locked --all-targets --all-features
