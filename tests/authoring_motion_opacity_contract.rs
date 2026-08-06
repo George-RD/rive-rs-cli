@@ -158,6 +158,21 @@ fn opacity_diagnostics_preserve_authored_paths() {
 }
 
 #[test]
+fn empty_pose_target_diagnostic_uses_existing_authored_path() {
+    let mut input = document();
+    input["motion"]["poses"][0]["targets"][0]
+        .as_object_mut()
+        .expect("hidden target")
+        .remove("opacity");
+
+    assert_diagnostic(
+        &input,
+        "empty_pose_target",
+        "$.motion.poses[0].targets[0]",
+    );
+}
+
+#[test]
 fn opacity_counts_toward_motion_expansion_budget() {
     const TARGET_COUNT: usize = 501;
     const KEYFRAME_COUNT: usize = 20;
