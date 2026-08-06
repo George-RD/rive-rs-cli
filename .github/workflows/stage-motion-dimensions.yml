@@ -8,8 +8,35 @@ permissions:
   contents: write
 
 jobs:
+  red:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact test-only head without marketplace actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git init .
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin 46b9b589873181ad6974368b0533bc532d26a0fc
+          git checkout --detach FETCH_HEAD
+      - name: Prepare Rust toolchain
+        run: |
+          rustup default stable
+          rustup component add clippy rustfmt
+      - name: Prove the dimension contract is RED
+        run: |
+          set +e
+          set -o pipefail
+          cargo test --test authoring_motion_dimension_contract 2>&1 | tee /tmp/motion-dimensions-red.log
+          test_status=${PIPESTATUS[0]}
+          set -e
+          test "$test_status" -ne 0
+          grep -F "test result: FAILED. 0 passed; 4 failed" /tmp/motion-dimensions-red.log
+
   stage:
     if: github.actor != 'github-actions[bot]'
+    needs: red
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout branch without marketplace actions
