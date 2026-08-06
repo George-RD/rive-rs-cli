@@ -1,8 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
-use super::super::super::spec::{AuthoringDiagnostic, MotionSection, TransformSpec};
+use super::super::super::spec::{
+    AuthoringDiagnostic, MotionInterpolation, MotionSection, TransformSpec,
+};
 use super::super::validate_id;
 
+const MAX_EASINGS: usize = 1_000;
 const MAX_POSES: usize = 1_000;
 const MAX_POSE_TARGETS: usize = 1_000;
 const MAX_TRACKS: usize = 1_000;
@@ -14,6 +17,28 @@ pub(in crate::authoring::frontend) fn validate_motion(
     motion: &MotionSection,
 ) -> Vec<AuthoringDiagnostic> {
     let mut diagnostics = Vec::new();
+    validate_count(
+        motion.easings.len(),
+        0,
+        MAX_EASINGS,
+        "$.motion.easings",
+        "motion_easing_limit",
+        "motion easing count",
+        &mut diagnostics,
+    );
+    let mut easing_ids = HashSet::new();
+    for (easing_index, easing) in motion.easings.iter().enumerate() {
+        let easing_path = format!("$.motion.easings[{easing_index}]");
+        validate_id(easing.id(), &format!("{easing_path}.id"), &mut diagnostics);
+        if !easing_ids.insert(easing.id()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("{easing_path}.id"),
+                "duplicate_easing",
+                format!("motion easing id '{}' is duplicated", easing.id()),
+            ));
+        }
+    }
+
     validate_count(
         motion.poses.len(),
         0,
@@ -123,12 +148,29 @@ pub(in crate::authoring::frontend) fn validate_motion(
             &mut diagnostics,
         );
         for (keyframe_index, keyframe) in track.keyframes.iter().enumerate() {
+            let keyframe_path = format!("{track_path}.keyframes[{keyframe_index}]");
             if !pose_ids.contains(keyframe.pose.as_str()) {
                 diagnostics.push(AuthoringDiagnostic::new(
-                    format!("{track_path}.keyframes[{keyframe_index}].pose"),
+                    format!("{keyframe_path}.pose"),
                     "unknown_pose",
                     format!("pose '{}' is not defined", keyframe.pose),
                 ));
+            }
+            if let Some(easing) = keyframe.easing.as_deref() {
+                if !easing_ids.contains(easing) {
+                    diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{keyframe_path}.easing"),
+                        "unknown_easing",
+                        format!("motion easing '{easing}' is not defined"),
+                    ));
+                }
+                if keyframe.interpolation == MotionInterpolation::Hold {
+                    diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{keyframe_path}.easing"),
+                        "easing_with_hold",
+                        "hold keyframes cannot reference a continuous easing",
+                    ));
+                }
             }
         }
 

@@ -206,21 +206,13 @@ fn shared_cubic_easing_lowers_once_and_reuses_deterministically() {
     for required in ["easings", "cubic", "easing"] {
         assert!(schema.contains(required), "schema is missing {required}");
     }
-
 }
 
 #[test]
 fn easing_references_are_validated_at_authored_paths() {
     let mut duplicate = document();
-    duplicate["motion"]["easings"] = json!([
-        cubic_easing("soft-out"),
-        cubic_easing("soft-out")
-    ]);
-    assert_diagnostic(
-        &duplicate,
-        "duplicate_easing",
-        "$.motion.easings[1].id",
-    );
+    duplicate["motion"]["easings"] = json!([cubic_easing("soft-out"), cubic_easing("soft-out")]);
+    assert_diagnostic(&duplicate, "duplicate_easing", "$.motion.easings[1].id");
 
     let mut unknown = document();
     unknown["motion"]["tracks"][0]["keyframes"][0]["easing"] = json!("missing");
@@ -265,4 +257,3 @@ fn cubic_easing_control_points_use_scalar_expression_validation() {
         "$.motion.easings[0].x1",
     );
 }
-

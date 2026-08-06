@@ -84,9 +84,14 @@ continues the same P2 precision hardening:
 The roadmap tracks incremental typed authoring operations as a separate P3
 milestone rather than leaving that AI-skill unblock condition implicit.
 
+The shared-easing continuation remains within this P2 todo:
+
+- exact-head RED `35c2054` in branch workflow run `31091633813` retained a focused contract for reusable cubic easing definitions, scalar-expression control points, authored-path diagnostics, deterministic runtime deduplication, cross-track reuse, canonical builder acceptance, schema exposure, and a dedicated easing source-map entry;
+- the frontend resolves every declared easing before the no-track return, bounds cubic time-axis control points, rejects hold/easing conflicts and unknown references, declares each referenced interpolator locally with one stable generated name, records every declaration path, and relies on the canonical builder to deduplicate identical definitions into one runtime object;
+- implementation reuses the canonical SceneSpec interpolator path rather than adding encoder logic or exposing runtime indices.
+
 ## Remaining
 
-- Shared easing definitions and deterministic easing reuse.
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
 - Color and other non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.

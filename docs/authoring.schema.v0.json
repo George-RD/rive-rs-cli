@@ -264,6 +264,43 @@
       ],
       "type": "string"
     },
+    "MotionEasingSpec": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "cubic",
+              "type": "string"
+            },
+            "x1": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "x2": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "y1": {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            "y2": {
+              "$ref": "#/$defs/ScalarExpr"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "MotionInterpolation": {
       "enum": [
         "hold",
@@ -282,6 +319,14 @@
     "MotionSection": {
       "additionalProperties": false,
       "properties": {
+        "easings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MotionEasingSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
         "poses": {
           "default": [],
           "items": {
@@ -373,6 +418,13 @@
     "PoseKeyframeSpec": {
       "additionalProperties": false,
       "properties": {
+        "easing": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "frame": {
           "$ref": "#/$defs/ScalarExpr"
         },

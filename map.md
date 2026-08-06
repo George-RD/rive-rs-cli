@@ -82,9 +82,14 @@ None in Phase 1.
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.core.objects` claims `src/objects/text.rs` at 1105 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.core.validator` claims `src/validator/parser.rs` at 501 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.ai` claims `src/ai/repair.rs` at 825 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/constraint.rs` at 554 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/motion.rs` at 510 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 535 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/visual.rs` at 580 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.discovery` claims `src/discovery/mod.rs` at 896 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.render` claims `src/render/mod.rs` at 782 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.scaffold` claims `src/scaffold/mod.rs` at 717 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/authoring_radial_contract.rs` at 566 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/e2e.rs` at 5255 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_PROVENANCE_NO_DECISION node `rive-cli.core.encoder` has no decision artefact explaining why it exists
 - warning: CAIRN_PROVENANCE_NO_DECISION node `rive-cli.core.objects` has no decision artefact explaining why it exists
