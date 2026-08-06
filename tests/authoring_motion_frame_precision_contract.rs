@@ -5,12 +5,8 @@ fn literal(value: f64, unit: &str) -> Value {
     json!({ "kind": "literal", "value": value, "unit": unit })
 }
 
-#[test]
-fn exact_half_frame_is_rejected_when_one_ulp_is_half_a_frame() {
-    const HALF_FRAME: f64 = 2_251_799_813_685_248.5;
-    const NEXT_WHOLE_FRAME: f64 = 2_251_799_813_685_249.0;
-
-    let input = json!({
+fn document(duration: f64, final_frame: f64) -> Value {
+    json!({
         "authoring_format_version": 0,
         "artboard": {
             "id": "motion-stage",
@@ -53,7 +49,7 @@ fn exact_half_frame_is_rejected_when_one_ulp_is_half_a_frame() {
                 {
                     "id": "entrance",
                     "fps": 60,
-                    "duration_frames": literal(NEXT_WHOLE_FRAME, "scalar"),
+                    "duration_frames": literal(duration, "scalar"),
                     "loop_type": "oneshot",
                     "keyframes": [
                         {
@@ -62,7 +58,7 @@ fn exact_half_frame_is_rejected_when_one_ulp_is_half_a_frame() {
                             "interpolation": "linear"
                         },
                         {
-                            "frame": literal(HALF_FRAME, "scalar"),
+                            "frame": literal(final_frame, "scalar"),
                             "pose": "settled",
                             "interpolation": "linear"
                         }
@@ -71,16 +67,41 @@ fn exact_half_frame_is_rejected_when_one_ulp_is_half_a_frame() {
             ]
         },
         "behavior": {}
-    });
+    })
+}
 
+fn assert_diagnostic(input: Value, code: &str, path: &str) {
     let error = lower_authoring_json(&input.to_string())
-        .expect_err("an exactly authored half frame must remain fractional");
+        .expect_err("ambiguous motion frame precision must be rejected");
     assert!(
-        error.diagnostics.iter().any(|diagnostic| {
-            diagnostic.code == "invalid_frame"
-                && diagnostic.path == "$.motion.tracks[0].keyframes[1].frame"
-        }),
-        "expected invalid_frame at the authored keyframe path: {:#?}",
+        error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == code && diagnostic.path == path),
+        "expected {code} at {path}: {:#?}",
         error.diagnostics
+    );
+}
+
+#[test]
+fn exact_half_frame_is_rejected_when_one_ulp_is_half_a_frame() {
+    const HALF_FRAME: f64 = 2_251_799_813_685_248.5;
+    const NEXT_WHOLE_FRAME: f64 = 2_251_799_813_685_249.0;
+
+    assert_diagnostic(
+        document(NEXT_WHOLE_FRAME, HALF_FRAME),
+        "invalid_frame",
+        "$.motion.tracks[0].keyframes[1].frame",
+    );
+}
+
+#[test]
+fn magnitudes_that_cannot_distinguish_half_frames_are_rejected() {
+    const FIRST_WHOLE_FRAME_ULP: f64 = 4_503_599_627_370_496.0;
+
+    assert_diagnostic(
+        document(FIRST_WHOLE_FRAME_ULP, 36.0),
+        "invalid_duration_frames",
+        "$.motion.tracks[0].duration_frames",
     );
 }
