@@ -77,7 +77,7 @@ authored half-frame once floating-point spacing reached half a frame. PR #162
 continues the same P2 precision hardening:
 
 - exact-head RED `e14a423` in CI run 718 passed rustfmt, Clippy, browser contracts, and every pre-existing Rust test; only the new half-frame regression failed because frame `2_251_799_813_685_248.5` was rounded up and accepted;
-- `tests/authoring_motion_frame_precision_contract.rs` also pins the first magnitude where one ULP reaches a whole frame and authored half-frame intent can no longer be represented;
+- `tests/authoring_motion_contract.rs` reuses the established motion fixture to pin both the half-frame boundary and the first magnitude where one ULP reaches a whole frame, without retaining a duplicate precision fixture;
 - normalization retains the capped multi-ULP window below half-frame spacing, requires exact whole-frame equality when spacing reaches half a frame, and rejects magnitudes where spacing reaches a whole frame;
 - exact implementation head `b2e72c9` passed rustfmt, Clippy, the complete Rust suite, browser contracts, Cairn architecture validation, site, demo, official-runtime evaluation, Playwright, and visual regression in CI run 720 before this durable contract evidence was committed.
 
