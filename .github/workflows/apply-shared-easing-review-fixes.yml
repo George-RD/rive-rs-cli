@@ -1,0 +1,74 @@
+name: Apply shared easing review fixes
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  apply:
+    if: github.head_ref == 'agent/shared-motion-easings'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/shared-motion-easings
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply reviewed fixes and preflight the production tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          python3 scripts/apply_shared_easing_review_fixes.py
+          cargo fmt
+          rustup toolchain install 1.88.0 --profile minimal --no-self-update
+
+          git rm \
+            .github/workflows/apply-shared-easing-review-fixes.yml \
+            scripts/apply_shared_easing_review_fixes.py
+
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh \
+            | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+          cairn scan
+          cairn lint
+          test "$(wc -l < src/authoring/frontend/motion.rs)" -le 500
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --locked --test authoring_motion_typed_api_contract
+          cargo test --locked --test authoring_motion_contract
+          cargo +1.88.0 check --locked --lib --all-features
+
+          git add -A
+          git reset meta/todos/todo.motion-authoring-compiler.md
+          git commit -m "fix(authoring): harden shared easing API"
+          fix_sha="$(git rev-parse HEAD)"
+
+          FIX_SHA="${fix_sha}" REVIEW_FIX_RUN_ID="${GITHUB_RUN_ID}" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path("meta/todos/todo.motion-authoring-compiler.md")
+          content = path.read_text()
+          content = content.replace("FIX_SHA_PENDING", os.environ["FIX_SHA"][:7], 1)
+          content = content.replace("REVIEW_FIX_RUN_ID", os.environ["REVIEW_FIX_RUN_ID"], 1)
+          path.write_text(content)
+          PY
+
+          git add meta/todos/todo.motion-authoring-compiler.md
+          git commit -m "docs(cairn): record shared easing review hardening"
+          git push origin HEAD:agent/shared-motion-easings
