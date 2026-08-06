@@ -1,0 +1,84 @@
+name: Stage shared motion easings
+
+on:
+  push:
+    branches:
+      - agent/shared-motion-easings
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Commit RED, implement GREEN, and preflight the final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          cat scripts/.stage_shared_motion_easings/*.b64 \
+            | base64 --decode \
+            | gzip --decompress \
+            > /tmp/stage_shared_motion_easings.py
+
+          python3 /tmp/stage_shared_motion_easings.py red
+          git add cairn.blueprint tests/authoring_motion_easing_contract.rs
+          git commit -m "test(authoring): define shared motion easing contract"
+          red_sha="$(git rev-parse HEAD)"
+          echo "RED head: ${red_sha}"
+
+          set +e
+          cargo test --locked --test authoring_motion_easing_contract 2>&1 | tee /tmp/shared-easing-red.log
+          red_status=${PIPESTATUS[0]}
+          set -e
+          if [[ ${red_status} -eq 0 ]]; then
+            echo "RED contract unexpectedly passed before implementation"
+            exit 1
+          fi
+          grep -q "shared_cubic_easing_lowers_once_and_reuses_deterministically" /tmp/shared-easing-red.log
+          grep -q "easing_references_are_validated_at_authored_paths" /tmp/shared-easing-red.log
+          grep -q "cubic_easing_control_points_use_scalar_expression_validation" /tmp/shared-easing-red.log
+
+          GITHUB_SHA="${red_sha}" python3 /tmp/stage_shared_motion_easings.py green
+          cargo fmt
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
+
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh \
+            | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+          git rm -r \
+            .github/workflows/stage-shared-motion-easings.yml \
+            scripts/.stage_shared_motion_easings
+
+          cairn scan
+          cairn lint
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --locked --all-features
+          node tests/playwright/shared-contract.js
+          node tests/playwright/visual-contract.js
+
+          git add -A
+          git commit -m "feat(authoring): add reusable cubic motion easings"
+          green_sha="$(git rev-parse HEAD)"
+          echo "Preflighted implementation head: ${green_sha}"
+          git push origin HEAD:agent/shared-motion-easings
