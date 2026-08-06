@@ -1,0 +1,51 @@
+name: Stage motion dimensions
+
+on:
+  push:
+    branches: [agent/motion-dimensions]
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/motion-dimensions
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply focused implementation
+        run: python3 scripts/stage_motion_dimensions.py
+      - name: Format and regenerate schema
+        run: |
+          cargo fmt
+          cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored
+      - name: Verify Rust contracts
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --locked --all-features
+      - name: Remove staging-only files
+        run: |
+          rm scripts/stage_motion_dimensions.py
+          rm .github/workflows/stage-motion-dimensions.yml
+      - name: Reconcile Cairn graph
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          set -o pipefail
+          cairn scan --json | tee /tmp/cairn-scan.json
+          cairn lint --json | tee /tmp/cairn-lint.json
+      - name: Commit verified implementation
+        run: |
+          git diff --check
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat(authoring): add typed motion dimensions"
+          git push origin HEAD:agent/motion-dimensions
