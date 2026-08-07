@@ -118,17 +118,18 @@ fn index_motion_targets(
         .filter(|entry| entry.authored_path.starts_with("$.visual.nodes["))
     {
         let mut target = Vec::new();
-        for binding in checked_runtime_bindings(entry)? {
+        for (binding_index, binding) in checked_runtime_bindings(entry)?.into_iter().enumerate() {
             let object_type = lowered
                 .scene
                 .pointer(binding.scene_path)
                 .and_then(|object| object.get("type"))
                 .and_then(Value::as_str)
                 .ok_or_else(|| invalid_runtime_binding(entry, binding))?;
-            target.push(MotionRuntimeObject {
-                runtime_name: binding.runtime_name,
+            target.push(MotionRuntimeObject::from_binding(
+                binding.runtime_name,
                 object_type,
-            });
+                binding_index == 0,
+            ));
         }
         let indexed = IndexedMotionTarget::Unique(target);
         match targets.entry(entry.authored_id.as_str()) {
