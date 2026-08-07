@@ -21,9 +21,41 @@ pub(super) enum PoseProperty {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum MotionRuntimeRole {
+    Transform,
+    Geometry,
+    Other,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct MotionRuntimeObject<'a> {
     pub(super) runtime_name: &'a str,
     pub(super) object_type: &'a str,
+    role: MotionRuntimeRole,
+}
+
+impl<'a> MotionRuntimeObject<'a> {
+    pub(super) fn from_binding(
+        runtime_name: &'a str,
+        object_type: &'a str,
+        is_primary: bool,
+    ) -> Self {
+        let role = if is_primary {
+            MotionRuntimeRole::Transform
+        } else if matches!(
+            object_type,
+            "ellipse" | "polygon" | "rectangle" | "star" | "triangle"
+        ) {
+            MotionRuntimeRole::Geometry
+        } else {
+            MotionRuntimeRole::Other
+        };
+        Self {
+            runtime_name,
+            object_type,
+            role,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -52,6 +84,18 @@ impl PoseProperty {
             Self::X | Self::Y | Self::Width | Self::Height => Unit::Px,
             Self::Rotation => Unit::Radians,
             Self::ScaleX | Self::ScaleY | Self::Opacity => Unit::Scalar,
+        }
+    }
+
+    fn runtime_role(self) -> MotionRuntimeRole {
+        match self {
+            Self::X
+            | Self::Y
+            | Self::Rotation
+            | Self::ScaleX
+            | Self::ScaleY
+            | Self::Opacity => MotionRuntimeRole::Transform,
+            Self::Width | Self::Height => MotionRuntimeRole::Geometry,
         }
     }
 
@@ -188,7 +232,8 @@ fn target_for_property<'a>(
     property: PoseProperty,
 ) -> PropertyTarget<'a> {
     let mut matches = runtime_objects.iter().copied().filter(|runtime_object| {
-        property_key_for_object(runtime_object.object_type, property.name()).is_some()
+        runtime_object.role == property.runtime_role()
+            && property_key_for_object(runtime_object.object_type, property.name()).is_some()
     });
     let Some(first) = matches.next() else {
         return PropertyTarget::Unsupported;
@@ -245,16 +290,10 @@ mod tests {
     }
 
     #[test]
-    fn properties_require_exactly_one_compatible_runtime_object() {
+    fn properties_require_exactly_one_compatible_runtime_role() {
         let runtime_objects = [
-            MotionRuntimeObject {
-                runtime_name: "shape",
-                object_type: "shape",
-            },
-            MotionRuntimeObject {
-                runtime_name: "geometry",
-                object_type: "rectangle",
-            },
+            MotionRuntimeObject::from_binding("shape", "shape", true),
+            MotionRuntimeObject::from_binding("geometry", "rectangle", false),
         ];
 
         assert_eq!(
@@ -268,10 +307,7 @@ mod tests {
 
         let ambiguous_geometry = [
             runtime_objects[1],
-            MotionRuntimeObject {
-                runtime_name: "other-geometry",
-                object_type: "rectangle",
-            },
+            MotionRuntimeObject::from_binding("other-geometry", "rectangle", false),
         ];
         assert_eq!(
             target_for_property(&ambiguous_geometry, PoseProperty::Width),
