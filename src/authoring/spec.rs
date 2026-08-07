@@ -277,6 +277,10 @@ pub struct PoseTargetSpec {
     pub transform: TransformSpec,
     #[serde(default)]
     pub opacity: Option<ScalarExpr>,
+    #[serde(default)]
+    pub width: Option<ScalarExpr>,
+    #[serde(default)]
+    pub height: Option<ScalarExpr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

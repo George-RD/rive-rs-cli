@@ -93,7 +93,7 @@ pub(in crate::authoring::frontend) fn validate_motion(
                 diagnostics.push(AuthoringDiagnostic::new(
                     target_path,
                     "empty_pose_target",
-                    "pose targets must declare at least one transform or opacity property",
+                    "pose targets must declare at least one transform, opacity, width, or height property",
                 ));
             }
             property_count = property_count.saturating_add(target_property_count);

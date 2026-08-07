@@ -105,8 +105,43 @@ The opacity continuation remains within this P2 todo:
 - opacity reuses the canonical SceneSpec `opacity` property-keyframe path, the shared ratio validator, easing resolution, deterministic naming, pose-shape checks, and expansion budget;
 - transform and opacity property discovery is centralized in `motion/property.rs`, reducing duplicate counting and lowering logic while keeping `motion.rs` below the Cairn module-size guideline.
 
+The dimension continuation and architecture review hardening remain within this P2
+todo rather than opening a parallel feature milestone:
+
+- PR #165 adds positive pixel-valued `width` and `height` pose properties for parametric shape geometry while preserving transform and opacity routing to the primary transform object;
+- exact test-only head `df70913` in CI run `31179565122` passed formatting, Clippy, browser contracts, and every pre-existing Rust test; only the new compound-raw-target regression failed because width and height were routed to the first compatible geometry child;
+- source-map runtime names and scene paths are now consumed through checked paired bindings, with a retained exception for an unnamed raw entry carrying one root scene path;
+- malformed binding cardinality or a binding that does not resolve to a typed scene object returns `invalid_source_map_binding` rather than being silently truncated by `zip` and `filter_map`;
+- the first registry-only exact-match implementation at `dc9c99a` exposed a second invariant in CI run `31179925223`: parametric geometry also advertises transform keys, so compatibility alone cannot identify semantic ownership;
+- internal runtime bindings now carry `Transform`, `Geometry`, or `Other` roles before the canonical builder registry is consulted;
+- zero compatible bindings return `unsupported_motion_property`, exactly one lowers normally, and more than one returns `ambiguous_motion_property_target` at the authored property path;
+- public `SourceMapEntry` serialization remains unchanged, avoiding a source-map format break while the compiler gains checked internal bindings.
+
+## Architecture gate before further feature expansion
+
+The public boundary remains:
+
+`AuthoringSpec -> SceneSpec -> canonical builder -> encoder/validator/runtime proof`
+
+Before typed behavior/statecharts or another broad Authoring feature slice, deepen
+the implementation behind that boundary in this order:
+
+1. Add characterization contracts for mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
+2. Introduce one internal `AuthoringCompiler` state holding resolved symbols, a canonical scene draft, the runtime-name registry, checked runtime bindings, the motion-target index, and the source-map builder.
+3. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
+4. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
+5. Make typed behavior consume the same compiler state only after the one-pass motion path is characterized and verified.
+6. Once compiler state exists, introduce a validated internal authoring model so ordinary authored symbol/reference rules have one user-facing owner; retain canonical lowerer and builder checks as defense in depth.
+7. Consolidate only stable contract-test helpers such as `literal`, `lower`, diagnostic assertions, and keyframe lookup. Keep scenario JSON local so tests continue to expose the public document contract.
+
+This is internal architecture hardening inside the existing motion and behavior todos,
+not a new product milestone. Preserve exact diagnostics and public source-map JSON.
+Do not split cohesive solver, registry, visual sum-type, or integration-test modules
+solely because they exceed a line-count guideline.
+
 ## Remaining
 
+- Complete the one-pass compiler architecture gate above before behavior/statecharts or broad Authoring expansion.
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
 - Color and additional non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.
