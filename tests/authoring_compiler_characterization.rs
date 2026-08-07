@@ -254,8 +254,7 @@ fn raw_animation_diagnostic_keeps_authored_index_after_typed_prefix() {
     let diagnostic = &error.diagnostics[0];
     assert_eq!(diagnostic.code, "invalid_raw_scene_fragment");
     assert_eq!(
-        diagnostic.path,
-        "$.motion.raw_animations[0].value",
+        diagnostic.path, "$.motion.raw_animations[0].value",
         "the generated two-track prefix must not leak into authored diagnostics"
     );
     assert_eq!(
