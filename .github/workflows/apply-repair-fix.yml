@@ -1,0 +1,108 @@
+name: Apply repair duplicate-reference fix
+
+on:
+  push:
+    branches: [agent/repair-duplicate-reference]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/repair-duplicate-reference
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Remove ambiguous reference retargeting
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/ai/repair.rs")
+          source = path.read_text()
+
+          function_start = source.index("fn deduplicate_names(json: &mut Value) -> Vec<String> {")
+          function_end = source.index("fn clamp_color_values(json: &mut Value) -> Vec<String> {", function_start)
+          function = '''fn deduplicate_names(json: &mut Value) -> Vec<String> {
+              let mut fixes = Vec::new();
+              let mut seen: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+
+              fn walk_dedup(
+                  val: &mut Value,
+                  seen: &mut std::collections::HashMap<String, u32>,
+                  fixes: &mut Vec<String>,
+              ) {
+                  if let Some(obj) = val.as_object_mut() {
+                      if let Some(name_val) = obj.get_mut("name")
+                          && let Some(name) = name_val.as_str().map(|s| s.to_string())
+                      {
+                          let count = seen.entry(name.clone()).or_insert(0);
+                          *count += 1;
+                          if *count > 1 {
+                              let new_name = format!("{}_{}", name, count);
+                              *name_val = Value::String(new_name.clone());
+                              fixes.push(format!("renamed duplicate '{}' to '{}'", name, new_name));
+                          }
+                      }
+                      for key in ["children", "artboard", "artboards"] {
+                          if let Some(child) = obj.get_mut(key) {
+                              walk_dedup(child, seen, fixes);
+                          }
+                      }
+                  }
+                  if let Some(arr) = val.as_array_mut() {
+                      for item in arr.iter_mut() {
+                          walk_dedup(item, seen, fixes);
+                      }
+                  }
+              }
+
+              walk_dedup(json, &mut seen, &mut fixes);
+              fixes
+          }
+
+          '''
+          source = source[:function_start] + function + source[function_end:]
+
+          test_start_marker = "    #[test]\n    fn test_deduplicate_names_preserves_ambiguous_reference() {"
+          test_end_marker = "    #[test]\n    fn test_clamp_color_short() {"
+          test_start = source.index(test_start_marker)
+          test_end = source.index(test_end_marker, test_start)
+          test = '''    #[test]
+              fn test_deduplicate_names_preserves_ambiguous_reference() {
+                  let mut json = serde_json::json!({
+                      "children": [
+                          {"name": "foo"},
+                          {"name": "foo"},
+                          {"name": "foo"},
+                          {"name": "reference-holder", "object": "foo"}
+                      ]
+                  });
+
+                  let fixes = deduplicate_names(&mut json);
+
+                  assert_eq!(fixes.len(), 2);
+                  assert_eq!(json["children"][0]["name"], "foo");
+                  assert_eq!(json["children"][1]["name"], "foo_2");
+                  assert_eq!(json["children"][2]["name"], "foo_3");
+                  assert_eq!(json["children"][3]["object"], "foo");
+              }
+
+          '''
+          source = source[:test_start] + test + source[test_end:]
+          path.write_text(source)
+          PY
+          cargo fmt
+          cargo test --locked ai::repair::tests::test_deduplicate_names_preserves_ambiguous_reference
+          cargo test --locked --test repair_duplicate_reference_contract
+          rm .github/workflows/apply-repair-fix.yml
+      - name: Persist the focused fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "fix(repair): keep ambiguous references on first duplicate"
+          git push origin HEAD:agent/repair-duplicate-reference
