@@ -36,6 +36,14 @@ fn duplicate_name_repair_keeps_existing_reference_on_first_object() {
     let result = RepairEngine::default()
         .repair(input, 0)
         .expect("duplicate names should be repaired");
+    assert_eq!(result.total_retries, 1);
+    assert!(
+        result.attempts[1]
+            .fixes_applied
+            .iter()
+            .any(|fix| fix == "renamed duplicate 'foo' to 'foo_3'")
+    );
+
     let children = result.scene_json["artboard"]["children"]
         .as_array()
         .expect("artboard children");
