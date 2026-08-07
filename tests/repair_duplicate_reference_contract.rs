@@ -44,8 +44,7 @@ fn duplicate_name_repair_keeps_existing_reference_on_first_object() {
     assert_eq!(children[1]["name"], "foo_2");
     assert_eq!(children[2]["name"], "foo_3");
     assert_eq!(
-        result.scene_json["artboard"]["animations"][0]["keyframes"][0]["object"],
-        "foo",
+        result.scene_json["artboard"]["animations"][0]["keyframes"][0]["object"], "foo",
         "an ambiguous pre-repair reference must remain on the first object that retains the original name"
     );
 }
