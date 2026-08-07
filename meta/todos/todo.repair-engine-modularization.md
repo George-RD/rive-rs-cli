@@ -13,11 +13,12 @@ priority.
 
 ## Immediate correctness gate
 
-A bounded P0 defect interrupts the deferred P4 refactor. `deduplicate_names` keeps
-the first object named `foo`, renames later duplicates, then records multiple
+A bounded P0 defect interrupted the deferred P4 refactor. `deduplicate_names` kept
+the first object named `foo`, renamed later duplicates, then recorded multiple
 `foo -> foo_N` rewrites in a map keyed by the original name. The final duplicate
-wins, so recognized references to `foo` can be redirected to the last renamed
-object even though the first object still owns `foo`.
+won, so a recognized reference to `foo` encountered by the legacy walker could be
+redirected to the last renamed object even though the first object still owned
+`foo`.
 
 The intended duplicate cannot be inferred from an ambiguous pre-repair reference.
 The accepted safe policy is therefore:
@@ -27,13 +28,16 @@ The accepted safe policy is therefore:
 - an existing reference to the duplicated original name remains on the first object;
 - repair must not silently infer that the reference meant a later duplicate.
 
-Implement this as a focused defect PR before the next Authoring feature or
-architecture slice:
+PR #166 closes this gate as a focused defect fix rather than beginning the deferred
+module split:
 
-1. Add a RED regression with three objects named `foo` and at least one currently supported keyframe or nested-artboard reference to `foo`.
-2. Require repaired names `foo`, `foo_2`, and `foo_3` while the reference remains `foo`.
-3. Remove or narrow the ambiguous global duplicate-name reference rewrite; do not combine this fix with module extraction.
-4. Run all repair, builder, CLI, browser, Cairn, and exact-head CI gates and record the evidence here.
+- the first end-to-end keyframe contract established that duplicate-name normalization ran and generated `foo`, `foo_2`, and `foo_3`; it also showed that the legacy reference walker did not descend into animation `keyframes`, narrowing the architecture report's original example;
+- the direct characterization was therefore moved to an `object` reference inside the traversal owned by `deduplicate_names`;
+- exact test-only head `52ee952` passed Rust 1.88, rustfmt, Clippy, browser contracts, and 619 existing unit tests in runs `31182212085` and `31182211147`; only `test_deduplicate_names_preserves_ambiguous_reference` failed;
+- the RED failure observed three fixes instead of the two deterministic renames, proving that the global rewrite added a third reference mutation before the exact-value assertion;
+- implementation `c53717b` removes the ambiguous rename map and the now-dead recursive reference-rewrite helper, while retaining deterministic duplicate suffixes and existing repair messages;
+- the focused unit regression and end-to-end RepairEngine contract passed before the implementation commit was persisted;
+- exact-head repository verification remains required before merge and will be recorded here.
 
 ## Acceptance criteria
 
@@ -42,6 +46,6 @@ architecture slice:
 - Passes have explicit ownership and bounded inputs/outputs.
 - Repair results map back to AuthoringSpec source paths when the frontend exists.
 
-The broader P4 modularization remains deferred until the Authoring compiler
+The broader P4 modularization remains open and deferred until the Authoring compiler
 architecture is stable. Line count alone is not sufficient reason to split a
 cohesive module.
