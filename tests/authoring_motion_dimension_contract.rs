@@ -127,6 +127,40 @@ fn shape_dimension_tracks_route_to_parametric_geometry() {
 }
 
 #[test]
+fn primary_raw_parametric_geometry_routes_transform_and_dimensions() {
+    let mut input = document();
+    input["visual"]["nodes"][0] = json!({
+        "kind": "raw_scene_object",
+        "id": "card",
+        "object": {
+            "type": "rectangle",
+            "name": "RawRectangle",
+            "width": 80.0,
+            "height": 48.0,
+            "origin_x": 0.5,
+            "origin_y": 0.5
+        }
+    });
+
+    let lowered = lower(&input);
+    let animation = &lowered.scene["artboard"]["animations"][0];
+
+    let x = keyframe_group(animation, "RawRectangle", "x");
+    assert_eq!(x["frames"][0]["value"], 40.0);
+    assert_eq!(x["frames"][1]["value"], 160.0);
+
+    let width = keyframe_group(animation, "RawRectangle", "width");
+    assert_eq!(width["frames"][0]["value"], 80.0);
+    assert_eq!(width["frames"][1]["value"], 160.0);
+
+    let height = keyframe_group(animation, "RawRectangle", "height");
+    assert_eq!(height["frames"][0]["value"], 48.0);
+    assert_eq!(height["frames"][1]["value"], 96.0);
+
+    assert_builds(lowered.scene);
+}
+
+#[test]
 fn dimension_schema_is_optional_and_expression_typed() {
     let schema = authoring_schema();
     let pose_target = &schema["$defs"]["PoseTargetSpec"];
