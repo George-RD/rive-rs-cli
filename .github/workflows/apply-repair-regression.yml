@@ -1,0 +1,68 @@
+name: Apply repair duplicate-reference regression
+
+on:
+  push:
+    branches: [agent/repair-duplicate-reference]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/repair-duplicate-reference
+      - name: Add the focused unit characterization
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/ai/repair.rs")
+          source = path.read_text()
+          marker = '''    #[test]
+              fn test_clamp_color_short() {'''.replace("              ", "")
+          test = '''    #[test]
+              fn test_deduplicate_names_preserves_ambiguous_reference() {
+                  let mut json = serde_json::json!({
+                      "children": [
+                          {"name": "foo"},
+                          {"name": "foo"},
+                          {"name": "foo"}
+                      ],
+                      "animations": [
+                          {
+                              "keyframes": [
+                                  {"object": "foo"}
+                              ]
+                          }
+                      ]
+                  });
+
+                  let fixes = deduplicate_names(&mut json);
+
+                  assert_eq!(fixes.len(), 2);
+                  assert_eq!(json["children"][0]["name"], "foo");
+                  assert_eq!(json["children"][1]["name"], "foo_2");
+                  assert_eq!(json["children"][2]["name"], "foo_3");
+                  assert_eq!(json["animations"][0]["keyframes"][0]["object"], "foo");
+              }
+
+          '''.replace("              ", "")
+          if "fn test_deduplicate_names_preserves_ambiguous_reference" not in source:
+              if source.count(marker) != 1:
+                  raise SystemExit("expected one test insertion marker")
+              source = source.replace(marker, test + marker, 1)
+              path.write_text(source)
+          PY
+          cargo fmt
+          rm .github/workflows/apply-repair-regression.yml
+      - name: Persist the regression
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "test(repair): pin duplicate reference semantics"
+          git push origin HEAD:agent/repair-duplicate-reference
