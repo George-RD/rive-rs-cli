@@ -37,7 +37,7 @@ module split:
 - the RED failure observed three fixes instead of the two deterministic renames, proving that the global rewrite added a third reference mutation before the exact-value assertion;
 - implementation `c53717b` removes the ambiguous rename map and the now-dead recursive reference-rewrite helper, while retaining deterministic duplicate suffixes and existing repair messages;
 - the focused unit regression and end-to-end RepairEngine contract passed before the implementation commit was persisted;
-- exact-head repository verification remains required before merge and will be recorded here.
+- exact implementation head `eefe2cd` passed the Rust 1.88 minimum in run `31182568911` and the complete repository suite in run `31182568545`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression all passed before this durable evidence was committed.
 
 ## Acceptance criteria
 
