@@ -129,6 +129,14 @@ continues the same P2 correctness work rather than creating a roadmap gap:
 - exact implementation head `1fbfba1` passed the Rust 1.88 minimum in run `31185735792` and the complete repository suite in run `31185735638`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
 - the public schema and source-map format are unchanged.
 
+The first one-pass compiler characterization slice remains within this P2 todo.
+PR #169 pins the migration boundary before production architecture changes:
+
+- `tests/authoring_compiler_characterization.rs` covers two typed tracks followed by two raw animation escapes, a raw state machine referencing the second typed track, repeated deterministic lowering, exact animation and source-map ordering, exact authored IDs and paths, runtime names, scene paths, canonical-builder acceptance, and a second-pass raw diagnostic rewritten across the generated two-track prefix;
+- initial head `eff8fbb` passed the Rust 1.88 minimum in run `31187208884` and browser contracts, while CI run `31187208893` stopped only at `cargo fmt --check` before Clippy or Rust tests; no behavioral conclusion was drawn from that formatting-only failure;
+- formatting-only head `f035f70` passed the Rust 1.88 minimum in run `31187442874` and the complete repository suite in run `31187441981`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
+- the slice changes no production code, public schema, source-map format, or product behavior; it establishes the exact contract that the one-pass compiler state must preserve while deleting the current clone, second lower, raw-fragment bridge, and string-offset repair path.
+
 ## Architecture gate before further feature expansion
 
 The public boundary remains:
@@ -138,7 +146,7 @@ The public boundary remains:
 Before typed behavior/statecharts or another broad Authoring feature slice, deepen
 the implementation behind that boundary in this order:
 
-1. Add characterization contracts for mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
+1. **Characterized in PR #169.** Preserve mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
 2. Introduce one internal `AuthoringCompiler` state holding resolved symbols, a canonical scene draft, the runtime-name registry, checked runtime bindings, the motion-target index, and the source-map builder.
 3. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
 4. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
@@ -153,7 +161,7 @@ solely because they exceed a line-count guideline.
 
 ## Remaining
 
-- Complete the one-pass compiler architecture gate above before behavior/statecharts or broad Authoring expansion.
+- Complete compiler-state and one-pass lowering steps 2–7 above before behavior/statecharts or broad Authoring expansion.
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
 - Color and additional non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.
