@@ -39,6 +39,15 @@ module split:
 - the focused unit regression and end-to-end RepairEngine contract passed before the implementation commit was persisted;
 - exact implementation head `eefe2cd` passed the Rust 1.88 minimum in run `31182568911` and the complete repository suite in run `31182568545`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression all passed before this durable evidence was committed.
 
+A late review on merged PR #166 found that the end-to-end contract also pinned the
+current retry count and indexed the second attempt directly. PR #167 hardens the
+same completed correctness gate without changing production behavior:
+
+- the contract now searches all recorded attempts for the deterministic `foo_3` rename rather than requiring exactly one retry and indexing `attempts[1]`;
+- the repaired names and the final ambiguous-reference policy remain the primary assertions;
+- exact test-hardening head `85dabaa` passed the Rust 1.88 minimum in run `31184278616` and the complete repository suite in run `31184279807`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression all passed before this evidence was committed;
+- this is review remediation inside the existing P0 gate, not a new roadmap item or the beginning of the deferred P4 module split.
+
 ## Acceptance criteria
 
 - The immediate duplicate-reference regression is fixed without changing unrelated repair behavior.
