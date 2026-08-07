@@ -708,6 +708,32 @@ mod tests {
     }
 
     #[test]
+    fn test_deduplicate_names_preserves_ambiguous_reference() {
+        let mut json = serde_json::json!({
+                  "children": [
+        {"name": "foo"},
+        {"name": "foo"},
+        {"name": "foo"}
+                  ],
+                  "animations": [
+        {
+            "keyframes": [
+                {"object": "foo"}
+            ]
+        }
+                  ]
+              });
+
+        let fixes = deduplicate_names(&mut json);
+
+        assert_eq!(fixes.len(), 2);
+        assert_eq!(json["children"][0]["name"], "foo");
+        assert_eq!(json["children"][1]["name"], "foo_2");
+        assert_eq!(json["children"][2]["name"], "foo_3");
+        assert_eq!(json["animations"][0]["keyframes"][0]["object"], "foo");
+    }
+
+    #[test]
     fn test_clamp_color_short() {
         let mut json = serde_json::json!({"color": "FF"});
         let fixes = clamp_color_values(&mut json);
