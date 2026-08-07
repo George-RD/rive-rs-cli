@@ -178,3 +178,51 @@ fn dimensions_reject_non_parametric_targets() {
         "$.motion.poses[0].targets[0].width",
     );
 }
+
+#[test]
+fn dimensions_reject_ambiguous_raw_geometry_targets() {
+    let mut input = document();
+    input["visual"]["nodes"][0] = json!({
+        "kind": "raw_scene_object",
+        "id": "card",
+        "object": {
+            "type": "shape",
+            "name": "RawShape",
+            "children": [
+                {
+                    "type": "rectangle",
+                    "name": "RawGeometryA",
+                    "width": 80.0,
+                    "height": 48.0,
+                    "origin_x": 0.5,
+                    "origin_y": 0.5
+                },
+                {
+                    "type": "rectangle",
+                    "name": "RawGeometryB",
+                    "width": 80.0,
+                    "height": 48.0,
+                    "origin_x": 0.5,
+                    "origin_y": 0.5
+                },
+                {
+                    "type": "fill",
+                    "name": "RawFill",
+                    "children": [
+                        {
+                            "type": "solid_color",
+                            "name": "RawColor",
+                            "color": "#172554"
+                        }
+                    ]
+                }
+            ]
+        }
+    });
+
+    assert_diagnostic(
+        &input,
+        "ambiguous_motion_property_target",
+        "$.motion.poses[0].targets[0].width",
+    );
+}
