@@ -20,10 +20,17 @@ pub(super) enum PoseProperty {
     Height,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct MotionRuntimeObject<'a> {
     pub(super) runtime_name: &'a str,
     pub(super) object_type: &'a str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PropertyTarget<'a> {
+    Unsupported,
+    Unique(MotionRuntimeObject<'a>),
+    Ambiguous,
 }
 
 impl PoseProperty {
@@ -132,16 +139,30 @@ pub(super) fn resolve_target_values(
             continue;
         };
         let path = property.authored_path(target_path);
-        let Some(runtime_object) = target_for_property(runtime_objects, property) else {
-            return Err(AuthoringDiagnostic::new(
-                path,
-                "unsupported_motion_property",
-                format!(
-                    "motion target '{}' does not resolve to an object that supports property '{}'",
-                    target.target,
-                    property.name()
-                ),
-            ));
+        let runtime_object = match target_for_property(runtime_objects, property) {
+            PropertyTarget::Unsupported => {
+                return Err(AuthoringDiagnostic::new(
+                    path,
+                    "unsupported_motion_property",
+                    format!(
+                        "motion target '{}' does not resolve to an object that supports property '{}'",
+                        target.target,
+                        property.name()
+                    ),
+                ));
+            }
+            PropertyTarget::Ambiguous => {
+                return Err(AuthoringDiagnostic::new(
+                    path,
+                    "ambiguous_motion_property_target",
+                    format!(
+                        "motion target '{}' resolves to more than one object that supports property '{}'",
+                        target.target,
+                        property.name()
+                    ),
+                ));
+            }
+            PropertyTarget::Unique(runtime_object) => runtime_object,
         };
         let value = property.evaluate(expression, &path, spec)?;
         if values
@@ -165,10 +186,18 @@ pub(super) fn resolve_target_values(
 fn target_for_property<'a>(
     runtime_objects: &[MotionRuntimeObject<'a>],
     property: PoseProperty,
-) -> Option<MotionRuntimeObject<'a>> {
-    runtime_objects.iter().copied().find(|runtime_object| {
+) -> PropertyTarget<'a> {
+    let mut matches = runtime_objects.iter().copied().filter(|runtime_object| {
         property_key_for_object(runtime_object.object_type, property.name()).is_some()
-    })
+    });
+    let Some(first) = matches.next() else {
+        return PropertyTarget::Unsupported;
+    };
+    if matches.next().is_some() {
+        PropertyTarget::Ambiguous
+    } else {
+        PropertyTarget::Unique(first)
+    }
 }
 
 #[cfg(test)]
@@ -216,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn properties_route_to_the_first_compatible_runtime_object() {
+    fn properties_require_exactly_one_compatible_runtime_object() {
         let runtime_objects = [
             MotionRuntimeObject {
                 runtime_name: "shape",
@@ -229,16 +258,24 @@ mod tests {
         ];
 
         assert_eq!(
-            target_for_property(&runtime_objects, PoseProperty::X)
-                .expect("shape x target")
-                .runtime_name,
-            "shape"
+            target_for_property(&runtime_objects, PoseProperty::X),
+            PropertyTarget::Unique(runtime_objects[0])
         );
         assert_eq!(
-            target_for_property(&runtime_objects, PoseProperty::Width)
-                .expect("geometry width target")
-                .runtime_name,
-            "geometry"
+            target_for_property(&runtime_objects, PoseProperty::Width),
+            PropertyTarget::Unique(runtime_objects[1])
+        );
+
+        let ambiguous_geometry = [
+            runtime_objects[1],
+            MotionRuntimeObject {
+                runtime_name: "other-geometry",
+                object_type: "rectangle",
+            },
+        ];
+        assert_eq!(
+            target_for_property(&ambiguous_geometry, PoseProperty::Width),
+            PropertyTarget::Ambiguous
         );
     }
 }
