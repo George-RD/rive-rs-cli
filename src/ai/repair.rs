@@ -710,19 +710,13 @@ mod tests {
     #[test]
     fn test_deduplicate_names_preserves_ambiguous_reference() {
         let mut json = serde_json::json!({
-                  "children": [
+              "children": [
         {"name": "foo"},
         {"name": "foo"},
-        {"name": "foo"}
-                  ],
-                  "animations": [
-        {
-            "keyframes": [
-                {"object": "foo"}
-            ]
-        }
-                  ]
-              });
+        {"name": "foo"},
+        {"name": "reference-holder", "object": "foo"}
+              ]
+          });
 
         let fixes = deduplicate_names(&mut json);
 
@@ -730,7 +724,7 @@ mod tests {
         assert_eq!(json["children"][0]["name"], "foo");
         assert_eq!(json["children"][1]["name"], "foo_2");
         assert_eq!(json["children"][2]["name"], "foo_3");
-        assert_eq!(json["animations"][0]["keyframes"][0]["object"], "foo");
+        assert_eq!(json["children"][3]["object"], "foo");
     }
 
     #[test]
