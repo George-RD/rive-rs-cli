@@ -117,6 +117,18 @@ todo rather than opening a parallel feature milestone:
 - zero compatible bindings return `unsupported_motion_property`, exactly one lowers normally, and more than one returns `ambiguous_motion_property_target` at the authored property path;
 - public `SourceMapEntry` serialization remains unchanged, avoiding a source-map format break while the compiler gains checked internal bindings.
 
+A late review on PR #165 found that treating primary identity as the `Transform`
+role made a root raw parametric object lose its geometry capability. PR #168
+continues the same P2 correctness work rather than creating a roadmap gap:
+
+- exact regression-only head `3189283` passed the Rust 1.88 minimum in run `31185371891`, rustfmt, Clippy, all pre-existing tests, and browser contracts; CI run `31185371412` failed only because the new raw-rectangle contract received `unsupported_motion_property` at `$.motion.poses[0].targets[0].width`;
+- runtime bindings now record primary identity independently from their semantic `Geometry` or `Other` role;
+- transform and opacity properties select the primary binding, while width and height select parametric geometry; the canonical builder property registry remains the final compatibility check for both paths;
+- a primary raw rectangle can therefore own `x`, `width`, and `height`, while a typed shape still routes dimensions to its child geometry and multiple compatible raw geometries remain ambiguous;
+- the obsolete `Transform` role and its duplicated role-matching path were removed, and property selection is consolidated in `PoseProperty::supports_runtime_object`;
+- exact implementation head `1fbfba1` passed the Rust 1.88 minimum in run `31185735792` and the complete repository suite in run `31185735638`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
+- the public schema and source-map format are unchanged.
+
 ## Architecture gate before further feature expansion
 
 The public boundary remains:
