@@ -20,4 +20,9 @@ states, listeners, and indexed state-machine objects.
 
 ## Dependency
 
-Depends on the motion slice for pose and blend-state lowering.
+Depends on the motion slice for pose and blend-state lowering. Do not begin typed
+behavior implementation until the one-pass Authoring compiler architecture gate in
+`todo.motion-authoring-compiler.md` is complete. Behavior must consume the same
+compiler-owned scene draft, resolved-symbol model, runtime-name registry, checked
+runtime bindings, and source-map builder; it must not introduce another raw-fragment
+re-entry pass or a second full document lowering.
