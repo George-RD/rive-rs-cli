@@ -89,12 +89,9 @@ impl PoseProperty {
 
     fn runtime_role(self) -> MotionRuntimeRole {
         match self {
-            Self::X
-            | Self::Y
-            | Self::Rotation
-            | Self::ScaleX
-            | Self::ScaleY
-            | Self::Opacity => MotionRuntimeRole::Transform,
+            Self::X | Self::Y | Self::Rotation | Self::ScaleX | Self::ScaleY | Self::Opacity => {
+                MotionRuntimeRole::Transform
+            }
             Self::Width | Self::Height => MotionRuntimeRole::Geometry,
         }
     }
