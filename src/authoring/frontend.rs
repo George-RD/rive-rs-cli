@@ -1,7 +1,9 @@
+mod compiler;
 mod motion;
 
 use std::collections::{BTreeMap, HashSet};
 
+use compiler::AuthoringCompiler;
 use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
@@ -13,10 +15,7 @@ use super::visual::VisualNode;
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     validate_authoring(spec)?;
-    let lowered = lower_target_graph(spec)?;
-    let lowered =
-        motion::lower_motion(spec, lowered).map_err(|error| rewrite_error_paths(spec, error))?;
-    validate_runtime_names(lowered)
+    AuthoringCompiler::new(spec)?.lower_motion()?.finish()
 }
 
 fn lower_target_graph(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
