@@ -137,6 +137,15 @@ PR #169 pins the migration boundary before production architecture changes:
 - formatting-only head `f035f70` passed the Rust 1.88 minimum in run `31187442874` and the complete repository suite in run `31187441981`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
 - the slice changes no production code, public schema, source-map format, or product behavior; it establishes the exact contract that the one-pass compiler state must preserve while deleting the current clone, second lower, raw-fragment bridge, and string-offset repair path.
 
+The compiler-state boundary continuation remains within this P2 todo. PR #170
+introduces the migration owner before moving scene construction into it:
+
+- the only open draft was continued after reconciling the roadmap, this todo, retained branches, review state, and exact-head CI; no new roadmap gap was found;
+- initial head `3b59218` failed CI run `31263772976` and minimum-Rust run `31263773001` because `frontend.rs` was accidentally truncated, so no behavioral conclusion was drawn;
+- corrected implementation head `d01cbc0` restored the characterized frontend and passed minimum-Rust run `31267191127` plus complete CI run `31267191151` across rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
+- frontend lowering now enters through one internal `AuthoringCompiler` that owns the borrowed document and current lowered target graph while preserving public schema, source-map JSON, diagnostics, ordering, and canonical-builder behavior;
+- `dec.authoring-compiler-state` records why the state boundary precedes one-pass scene ownership, and the PR #169 characterization contract is now claimed by the Cairn Rust verification module.
+
 ## Architecture gate before further feature expansion
 
 The public boundary remains:
@@ -147,12 +156,13 @@ Before typed behavior/statecharts or another broad Authoring feature slice, deep
 the implementation behind that boundary in this order:
 
 1. **Characterized in PR #169.** Preserve mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
-2. Introduce one internal `AuthoringCompiler` state holding resolved symbols, a canonical scene draft, the runtime-name registry, checked runtime bindings, the motion-target index, and the source-map builder.
-3. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
-4. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
-5. Make typed behavior consume the same compiler state only after the one-pass motion path is characterized and verified.
-6. Once compiler state exists, introduce a validated internal authoring model so ordinary authored symbol/reference rules have one user-facing owner; retain canonical lowerer and builder checks as defense in depth.
-7. Consolidate only stable contract-test helpers such as `literal`, `lower`, diagnostic assertions, and keyframe lookup. Keep scenario JSON local so tests continue to expose the public document contract.
+2. **Boundary introduced in PR #170.** Route frontend lowering through one internal `AuthoringCompiler` that initially owns the authored document and current lowered target graph.
+3. Move resolved symbols, a canonical scene draft, the runtime-name registry, checked runtime bindings, the motion-target index, and the source-map builder into that state.
+4. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
+5. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
+6. Make typed behavior consume the same compiler state only after the one-pass motion path is characterized and verified.
+7. Once compiler state exists, introduce a validated internal authoring model so ordinary authored symbol/reference rules have one user-facing owner; retain canonical lowerer and builder checks as defense in depth.
+8. Consolidate only stable contract-test helpers such as `literal`, `lower`, diagnostic assertions, and keyframe lookup. Keep scenario JSON local so tests continue to expose the public document contract.
 
 This is internal architecture hardening inside the existing motion and behavior todos,
 not a new product milestone. Preserve exact diagnostics and public source-map JSON.
@@ -161,7 +171,7 @@ solely because they exceed a line-count guideline.
 
 ## Remaining
 
-- Complete compiler-state and one-pass lowering steps 2–7 above before behavior/statecharts or broad Authoring expansion.
+- Complete compiler-state and one-pass lowering steps 3–8 above before behavior/statecharts or broad Authoring expansion.
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
 - Color and additional non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.
