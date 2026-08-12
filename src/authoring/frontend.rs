@@ -46,31 +46,6 @@ fn validate_authoring(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
     validate_component_definitions(spec)
 }
 
-fn validate_runtime_names(lowered: LoweredAuthoring) -> Result<LoweredAuthoring, AuthoringError> {
-    let mut names = HashSet::new();
-    for entry in &lowered.source_map.entries {
-        for name in &entry.runtime_names {
-            if !names.insert(name.as_str()) {
-                let path = if entry.authored_path.starts_with("$.motion.raw_animations[")
-                    || entry
-                        .authored_path
-                        .starts_with("$.behavior.raw_state_machines[")
-                {
-                    format!("{}.value", entry.authored_path)
-                } else {
-                    entry.authored_path.clone()
-                };
-                return Err(AuthoringError::one(AuthoringDiagnostic::new(
-                    path,
-                    "runtime_name_collision",
-                    format!("runtime name '{name}' is generated or declared more than once"),
-                )));
-            }
-        }
-    }
-    Ok(lowered)
-}
-
 fn validate_raw_fragment_runtime_names(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
     let mut names = HashSet::new();
     for (fragments, list_path) in [
