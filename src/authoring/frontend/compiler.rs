@@ -68,7 +68,7 @@ impl CompilerState {
                 .entries
                 .iter()
                 .map(|entry| entry.runtime_names.len())
-                .sum()
+                .sum::<usize>()
         );
         LoweredAuthoring { scene, source_map }
     }
