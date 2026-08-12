@@ -262,3 +262,30 @@ fn raw_animation_diagnostic_keeps_authored_index_after_typed_prefix() {
         "raw SceneSpec escape must be a JSON object"
     );
 }
+
+#[test]
+fn motion_diagnostic_precedes_runtime_name_collision() {
+    let mut input = mixed_document();
+    input["motion"]["tracks"] = json!([]);
+    input["motion"]["poses"][0]["targets"][0]["target"] = json!("missing");
+    input["motion"]["raw_animations"] = json!([
+        {
+            "id": "colliding-animation",
+            "value": {
+                "name": "auth__compiler_2dstage__card__shape",
+                "fps": 60,
+                "duration": 1,
+                "keyframes": []
+            }
+        }
+    ]);
+    input["behavior"]["raw_state_machines"] = json!([]);
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("authored motion diagnostics must precede final name validation");
+    assert_eq!(error.diagnostics.len(), 1);
+    let diagnostic = &error.diagnostics[0];
+    assert_eq!(diagnostic.code, "unknown_motion_target");
+    assert_eq!(diagnostic.path, "$.motion.poses[0].targets[0].target");
+    assert_eq!(diagnostic.message, "visual target 'missing' is not defined");
+}
