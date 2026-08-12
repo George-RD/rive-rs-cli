@@ -65,6 +65,18 @@ without combining those later deletions into the same review.
   plus complete CI run `31620929128`: formatting, Clippy, all Rust tests, browser
   contracts, Cairn architecture validation, official-runtime evidence, demo,
   site, Playwright, and visual regression.
+- Review RED head `8c026e43f6573c5b87646858ac842c0dc6ebbd15`
+  passed minimum-Rust run `31621973310`; CI run `31621973309` passed formatting,
+  Clippy, browser contracts, and every pre-existing Rust test, then failed only
+  because the new characterization received `runtime_name_collision` before the
+  prior `unknown_motion_target` diagnostic.
+- Review fix `6d979ef368325b424fb89a1c1af533a9ab5398f0` records the
+  first collision during state construction but reports it only at compiler
+  finalization. Exact documentation head
+  `5761fe98e3863c361c27ccddf41147781beec555` passed minimum-Rust run
+  `31622213725` plus complete CI run `31622213661`: formatting, Clippy, all Rust
+  tests, browser contracts, Cairn architecture validation, official-runtime
+  evidence, demo, site, Playwright, and visual regression.
 
 ## Alternatives considered
 
@@ -80,6 +92,8 @@ without combining those later deletions into the same review.
 `CompilerState` still adapts through `LoweredAuthoring` around the existing motion
 lowerer, so this slice establishes ownership without yet reducing the second-pass
 runtime cost. The runtime-name registry is rebuilt after that pass rather than
-mutated incrementally. In return, duplicate validation logic is gone, the scene
-and source map have one explicit owner, and the next slice can migrate checked
-bindings and target indexes before deleting the characterized adapter boundary.
+mutated incrementally, and it retains the first collision until compiler
+finalization so authored motion diagnostics preserve their previous precedence.
+In return, duplicate validation logic is gone, the scene and source map have one
+explicit owner, and the next slice can migrate checked bindings and target
+indexes before deleting the characterized adapter boundary.
