@@ -19,9 +19,10 @@ revisit_triggers:
   validation boundary.
 - Route frontend lowering through one internal `AuthoringCompiler` state before
   deleting the existing cloned second lowering pass.
-- The state now owns the borrowed authored document, canonical JSON scene draft,
-  source-map state, and runtime-name registry while preserving public schema,
-  source maps, diagnostics, and ordering.
+- `AuthoringCompiler` retains the borrowed authored document, while its
+  `CompilerState` owns the canonical JSON scene draft, source-map state, and
+  runtime-name registry while preserving public schema, source maps,
+  diagnostics, and ordering.
 - Continue moving resolved symbols, checked runtime bindings, the motion-target
   index, and mutation-oriented source-map construction into that state before
   lowering typed motion directly into the same scene draft.
