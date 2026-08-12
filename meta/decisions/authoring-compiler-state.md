@@ -19,23 +19,25 @@ revisit_triggers:
   validation boundary.
 - Route frontend lowering through one internal `AuthoringCompiler` state before
   deleting the existing cloned second lowering pass.
-- In the first bounded slice, let the state own the borrowed authored document,
-  the lowered target graph, typed-motion lowering, and final runtime-name
-  validation without changing public schema, source maps, or diagnostics.
-- Move resolved symbols, the canonical scene draft, runtime-name registry,
-  checked runtime bindings, motion-target index, and source-map construction into
-  that state in subsequent slices of the existing motion todo.
+- `AuthoringCompiler` retains the borrowed authored document, while its
+  `CompilerState` owns the canonical JSON scene draft, source-map state, and
+  runtime-name registry while preserving public schema, source maps,
+  diagnostics, and ordering.
+- Continue moving resolved symbols, checked runtime bindings, the motion-target
+  index, and mutation-oriented source-map construction into that state before
+  lowering typed motion directly into the same scene draft.
 - Do not begin typed behavior/statechart lowering until typed motion and raw
-  escapes share one compiler-owned scene draft.
+  escapes share one compiler-owned scene draft without the cloned second lower.
 
 ## Why
 
 The mixed typed/raw characterization in PR #169 fixes ordering, cross-reference,
 source-map identity, canonical-builder acceptance, and authored diagnostic paths.
 Introducing a state boundary before moving scene ownership keeps those contracts
-stable while giving the one-pass migration one explicit home. A direct rewrite
-would combine state introduction, behavior preservation, and deletion of the
-second lower in one hard-to-review change.
+stable while giving the one-pass migration one explicit home. Moving output state
+and runtime-name ownership next removes a duplicate free-function validator and
+creates the stable container required for checked bindings and direct mutation,
+without combining those later deletions into the same review.
 
 ## Evidence
 
@@ -45,11 +47,36 @@ second lower in one hard-to-review change.
   failed CI run `31263772976` and minimum-Rust run `31263773001` because
   `frontend.rs` was accidentally truncated; the failure was syntactic and no
   behavioral conclusion was drawn.
-- Corrected implementation head `d01cbc0fb515afab4b436fa2951868bdb147cd8f`
-  restored the characterized frontend and passed minimum-Rust run `31267191127`
-  plus complete CI run `31267191151`: formatting, Clippy, all Rust tests,
-  browser contracts, Cairn scan/lint, official-runtime evidence, demo, site,
-  Playwright, and visual regression.
+- Corrected PR #170 implementation head
+  `d01cbc0fb515afab4b436fa2951868bdb147cd8f` restored the characterized
+  frontend and passed minimum-Rust run `31267191127` plus complete CI run
+  `31267191151`.
+- PR #171 RED head `e61a5c0566cddcd66efba4fa5acacdcda6c4a14e`
+  failed CI run `31620093313` and minimum-Rust run `31620093283` because the new
+  state contracts referenced the not-yet-implemented `CompilerState`.
+- Implementation head `2581a8102be4a3ca1731e774ff298b0b4c8a6a0d`
+  introduced compiler-owned output state and removed the duplicate frontend
+  runtime-name validator. Its CI run `31620607421` stopped at formatting only,
+  before Clippy or Rust tests, so no behavioral conclusion was drawn.
+- Formatting head `fb5ed4d5f58e55139846d22a5c8bbaaa05253445`
+  exposed one ambiguous iterator result type in both stable and Rust 1.88 checks.
+  Exact head `dc6b89683b4a4ba0d8400be2c0292bbdd1838cde` made the
+  registry-count invariant explicit and passed minimum-Rust run `31620929117`
+  plus complete CI run `31620929128`: formatting, Clippy, all Rust tests, browser
+  contracts, Cairn architecture validation, official-runtime evidence, demo,
+  site, Playwright, and visual regression.
+- Review RED head `8c026e43f6573c5b87646858ac842c0dc6ebbd15`
+  passed minimum-Rust run `31621973310`; CI run `31621973309` passed formatting,
+  Clippy, browser contracts, and every pre-existing Rust test, then failed only
+  because the new characterization received `runtime_name_collision` before the
+  prior `unknown_motion_target` diagnostic.
+- Review fix `6d979ef368325b424fb89a1c1af533a9ab5398f0` records the
+  first collision during state construction but reports it only at compiler
+  finalization. Exact documentation head
+  `5761fe98e3863c361c27ccddf41147781beec555` passed minimum-Rust run
+  `31622213725` plus complete CI run `31622213661`: formatting, Clippy, all Rust
+  tests, browser contracts, Cairn architecture validation, official-runtime
+  evidence, demo, site, Playwright, and visual regression.
 
 ## Alternatives considered
 
@@ -62,8 +89,11 @@ second lower in one hard-to-review change.
 
 ## Trade-offs
 
-The first slice adds an internal type before it removes work, so it temporarily
-wraps the existing pipeline rather than improving runtime cost. In return, each
-subsequent deletion can be reviewed against the retained characterization suite,
-and motion and behavior converge on one compiler-owned graph instead of growing
-parallel lowering paths.
+`CompilerState` still adapts through `LoweredAuthoring` around the existing motion
+lowerer, so this slice establishes ownership without yet reducing the second-pass
+runtime cost. The runtime-name registry is rebuilt after that pass rather than
+mutated incrementally, and it retains the first collision until compiler
+finalization so authored motion diagnostics preserve their previous precedence.
+In return, duplicate validation logic is gone, the scene and source map have one
+explicit owner, and the next slice can migrate checked bindings and target
+indexes before deleting the characterized adapter boundary.

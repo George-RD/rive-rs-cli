@@ -24,7 +24,7 @@ until that frontend and its evidence gates exist.
 | P0 | [AuthoringSpec v0 and lowering boundary](meta/todos/todo.authoring-spec-v0.md) | complete in PR #135 | strict schema, deterministic lowering, source map, two validated examples |
 | P0 | [Repair duplicate-reference correctness defect](meta/todos/todo.repair-engine-modularization.md#immediate-correctness-gate) | complete in PR #166 | duplicate-name repair cannot silently retarget an existing reference |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
-| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169 and state boundary in PR #170; one-pass scene ownership remains | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
+| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169, boundary in PR #170, and compiler-owned scene/source-map/runtime-name state in PR #171; checked compiler indexes and one-pass scene mutation remain | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; gated on the one-pass compiler state | view-model bindings and named statecharts reproduce interaction with runtime proof |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open | semantic evidence reported separately from structural and runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open | stable-ID edits validate atomically and preserve unaffected source-map identity |
@@ -33,7 +33,7 @@ until that frontend and its evidence gates exist.
 
 ## Delivery dependencies
 
-- The next development session moves resolved symbols, the canonical scene draft, runtime-name registry, checked bindings, motion-target index, and source-map builder into `AuthoringCompiler`, then begins deleting the cloned second lower.
+- The next development session moves resolved symbols, checked runtime bindings, the motion-target index, and mutation-oriented source-map construction into `AuthoringCompiler`, then lowers typed motion directly into its existing scene draft and begins deleting the cloned second lower.
 - Complete the one-pass motion compiler architecture gate before behavior/statechart lowering or broader Authoring feature expansion.
 - Semantic evaluation can advance in parallel, but its animated and interactive exit cases require the motion and behavior showcases.
 - Add incremental operations only after the typed visual, motion, and behavior contracts are stable enough to preserve unchanged authored identity.
