@@ -104,9 +104,7 @@ impl RuntimeNameRegistry {
 }
 
 fn runtime_name_collision_path(entry: &SourceMapEntry) -> String {
-    if entry
-        .authored_path
-        .starts_with("$.motion.raw_animations[")
+    if entry.authored_path.starts_with("$.motion.raw_animations[")
         || entry
             .authored_path
             .starts_with("$.behavior.raw_state_machines[")
@@ -121,8 +119,8 @@ fn runtime_name_collision_path(entry: &SourceMapEntry) -> String {
 mod tests {
     use serde_json::json;
 
-    use super::*;
     use super::super::super::spec::{AuthoringSourceMap, SourceMapEntry};
+    use super::*;
 
     fn source_entry(authored_path: &str, runtime_name: &str) -> SourceMapEntry {
         SourceMapEntry {
