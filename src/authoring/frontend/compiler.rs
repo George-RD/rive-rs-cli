@@ -22,11 +22,13 @@ struct CompilerState {
 #[derive(Default)]
 struct RuntimeNameRegistry {
     names: HashSet<String>,
+    first_collision: Option<AuthoringDiagnostic>,
+    binding_count: usize,
 }
 
 impl<'a> AuthoringCompiler<'a> {
     pub(super) fn new(spec: &'a AuthoringSpec) -> Result<Self, AuthoringError> {
-        let state = CompilerState::from_lowered(lower_target_graph(spec)?)?;
+        let state = CompilerState::from_lowered(lower_target_graph(spec)?);
         Ok(Self { spec, state })
     }
 
@@ -36,70 +38,88 @@ impl<'a> AuthoringCompiler<'a> {
             .map_err(|error| rewrite_error_paths(spec, error))?;
         Ok(Self {
             spec,
-            state: CompilerState::from_lowered(lowered)?,
+            state: CompilerState::from_lowered(lowered),
         })
     }
 
     pub(super) fn finish(self) -> Result<LoweredAuthoring, AuthoringError> {
-        Ok(self.state.into_lowered())
+        self.state.finish()
     }
 }
 
 impl CompilerState {
-    fn from_lowered(lowered: LoweredAuthoring) -> Result<Self, AuthoringError> {
+    fn from_lowered(lowered: LoweredAuthoring) -> Self {
         let LoweredAuthoring { scene, source_map } = lowered;
-        let runtime_names = RuntimeNameRegistry::from_source_map(&source_map)?;
-        Ok(Self {
+        let runtime_names = RuntimeNameRegistry::from_source_map(&source_map);
+        Self {
             scene,
             source_map,
             runtime_names,
-        })
+        }
     }
 
     fn into_lowered(self) -> LoweredAuthoring {
+        let (scene, source_map, _) = self.into_parts();
+        LoweredAuthoring { scene, source_map }
+    }
+
+    fn finish(self) -> Result<LoweredAuthoring, AuthoringError> {
+        let (scene, source_map, runtime_names) = self.into_parts();
+        runtime_names.validate()?;
+        Ok(LoweredAuthoring { scene, source_map })
+    }
+
+    fn into_parts(self) -> (Value, AuthoringSourceMap, RuntimeNameRegistry) {
         let Self {
             scene,
             source_map,
             runtime_names,
         } = self;
         debug_assert_eq!(
-            runtime_names.len(),
+            runtime_names.binding_count(),
             source_map
                 .entries
                 .iter()
                 .map(|entry| entry.runtime_names.len())
                 .sum::<usize>()
         );
-        LoweredAuthoring { scene, source_map }
+        (scene, source_map, runtime_names)
     }
 }
 
 impl RuntimeNameRegistry {
-    fn from_source_map(source_map: &AuthoringSourceMap) -> Result<Self, AuthoringError> {
+    fn from_source_map(source_map: &AuthoringSourceMap) -> Self {
         let mut registry = Self::default();
         for entry in &source_map.entries {
-            registry.register(entry)?;
+            registry.register(entry);
         }
-        Ok(registry)
+        registry
     }
 
-    fn len(&self) -> usize {
-        self.names.len()
+    fn binding_count(&self) -> usize {
+        self.binding_count
     }
 
-    fn register(&mut self, entry: &SourceMapEntry) -> Result<(), AuthoringError> {
+    fn register(&mut self, entry: &SourceMapEntry) {
         for runtime_name in &entry.runtime_names {
-            if !self.names.insert(runtime_name.clone()) {
-                return Err(AuthoringError::one(AuthoringDiagnostic::new(
+            self.binding_count += 1;
+            if !self.names.insert(runtime_name.clone()) && self.first_collision.is_none() {
+                self.first_collision = Some(AuthoringDiagnostic::new(
                     runtime_name_collision_path(entry),
                     "runtime_name_collision",
                     format!(
                         "runtime name '{runtime_name}' is generated or declared more than once"
                     ),
-                )));
+                ));
             }
         }
-        Ok(())
+    }
+
+    fn validate(self) -> Result<(), AuthoringError> {
+        match self.first_collision {
+            Some(diagnostic) => Err(AuthoringError::one(diagnostic)),
+            None => Ok(()),
+        }
     }
 }
 
@@ -144,21 +164,20 @@ mod tests {
         let lowered = lowered(vec![source_entry("$.visual.nodes[0]", "card")]);
         let expected = lowered.clone();
 
-        let actual = CompilerState::from_lowered(lowered)
-            .expect("unique runtime names must initialize compiler state")
-            .into_lowered();
+        let actual = CompilerState::from_lowered(lowered).into_lowered();
 
         assert_eq!(actual, expected);
     }
 
     #[test]
-    fn compiler_state_rejects_duplicate_raw_runtime_name_at_value_path() {
+    fn compiler_state_reports_duplicate_raw_runtime_name_at_finish() {
         let result = CompilerState::from_lowered(lowered(vec![
             source_entry("$.visual.nodes[0]", "shared"),
             source_entry("$.motion.raw_animations[0]", "shared"),
-        ]));
+        ]))
+        .finish();
         let Err(error) = result else {
-            panic!("duplicate runtime names must fail compiler-state initialization");
+            panic!("duplicate runtime names must fail compiler-state finalization");
         };
 
         assert_eq!(error.diagnostics.len(), 1);
