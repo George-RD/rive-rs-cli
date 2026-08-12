@@ -146,6 +146,18 @@ introduces the migration owner before moving scene construction into it:
 - frontend lowering now enters through one internal `AuthoringCompiler` that owns the borrowed document and current lowered target graph while preserving public schema, source-map JSON, diagnostics, ordering, and canonical-builder behavior;
 - `dec.authoring-compiler-state` records why the state boundary precedes one-pass scene ownership, and the PR #169 characterization contract is now claimed by the Cairn Rust verification module.
 
+The compiler-owned output-state continuation remains within this P2 todo. PR #171
+partially completes architecture step 3 rather than opening a new roadmap item:
+
+- the audit found no open PR to continue; retained agent branches map to merged work or the documented stale Git-data probe, while `ROADMAP.md`, this todo, and `dec.authoring-compiler-state` agree on deepening the existing compiler state;
+- a late optional Qodo comment on PR #170 was reconciled against the retained PR #169 characterization suite instead of adding duplicate public-behavior tests; this slice adds colocated tests for distinct private state invariants;
+- exact-head RED `e61a5c0` failed CI run `31620093313` and minimum-Rust run `31620093283` because `CompilerState` did not yet exist;
+- `AuthoringCompiler` now owns the canonical JSON scene draft, source-map state, and a runtime-name registry that preserves authored collision paths while round-tripping the public `LoweredAuthoring` contract;
+- runtime-name collision validation moved out of the frontend free-function chain and into that registry, removing duplicate ownership while retaining the earlier raw-fragment preflight check for duplicate declarations;
+- implementation head `2581a81` stopped at formatting in CI run `31620607421`; formatting head `fb5ed4d` then exposed one ambiguous iterator result type in stable and Rust 1.88, so no behavioral conclusion was drawn from either failure;
+- exact implementation head `dc6b896` passed minimum-Rust run `31620929117` and complete CI run `31620929128`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
+- public schema, source-map JSON, diagnostics, animation ordering, and canonical-builder behavior remain unchanged under the PR #169 characterization contract.
+
 ## Architecture gate before further feature expansion
 
 The public boundary remains:
@@ -157,7 +169,7 @@ the implementation behind that boundary in this order:
 
 1. **Characterized in PR #169.** Preserve mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
 2. **Boundary introduced in PR #170.** Route frontend lowering through one internal `AuthoringCompiler` that initially owns the authored document and current lowered target graph.
-3. Move resolved symbols, a canonical scene draft, the runtime-name registry, checked runtime bindings, the motion-target index, and the source-map builder into that state.
+3. **Partially completed in PR #171.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, and runtime-name registry. Move resolved symbols, checked runtime bindings, the motion-target index, and mutation-oriented source-map construction into that state.
 4. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
 5. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
 6. Make typed behavior consume the same compiler state only after the one-pass motion path is characterized and verified.
@@ -171,7 +183,7 @@ solely because they exceed a line-count guideline.
 
 ## Remaining
 
-- Complete compiler-state and one-pass lowering steps 3–8 above before behavior/statecharts or broad Authoring expansion.
+- Complete the remaining compiler-state step 3 and one-pass lowering steps 4–8 above before behavior/statecharts or broad Authoring expansion.
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
 - Color and additional non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.
