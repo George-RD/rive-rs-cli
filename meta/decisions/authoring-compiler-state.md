@@ -20,12 +20,11 @@ revisit_triggers:
 - Route frontend lowering through one internal `AuthoringCompiler` state before
   deleting the existing cloned second lowering pass.
 - `AuthoringCompiler` retains the borrowed authored document, while its
-  `CompilerState` owns the canonical JSON scene draft, source-map state, and
-  runtime-name registry while preserving public schema, source maps,
-  diagnostics, and ordering.
-- Continue moving resolved symbols, checked runtime bindings, the motion-target
-  index, and mutation-oriented source-map construction into that state before
-  lowering typed motion directly into the same scene draft.
+  `CompilerState` owns the canonical JSON scene draft, source-map state,
+  runtime-name registry, checked runtime bindings, and motion-target index while
+  preserving public schema, source maps, diagnostics, and ordering.
+- Continue moving resolved symbols and mutation-oriented source-map construction
+  into that state before lowering typed motion directly into the same scene draft.
 - Do not begin typed behavior/statechart lowering until typed motion and raw
   escapes share one compiler-owned scene draft without the cloned second lower.
 
@@ -34,10 +33,12 @@ revisit_triggers:
 The mixed typed/raw characterization in PR #169 fixes ordering, cross-reference,
 source-map identity, canonical-builder acceptance, and authored diagnostic paths.
 Introducing a state boundary before moving scene ownership keeps those contracts
-stable while giving the one-pass migration one explicit home. Moving output state
-and runtime-name ownership next removes a duplicate free-function validator and
-creates the stable container required for checked bindings and direct mutation,
-without combining those later deletions into the same review.
+stable while giving the one-pass migration one explicit home. Compiler-owned
+output state and runtime-name validation removed one duplicate owner in PR #171;
+compiler-owned checked bindings and target indexing remove the remaining
+source-map scan from `motion.rs` in PR #172. This leaves direct mutation and
+source-map construction as the next isolated deletion boundary rather than
+combining state design, indexing, scene mutation, and path repair in one review.
 
 ## Evidence
 
@@ -77,23 +78,45 @@ without combining those later deletions into the same review.
   `31622213725` plus complete CI run `31622213661`: formatting, Clippy, all Rust
   tests, browser contracts, Cairn architecture validation, official-runtime
   evidence, demo, site, Playwright, and visual regression.
+- PR #172 exact RED head `d7807cbb5da065e6000ac24f8ff5b72a4f627581`
+  added compiler-state contracts for a checked motion-target index and rejected
+  unpaired source-map bindings. Stable CI run `31961431662` stopped at formatting
+  before Rust tests, while minimum-Rust run `31961431674` failed exactly because
+  `CompilerState::into_motion_input` did not exist.
+- PR #172 implementation head
+  `b7bab3149c682f8b60628f07d49a74254d9781ff` moved checked bindings and target
+  indexing into compiler state and removed their duplicate ownership from
+  `motion.rs`. Minimum-Rust run `31961897868` passed; stable CI run
+  `31961897869` stopped only on two rustfmt line wraps.
+- Exact implementation head `7faf26a31a2782a4022e54463828473109717722`
+  passed minimum-Rust run `31962017692` plus complete CI run `31962017694`:
+  formatting, Clippy, all Rust tests, browser contracts, Cairn architecture
+  validation, official-runtime evidence, demo, site, Playwright, and visual
+  regression.
 
 ## Alternatives considered
 
 - **Delete the second lowering pass immediately.** Reaches the target sooner but
   mixes state design, scene ownership, path repair, and behavioral migration.
-- **Keep the existing free-function chain.** Smaller now, but leaves no stable
-  owner for the scene draft and registries required by typed behavior.
+- **Keep target indexing in `motion.rs`.** Avoids owned compiler bindings now but
+  leaves source-map validation and target discovery outside their long-term owner.
+- **Use self-referential borrowed bindings.** Avoids small string clones but makes
+  `CompilerState` self-referential and harder to mutate safely.
 - **Give behavior a separate compiler.** Reduces short-term coupling but creates
   competing symbol, runtime-name, and source-map ownership.
 
 ## Trade-offs
 
 `CompilerState` still adapts through `LoweredAuthoring` around the existing motion
-lowerer, so this slice establishes ownership without yet reducing the second-pass
-runtime cost. The runtime-name registry is rebuilt after that pass rather than
-mutated incrementally, and it retains the first collision until compiler
-finalization so authored motion diagnostics preserve their previous precedence.
-In return, duplicate validation logic is gone, the scene and source map have one
-explicit owner, and the next slice can migrate checked bindings and target
-indexes before deleting the characterized adapter boundary.
+lowerer, so this slice does not yet remove the cloned second pass. The target
+index owns runtime names and object-type strings to avoid self-referential state,
+and `motion.rs` temporarily creates a small property-resolution adapter vector.
+Binding-index failures are retained in state and surfaced after easing resolution
+to preserve characterized diagnostic precedence. The post-motion state rebuilds
+an index that finalization does not consume because the previous pipeline did not
+re-index after the second lower.
+
+In return, checked source-map bindings and target discovery now have one owner,
+the duplicate scan and diagnostics are gone from `motion.rs`, and the next slice
+can move mutation-oriented source-map construction and typed-motion emission into
+the existing scene draft before deleting the raw-fragment bridge and path repair.

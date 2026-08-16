@@ -158,6 +158,19 @@ partially completes architecture step 3 rather than opening a new roadmap item:
 - exact implementation head `dc6b896` passed minimum-Rust run `31620929117` and complete CI run `31620929128`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
 - public schema, source-map JSON, diagnostics, animation ordering, and canonical-builder behavior remain unchanged under the PR #169 characterization contract.
 
+The compiler-owned target-index continuation remains within this P2 todo. PR #172
+advances architecture step 3 rather than opening a new roadmap item:
+
+- the audit found no open pull request to continue; retained agent branches were already merged or matched the documented stale Git-data probe, and `ROADMAP.md`, this todo, and `dec.authoring-compiler-state` exposed the same next compiler-state slice;
+- exact RED head `d7807cbb5da065e6000ac24f8ff5b72a4f627581` added private compiler-state contracts for checked motion bindings, typed target metadata, and source-map cardinality; stable CI run `31961431662` stopped at formatting before Rust tests, while minimum-Rust run `31961431674` failed exactly because `CompilerState::into_motion_input` did not exist;
+- `CompilerState` now builds and owns one checked motion-target index from its canonical scene and source map, including runtime name, scene object type, and primary-object identity;
+- one-to-one source-map binding checks, typed scene-object resolution, ambiguous authored-target handling, and target diagnostics moved from `motion.rs` into `compiler/target_index.rs`;
+- `motion.rs` now consumes compiler-owned bindings and only adapts them for property selection; the duplicate index, binding helpers, diagnostics, and colocated tests were removed from that module;
+- the index stores owned strings so the compiler state remains non-self-referential, while a retained `Result` surfaces binding failures after easing resolution and preserves the characterized diagnostic precedence;
+- implementation head `b7bab3149c682f8b60628f07d49a74254d9781ff` passed minimum-Rust run `31961897868`; CI run `31961897869` stopped only on two rustfmt line wraps, so no broader behavioral conclusion was drawn from that stable run;
+- exact implementation head `7faf26a31a2782a4022e54463828473109717722` passed minimum-Rust run `31962017692` and complete CI run `31962017694`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
+- public schema, source-map JSON, authored diagnostics, animation ordering, canonical-builder behavior, and runtime evidence remain unchanged under the PR #169 characterization contract.
+
 ## Architecture gate before further feature expansion
 
 The public boundary remains:
@@ -169,7 +182,7 @@ the implementation behind that boundary in this order:
 
 1. **Characterized in PR #169.** Preserve mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
 2. **Boundary introduced in PR #170.** Route frontend lowering through one internal `AuthoringCompiler` that initially owns the authored document and current lowered target graph.
-3. **Partially completed in PR #171.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, and runtime-name registry. Move resolved symbols, checked runtime bindings, the motion-target index, and mutation-oriented source-map construction into that state.
+3. **Advanced through PRs #171–#172.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, runtime-name registry, checked runtime bindings, and motion-target index. Move remaining resolved symbols and mutation-oriented source-map construction into that state.
 4. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
 5. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
 6. Make typed behavior consume the same compiler state only after the one-pass motion path is characterized and verified.
