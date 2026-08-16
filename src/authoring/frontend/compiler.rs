@@ -159,6 +159,29 @@ mod tests {
         }
     }
 
+    fn motion_lowered(runtime_names: Vec<&str>, scene_paths: Vec<&str>) -> LoweredAuthoring {
+        LoweredAuthoring {
+            scene: json!({
+                "scene_format_version": 1,
+                "artboard": {
+                    "children": [
+                        { "type": "shape" },
+                        { "type": "rectangle" }
+                    ]
+                }
+            }),
+            source_map: AuthoringSourceMap {
+                entries: vec![SourceMapEntry {
+                    authored_id: "card".to_string(),
+                    authored_path: "$.visual.nodes[0]".to_string(),
+                    definition_path: None,
+                    runtime_names: runtime_names.into_iter().map(str::to_string).collect(),
+                    scene_paths: scene_paths.into_iter().map(str::to_string).collect(),
+                }],
+            },
+        }
+    }
+
     #[test]
     fn compiler_state_round_trips_scene_and_source_map() {
         let lowered = lowered(vec![source_entry("$.visual.nodes[0]", "card")]);
@@ -188,5 +211,46 @@ mod tests {
             diagnostic.message,
             "runtime name 'shared' is generated or declared more than once"
         );
+    }
+
+    #[test]
+    fn compiler_state_owns_checked_motion_target_index() {
+        let input = CompilerState::from_lowered(motion_lowered(
+            vec!["card", "card_geometry"],
+            vec!["/artboard/children/0", "/artboard/children/1"],
+        ))
+        .into_motion_input();
+        let Ok(targets) = input.motion_targets else {
+            panic!("valid compiler bindings must produce a motion-target index");
+        };
+        let Ok(bindings) = targets.resolve(
+            "card",
+            "$.motion.poses[0].targets[0].target",
+        ) else {
+            panic!("authored visual target must resolve from compiler state");
+        };
+
+        assert_eq!(bindings.len(), 2);
+        assert_eq!(bindings[0].runtime_name, "card");
+        assert_eq!(bindings[0].object_type, "shape");
+        assert!(bindings[0].is_primary);
+        assert_eq!(bindings[1].runtime_name, "card_geometry");
+        assert_eq!(bindings[1].object_type, "rectangle");
+        assert!(!bindings[1].is_primary);
+    }
+
+    #[test]
+    fn compiler_state_rejects_unpaired_motion_bindings() {
+        let input = CompilerState::from_lowered(motion_lowered(
+            vec!["card", "card_geometry"],
+            vec!["/artboard/children/0"],
+        ))
+        .into_motion_input();
+        let Err(diagnostic) = input.motion_targets else {
+            panic!("unpaired compiler bindings must fail indexing");
+        };
+
+        assert_eq!(diagnostic.code, "invalid_source_map_binding");
+        assert_eq!(diagnostic.path, "$.visual.nodes[0]");
     }
 }
