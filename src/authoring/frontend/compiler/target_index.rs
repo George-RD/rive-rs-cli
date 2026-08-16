@@ -23,8 +23,7 @@ impl MotionTargetIndex {
             .filter(|entry| entry.authored_path.starts_with("$.visual.nodes["))
         {
             let mut bindings = Vec::new();
-            for (binding_index, binding) in
-                checked_runtime_bindings(entry)?.into_iter().enumerate()
+            for (binding_index, binding) in checked_runtime_bindings(entry)?.into_iter().enumerate()
             {
                 let object_type = scene
                     .pointer(binding.scene_path)

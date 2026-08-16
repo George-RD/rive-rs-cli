@@ -80,10 +80,8 @@ fn resolve_poses(
         let mut values = BTreeMap::new();
         for (target_index, target) in pose.targets.iter().enumerate() {
             let target_path = format!("{pose_path}.targets[{target_index}]");
-            let bindings = motion_targets.resolve(
-                &target.target,
-                &format!("{target_path}.target"),
-            )?;
+            let bindings =
+                motion_targets.resolve(&target.target, &format!("{target_path}.target"))?;
             let runtime_objects = bindings
                 .iter()
                 .map(|binding| {
