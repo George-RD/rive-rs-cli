@@ -1,4 +1,6 @@
-use std::collections::HashSet;
+mod target_index;
+
+use std::collections::{HashMap, HashSet};
 
 use serde_json::Value;
 
@@ -17,6 +19,27 @@ struct CompilerState {
     scene: Value,
     source_map: AuthoringSourceMap,
     runtime_names: RuntimeNameRegistry,
+    motion_targets: Result<MotionTargetIndex, AuthoringDiagnostic>,
+}
+
+pub(super) struct MotionLoweringInput {
+    pub(super) lowered: LoweredAuthoring,
+    pub(super) motion_targets: Result<MotionTargetIndex, AuthoringDiagnostic>,
+}
+
+pub(super) struct MotionTargetIndex {
+    targets: HashMap<String, IndexedMotionTarget>,
+}
+
+enum IndexedMotionTarget {
+    Unique(Vec<MotionTargetBinding>),
+    Ambiguous,
+}
+
+pub(super) struct MotionTargetBinding {
+    pub(super) runtime_name: String,
+    pub(super) object_type: String,
+    pub(super) is_primary: bool,
 }
 
 #[derive(Default)]
@@ -34,7 +57,7 @@ impl<'a> AuthoringCompiler<'a> {
 
     pub(super) fn lower_motion(self) -> Result<Self, AuthoringError> {
         let Self { spec, state } = self;
-        let lowered = motion::lower_motion(spec, state.into_lowered())
+        let lowered = motion::lower_motion(spec, state.into_motion_input())
             .map_err(|error| rewrite_error_paths(spec, error))?;
         Ok(Self {
             spec,
@@ -51,29 +74,42 @@ impl CompilerState {
     fn from_lowered(lowered: LoweredAuthoring) -> Self {
         let LoweredAuthoring { scene, source_map } = lowered;
         let runtime_names = RuntimeNameRegistry::from_source_map(&source_map);
+        let motion_targets = MotionTargetIndex::from_output(&scene, &source_map);
         Self {
             scene,
             source_map,
             runtime_names,
+            motion_targets,
         }
     }
 
-    fn into_lowered(self) -> LoweredAuthoring {
-        let (scene, source_map, _) = self.into_parts();
-        LoweredAuthoring { scene, source_map }
+    fn into_motion_input(self) -> MotionLoweringInput {
+        let (scene, source_map, _, motion_targets) = self.into_parts();
+        MotionLoweringInput {
+            lowered: LoweredAuthoring { scene, source_map },
+            motion_targets,
+        }
     }
 
     fn finish(self) -> Result<LoweredAuthoring, AuthoringError> {
-        let (scene, source_map, runtime_names) = self.into_parts();
+        let (scene, source_map, runtime_names, _) = self.into_parts();
         runtime_names.validate()?;
         Ok(LoweredAuthoring { scene, source_map })
     }
 
-    fn into_parts(self) -> (Value, AuthoringSourceMap, RuntimeNameRegistry) {
+    fn into_parts(
+        self,
+    ) -> (
+        Value,
+        AuthoringSourceMap,
+        RuntimeNameRegistry,
+        Result<MotionTargetIndex, AuthoringDiagnostic>,
+    ) {
         let Self {
             scene,
             source_map,
             runtime_names,
+            motion_targets,
         } = self;
         debug_assert_eq!(
             runtime_names.binding_count(),
@@ -83,7 +119,36 @@ impl CompilerState {
                 .map(|entry| entry.runtime_names.len())
                 .sum::<usize>()
         );
-        (scene, source_map, runtime_names)
+        (scene, source_map, runtime_names, motion_targets)
+    }
+}
+
+impl MotionTargetIndex {
+    pub(super) fn resolve(
+        &self,
+        target: &str,
+        path: &str,
+    ) -> Result<&[MotionTargetBinding], AuthoringDiagnostic> {
+        match self.targets.get(target) {
+            None => Err(AuthoringDiagnostic::new(
+                path,
+                "unknown_motion_target",
+                format!("visual target '{target}' is not defined"),
+            )),
+            Some(IndexedMotionTarget::Ambiguous) => Err(AuthoringDiagnostic::new(
+                path,
+                "ambiguous_motion_target",
+                format!("visual target '{target}' resolves to more than one authored node"),
+            )),
+            Some(IndexedMotionTarget::Unique(targets)) if targets.is_empty() => {
+                Err(AuthoringDiagnostic::new(
+                    path,
+                    "unsupported_motion_target",
+                    format!("visual target '{target}' has no animatable runtime object"),
+                ))
+            }
+            Some(IndexedMotionTarget::Unique(targets)) => Ok(targets),
+        }
     }
 }
 
@@ -187,7 +252,9 @@ mod tests {
         let lowered = lowered(vec![source_entry("$.visual.nodes[0]", "card")]);
         let expected = lowered.clone();
 
-        let actual = CompilerState::from_lowered(lowered).into_lowered();
+        let actual = CompilerState::from_lowered(lowered)
+            .finish()
+            .expect("valid compiler state must finish");
 
         assert_eq!(actual, expected);
     }
@@ -223,10 +290,7 @@ mod tests {
         let Ok(targets) = input.motion_targets else {
             panic!("valid compiler bindings must produce a motion-target index");
         };
-        let Ok(bindings) = targets.resolve(
-            "card",
-            "$.motion.poses[0].targets[0].target",
-        ) else {
+        let Ok(bindings) = targets.resolve("card", "$.motion.poses[0].targets[0].target") else {
             panic!("authored visual target must resolve from compiler state");
         };
 

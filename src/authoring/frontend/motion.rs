@@ -3,35 +3,22 @@ mod property;
 mod timing;
 mod validation;
 
-use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use serde_json::{Value, json};
+use serde_json::json;
 
 use super::super::lower;
 use super::super::spec::{
     AuthoringDiagnostic, AuthoringError, AuthoringSpec, LoweredAuthoring, MotionInterpolation,
-    MotionLoop, RawSceneFragment, SourceMapEntry,
+    MotionLoop, RawSceneFragment,
 };
+use super::compiler::{MotionLoweringInput, MotionTargetIndex};
 
 use easing::{EasingEmission, ResolvedEasing};
 use property::{MotionRuntimeObject, PoseValues};
 use timing::evaluate_frame_value;
 
 pub(super) use validation::validate_motion;
-
-type MotionTargetIndex<'a> = HashMap<&'a str, IndexedMotionTarget<'a>>;
-
-enum IndexedMotionTarget<'a> {
-    Unique(Vec<MotionRuntimeObject<'a>>),
-    Ambiguous,
-}
-
-#[derive(Clone, Copy, Debug)]
-struct RuntimeBinding<'a> {
-    runtime_name: &'a str,
-    scene_path: &'a str,
-}
 
 struct ResolvedFrame {
     authored_index: usize,
@@ -48,10 +35,15 @@ struct LoweredTracks {
 
 pub(super) fn lower_motion(
     spec: &AuthoringSpec,
-    lowered: LoweredAuthoring,
+    input: MotionLoweringInput,
 ) -> Result<LoweredAuthoring, AuthoringError> {
     let easings = easing::resolve(spec).map_err(AuthoringError::one)?;
-    let poses = resolve_poses(spec, &lowered).map_err(AuthoringError::one)?;
+    let MotionLoweringInput {
+        lowered,
+        motion_targets,
+    } = input;
+    let motion_targets = motion_targets.map_err(AuthoringError::one)?;
+    let poses = resolve_poses(spec, &motion_targets).map_err(AuthoringError::one)?;
     if spec.motion.tracks.is_empty() {
         return Ok(lowered);
     }
@@ -80,145 +72,39 @@ pub(super) fn lower_motion(
 
 fn resolve_poses(
     spec: &AuthoringSpec,
-    lowered: &LoweredAuthoring,
+    motion_targets: &MotionTargetIndex,
 ) -> Result<Vec<PoseValues>, AuthoringDiagnostic> {
-    let motion_targets = index_motion_targets(lowered)?;
     let mut poses = Vec::with_capacity(spec.motion.poses.len());
     for (pose_index, pose) in spec.motion.poses.iter().enumerate() {
         let pose_path = format!("$.motion.poses[{pose_index}]");
         let mut values = BTreeMap::new();
         for (target_index, target) in pose.targets.iter().enumerate() {
             let target_path = format!("{pose_path}.targets[{target_index}]");
-            let resolved_targets = resolve_motion_targets(
-                &motion_targets,
+            let bindings = motion_targets.resolve(
                 &target.target,
                 &format!("{target_path}.target"),
             )?;
+            let runtime_objects = bindings
+                .iter()
+                .map(|binding| {
+                    MotionRuntimeObject::from_binding(
+                        &binding.runtime_name,
+                        &binding.object_type,
+                        binding.is_primary,
+                    )
+                })
+                .collect::<Vec<_>>();
             property::resolve_target_values(
                 spec,
                 target,
                 &target_path,
-                resolved_targets,
+                &runtime_objects,
                 &mut values,
             )?;
         }
         poses.push(values);
     }
     Ok(poses)
-}
-
-fn index_motion_targets(
-    lowered: &LoweredAuthoring,
-) -> Result<MotionTargetIndex<'_>, AuthoringDiagnostic> {
-    let mut targets = HashMap::new();
-    for entry in lowered
-        .source_map
-        .entries
-        .iter()
-        .filter(|entry| entry.authored_path.starts_with("$.visual.nodes["))
-    {
-        let mut target = Vec::new();
-        for (binding_index, binding) in checked_runtime_bindings(entry)?.into_iter().enumerate() {
-            let object_type = lowered
-                .scene
-                .pointer(binding.scene_path)
-                .and_then(|object| object.get("type"))
-                .and_then(Value::as_str)
-                .ok_or_else(|| invalid_runtime_binding(entry, binding))?;
-            target.push(MotionRuntimeObject::from_binding(
-                binding.runtime_name,
-                object_type,
-                binding_index == 0,
-            ));
-        }
-        let indexed = IndexedMotionTarget::Unique(target);
-        match targets.entry(entry.authored_id.as_str()) {
-            Entry::Vacant(slot) => {
-                slot.insert(indexed);
-            }
-            Entry::Occupied(mut slot) => {
-                slot.insert(IndexedMotionTarget::Ambiguous);
-            }
-        }
-    }
-    Ok(targets)
-}
-
-fn checked_runtime_bindings(
-    entry: &SourceMapEntry,
-) -> Result<Vec<RuntimeBinding<'_>>, AuthoringDiagnostic> {
-    if entry.runtime_names.is_empty() {
-        if entry.scene_paths.len() <= 1 {
-            return Ok(Vec::new());
-        }
-        return Err(invalid_binding_cardinality(entry));
-    }
-    if entry.runtime_names.len() != entry.scene_paths.len() {
-        return Err(invalid_binding_cardinality(entry));
-    }
-    Ok(entry
-        .runtime_names
-        .iter()
-        .zip(&entry.scene_paths)
-        .map(|(runtime_name, scene_path)| RuntimeBinding {
-            runtime_name,
-            scene_path,
-        })
-        .collect())
-}
-
-fn invalid_binding_cardinality(entry: &SourceMapEntry) -> AuthoringDiagnostic {
-    AuthoringDiagnostic::new(
-        &entry.authored_path,
-        "invalid_source_map_binding",
-        format!(
-            "source-map entry '{}' has {} runtime names and {} scene paths; named runtime objects must be paired one-to-one",
-            entry.authored_id,
-            entry.runtime_names.len(),
-            entry.scene_paths.len()
-        ),
-    )
-}
-
-fn invalid_runtime_binding(
-    entry: &SourceMapEntry,
-    binding: RuntimeBinding<'_>,
-) -> AuthoringDiagnostic {
-    AuthoringDiagnostic::new(
-        &entry.authored_path,
-        "invalid_source_map_binding",
-        format!(
-            "source-map runtime object '{}' for authored id '{}' does not resolve to a typed scene object at '{}'",
-            binding.runtime_name, entry.authored_id, binding.scene_path
-        ),
-    )
-}
-
-fn resolve_motion_targets<'index, 'scene>(
-    target_index: &'index MotionTargetIndex<'scene>,
-    target: &str,
-    path: &str,
-) -> Result<&'index [MotionRuntimeObject<'scene>], AuthoringDiagnostic> {
-    match target_index.get(target) {
-        None => Err(AuthoringDiagnostic::new(
-            path,
-            "unknown_motion_target",
-            format!("visual target '{target}' is not defined"),
-        )),
-        Some(IndexedMotionTarget::Ambiguous) => Err(AuthoringDiagnostic::new(
-            path,
-            "ambiguous_motion_target",
-            format!("visual target '{target}' resolves to more than one authored node"),
-        )),
-        Some(IndexedMotionTarget::Unique(targets)) if targets.is_empty() => {
-            Err(AuthoringDiagnostic::new(
-                path,
-                "unsupported_motion_target",
-                format!("visual target '{target}' has no animatable runtime object"),
-            ))
-        }
-        Some(IndexedMotionTarget::Unique(targets)) => Ok(targets),
-    }
 }
 
 fn lower_tracks(
@@ -476,41 +362,5 @@ fn loop_name(loop_type: MotionLoop) -> &'static str {
         MotionLoop::Oneshot => "oneshot",
         MotionLoop::Loop => "loop",
         MotionLoop::Pingpong => "pingpong",
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn source_entry(runtime_names: Vec<&str>, scene_paths: Vec<&str>) -> SourceMapEntry {
-        SourceMapEntry {
-            authored_id: "card".to_string(),
-            authored_path: "$.visual.nodes[0]".to_string(),
-            definition_path: None,
-            runtime_names: runtime_names.into_iter().map(str::to_string).collect(),
-            scene_paths: scene_paths.into_iter().map(str::to_string).collect(),
-        }
-    }
-
-    #[test]
-    fn source_map_runtime_names_require_one_scene_path_each() {
-        let entry = source_entry(vec!["Shape", "Geometry"], vec!["/artboard/children/0"]);
-
-        let error = checked_runtime_bindings(&entry).expect_err("unequal bindings must fail");
-
-        assert_eq!(error.code, "invalid_source_map_binding");
-        assert_eq!(error.path, "$.visual.nodes[0]");
-    }
-
-    #[test]
-    fn unnamed_raw_entry_may_keep_its_root_scene_path() {
-        let entry = source_entry(Vec::new(), vec!["/artboard/children/0"]);
-
-        assert!(
-            checked_runtime_bindings(&entry)
-                .expect("root-only raw entry remains valid")
-                .is_empty()
-        );
     }
 }
