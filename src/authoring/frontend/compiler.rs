@@ -317,4 +317,57 @@ mod tests {
         assert_eq!(diagnostic.code, "invalid_source_map_binding");
         assert_eq!(diagnostic.path, "$.visual.nodes[0]");
     }
+
+    #[test]
+    fn compiler_state_owns_motion_source_map_mutation() {
+        let state = CompilerState::from_lowered(lowered(vec![
+            source_entry("$.visual.nodes[0]", "card"),
+            source_entry("$.motion.raw_animations[0]", "typed_motion"),
+            source_entry("$.motion.raw_animations[1]", "raw_motion"),
+        ]))
+        .apply_motion_source_map(
+            1,
+            vec![source_entry("$.motion.easings[0]", "shared_easing")],
+        );
+
+        let actual = state
+            .finish()
+            .expect("compiler-owned source-map mutation must preserve valid state");
+        let paths = actual
+            .source_map
+            .entries
+            .iter()
+            .map(|entry| entry.authored_path.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            paths,
+            vec![
+                "$.visual.nodes[0]",
+                "$.motion.tracks[0]",
+                "$.motion.raw_animations[0]",
+                "$.motion.easings[0]",
+            ]
+        );
+    }
+
+    #[test]
+    fn compiler_state_registers_appended_motion_source_names() {
+        let result = CompilerState::from_lowered(lowered(vec![source_entry(
+            "$.visual.nodes[0]",
+            "shared",
+        )]))
+        .apply_motion_source_map(
+            0,
+            vec![source_entry("$.motion.easings[0]", "shared")],
+        )
+        .finish();
+        let Err(error) = result else {
+            panic!("appended motion source names must participate in collision checks");
+        };
+
+        assert_eq!(error.diagnostics.len(), 1);
+        assert_eq!(error.diagnostics[0].path, "$.motion.easings[0]");
+        assert_eq!(error.diagnostics[0].code, "runtime_name_collision");
+    }
 }
