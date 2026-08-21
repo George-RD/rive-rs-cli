@@ -353,15 +353,10 @@ mod tests {
 
     #[test]
     fn compiler_state_registers_appended_motion_source_names() {
-        let result = CompilerState::from_lowered(lowered(vec![source_entry(
-            "$.visual.nodes[0]",
-            "shared",
-        )]))
-        .apply_motion_source_map(
-            0,
-            vec![source_entry("$.motion.easings[0]", "shared")],
-        )
-        .finish();
+        let result =
+            CompilerState::from_lowered(lowered(vec![source_entry("$.visual.nodes[0]", "shared")]))
+                .apply_motion_source_map(0, vec![source_entry("$.motion.easings[0]", "shared")])
+                .finish();
         let Err(error) = result else {
             panic!("appended motion source names must participate in collision checks");
         };
