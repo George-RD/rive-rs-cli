@@ -23,8 +23,9 @@ revisit_triggers:
   `CompilerState` owns the canonical JSON scene draft, source-map state,
   runtime-name registry, checked runtime bindings, and motion-target index while
   preserving public schema, source maps, diagnostics, and ordering.
-- Continue moving resolved symbols and mutation-oriented source-map construction
-  into that state before lowering typed motion directly into the same scene draft.
+- Motion source-path normalization and appended motion source entries are owned by
+  that compiler state. Lower typed motion directly into the same scene draft next,
+  then delete the raw-fragment bridge, cloned `AuthoringSpec`, and second full lower.
 - Do not begin typed behavior/statechart lowering until typed motion and raw
   escapes share one compiler-owned scene draft without the cloned second lower.
 
@@ -35,10 +36,12 @@ source-map identity, canonical-builder acceptance, and authored diagnostic paths
 Introducing a state boundary before moving scene ownership keeps those contracts
 stable while giving the one-pass migration one explicit home. Compiler-owned
 output state and runtime-name validation removed one duplicate owner in PR #171;
-compiler-owned checked bindings and target indexing remove the remaining
-source-map scan from `motion.rs` in PR #172. This leaves direct mutation and
-source-map construction as the next isolated deletion boundary rather than
-combining state design, indexing, scene mutation, and path repair in one review.
+compiler-owned checked bindings and target indexing removed the remaining
+source-map scan from `motion.rs` in PR #172; PR #173 moves motion source-map path
+normalization and easing source-entry construction under the same state boundary.
+This leaves direct typed-motion scene mutation as the next isolated deletion
+boundary rather than combining state design, indexing, source-map ownership, and
+scene mutation in one review.
 
 ## Evidence
 
@@ -93,6 +96,29 @@ combining state design, indexing, scene mutation, and path repair in one review.
   formatting, Clippy, all Rust tests, browser contracts, Cairn architecture
   validation, official-runtime evidence, demo, site, Playwright, and visual
   regression.
+- PR #173 RED head `6d456927aa7007f5646181230d589289df2fb918`
+  added private compiler-state contracts for motion source-path normalization and
+  appended source-entry registration. CI run `32462071558` stopped at formatting,
+  so no behavioral conclusion was drawn from that first head.
+- Formatted RED head `252bc90395e933ebff65aed8c7d2c869d377779d`
+  then failed minimum-Rust run `32462193068` exactly because
+  `CompilerState::apply_motion_source_map` did not yet exist.
+- Implementation head `5e1355dc5a12b4f4639705794894bf0e36cbe684`
+  moved motion source-path normalization and easing source-entry construction into
+  compiler state, replaced the mutating easing helper with a pure source-entry
+  producer, and consolidated motion path rewriting so diagnostics and source maps
+  share one helper.
+- Stable CI run `32462491648` then exposed unrelated toolchain drift: Rust 1.98
+  introduced `chunks_exact_to_as_chunks` against pre-existing `render/image.rs`;
+  minimum-Rust run `32462491630` passed the authoring implementation. Commits
+  `c2d10ce0879725f843330e727a2981cc71166ab6` and
+  `166e831fd4c00c7231cfcc027f5a817d9ee49fc2` mechanically adopted the new
+  constant-chunk APIs while preserving Rust 1.88 comparison semantics.
+- Exact code head `166e831fd4c00c7231cfcc027f5a817d9ee49fc2`
+  passed minimum-Rust run `32462871969` plus complete CI run `32462872156`:
+  formatting, Clippy, all Rust tests, browser contracts, Cairn architecture
+  validation, official-runtime evidence, demo, site, Playwright, and visual
+  regression.
 
 ## Alternatives considered
 
@@ -100,6 +126,9 @@ combining state design, indexing, scene mutation, and path repair in one review.
   mixes state design, scene ownership, path repair, and behavioral migration.
 - **Keep target indexing in `motion.rs`.** Avoids owned compiler bindings now but
   leaves source-map validation and target discovery outside their long-term owner.
+- **Keep motion source-map mutation in `motion.rs`.** Avoids a small structured
+  return type but leaves two owners for source-map paths and appended entries just
+  before direct scene mutation.
 - **Use self-referential borrowed bindings.** Avoids small string clones but makes
   `CompilerState` self-referential and harder to mutate safely.
 - **Give behavior a separate compiler.** Reduces short-term coupling but creates
@@ -108,15 +137,16 @@ combining state design, indexing, scene mutation, and path repair in one review.
 ## Trade-offs
 
 `CompilerState` still adapts through `LoweredAuthoring` around the existing motion
-lowerer, so this slice does not yet remove the cloned second pass. The target
-index owns runtime names and object-type strings to avoid self-referential state,
-and `motion.rs` temporarily creates a small property-resolution adapter vector.
+lowerer, so PR #173 does not yet remove the cloned second pass. The target index
+owns runtime names and object-type strings to avoid self-referential state, and
+`motion.rs` temporarily creates a small property-resolution adapter vector.
 Binding-index failures are retained in state and surfaced after easing resolution
-to preserve characterized diagnostic precedence. The post-motion state rebuilds
-an index that finalization does not consume because the previous pipeline did not
-re-index after the second lower.
+to preserve characterized diagnostic precedence. The post-motion state still
+rebuilds an index that finalization does not consume because the previous pipeline
+did not re-index after the second lower.
 
-In return, checked source-map bindings and target discovery now have one owner,
-the duplicate scan and diagnostics are gone from `motion.rs`, and the next slice
-can move mutation-oriented source-map construction and typed-motion emission into
-the existing scene draft before deleting the raw-fragment bridge and path repair.
+In return, checked source-map bindings, target discovery, motion source-path
+normalization, appended motion source entries, and runtime-name registration now
+have one compiler-state owner. The next slice can lower typed motion directly into
+the existing scene draft, append raw escapes afterward, and delete the clone,
+second full visual lower, raw-fragment bridge, and remaining path-repair adapter.
