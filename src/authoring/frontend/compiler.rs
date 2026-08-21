@@ -27,6 +27,12 @@ pub(super) struct MotionLoweringInput {
     pub(super) motion_targets: Result<MotionTargetIndex, AuthoringDiagnostic>,
 }
 
+pub(super) struct MotionLoweringOutput {
+    pub(super) lowered: LoweredAuthoring,
+    pub(super) typed_animation_count: usize,
+    pub(super) source_entries: Vec<SourceMapEntry>,
+}
+
 pub(super) struct MotionTargetIndex {
     targets: HashMap<String, IndexedMotionTarget>,
 }
@@ -57,11 +63,16 @@ impl<'a> AuthoringCompiler<'a> {
 
     pub(super) fn lower_motion(self) -> Result<Self, AuthoringError> {
         let Self { spec, state } = self;
-        let lowered = motion::lower_motion(spec, state.into_motion_input())
+        let MotionLoweringOutput {
+            lowered,
+            typed_animation_count,
+            source_entries,
+        } = motion::lower_motion(spec, state.into_motion_input())
             .map_err(|error| rewrite_error_paths(spec, error))?;
         Ok(Self {
             spec,
-            state: CompilerState::from_lowered(lowered),
+            state: CompilerState::from_lowered(lowered)
+                .apply_motion_source_map(typed_animation_count, source_entries),
         })
     }
 
@@ -81,6 +92,18 @@ impl CompilerState {
             runtime_names,
             motion_targets,
         }
+    }
+
+    fn apply_motion_source_map(
+        mut self,
+        typed_animation_count: usize,
+        source_entries: Vec<SourceMapEntry>,
+    ) -> Self {
+        rewrite_motion_source_paths(&mut self.source_map, typed_animation_count);
+        self.source_map.entries.extend(source_entries);
+        self.runtime_names = RuntimeNameRegistry::from_source_map(&self.source_map);
+        self.motion_targets = MotionTargetIndex::from_output(&self.scene, &self.source_map);
+        self
     }
 
     fn into_motion_input(self) -> MotionLoweringInput {
@@ -185,6 +208,30 @@ impl RuntimeNameRegistry {
             Some(diagnostic) => Err(AuthoringError::one(diagnostic)),
             None => Ok(()),
         }
+    }
+}
+
+fn rewrite_motion_source_paths(source_map: &mut AuthoringSourceMap, typed_animation_count: usize) {
+    for entry in &mut source_map.entries {
+        if let Some(path) = rewritten_motion_path(&entry.authored_path, typed_animation_count) {
+            entry.authored_path = path;
+        }
+    }
+}
+
+pub(super) fn rewritten_motion_path(path: &str, typed_animation_count: usize) -> Option<String> {
+    let remainder = path.strip_prefix("$.motion.raw_animations[")?;
+    let close = remainder.find(']')?;
+    let index = remainder[..close].parse::<usize>().ok()?;
+    let suffix = &remainder[close + 1..];
+    if index < typed_animation_count {
+        let suffix = suffix.strip_prefix(".value").unwrap_or(suffix);
+        Some(format!("$.motion.tracks[{index}]{suffix}"))
+    } else {
+        Some(format!(
+            "$.motion.raw_animations[{}]{suffix}",
+            index - typed_animation_count
+        ))
     }
 }
 

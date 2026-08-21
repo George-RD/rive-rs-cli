@@ -9,10 +9,12 @@ use serde_json::json;
 
 use super::super::lower;
 use super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, LoweredAuthoring, MotionInterpolation,
-    MotionLoop, RawSceneFragment,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, MotionInterpolation, MotionLoop,
+    RawSceneFragment,
 };
-use super::compiler::{MotionLoweringInput, MotionTargetIndex};
+use super::compiler::{
+    MotionLoweringInput, MotionLoweringOutput, MotionTargetIndex, rewritten_motion_path,
+};
 
 use easing::{EasingEmission, ResolvedEasing};
 use property::{MotionRuntimeObject, PoseValues};
@@ -36,7 +38,7 @@ struct LoweredTracks {
 pub(super) fn lower_motion(
     spec: &AuthoringSpec,
     input: MotionLoweringInput,
-) -> Result<LoweredAuthoring, AuthoringError> {
+) -> Result<MotionLoweringOutput, AuthoringError> {
     let easings = easing::resolve(spec).map_err(AuthoringError::one)?;
     let MotionLoweringInput {
         lowered,
@@ -45,7 +47,11 @@ pub(super) fn lower_motion(
     let motion_targets = motion_targets.map_err(AuthoringError::one)?;
     let poses = resolve_poses(spec, &motion_targets).map_err(AuthoringError::one)?;
     if spec.motion.tracks.is_empty() {
-        return Ok(lowered);
+        return Ok(MotionLoweringOutput {
+            lowered,
+            typed_animation_count: 0,
+            source_entries: Vec::new(),
+        });
     }
 
     let LoweredTracks {
@@ -63,11 +69,13 @@ pub(super) fn lower_motion(
         .chain(spec.motion.raw_animations.iter().cloned())
         .collect();
 
-    let mut lowered = lower::lower_authoring(&expanded)
+    let lowered = lower::lower_authoring(&expanded)
         .map_err(|error| rewrite_motion_error_paths(error, typed_count))?;
-    rewrite_motion_source_paths(&mut lowered, typed_count);
-    easing::append_source_entries(&mut lowered, easing_emissions);
-    Ok(lowered)
+    Ok(MotionLoweringOutput {
+        lowered,
+        typed_animation_count: typed_count,
+        source_entries: easing::source_entries(easing_emissions),
+    })
 }
 
 fn resolve_poses(
@@ -322,30 +330,6 @@ fn rewrite_motion_error_paths(mut error: AuthoringError, typed_count: usize) -> 
         }
     }
     error
-}
-
-fn rewrite_motion_source_paths(lowered: &mut LoweredAuthoring, typed_count: usize) {
-    for entry in &mut lowered.source_map.entries {
-        if let Some(path) = rewritten_motion_path(&entry.authored_path, typed_count) {
-            entry.authored_path = path;
-        }
-    }
-}
-
-fn rewritten_motion_path(path: &str, typed_count: usize) -> Option<String> {
-    let remainder = path.strip_prefix("$.motion.raw_animations[")?;
-    let close = remainder.find(']')?;
-    let index = remainder[..close].parse::<usize>().ok()?;
-    let suffix = &remainder[close + 1..];
-    if index < typed_count {
-        let suffix = suffix.strip_prefix(".value").unwrap_or(suffix);
-        Some(format!("$.motion.tracks[{index}]{suffix}"))
-    } else {
-        Some(format!(
-            "$.motion.raw_animations[{}]{suffix}",
-            index - typed_count
-        ))
-    }
 }
 
 fn interpolation_name(interpolation: MotionInterpolation) -> &'static str {

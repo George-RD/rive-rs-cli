@@ -3,8 +3,7 @@ use serde_json::{Value, json};
 use super::super::super::expression::evaluate_expression;
 use super::super::super::lower;
 use super::super::super::spec::{
-    AuthoringDiagnostic, AuthoringSpec, LoweredAuthoring, MotionEasingSpec, ScalarExpr,
-    SourceMapEntry, Unit,
+    AuthoringDiagnostic, AuthoringSpec, MotionEasingSpec, ScalarExpr, SourceMapEntry, Unit,
 };
 
 pub(super) struct ResolvedEasing {
@@ -86,22 +85,18 @@ pub(super) fn definition(easing: &ResolvedEasing) -> Value {
     })
 }
 
-pub(super) fn append_source_entries(
-    lowered: &mut LoweredAuthoring,
-    emissions: Vec<EasingEmission>,
-) {
-    lowered.source_map.entries.extend(
-        emissions
-            .into_iter()
-            .filter(|emission| !emission.scene_paths.is_empty())
-            .map(|emission| SourceMapEntry {
-                authored_id: emission.authored_id,
-                authored_path: format!("$.motion.easings[{}]", emission.authored_index),
-                definition_path: None,
-                runtime_names: vec![emission.runtime_name],
-                scene_paths: emission.scene_paths,
-            }),
-    );
+pub(super) fn source_entries(emissions: Vec<EasingEmission>) -> Vec<SourceMapEntry> {
+    emissions
+        .into_iter()
+        .filter(|emission| !emission.scene_paths.is_empty())
+        .map(|emission| SourceMapEntry {
+            authored_id: emission.authored_id,
+            authored_path: format!("$.motion.easings[{}]", emission.authored_index),
+            definition_path: None,
+            runtime_names: vec![emission.runtime_name],
+            scene_paths: emission.scene_paths,
+        })
+        .collect()
 }
 
 fn evaluate_time_control(
