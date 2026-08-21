@@ -100,7 +100,7 @@ fn rgba_hex(color: [u8; 4]) -> String {
 fn non_background_bounds(image: &ImageInfo, background: [u8; 4]) -> Option<PixelBounds> {
     let mut bounds = None;
     for (index, pixel) in image.rgba.as_chunks::<4>().0.iter().enumerate() {
-        if pixel == background {
+        if *pixel == background {
             continue;
         }
         let x = index as u32 % image.width;
