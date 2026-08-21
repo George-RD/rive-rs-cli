@@ -73,7 +73,7 @@ dominant: {} ({dominant_percentage:.2}%) | non-background bounds: {bounds}\n",
 
 fn dominant_color(rgba: &[u8]) -> ([u8; 4], usize) {
     let mut counts = HashMap::new();
-    for pixel in rgba.chunks_exact(4) {
+    for pixel in rgba.as_chunks::<4>().0 {
         let color = [pixel[0], pixel[1], pixel[2], pixel[3]];
         *counts.entry(color).or_insert(0usize) += 1;
     }
@@ -99,7 +99,7 @@ fn rgba_hex(color: [u8; 4]) -> String {
 
 fn non_background_bounds(image: &ImageInfo, background: [u8; 4]) -> Option<PixelBounds> {
     let mut bounds = None;
-    for (index, pixel) in image.rgba.chunks_exact(4).enumerate() {
+    for (index, pixel) in image.rgba.as_chunks::<4>().0.iter().enumerate() {
         if pixel == background {
             continue;
         }
@@ -200,7 +200,7 @@ pub fn analyze(path: &Path) -> Result<ImageInfo, RenderError> {
     match info.color_type {
         ColorType::Rgba => rgba.extend_from_slice(data),
         ColorType::Rgb => {
-            for p in data.chunks_exact(3) {
+            for p in data.as_chunks::<3>().0 {
                 rgba.extend_from_slice(&[p[0], p[1], p[2], 255])
             }
         }
@@ -210,13 +210,13 @@ pub fn analyze(path: &Path) -> Result<ImageInfo, RenderError> {
             }
         }
         ColorType::GrayscaleAlpha => {
-            for p in data.chunks_exact(2) {
+            for p in data.as_chunks::<2>().0 {
                 rgba.extend_from_slice(&[p[0], p[0], p[0], p[1]])
             }
         }
         ColorType::Indexed => return Err(RenderError::Message("indexed PNG unsupported".into())),
     };
-    let colors = rgba.chunks_exact(4).collect::<HashSet<_>>().len();
+    let colors = rgba.as_chunks::<4>().0.iter().collect::<HashSet<_>>().len();
     Ok(ImageInfo {
         width: info.width,
         height: info.height,
@@ -239,8 +239,10 @@ pub fn pixel_difference(a: &ImageInfo, b: &ImageInfo) -> Result<f64, RenderError
     }
     let different = a
         .rgba
-        .chunks_exact(4)
-        .zip(b.rgba.chunks_exact(4))
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(b.rgba.as_chunks::<4>().0.iter())
         .filter(|(left, right)| left != right)
         .count();
     Ok(different as f64 / pixels as f64 * 100.0)
@@ -252,7 +254,7 @@ pub fn contact_sheet(paths: &[PathBuf], out: &Path) -> Result<(), RenderError> {
         .collect::<Result<Vec<_>, _>>()?;
     if imgs.is_empty() {
         return Ok(());
-    };
+    }
     let w = imgs.iter().map(|i| i.width).sum();
     let Some(h) = imgs.iter().map(|i| i.height).max() else {
         return Ok(());
@@ -328,7 +330,12 @@ mod tests {
     }
 
     fn info(pixels: &[u8], width: u32, height: u32) -> ImageInfo {
-        let distinct_colors = pixels.chunks_exact(4).collect::<HashSet<_>>().len();
+        let distinct_colors = pixels
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .collect::<HashSet<_>>()
+            .len();
         ImageInfo {
             width,
             height,
@@ -368,7 +375,7 @@ mod tests {
     #[test]
     fn coverage_preview_uses_low_and_medium_thresholds() {
         let mut pixels = vec![0u8; 128 * 16 * 4];
-        for pixel in pixels.chunks_exact_mut(4) {
+        for pixel in pixels.as_chunks_mut::<4>().0 {
             pixel.copy_from_slice(&[0, 0, 0, 255]);
         }
         pixels[0..4].copy_from_slice(&[255, 0, 0, 255]);
@@ -376,7 +383,7 @@ mod tests {
         assert_eq!(preview.grid[0].chars().next(), Some('.'));
 
         let mut pixels = vec![0u8; 96 * 3 * 4];
-        for pixel in pixels.chunks_exact_mut(4) {
+        for pixel in pixels.as_chunks_mut::<4>().0 {
             pixel.copy_from_slice(&[0, 0, 0, 255]);
         }
         pixels[0..8].copy_from_slice(&[255, 0, 0, 255, 255, 0, 0, 255]);
