@@ -100,9 +100,10 @@ impl CompilerState {
         source_entries: Vec<SourceMapEntry>,
     ) -> Self {
         rewrite_motion_source_paths(&mut self.source_map, typed_animation_count);
-        self.source_map.entries.extend(source_entries);
-        self.runtime_names = RuntimeNameRegistry::from_source_map(&self.source_map);
-        self.motion_targets = MotionTargetIndex::from_output(&self.scene, &self.source_map);
+        for entry in source_entries {
+            self.runtime_names.register(&entry);
+            self.source_map.entries.push(entry);
+        }
         self
     }
 
