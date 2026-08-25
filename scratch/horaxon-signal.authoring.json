@@ -1,0 +1,3711 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "horaxon-signal-stage",
+    "width": {
+      "value": 480,
+      "unit": "px"
+    },
+    "height": {
+      "value": 420,
+      "unit": "px"
+    }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "group",
+        "id": "link-chat",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "link-chat-line",
+            "width": {
+              "kind": "literal",
+              "value": 118,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1.5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -58,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -45,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "link-mail",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "link-mail-line",
+            "width": {
+              "kind": "literal",
+              "value": 118,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1.5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 58,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -45,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "link-data",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "link-data-line",
+            "width": {
+              "kind": "literal",
+              "value": 112,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1.5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -59,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "link-chart",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "link-chart-line",
+            "width": {
+              "kind": "literal",
+              "value": 112,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1.5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 59,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "link-doc",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "link-doc-line",
+            "width": {
+              "kind": "literal",
+              "value": 116,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1.5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 58,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "hub",
+        "children": [
+          {
+            "kind": "ellipse",
+            "id": "hub-ring",
+            "width": {
+              "kind": "literal",
+              "value": 34,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 34,
+              "unit": "px"
+            },
+            "fill": "#151e27"
+          },
+          {
+            "kind": "ellipse",
+            "id": "hub-core",
+            "width": {
+              "kind": "literal",
+              "value": 12,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 12,
+              "unit": "px"
+            },
+            "fill": "#c8a24b"
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-chat",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "signal-chat-surface",
+            "width": {
+              "kind": "literal",
+              "value": 98,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 64,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "fill": "#151e27",
+            "stroke": {
+              "paint": "#52606b",
+              "width": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              }
+            }
+          },
+          {
+            "kind": "ellipse",
+            "id": "chat-avatar",
+            "width": {
+              "kind": "literal",
+              "value": 16,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 16,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -32,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -13,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chat-a",
+            "width": {
+              "kind": "literal",
+              "value": 36,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#f1ede5",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 12,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -14,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chat-b",
+            "width": {
+              "kind": "literal",
+              "value": 50,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 5,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chat-c",
+            "width": {
+              "kind": "literal",
+              "value": 30,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -5,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 14,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-mail",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "signal-mail-surface",
+            "width": {
+              "kind": "literal",
+              "value": 100,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 66,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "fill": "#151e27",
+            "stroke": {
+              "paint": "#52606b",
+              "width": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "mail-icon",
+            "width": {
+              "kind": "literal",
+              "value": 30,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 22,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 3,
+              "unit": "px"
+            },
+            "fill": "#1b2631",
+            "stroke": {
+              "paint": "#8795a1",
+              "width": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              }
+            },
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -29,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -10,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "mail-a",
+            "width": {
+              "kind": "literal",
+              "value": 38,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#f1ede5",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 20,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -13,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "mail-b",
+            "width": {
+              "kind": "literal",
+              "value": 44,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 16,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "mail-c",
+            "width": {
+              "kind": "literal",
+              "value": 30,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 9,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 15,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-data",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "signal-data-surface",
+            "width": {
+              "kind": "literal",
+              "value": 118,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 78,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "fill": "#151e27",
+            "stroke": {
+              "paint": "#52606b",
+              "width": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-head",
+            "width": {
+              "kind": "literal",
+              "value": 96,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -25,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-rule-a",
+            "width": {
+              "kind": "literal",
+              "value": 96,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#52606b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -8,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-rule-b",
+            "width": {
+              "kind": "literal",
+              "value": 96,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#52606b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 9,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-cell-a",
+            "width": {
+              "kind": "literal",
+              "value": 22,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#f1ede5",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -34,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-cell-b",
+            "width": {
+              "kind": "literal",
+              "value": 28,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 18,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-cell-c",
+            "width": {
+              "kind": "literal",
+              "value": 18,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 35,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 18,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-chart",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "signal-chart-surface",
+            "width": {
+              "kind": "literal",
+              "value": 94,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 76,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "fill": "#151e27",
+            "stroke": {
+              "paint": "#52606b",
+              "width": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chart-axis",
+            "width": {
+              "kind": "literal",
+              "value": 68,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#52606b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 24,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chart-a",
+            "width": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 22,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -24,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 12,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chart-b",
+            "width": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 36,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -7,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 5,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chart-c",
+            "width": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 52,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 10,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -3,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chart-d",
+            "width": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 29,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#f1ede5",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 27,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 8,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-doc",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "signal-doc-surface",
+            "width": {
+              "kind": "literal",
+              "value": 82,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 98,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "fill": "#151e27",
+            "stroke": {
+              "paint": "#52606b",
+              "width": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-mark",
+            "width": {
+              "kind": "literal",
+              "value": 9,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 20,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -27,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -31,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-title",
+            "width": {
+              "kind": "literal",
+              "value": 30,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#f1ede5",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 8,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -31,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-a",
+            "width": {
+              "kind": "literal",
+              "value": 54,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -5,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -12,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-b",
+            "width": {
+              "kind": "literal",
+              "value": 48,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -8,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 2,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-c",
+            "width": {
+              "kind": "literal",
+              "value": 56,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -4,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 16,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-d",
+            "width": {
+              "kind": "literal",
+              "value": 34,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -15,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 30,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "action-card",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "action-surface",
+            "width": {
+              "kind": "literal",
+              "value": 330,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 92,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 8,
+              "unit": "px"
+            },
+            "fill": "#e9e1d2",
+            "stroke": {
+              "paint": "#c8a24b",
+              "width": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "action-accent",
+            "width": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 58,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -143,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "ellipse",
+            "id": "action-dot",
+            "width": {
+              "kind": "literal",
+              "value": 16,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 16,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -116,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -18,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "action-title",
+            "width": {
+              "kind": "literal",
+              "value": 72,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#15191d",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -54,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -20,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "action-a",
+            "width": {
+              "kind": "literal",
+              "value": 208,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#5f625f",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 24,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "action-b",
+            "width": {
+              "kind": "literal",
+              "value": 154,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#5f625f",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -3,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 17,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "motion": {
+    "easings": [
+      {
+        "kind": "cubic",
+        "id": "settle",
+        "x1": {
+          "kind": "literal",
+          "value": 0.23,
+          "unit": "scalar"
+        },
+        "y1": {
+          "kind": "literal",
+          "value": 1,
+          "unit": "scalar"
+        },
+        "x2": {
+          "kind": "literal",
+          "value": 0.32,
+          "unit": "scalar"
+        },
+        "y2": {
+          "kind": "literal",
+          "value": 1,
+          "unit": "scalar"
+        }
+      }
+    ],
+    "poses": [
+      {
+        "id": "scattered",
+        "targets": [
+          {
+            "target": "link-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "hub",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.7,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.7,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 92,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 82,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": -8,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.95,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 365,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 92,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 7,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.95,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 112,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 305,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 4,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.95,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 366,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 300,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": -7,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.95,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 245,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 110,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 10,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.95,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "action-card",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 322,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.94,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.94,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          }
+        ]
+      },
+      {
+        "id": "overload",
+        "targets": [
+          {
+            "target": "link-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "hub",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.8,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.8,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.15,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 190,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 170,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": -13,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 280,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 165,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 11,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 220,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 225,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": -5,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 295,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 235,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 9,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 245,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 190,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": -9,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "action-card",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 322,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.94,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.94,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          }
+        ]
+      },
+      {
+        "id": "connected",
+        "targets": [
+          {
+            "target": "link-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "hub",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 98,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 91,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.78,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.78,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 382,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 92,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.78,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.78,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 90,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 211,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.72,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.72,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 390,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 211,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.76,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.76,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 326,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.7,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.7,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.82,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "action-card",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 325,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.95,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.95,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          }
+        ]
+      },
+      {
+        "id": "decision",
+        "targets": [
+          {
+            "target": "link-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "link-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 205,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "hub",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 185,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.9,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.9,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chat",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 73,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 70,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.62,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.62,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-mail",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 407,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 70,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.62,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.62,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-data",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 67,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 197,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.58,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.58,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-chart",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 413,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 197,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.6,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.6,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.28,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "signal-doc",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 350,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.55,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.55,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.2,
+              "unit": "scalar"
+            }
+          },
+          {
+            "target": "action-card",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 240,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 257,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "signal-to-action",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 180,
+          "unit": "scalar"
+        },
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "scattered",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 55,
+              "unit": "scalar"
+            },
+            "pose": "overload",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 118,
+              "unit": "scalar"
+            },
+            "pose": "connected",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 180,
+              "unit": "scalar"
+            },
+            "pose": "decision"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {}
+}
