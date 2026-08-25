@@ -38,7 +38,7 @@ jobs:
       - name: Prove storyboard frames in the official runtime
         run: |
           cargo run --quiet -- render scratch/horaxon-signal-to-action.riv \
-            --frames 0,24,52,78,118,145,162,195,210,220,229,238,248,260,275,285,295,305,310,322,420,450,480 \
+            --frames 0,24,52,78,118,145,162,195,210,225,229,233,248,260,275,285,295,305,310,322,420,450,480 \
             --width 480 \
             --height 420 \
             --scale 1 \
