@@ -19,21 +19,6 @@
         "children": [
           {
             "kind": "ellipse",
-            "id": "token-chat-outer",
-            "width": {
-              "kind": "literal",
-              "value": 10,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 10,
-              "unit": "px"
-            },
-            "fill": "#c8a24b"
-          },
-          {
-            "kind": "ellipse",
             "id": "token-chat-core",
             "width": {
               "kind": "literal",
@@ -46,16 +31,10 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "token-mail",
-        "children": [
+          },
           {
             "kind": "ellipse",
-            "id": "token-mail-outer",
+            "id": "token-chat-outer",
             "width": {
               "kind": "literal",
               "value": 10,
@@ -67,7 +46,13 @@
               "unit": "px"
             },
             "fill": "#c8a24b"
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "token-mail",
+        "children": [
           {
             "kind": "ellipse",
             "id": "token-mail-core",
@@ -82,16 +67,10 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "token-data",
-        "children": [
+          },
           {
             "kind": "ellipse",
-            "id": "token-data-outer",
+            "id": "token-mail-outer",
             "width": {
               "kind": "literal",
               "value": 10,
@@ -103,7 +82,13 @@
               "unit": "px"
             },
             "fill": "#c8a24b"
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "token-data",
+        "children": [
           {
             "kind": "ellipse",
             "id": "token-data-core",
@@ -118,16 +103,10 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "token-chart",
-        "children": [
+          },
           {
             "kind": "ellipse",
-            "id": "token-chart-outer",
+            "id": "token-data-outer",
             "width": {
               "kind": "literal",
               "value": 10,
@@ -139,7 +118,13 @@
               "unit": "px"
             },
             "fill": "#c8a24b"
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "token-chart",
+        "children": [
           {
             "kind": "ellipse",
             "id": "token-chart-core",
@@ -154,16 +139,10 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "token-doc",
-        "children": [
+          },
           {
             "kind": "ellipse",
-            "id": "token-doc-outer",
+            "id": "token-chart-outer",
             "width": {
               "kind": "literal",
               "value": 10,
@@ -175,7 +154,13 @@
               "unit": "px"
             },
             "fill": "#c8a24b"
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "token-doc",
+        "children": [
           {
             "kind": "ellipse",
             "id": "token-doc-core",
@@ -190,16 +175,10 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "token-alert",
-        "children": [
+          },
           {
             "kind": "ellipse",
-            "id": "token-alert-outer",
+            "id": "token-doc-outer",
             "width": {
               "kind": "literal",
               "value": 10,
@@ -211,7 +190,13 @@
               "unit": "px"
             },
             "fill": "#c8a24b"
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "token-alert",
+        "children": [
           {
             "kind": "ellipse",
             "id": "token-alert-core",
@@ -226,16 +211,10 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "token-task",
-        "children": [
+          },
           {
             "kind": "ellipse",
-            "id": "token-task-outer",
+            "id": "token-alert-outer",
             "width": {
               "kind": "literal",
               "value": 10,
@@ -247,7 +226,13 @@
               "unit": "px"
             },
             "fill": "#c8a24b"
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "token-task",
+        "children": [
           {
             "kind": "ellipse",
             "id": "token-task-core",
@@ -262,16 +247,10 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "output-token",
-        "children": [
+          },
           {
             "kind": "ellipse",
-            "id": "output-token-outer",
+            "id": "token-task-outer",
             "width": {
               "kind": "literal",
               "value": 10,
@@ -283,7 +262,13 @@
               "unit": "px"
             },
             "fill": "#c8a24b"
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "output-token",
+        "children": [
           {
             "kind": "ellipse",
             "id": "output-token-core",
@@ -298,6 +283,21 @@
               "unit": "px"
             },
             "fill": "#f1ede5"
+          },
+          {
+            "kind": "ellipse",
+            "id": "output-token-outer",
+            "width": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 10,
+              "unit": "px"
+            },
+            "fill": "#c8a24b"
           }
         ]
       },
@@ -306,61 +306,16 @@
         "id": "horaxon-gate",
         "children": [
           {
-            "kind": "ellipse",
-            "id": "gate-outer",
-            "width": {
-              "kind": "literal",
-              "value": 74,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 74,
-              "unit": "px"
-            },
-            "fill": "#c8a24b"
-          },
-          {
-            "kind": "ellipse",
-            "id": "gate-inner",
-            "width": {
-              "kind": "literal",
-              "value": 62,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 62,
-              "unit": "px"
-            },
-            "fill": "#1b2834"
-          },
-          {
-            "kind": "ellipse",
-            "id": "gate-core",
-            "width": {
-              "kind": "literal",
-              "value": 48,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 48,
-              "unit": "px"
-            },
-            "fill": "#111b24"
-          },
-          {
             "kind": "rectangle",
-            "id": "gate-h-left",
+            "id": "gate-h-mid",
             "width": {
+              "kind": "literal",
+              "value": 21,
+              "unit": "px"
+            },
+            "height": {
               "kind": "literal",
               "value": 5,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 28,
               "unit": "px"
             },
             "corner_radius": {
@@ -368,34 +323,7 @@
               "value": 2,
               "unit": "px"
             },
-            "fill": "#c8a24b",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -10,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
+            "fill": "#c8a24b"
           },
           {
             "kind": "rectangle",
@@ -446,15 +374,15 @@
           },
           {
             "kind": "rectangle",
-            "id": "gate-h-mid",
+            "id": "gate-h-left",
             "width": {
               "kind": "literal",
-              "value": 21,
+              "value": 5,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 5,
+              "value": 28,
               "unit": "px"
             },
             "corner_radius": {
@@ -462,78 +390,16 @@
               "value": 2,
               "unit": "px"
             },
-            "fill": "#c8a24b"
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "signal-chat",
-        "children": [
-          {
-            "kind": "rectangle",
-            "id": "signal-chat-surface",
-            "width": {
-              "kind": "literal",
-              "value": 110,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 76,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.6,
-                "unit": "px"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "chat-bubble",
-            "width": {
-              "kind": "literal",
-              "value": 74,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 42,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "fill": "#263744",
-            "stroke": {
-              "paint": "#64727e",
-              "width": {
-                "kind": "literal",
-                "value": 1.4,
-                "unit": "px"
-              }
-            },
+            "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 3,
+                "value": -10,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 1,
+                "value": 0,
                 "unit": "px"
               },
               "rotation": {
@@ -554,38 +420,84 @@
             }
           },
           {
-            "kind": "rectangle",
-            "id": "chat-tail",
+            "kind": "ellipse",
+            "id": "gate-core",
             "width": {
               "kind": "literal",
-              "value": 13,
+              "value": 48,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 9,
+              "value": 48,
               "unit": "px"
             },
-            "corner_radius": {
+            "fill": "#111b24"
+          },
+          {
+            "kind": "ellipse",
+            "id": "gate-inner",
+            "width": {
               "kind": "literal",
-              "value": 2,
+              "value": 62,
               "unit": "px"
             },
-            "fill": "#263744",
+            "height": {
+              "kind": "literal",
+              "value": 62,
+              "unit": "px"
+            },
+            "fill": "#1e2d39"
+          },
+          {
+            "kind": "ellipse",
+            "id": "gate-outer",
+            "width": {
+              "kind": "literal",
+              "value": 74,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 74,
+              "unit": "px"
+            },
+            "fill": "#c8a24b"
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-chat",
+        "children": [
+          {
+            "kind": "ellipse",
+            "id": "chat-unread",
+            "width": {
+              "kind": "literal",
+              "value": 11,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 11,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -24,
+                "value": 39,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 20,
+                "value": -25,
                 "unit": "px"
               },
               "rotation": {
                 "kind": "literal",
-                "value": 36,
+                "value": 0,
                 "unit": "degrees"
               },
               "scale_x": {
@@ -602,7 +514,7 @@
           },
           {
             "kind": "ellipse",
-            "id": "chat-dot-a",
+            "id": "chat-dot-c",
             "width": {
               "kind": "literal",
               "value": 7,
@@ -617,7 +529,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -17,
+                "value": 23,
                 "unit": "px"
               },
               "y": {
@@ -686,7 +598,7 @@
           },
           {
             "kind": "ellipse",
-            "id": "chat-dot-c",
+            "id": "chat-dot-a",
             "width": {
               "kind": "literal",
               "value": 7,
@@ -701,7 +613,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 23,
+                "value": -17,
                 "unit": "px"
               },
               "y": {
@@ -727,87 +639,58 @@
             }
           },
           {
-            "kind": "ellipse",
-            "id": "chat-unread",
-            "width": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "fill": "#c8a24b",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 39,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": -25,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "signal-mail",
-        "children": [
-          {
             "kind": "rectangle",
-            "id": "signal-mail-surface",
+            "id": "chat-tail",
             "width": {
               "kind": "literal",
-              "value": 110,
+              "value": 13,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 72,
+              "value": 9,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 11,
+              "value": 2,
               "unit": "px"
             },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
+            "fill": "#304657",
+            "transform": {
+              "x": {
                 "kind": "literal",
-                "value": 1.6,
+                "value": -24,
                 "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 20,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 36,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
               }
             }
           },
           {
             "kind": "rectangle",
-            "id": "mail-envelope",
+            "id": "chat-bubble",
             "width": {
               "kind": "literal",
-              "value": 68,
+              "value": 74,
               "unit": "px"
             },
             "height": {
@@ -817,12 +700,12 @@
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 4,
+              "value": 11,
               "unit": "px"
             },
-            "fill": "#263744",
+            "fill": "#304657",
             "stroke": {
-              "paint": "#77848f",
+              "paint": "#8795a1",
               "width": {
                 "kind": "literal",
                 "value": 1.6,
@@ -832,7 +715,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 0,
+                "value": 3,
                 "unit": "px"
               },
               "y": {
@@ -859,192 +742,38 @@
           },
           {
             "kind": "rectangle",
-            "id": "mail-flap-left",
+            "id": "signal-chat-surface",
             "width": {
               "kind": "literal",
-              "value": 39,
+              "value": 110,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 2,
+              "value": 76,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 0,
+              "value": 11,
               "unit": "px"
             },
-            "fill": "#f1ede5",
-            "transform": {
-              "x": {
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
                 "kind": "literal",
-                "value": -15,
+                "value": 1.8,
                 "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": -6,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 31,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
               }
             }
-          },
-          {
-            "kind": "rectangle",
-            "id": "mail-flap-right",
-            "width": {
-              "kind": "literal",
-              "value": 39,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 0,
-              "unit": "px"
-            },
-            "fill": "#f1ede5",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 15,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": -6,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": -31,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "mail-bottom-left",
-            "width": {
-              "kind": "literal",
-              "value": 30,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 0,
-              "unit": "px"
-            },
-            "fill": "#b4bec7",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -19,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 12,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": -27,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "mail-bottom-right",
-            "width": {
-              "kind": "literal",
-              "value": 30,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 0,
-              "unit": "px"
-            },
-            "fill": "#b4bec7",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 19,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 12,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 27,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-mail",
+        "children": [
           {
             "kind": "ellipse",
             "id": "mail-unread",
@@ -1086,154 +815,18 @@
                 "unit": "scalar"
               }
             }
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "signal-data",
-        "children": [
-          {
-            "kind": "rectangle",
-            "id": "signal-data-surface",
-            "width": {
-              "kind": "literal",
-              "value": 122,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 84,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.6,
-                "unit": "px"
-              }
-            }
           },
           {
             "kind": "rectangle",
-            "id": "data-sheet",
+            "id": "mail-bottom-right",
             "width": {
               "kind": "literal",
-              "value": 94,
+              "value": 30,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 58,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 3,
-              "unit": "px"
-            },
-            "fill": "#263744",
-            "stroke": {
-              "paint": "#64727e",
-              "width": {
-                "kind": "literal",
-                "value": 1.4,
-                "unit": "px"
-              }
-            },
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 4,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "data-header",
-            "width": {
-              "kind": "literal",
-              "value": 94,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 8,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#64727e",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": -21,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "data-col-a",
-            "width": {
-              "kind": "literal",
-              "value": 1.5,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 48,
+              "value": 2.2,
               "unit": "px"
             },
             "corner_radius": {
@@ -1241,21 +834,21 @@
               "value": 0,
               "unit": "px"
             },
-            "fill": "#77848f",
+            "fill": "#d0d8de",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -24,
+                "value": 19,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 5,
+                "value": 12,
                 "unit": "px"
               },
               "rotation": {
                 "kind": "literal",
-                "value": 0,
+                "value": 27,
                 "unit": "degrees"
               },
               "scale_x": {
@@ -1272,15 +865,15 @@
           },
           {
             "kind": "rectangle",
-            "id": "data-col-b",
+            "id": "mail-bottom-left",
             "width": {
               "kind": "literal",
-              "value": 1.5,
+              "value": 30,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 48,
+              "value": 2.2,
               "unit": "px"
             },
             "corner_radius": {
@@ -1288,7 +881,54 @@
               "value": 0,
               "unit": "px"
             },
-            "fill": "#77848f",
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -19,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 12,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": -27,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "mail-flap-right",
+            "width": {
+              "kind": "literal",
+              "value": 39,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 2.3,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#f1ede5",
             "transform": {
               "x": {
                 "kind": "literal",
@@ -1297,7 +937,109 @@
               },
               "y": {
                 "kind": "literal",
-                "value": 5,
+                "value": -6,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": -31,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "mail-flap-left",
+            "width": {
+              "kind": "literal",
+              "value": 39,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 2.3,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#f1ede5",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -15,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -6,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 31,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "mail-envelope",
+            "width": {
+              "kind": "literal",
+              "value": 68,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 42,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "fill": "#304657",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
+              }
+            },
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 1,
                 "unit": "px"
               },
               "rotation": {
@@ -1319,98 +1061,38 @@
           },
           {
             "kind": "rectangle",
-            "id": "data-row-a",
+            "id": "signal-mail-surface",
             "width": {
               "kind": "literal",
-              "value": 90,
+              "value": 110,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 1.5,
+              "value": 72,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 0,
+              "value": 11,
               "unit": "px"
             },
-            "fill": "#77848f",
-            "transform": {
-              "x": {
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
                 "kind": "literal",
-                "value": 0,
+                "value": 1.8,
                 "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": -5,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
               }
             }
-          },
-          {
-            "kind": "rectangle",
-            "id": "data-row-b",
-            "width": {
-              "kind": "literal",
-              "value": 90,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 1.5,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 0,
-              "unit": "px"
-            },
-            "fill": "#77848f",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 11,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-data",
+        "children": [
           {
             "kind": "rectangle",
             "id": "data-highlight",
@@ -1457,6 +1139,324 @@
                 "unit": "scalar"
               }
             }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-row-b",
+            "width": {
+              "kind": "literal",
+              "value": 90,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1.8,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 11,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-row-a",
+            "width": {
+              "kind": "literal",
+              "value": 90,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 1.8,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -5,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-col-b",
+            "width": {
+              "kind": "literal",
+              "value": 1.8,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 48,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 15,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 5,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-col-a",
+            "width": {
+              "kind": "literal",
+              "value": 1.8,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 48,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -24,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 5,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-header",
+            "width": {
+              "kind": "literal",
+              "value": 94,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 8,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -21,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "data-sheet",
+            "width": {
+              "kind": "literal",
+              "value": 94,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 58,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 3,
+              "unit": "px"
+            },
+            "fill": "#304657",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.6,
+                "unit": "px"
+              }
+            },
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 4,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "signal-data-surface",
+            "width": {
+              "kind": "literal",
+              "value": 122,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 84,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 11,
+              "unit": "px"
+            },
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
+              }
+            }
           }
         ]
       },
@@ -1466,82 +1466,7 @@
         "children": [
           {
             "kind": "rectangle",
-            "id": "signal-chart-surface",
-            "width": {
-              "kind": "literal",
-              "value": 108,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 82,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.6,
-                "unit": "px"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "chart-axis",
-            "width": {
-              "kind": "literal",
-              "value": 76,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 0,
-              "unit": "px"
-            },
-            "fill": "#64727e",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 25,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "chart-bar-a",
+            "id": "chart-bar-d",
             "width": {
               "kind": "literal",
               "value": 13,
@@ -1549,7 +1474,7 @@
             },
             "height": {
               "kind": "literal",
-              "value": 24,
+              "value": 33,
               "unit": "px"
             },
             "corner_radius": {
@@ -1557,63 +1482,16 @@
               "value": 2,
               "unit": "px"
             },
-            "fill": "#b4bec7",
+            "fill": "#f1ede5",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -27,
+                "value": 30,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 12,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "chart-bar-b",
-            "width": {
-              "kind": "literal",
-              "value": 13,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 39,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#b4bec7",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -8,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 5,
+                "value": 8,
                 "unit": "px"
               },
               "rotation": {
@@ -1682,7 +1560,7 @@
           },
           {
             "kind": "rectangle",
-            "id": "chart-bar-d",
+            "id": "chart-bar-b",
             "width": {
               "kind": "literal",
               "value": 13,
@@ -1690,7 +1568,7 @@
             },
             "height": {
               "kind": "literal",
-              "value": 33,
+              "value": 39,
               "unit": "px"
             },
             "corner_radius": {
@@ -1698,16 +1576,16 @@
               "value": 2,
               "unit": "px"
             },
-            "fill": "#f1ede5",
+            "fill": "#d0d8de",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 30,
+                "value": -8,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 8,
+                "value": 5,
                 "unit": "px"
               },
               "rotation": {
@@ -1724,6 +1602,128 @@
                 "kind": "literal",
                 "value": 1,
                 "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chart-bar-a",
+            "width": {
+              "kind": "literal",
+              "value": 13,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 24,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -27,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 12,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "chart-axis",
+            "width": {
+              "kind": "literal",
+              "value": 76,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 2.2,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 25,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "signal-chart-surface",
+            "width": {
+              "kind": "literal",
+              "value": 108,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 82,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 11,
+              "unit": "px"
+            },
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
               }
             }
           }
@@ -1735,68 +1735,32 @@
         "children": [
           {
             "kind": "rectangle",
-            "id": "signal-doc-surface",
+            "id": "doc-mark",
             "width": {
               "kind": "literal",
-              "value": 86,
+              "value": 6,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 106,
+              "value": 18,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 11,
+              "value": 1,
               "unit": "px"
             },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.6,
-                "unit": "px"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "doc-page",
-            "width": {
-              "kind": "literal",
-              "value": 58,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 78,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 3,
-              "unit": "px"
-            },
-            "fill": "#263744",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.5,
-                "unit": "px"
-              }
-            },
+            "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 0,
+                "value": -23,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 2,
+                "value": -25,
                 "unit": "px"
               },
               "rotation": {
@@ -1818,45 +1782,131 @@
           },
           {
             "kind": "rectangle",
-            "id": "doc-fold",
+            "id": "doc-line-c",
             "width": {
               "kind": "literal",
-              "value": 17,
+              "value": 31,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 17,
+              "value": 5,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 1,
+              "value": 2,
               "unit": "px"
             },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.4,
-                "unit": "px"
-              }
-            },
+            "fill": "#d0d8de",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 20,
+                "value": -8,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": -29,
+                "value": 24,
                 "unit": "px"
               },
               "rotation": {
                 "kind": "literal",
-                "value": 45,
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-line-b",
+            "width": {
+              "kind": "literal",
+              "value": 43,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -2,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 9,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "doc-line-a",
+            "width": {
+              "kind": "literal",
+              "value": 39,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -4,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -6,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
                 "unit": "degrees"
               },
               "scale_x": {
@@ -1920,156 +1970,15 @@
           },
           {
             "kind": "rectangle",
-            "id": "doc-line-a",
+            "id": "doc-fold",
             "width": {
               "kind": "literal",
-              "value": 39,
+              "value": 17,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 5,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#b4bec7",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -4,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": -6,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "doc-line-b",
-            "width": {
-              "kind": "literal",
-              "value": 43,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 5,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#b4bec7",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -2,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 9,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "doc-line-c",
-            "width": {
-              "kind": "literal",
-              "value": 31,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 5,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#b4bec7",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -8,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 24,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "doc-mark",
-            "width": {
-              "kind": "literal",
-              "value": 6,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 18,
+              "value": 17,
               "unit": "px"
             },
             "corner_radius": {
@@ -2077,105 +1986,24 @@
               "value": 1,
               "unit": "px"
             },
-            "fill": "#c8a24b",
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -23,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": -25,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          }
-        ]
-      },
-      {
-        "kind": "group",
-        "id": "signal-alert",
-        "children": [
-          {
-            "kind": "rectangle",
-            "id": "signal-alert-surface",
-            "width": {
-              "kind": "literal",
-              "value": 92,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 68,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
+            "fill": "#1e2d39",
             "stroke": {
-              "paint": "#77848f",
+              "paint": "#aab5bf",
               "width": {
                 "kind": "literal",
                 "value": 1.6,
                 "unit": "px"
               }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "alert-diamond",
-            "width": {
-              "kind": "literal",
-              "value": 37,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 37,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 5,
-              "unit": "px"
-            },
-            "fill": "#263744",
-            "stroke": {
-              "paint": "#c8a24b",
-              "width": {
-                "kind": "literal",
-                "value": 1.8,
-                "unit": "px"
-              }
             },
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -20,
+                "value": 20,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 0,
+                "value": -29,
                 "unit": "px"
               },
               "rotation": {
@@ -2197,32 +2025,40 @@
           },
           {
             "kind": "rectangle",
-            "id": "alert-mark",
+            "id": "doc-page",
             "width": {
               "kind": "literal",
-              "value": 4,
+              "value": 58,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 16,
+              "value": 78,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 2,
+              "value": 3,
               "unit": "px"
             },
-            "fill": "#c8a24b",
+            "fill": "#304657",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
+              }
+            },
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -20,
+                "value": 0,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": -4,
+                "value": 2,
                 "unit": "px"
               },
               "rotation": {
@@ -2243,11 +2079,45 @@
             }
           },
           {
-            "kind": "ellipse",
-            "id": "alert-dot",
+            "kind": "rectangle",
+            "id": "signal-doc-surface",
             "width": {
               "kind": "literal",
-              "value": 5,
+              "value": 86,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 106,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 11,
+              "unit": "px"
+            },
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "signal-alert",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "alert-line-b",
+            "width": {
+              "kind": "literal",
+              "value": 35,
               "unit": "px"
             },
             "height": {
@@ -2255,16 +2125,21 @@
               "value": 5,
               "unit": "px"
             },
-            "fill": "#c8a24b",
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#d0d8de",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -20,
+                "value": 23,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 9,
+                "value": 6,
                 "unit": "px"
               },
               "rotation": {
@@ -2332,11 +2207,11 @@
             }
           },
           {
-            "kind": "rectangle",
-            "id": "alert-line-b",
+            "kind": "ellipse",
+            "id": "alert-dot",
             "width": {
               "kind": "literal",
-              "value": 35,
+              "value": 5,
               "unit": "px"
             },
             "height": {
@@ -2344,21 +2219,16 @@
               "value": 5,
               "unit": "px"
             },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#b4bec7",
+            "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 23,
+                "value": -20,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 6,
+                "value": 9,
                 "unit": "px"
               },
               "rotation": {
@@ -2375,6 +2245,136 @@
                 "kind": "literal",
                 "value": 1,
                 "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "alert-mark",
+            "width": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 16,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -20,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -4,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "alert-diamond",
+            "width": {
+              "kind": "literal",
+              "value": 37,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 37,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "fill": "#304657",
+            "stroke": {
+              "paint": "#c8a24b",
+              "width": {
+                "kind": "literal",
+                "value": 2,
+                "unit": "px"
+              }
+            },
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -20,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 45,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "signal-alert-surface",
+            "width": {
+              "kind": "literal",
+              "value": 92,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 68,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 11,
+              "unit": "px"
+            },
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
               }
             }
           }
@@ -2385,69 +2385,70 @@
         "id": "signal-task",
         "children": [
           {
-            "kind": "rectangle",
-            "id": "signal-task-surface",
+            "kind": "ellipse",
+            "id": "task-ring-b",
             "width": {
-              "kind": "literal",
-              "value": 104,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 72,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 11,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.6,
-                "unit": "px"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "task-calendar",
-            "width": {
-              "kind": "literal",
-              "value": 72,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 48,
-              "unit": "px"
-            },
-            "corner_radius": {
               "kind": "literal",
               "value": 5,
               "unit": "px"
             },
-            "fill": "#263744",
-            "stroke": {
-              "paint": "#77848f",
-              "width": {
-                "kind": "literal",
-                "value": 1.5,
-                "unit": "px"
-              }
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
             },
+            "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 0,
+                "value": 23,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 2,
+                "value": -26,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "ellipse",
+            "id": "task-ring-a",
+            "width": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "fill": "#c8a24b",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -23,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -26,
                 "unit": "px"
               },
               "rotation": {
@@ -2469,202 +2470,37 @@
           },
           {
             "kind": "rectangle",
-            "id": "task-header",
+            "id": "task-check-b",
             "width": {
               "kind": "literal",
-              "value": 72,
+              "value": 12,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 9,
+              "value": 2.5,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 4,
+              "value": 1,
               "unit": "px"
             },
-            "fill": "#64727e",
+            "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 0,
+                "value": 25,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": -17,
+                "value": 1,
                 "unit": "px"
               },
               "rotation": {
                 "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "task-cell-a",
-            "width": {
-              "kind": "literal",
-              "value": 15,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 13,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#64727e",
-              "width": {
-                "kind": "literal",
-                "value": 1.4,
-                "unit": "px"
-              }
-            },
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": -22,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 5,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "task-cell-b",
-            "width": {
-              "kind": "literal",
-              "value": 15,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 13,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#64727e",
-              "width": {
-                "kind": "literal",
-                "value": 1.4,
-                "unit": "px"
-              }
-            },
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 5,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "task-cell-c",
-            "width": {
-              "kind": "literal",
-              "value": 15,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 13,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 2,
-              "unit": "px"
-            },
-            "fill": "#1b2834",
-            "stroke": {
-              "paint": "#64727e",
-              "width": {
-                "kind": "literal",
-                "value": 1.4,
-                "unit": "px"
-              }
-            },
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 22,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 5,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 0,
+                "value": -48,
                 "unit": "degrees"
               },
               "scale_x": {
@@ -2728,74 +2564,40 @@
           },
           {
             "kind": "rectangle",
-            "id": "task-check-b",
+            "id": "task-cell-c",
             "width": {
               "kind": "literal",
-              "value": 12,
+              "value": 15,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 2.5,
+              "value": 13,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 1,
+              "value": 2,
               "unit": "px"
             },
-            "fill": "#c8a24b",
-            "transform": {
-              "x": {
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#d0d8de",
+              "width": {
                 "kind": "literal",
-                "value": 25,
+                "value": 1.4,
                 "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": -48,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
               }
-            }
-          },
-          {
-            "kind": "ellipse",
-            "id": "task-ring-a",
-            "width": {
-              "kind": "literal",
-              "value": 5,
-              "unit": "px"
             },
-            "height": {
-              "kind": "literal",
-              "value": 5,
-              "unit": "px"
-            },
-            "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": -23,
+                "value": 22,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": -26,
+                "value": 5,
                 "unit": "px"
               },
               "rotation": {
@@ -2816,28 +2618,41 @@
             }
           },
           {
-            "kind": "ellipse",
-            "id": "task-ring-b",
+            "kind": "rectangle",
+            "id": "task-cell-b",
             "width": {
               "kind": "literal",
-              "value": 5,
+              "value": 15,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 5,
+              "value": 13,
               "unit": "px"
             },
-            "fill": "#c8a24b",
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#d0d8de",
+              "width": {
+                "kind": "literal",
+                "value": 1.4,
+                "unit": "px"
+              }
+            },
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 23,
+                "value": 0,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": -26,
+                "value": 5,
                 "unit": "px"
               },
               "rotation": {
@@ -2854,6 +2669,191 @@
                 "kind": "literal",
                 "value": 1,
                 "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "task-cell-a",
+            "width": {
+              "kind": "literal",
+              "value": 15,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 13,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 2,
+              "unit": "px"
+            },
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#d0d8de",
+              "width": {
+                "kind": "literal",
+                "value": 1.4,
+                "unit": "px"
+              }
+            },
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": -22,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 5,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "task-header",
+            "width": {
+              "kind": "literal",
+              "value": 72,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 9,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 4,
+              "unit": "px"
+            },
+            "fill": "#8795a1",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": -17,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "task-calendar",
+            "width": {
+              "kind": "literal",
+              "value": 72,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 48,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 5,
+              "unit": "px"
+            },
+            "fill": "#304657",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
+              }
+            },
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 2,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "signal-task-surface",
+            "width": {
+              "kind": "literal",
+              "value": 104,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 72,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 11,
+              "unit": "px"
+            },
+            "fill": "#1e2d39",
+            "stroke": {
+              "paint": "#aab5bf",
+              "width": {
+                "kind": "literal",
+                "value": 1.8,
+                "unit": "px"
               }
             }
           }
@@ -3047,92 +3047,37 @@
         "children": [
           {
             "kind": "rectangle",
-            "id": "output-line",
+            "id": "output-check-b",
             "width": {
               "kind": "literal",
-              "value": 116,
+              "value": 13,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 2.5,
+              "value": 3,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 0,
+              "value": 1,
               "unit": "px"
             },
             "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 58,
+                "value": 98,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": 0,
+                "value": -4,
                 "unit": "px"
               },
               "rotation": {
                 "kind": "literal",
-                "value": 0,
-                "unit": "degrees"
-              },
-              "scale_x": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              },
-              "scale_y": {
-                "kind": "literal",
-                "value": 1,
-                "unit": "scalar"
-              }
-            }
-          },
-          {
-            "kind": "rectangle",
-            "id": "output-marker",
-            "width": {
-              "kind": "literal",
-              "value": 28,
-              "unit": "px"
-            },
-            "height": {
-              "kind": "literal",
-              "value": 28,
-              "unit": "px"
-            },
-            "corner_radius": {
-              "kind": "literal",
-              "value": 5,
-              "unit": "px"
-            },
-            "fill": "#263744",
-            "stroke": {
-              "paint": "#c8a24b",
-              "width": {
-                "kind": "literal",
-                "value": 1.8,
-                "unit": "px"
-              }
-            },
-            "transform": {
-              "x": {
-                "kind": "literal",
-                "value": 118,
-                "unit": "px"
-              },
-              "y": {
-                "kind": "literal",
-                "value": 0,
-                "unit": "px"
-              },
-              "rotation": {
-                "kind": "literal",
-                "value": 45,
+                "value": -48,
                 "unit": "degrees"
               },
               "scale_x": {
@@ -3152,7 +3097,7 @@
             "id": "output-check-a",
             "width": {
               "kind": "literal",
-              "value": 9,
+              "value": 8,
               "unit": "px"
             },
             "height": {
@@ -3169,7 +3114,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 113,
+                "value": 90,
                 "unit": "px"
               },
               "y": {
@@ -3196,37 +3141,92 @@
           },
           {
             "kind": "rectangle",
-            "id": "output-check-b",
+            "id": "output-marker",
             "width": {
               "kind": "literal",
-              "value": 15,
+              "value": 24,
               "unit": "px"
             },
             "height": {
               "kind": "literal",
-              "value": 3,
+              "value": 24,
               "unit": "px"
             },
             "corner_radius": {
               "kind": "literal",
-              "value": 1,
+              "value": 5,
+              "unit": "px"
+            },
+            "fill": "#304657",
+            "stroke": {
+              "paint": "#c8a24b",
+              "width": {
+                "kind": "literal",
+                "value": 2,
+                "unit": "px"
+              }
+            },
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 94,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 45,
+                "unit": "degrees"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1,
+                "unit": "scalar"
+              }
+            }
+          },
+          {
+            "kind": "rectangle",
+            "id": "output-line",
+            "width": {
+              "kind": "literal",
+              "value": 90,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 2.5,
+              "unit": "px"
+            },
+            "corner_radius": {
+              "kind": "literal",
+              "value": 0,
               "unit": "px"
             },
             "fill": "#c8a24b",
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 122,
+                "value": 45.0,
                 "unit": "px"
               },
               "y": {
                 "kind": "literal",
-                "value": -4,
+                "value": 0,
                 "unit": "px"
               },
               "rotation": {
                 "kind": "literal",
-                "value": -48,
+                "value": 0,
                 "unit": "degrees"
               },
               "scale_x": {
@@ -11157,7 +11157,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -11192,7 +11192,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -11227,7 +11227,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -11262,7 +11262,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -11297,7 +11297,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -11332,7 +11332,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -11367,7 +11367,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12002,7 +12002,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12037,7 +12037,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12072,7 +12072,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12107,7 +12107,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12142,7 +12142,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12177,7 +12177,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12212,7 +12212,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12847,7 +12847,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12882,7 +12882,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12917,7 +12917,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12952,7 +12952,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -12987,7 +12987,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13022,7 +13022,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13057,7 +13057,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13692,7 +13692,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13727,7 +13727,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13762,7 +13762,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13797,7 +13797,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13832,7 +13832,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13867,7 +13867,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -13902,7 +13902,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.72,
+              "value": 0.78,
               "unit": "scalar"
             }
           },
@@ -14292,7 +14292,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.62,
+              "value": 0.58,
               "unit": "scalar"
             }
           },
@@ -14327,7 +14327,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.62,
+              "value": 0.58,
               "unit": "scalar"
             }
           },
@@ -14362,7 +14362,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.62,
+              "value": 0.58,
               "unit": "scalar"
             }
           },
@@ -14397,7 +14397,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.62,
+              "value": 0.58,
               "unit": "scalar"
             }
           },
@@ -14432,7 +14432,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.62,
+              "value": 0.58,
               "unit": "scalar"
             }
           },
@@ -14467,7 +14467,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.62,
+              "value": 0.58,
               "unit": "scalar"
             }
           },
@@ -14502,7 +14502,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.62,
+              "value": 0.58,
               "unit": "scalar"
             }
           },
@@ -14537,7 +14537,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.68,
+              "value": 0.62,
               "unit": "scalar"
             }
           },
@@ -14572,7 +14572,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.68,
+              "value": 0.62,
               "unit": "scalar"
             }
           },
@@ -14607,7 +14607,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.68,
+              "value": 0.62,
               "unit": "scalar"
             }
           },
@@ -14642,7 +14642,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.68,
+              "value": 0.62,
               "unit": "scalar"
             }
           },
@@ -14677,7 +14677,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.68,
+              "value": 0.62,
               "unit": "scalar"
             }
           },
@@ -14712,7 +14712,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.68,
+              "value": 0.62,
               "unit": "scalar"
             }
           },
@@ -14747,7 +14747,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.68,
+              "value": 0.62,
               "unit": "scalar"
             }
           },
@@ -14771,12 +14771,12 @@
               },
               "scale_x": {
                 "kind": "literal",
-                "value": 1.12,
+                "value": 1.1,
                 "unit": "scalar"
               },
               "scale_y": {
                 "kind": "literal",
-                "value": 1.12,
+                "value": 1.1,
                 "unit": "scalar"
               }
             },
@@ -15137,7 +15137,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -15172,7 +15172,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -15207,7 +15207,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -15242,7 +15242,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -15277,7 +15277,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -15312,7 +15312,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -15347,7 +15347,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -15382,7 +15382,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -15417,7 +15417,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -15452,7 +15452,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -15487,7 +15487,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -15522,7 +15522,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -15557,7 +15557,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -15592,7 +15592,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -15921,7 +15921,7 @@
               },
               "y": {
                 "kind": "literal",
-                "value": 222.16,
+                "value": 219.28,
                 "unit": "px"
               },
               "rotation": {
@@ -15982,7 +15982,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -16017,7 +16017,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -16052,7 +16052,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -16087,7 +16087,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -16122,7 +16122,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -16157,7 +16157,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -16192,7 +16192,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.34,
+              "value": 0.3,
               "unit": "scalar"
             }
           },
@@ -16227,7 +16227,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -16262,7 +16262,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -16297,7 +16297,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -16332,7 +16332,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -16367,7 +16367,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -16402,7 +16402,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -16437,7 +16437,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.3,
+              "value": 0.26,
               "unit": "scalar"
             }
           },
@@ -16766,7 +16766,7 @@
               },
               "y": {
                 "kind": "literal",
-                "value": 276.44,
+                "value": 262.52,
                 "unit": "px"
               },
               "rotation": {
@@ -16827,7 +16827,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.16,
+              "value": 0.14,
               "unit": "scalar"
             }
           },
@@ -16862,7 +16862,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.16,
+              "value": 0.14,
               "unit": "scalar"
             }
           },
@@ -16897,7 +16897,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.16,
+              "value": 0.14,
               "unit": "scalar"
             }
           },
@@ -16932,7 +16932,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.16,
+              "value": 0.14,
               "unit": "scalar"
             }
           },
@@ -16967,7 +16967,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.16,
+              "value": 0.14,
               "unit": "scalar"
             }
           },
@@ -17002,7 +17002,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.16,
+              "value": 0.14,
               "unit": "scalar"
             }
           },
@@ -17037,7 +17037,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.16,
+              "value": 0.14,
               "unit": "scalar"
             }
           },
@@ -17072,7 +17072,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.14,
+              "value": 0.12,
               "unit": "scalar"
             }
           },
@@ -17107,7 +17107,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.14,
+              "value": 0.12,
               "unit": "scalar"
             }
           },
@@ -17142,7 +17142,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.14,
+              "value": 0.12,
               "unit": "scalar"
             }
           },
@@ -17177,7 +17177,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.14,
+              "value": 0.12,
               "unit": "scalar"
             }
           },
@@ -17212,7 +17212,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.14,
+              "value": 0.12,
               "unit": "scalar"
             }
           },
@@ -17247,7 +17247,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.14,
+              "value": 0.12,
               "unit": "scalar"
             }
           },
@@ -17282,7 +17282,7 @@
             },
             "opacity": {
               "kind": "literal",
-              "value": 0.14,
+              "value": 0.12,
               "unit": "scalar"
             }
           },
@@ -17611,7 +17611,7 @@
               },
               "y": {
                 "kind": "literal",
-                "value": 326,
+                "value": 302,
                 "unit": "px"
               },
               "rotation": {
@@ -18456,7 +18456,7 @@
               },
               "y": {
                 "kind": "literal",
-                "value": 326,
+                "value": 302,
                 "unit": "px"
               },
               "rotation": {
