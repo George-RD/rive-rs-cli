@@ -114,11 +114,15 @@ scene mutation in one review.
   `c2d10ce0879725f843330e727a2981cc71166ab6` and
   `166e831fd4c00c7231cfcc027f5a817d9ee49fc2` mechanically adopted the new
   constant-chunk APIs while preserving Rust 1.88 comparison semantics.
-- Exact code head `166e831fd4c00c7231cfcc027f5a817d9ee49fc2`
+- Compatibility-fix head `166e831fd4c00c7231cfcc027f5a817d9ee49fc2`
   passed minimum-Rust run `32462871969` plus complete CI run `32462872156`:
   formatting, Clippy, all Rust tests, browser contracts, Cairn architecture
   validation, official-runtime evidence, demo, site, Playwright, and visual
   regression.
+- Final code head `b25118b7e62c72f8865d91fe52ef5a570b46e187`
+  updates appended runtime names incrementally instead of rebuilding the full
+  registry and an unused post-motion target index. Exact-head minimum-Rust run
+  `32463482887` and complete CI run `32463482955` both passed.
 
 ## Alternatives considered
 
@@ -141,9 +145,10 @@ lowerer, so PR #173 does not yet remove the cloned second pass. The target index
 owns runtime names and object-type strings to avoid self-referential state, and
 `motion.rs` temporarily creates a small property-resolution adapter vector.
 Binding-index failures are retained in state and surfaced after easing resolution
-to preserve characterized diagnostic precedence. The post-motion state still
-rebuilds an index that finalization does not consume because the previous pipeline
-did not re-index after the second lower.
+to preserve characterized diagnostic precedence. Appended source entries update
+the runtime-name registry incrementally; the motion-target index is intentionally
+not rebuilt because finalization does not consume it and the previous pipeline did
+not re-index after the second lower.
 
 In return, checked source-map bindings, target discovery, motion source-path
 normalization, appended motion source entries, and runtime-name registration now
