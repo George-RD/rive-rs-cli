@@ -71,41 +71,40 @@ checks["spreadsheet_gold_pixels"] = count_exact(data, (115, 205, 245, 298), COLO
 assert checks["spreadsheet_muted_pixels"] >= 60, checks
 assert checks["spreadsheet_gold_pixels"] >= 50, checks
 
-# The Horaxon gate must be a ring/dark centre with an H, not the solid gold disc
-# seen in the phone screenshot from iteration 3.
+# The Horaxon gate must be a ring/dark centre with an H, not a solid gold disc.
 connected = image(195)
 checks["gate_center"] = connected.getpixel((240, 208))
 checks["gate_core_above_h"] = connected.getpixel((240, 190))
 assert checks["gate_center"] == COLORS["gold"], checks
 assert checks["gate_core_above_h"] == COLORS["gate_core"], checks
 
-# Inbound travel now has no intermediate motion keyframe. Sample the vertical
-# email token between start and arrival and require it to keep moving toward H.
+# Inbound travel has no intermediate motion keyframe. Sample the vertical email
+# token between start and arrival and require it to keep moving toward H.
 inbound_box = (235, 100, 246, 196)
 checks["inbound_token_y"] = [
     neutral_centroid_y(image(frame), inbound_box) for frame in (225, 229, 233)
 ]
 assert checks["inbound_token_y"][0] < checks["inbound_token_y"][1] < checks["inbound_token_y"][2], checks
 
-# The Horaxon -> action journey is also one travel segment now. Sampling frames
-# that used to straddle separate eased waypoints should show uninterrupted
-# forward movement rather than stop/restart beats.
-outbound_box = (234, 246, 247, 314)
+# Horaxon -> action is one travel segment. Iteration 6 shortens that route so the
+# payoff sits in the lower-middle rather than near the bottom edge. Samples that
+# used to straddle separate eased waypoints must still move monotonically.
+outbound_box = (234, 220, 247, 278)
 checks["outbound_token_y"] = [
     neutral_centroid_y(image(frame), outbound_box) for frame in (285, 295, 305)
 ]
 assert checks["outbound_token_y"][0] < checks["outbound_token_y"][1] < checks["outbound_token_y"][2], checks
 
-# The output marker ends above the HTML recommendation; no full-strength gold may
-# continue through the central copy gap.
+# The lifted output marker must finish before the HTML conclusion begins. Keep a
+# clean central gap below the Rive endpoint for the larger payoff text.
 decision = image(322)
-checks["gold_pixels_in_action_gap"] = count_exact(decision, (220, 322, 260, 340), COLORS["gold"])
-assert checks["gold_pixels_in_action_gap"] == 0, checks
+checks["gold_pixels_below_lifted_endpoint"] = count_exact(decision, (220, 285, 260, 302), COLORS["gold"])
+assert checks["gold_pixels_below_lifted_endpoint"] == 0, checks
 
 # Reset is one uninterrupted fade from the held decision directly to the empty
 # loop boundary. Its visual energy must decrease through the fade rather than
 # pausing at an intermediate dissolve pose.
-fade_box = (185, 165, 295, 325)
+fade_box = (185, 165, 295, 292)
 checks["fade_energy"] = [background_energy(image(frame), fade_box) for frame in (420, 450, 480)]
 assert checks["fade_energy"][0] > checks["fade_energy"][1] > checks["fade_energy"][2], checks
 assert checks["fade_energy"][2] == 0, checks
