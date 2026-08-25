@@ -6,7 +6,8 @@ use std::collections::{BTreeMap, HashSet};
 use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSpec, LoweredAuthoring, Quantity, RawSceneFragment, TransformSpec, Unit, VisualSection,
+    AuthoringSpec, LoweredAuthoring, Quantity, RawSceneFragment, TransformSpec, Unit,
+    VisualSection,
 };
 use super::validation::validate_numeric_values;
 use super::visual::VisualNode;
