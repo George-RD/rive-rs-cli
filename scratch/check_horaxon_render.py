@@ -7,6 +7,7 @@ from PIL import Image
 
 RENDER_DIR = Path("scratch/horaxon-render")
 COLORS = {
+    "background": (15, 23, 32),
     "text": (241, 237, 229),
     "gold": (200, 162, 75),
     "muted": (208, 216, 222),
@@ -20,6 +21,31 @@ def image(frame):
 
 def count_exact(img, box, rgb):
     return sum(1 for pixel in img.crop(box).getdata() if pixel == rgb)
+
+
+def background_energy(img, box):
+    background = COLORS["background"]
+    return sum(
+        sum(abs(channel - background[index]) for index, channel in enumerate(pixel))
+        for pixel in img.crop(box).getdata()
+    )
+
+
+def neutral_centroid_y(img, box):
+    left, top, right, bottom = box
+    points = []
+    for y in range(top, bottom):
+        for x in range(left, right):
+            red, green, blue = img.getpixel((x, y))
+            # The moving token has a parchment core. Restrict to roughly neutral,
+            # brighter pixels so gold routes and the dark field do not dominate.
+            if min(red, green, blue) >= 55 and max(red, green, blue) - min(red, green, blue) <= 38:
+                weight = red + green + blue
+                points.append((y, weight))
+    if not points:
+        raise AssertionError(f"no neutral token pixels found in {box}")
+    total = sum(weight for _, weight in points)
+    return sum(y * weight for y, weight in points) / total
 
 
 checks = {}
@@ -53,12 +79,36 @@ checks["gate_core_above_h"] = connected.getpixel((240, 190))
 assert checks["gate_center"] == COLORS["gold"], checks
 assert checks["gate_core_above_h"] == COLORS["gate_core"], checks
 
-# The output marker now ends around y=319. The HTML recommendation begins lower
-# in the web composition; there must be no full-strength output gold continuing
-# through the central gap where the label sits.
-decision = image(310)
+# Inbound travel now has no intermediate motion keyframe. Sample the vertical
+# email token between start and arrival and require it to keep moving toward H.
+inbound_box = (235, 100, 246, 196)
+checks["inbound_token_y"] = [
+    neutral_centroid_y(image(frame), inbound_box) for frame in (225, 229, 233)
+]
+assert checks["inbound_token_y"][0] < checks["inbound_token_y"][1] < checks["inbound_token_y"][2], checks
+
+# The Horaxon -> action journey is also one travel segment now. Sampling frames
+# that used to straddle separate eased waypoints should show uninterrupted
+# forward movement rather than stop/restart beats.
+outbound_box = (234, 246, 247, 314)
+checks["outbound_token_y"] = [
+    neutral_centroid_y(image(frame), outbound_box) for frame in (285, 295, 305)
+]
+assert checks["outbound_token_y"][0] < checks["outbound_token_y"][1] < checks["outbound_token_y"][2], checks
+
+# The output marker ends above the HTML recommendation; no full-strength gold may
+# continue through the central copy gap.
+decision = image(322)
 checks["gold_pixels_in_action_gap"] = count_exact(decision, (220, 322, 260, 340), COLORS["gold"])
 assert checks["gold_pixels_in_action_gap"] == 0, checks
+
+# Reset is one uninterrupted fade from the held decision directly to the empty
+# loop boundary. Its visual energy must decrease through the fade rather than
+# pausing at an intermediate dissolve pose.
+fade_box = (185, 165, 295, 325)
+checks["fade_energy"] = [background_energy(image(frame), fade_box) for frame in (420, 450, 480)]
+assert checks["fade_energy"][0] > checks["fade_energy"][1] > checks["fade_energy"][2], checks
+assert checks["fade_energy"][2] == 0, checks
 
 # The Rive track owns its own reset. The runtime loop boundary must therefore be
 # visually identical rather than relying on JavaScript to hide a jump.
