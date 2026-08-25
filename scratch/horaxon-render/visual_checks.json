@@ -21,14 +21,14 @@
     164.7284222100055
   ],
   "outbound_token_y": [
-    258.3372925232222,
-    285.1484860357083,
-    299.2993654042989
+    236.23758426193424,
+    254.93232456444784,
+    262.73361541645585
   ],
-  "gold_pixels_in_action_gap": 0,
+  "gold_pixels_below_lifted_endpoint": 0,
   "fade_energy": [
-    887449,
-    505625,
+    843370,
+    491667,
     0
   ],
   "loop_boundary_identical": true

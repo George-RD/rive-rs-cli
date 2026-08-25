@@ -3067,7 +3067,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 98,
+                "value": 62,
                 "unit": "px"
               },
               "y": {
@@ -3114,7 +3114,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 90,
+                "value": 54,
                 "unit": "px"
               },
               "y": {
@@ -3169,7 +3169,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 94,
+                "value": 58,
                 "unit": "px"
               },
               "y": {
@@ -3199,7 +3199,7 @@
             "id": "output-line",
             "width": {
               "kind": "literal",
-              "value": 90,
+              "value": 54,
               "unit": "px"
             },
             "height": {
@@ -3216,7 +3216,7 @@
             "transform": {
               "x": {
                 "kind": "literal",
-                "value": 45.0,
+                "value": 27.0,
                 "unit": "px"
               },
               "y": {
@@ -15124,7 +15124,7 @@
               },
               "y": {
                 "kind": "literal",
-                "value": 302,
+                "value": 266,
                 "unit": "px"
               },
               "rotation": {
@@ -15969,7 +15969,7 @@
               },
               "y": {
                 "kind": "literal",
-                "value": 302,
+                "value": 266,
                 "unit": "px"
               },
               "rotation": {
