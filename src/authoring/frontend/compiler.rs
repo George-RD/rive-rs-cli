@@ -84,7 +84,12 @@ impl<'a> AuthoringCompiler<'a> {
         let lowered = draft
             .finish(animations, source_entries, easing_source_entries)
             .map_err(|error| rewrite_error_paths(spec, error))?;
-        for entry in lowered.source_map.entries.iter().skip(existing_source_entries) {
+        for entry in lowered
+            .source_map
+            .entries
+            .iter()
+            .skip(existing_source_entries)
+        {
             runtime_names.register(entry);
         }
         Ok(Self {
