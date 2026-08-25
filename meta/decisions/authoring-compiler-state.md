@@ -24,8 +24,10 @@ revisit_triggers:
   runtime-name registry, checked runtime bindings, and motion-target index while
   preserving public schema, source maps, diagnostics, and ordering.
 - Motion source-path normalization and appended motion source entries are owned by
-  that compiler state. Lower typed motion directly into the same scene draft next,
-  then delete the raw-fragment bridge, cloned `AuthoringSpec`, and second full lower.
+  that compiler state. Normalize post-motion authored paths before rebuilding
+  state derived from the source map, so stored diagnostics use final authored
+  indices. Lower typed motion directly into the same scene draft next, then delete
+  the raw-fragment bridge, cloned `AuthoringSpec`, and second full lower.
 - Do not begin typed behavior/statechart lowering until typed motion and raw
   escapes share one compiler-owned scene draft without the cloned second lower.
 
@@ -39,9 +41,11 @@ output state and runtime-name validation removed one duplicate owner in PR #171;
 compiler-owned checked bindings and target indexing removed the remaining
 source-map scan from `motion.rs` in PR #172; PR #173 moves motion source-map path
 normalization and easing source-entry construction under the same state boundary.
-This leaves direct typed-motion scene mutation as the next isolated deletion
-boundary rather than combining state design, indexing, source-map ownership, and
-scene mutation in one review.
+A review regression proved that source-map normalization must happen before
+runtime-name registry construction because the registry retains authored paths in
+collision diagnostics. This leaves direct typed-motion scene mutation as the next
+isolated deletion boundary rather than combining state design, indexing,
+source-map ownership, and scene mutation in one review.
 
 ## Evidence
 
@@ -119,10 +123,27 @@ scene mutation in one review.
   formatting, Clippy, all Rust tests, browser contracts, Cairn architecture
   validation, official-runtime evidence, demo, site, Playwright, and visual
   regression.
-- Final code head `b25118b7e62c72f8865d91fe52ef5a570b46e187`
+- Final pre-review code head `b25118b7e62c72f8865d91fe52ef5a570b46e187`
   updates appended runtime names incrementally instead of rebuilding the full
   registry and an unused post-motion target index. Exact-head minimum-Rust run
   `32463482887` and complete CI run `32463482955` both passed.
+- After PR #173 was marked ready, Codex review found that the post-motion registry
+  captured a raw-animation collision path before typed-prefix normalization. RED
+  head `702fb2c39958a27f8c66d53d2fbb9c6522b688f4` added the focused regression:
+  minimum-Rust run `32831632752` passed and CI run `32831632768` failed exactly
+  one new Rust test, with 625 tests passing and the collision reported at
+  `$.motion.raw_animations[1].value` instead of authored
+  `$.motion.raw_animations[0].value`.
+- Review fix `bff756f389e6801b212d372270b60d73e34019fd` normalizes the
+  post-motion source map before constructing source-map-derived compiler state,
+  then appends new motion source entries incrementally. Minimum-Rust run
+  `32831885096` passed; CI run `32831885008` stopped only on one rustfmt line wrap,
+  so no behavioral conclusion was drawn from that stable run.
+- Exact formatted review-fix head `da535aae3665c0a6e88b73f927cad3fc1bf5d94c`
+  passed minimum-Rust run `32832102805` and complete CI run `32832102823`:
+  formatting, Clippy, all Rust tests, browser contracts, Cairn architecture
+  validation, official-runtime evidence, demo, site, Playwright, and visual
+  regression.
 
 ## Alternatives considered
 
@@ -133,6 +154,9 @@ scene mutation in one review.
 - **Keep motion source-map mutation in `motion.rs`.** Avoids a small structured
   return type but leaves two owners for source-map paths and appended entries just
   before direct scene mutation.
+- **Patch stored collision diagnostics after path normalization.** Avoids changing
+  state-construction order but creates a second path-mutation owner and risks
+  leaving other source-map-derived state stale.
 - **Use self-referential borrowed bindings.** Avoids small string clones but makes
   `CompilerState` self-referential and harder to mutate safely.
 - **Give behavior a separate compiler.** Reduces short-term coupling but creates
@@ -145,10 +169,12 @@ lowerer, so PR #173 does not yet remove the cloned second pass. The target index
 owns runtime names and object-type strings to avoid self-referential state, and
 `motion.rs` temporarily creates a small property-resolution adapter vector.
 Binding-index failures are retained in state and surfaced after easing resolution
-to preserve characterized diagnostic precedence. Appended source entries update
-the runtime-name registry incrementally; the motion-target index is intentionally
-not rebuilt because finalization does not consume it and the previous pipeline did
-not re-index after the second lower.
+to preserve characterized diagnostic precedence. Post-motion authored paths are
+normalized before rebuilding source-map-derived state so retained diagnostics use
+final authored indices; appended source entries then update the runtime-name
+registry incrementally. The motion-target index is intentionally not rebuilt after
+those appended entries because finalization does not consume it and the previous
+pipeline did not re-index after the second lower.
 
 In return, checked source-map bindings, target discovery, motion source-path
 normalization, appended motion source entries, and runtime-name registration now
