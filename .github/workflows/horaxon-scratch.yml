@@ -48,6 +48,7 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add scratch/horaxon-signal.authoring.json scratch/horaxon-signal-to-action.riv scratch/horaxon-render
+          git add scratch/horaxon-signal.authoring.json scratch/horaxon-render
+          git add -f scratch/horaxon-signal-to-action.riv
           git commit -m 'scratch: compile Horaxon signal-to-action Rive proof'
           git push
