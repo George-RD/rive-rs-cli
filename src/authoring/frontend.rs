@@ -6,8 +6,7 @@ use std::collections::{BTreeMap, HashSet};
 use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, Quantity, RawSceneFragment,
-    TransformSpec, Unit, VisualSection,
+    AuthoringSpec, LoweredAuthoring, Quantity, RawSceneFragment, TransformSpec, Unit, VisualSection,
 };
 use super::validation::validate_numeric_values;
 use super::visual::VisualNode;
@@ -16,17 +15,6 @@ use compiler::AuthoringCompiler;
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     validate_authoring(spec)?;
     AuthoringCompiler::new(spec)?.lower_motion()?.finish()
-}
-
-fn lower_target_graph(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
-    if spec.motion.tracks.is_empty() {
-        return lower::lower_authoring(spec).map_err(|error| rewrite_error_paths(spec, error));
-    }
-
-    let mut target_spec = spec.clone();
-    target_spec.motion = MotionSection::default();
-    target_spec.behavior = BehaviorSection::default();
-    lower::lower_authoring(&target_spec).map_err(|error| rewrite_error_paths(spec, error))
 }
 
 fn validate_authoring(spec: &AuthoringSpec) -> Result<(), AuthoringError> {
@@ -277,8 +265,8 @@ fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringE
                     transform: TransformSpec::default(),
                 }],
             },
-            motion: MotionSection::default(),
-            behavior: BehaviorSection::default(),
+            motion: Default::default(),
+            behavior: Default::default(),
         };
 
         if let Err(error) = lower::lower_authoring(&validation_spec) {
