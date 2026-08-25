@@ -20,14 +20,16 @@ until that frontend and its evidence gates exist.
 
 Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 
-**Next item: [#176 — finish one-pass typed motion lowering in `AuthoringCompiler`](https://github.com/George-RD/rive-rs-cli/issues/176).**
-It has no blockers. A fresh implementation session should continue an open PR for
-this ticket first; otherwise claim #176 before selecting later work.
+**Next item: [#177 — deepen the canonical SceneSpec compilation seam](https://github.com/George-RD/rive-rs-cli/issues/177).**
+[#176](https://github.com/George-RD/rive-rs-cli/issues/176) completes the one-pass
+motion-compiler architecture gate in PR #192. A fresh implementation session
+should continue an open PR for #177 first; otherwise claim #177 before selecting
+later work.
 
 The ordered execution graph is:
 
 ```text
-#176 one-pass motion compiler
+#176 one-pass motion compiler (complete in PR #192)
   -> #177 shared SceneSpec compilation seam
   -> #174 first-class AuthoringSpec CLI
   -> #178 complex animated AuthoringSpec exit gate
@@ -58,8 +60,8 @@ AuthoringSpec progress.
 | P0 | [AuthoringSpec v0 and lowering boundary](meta/todos/todo.authoring-spec-v0.md) | complete in PR #135 | strict schema, deterministic lowering, source map, two validated examples |
 | P0 | [Repair duplicate-reference correctness defect](meta/todos/todo.repair-engine-modularization.md#immediate-correctness-gate) | complete in PR #166 | duplicate-name repair cannot silently retarget an existing reference |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
-| P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | in progress; #176 -> #177 -> #174 -> #178 | one-pass compiler, one shared compile seam, first-class Authoring CLI, complex animated runtime proof |
-| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169, boundary in PR #170, compiler-owned scene/source-map/runtime-name state in PR #171, checked bindings/target index in PR #172, and compiler-owned motion source-map mutation in PR #173; #176 finishes one-pass mutation and #178 supplies the product exit proof | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
+| P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | in progress; #176 complete in PR #192, then #177 -> #174 -> #178 | one-pass compiler, one shared compile seam, first-class Authoring CLI, complex animated runtime proof |
+| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169, boundary in PR #170, compiler-owned scene/source-map/runtime-name state in PR #171, checked bindings/target index in PR #172, compiler-owned motion source-map mutation in PR #173, and one-pass typed motion lowering in PR #192; #178 supplies the product exit proof | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; tickets #179-#181, gated on #178 | view-model bindings and named statecharts reproduce interaction with runtime proof |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 after #178, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 -> #185 after #181 | stable-ID edits validate atomically and preserve unaffected source-map identity |
@@ -68,8 +70,8 @@ AuthoringSpec progress.
 
 ## Delivery dependencies
 
-- #176 completes the existing one-pass motion compiler architecture gate before
-  broader Authoring product expansion.
+- #176 completes the existing one-pass motion compiler architecture gate in PR
+  #192; #177 is the next delivery item.
 - #177 deepens one canonical `SceneSpec -> .riv` compilation seam before #174;
   the Authoring CLI must not duplicate the existing generate/build/encode flow.
 - #174 exposes AuthoringSpec explicitly through the CLI while preserving raw
