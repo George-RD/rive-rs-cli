@@ -89,6 +89,19 @@ fn typed_and_raw_animation_ids_share_one_authored_namespace() {
 }
 
 #[test]
+fn mixed_animation_id_collision_stays_after_motion_preflight() {
+    let mut input = document();
+    input["motion"]["tracks"][0]["fps"] = json!(0);
+    input["motion"]["raw_animations"][0]["id"] = json!("entrance");
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("motion preflight diagnostics must retain their prior precedence");
+    assert_eq!(error.diagnostics.len(), 1);
+    assert_eq!(error.diagnostics[0].code, "invalid_motion_fps");
+    assert_eq!(error.diagnostics[0].path, "$.motion.tracks[0].fps");
+}
+
+#[test]
 fn no_track_raw_fragment_error_precedes_pose_target_error() {
     let mut input = document();
     input["motion"]["tracks"] = json!([]);
