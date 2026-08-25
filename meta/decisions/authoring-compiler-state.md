@@ -18,9 +18,11 @@ revisit_triggers:
 - Keep `AuthoringSpec -> SceneSpec -> canonical builder` as the public and
   validation boundary.
 - Route frontend lowering through one internal `AuthoringCompiler` state.
-  Assets and visuals lower once into a resumable draft; typed motion is emitted
-  into that same final animation list before raw escapes; canonical `SceneSpec`
-  construction and builder validation happen once at finalization.
+  Assets and visuals lower once into a resumable draft. For tracked documents,
+  the provisional visual SceneSpec is canonically validated before motion so the
+  established visual-diagnostic precedence is preserved. Typed motion is then
+  emitted into the same final animation list before raw escapes, and the final
+  assembled SceneSpec is canonically validated after raw content is appended.
 - `AuthoringCompiler` retains the borrowed authored document, while its compiler
   state owns the resumable scene draft, source-map state, runtime-name registry,
   checked runtime bindings, and motion-target index while preserving public
@@ -31,6 +33,11 @@ revisit_triggers:
   bridge, second full visual lower, and bridge-specific diagnostic/source-path
   repair are removed. General authored-path rewriting for expanded visual and
   component diagnostics remains.
+- Raw animation IDs are validated at the final typed/raw animation merge so typed
+  and raw animations share the same authored-ID namespace without moving that
+  diagnostic ahead of typed motion validation. On no-track documents, raw content
+  is finalized before unused pose semantics are checked so the previous raw-error
+  precedence remains stable.
 - Do not begin typed behavior/statechart lowering until the delivery roadmap's
   animated Authoring exit gate is complete; behavior must reuse this compiler
   state rather than introducing a second lowering graph.
@@ -49,12 +56,16 @@ A review regression proved that source-map normalization had to happen before
 runtime-name registry construction because the registry retains authored paths in
 collision diagnostics.
 
-PR #192 completes that migration boundary. The visual/component graph is now
-lowered once, typed motion produces final animation objects and source entries
-without converting back to raw fragments, raw escapes are appended after the
-typed prefix at their final scene indices, and the canonical builder validates the
-assembled SceneSpec once. This removes the bridge-specific path-normalization
-owner entirely instead of carrying it into behavior work.
+PR #192 completes that migration boundary. The visual/component graph is lowered
+once, typed motion produces final animation objects and source entries without
+converting back to raw fragments, and raw escapes append after the typed prefix at
+their final scene indices. Review hardening showed that deleting the second
+lowering pass must not delete the observable validation boundaries it used to
+provide: tracked documents still need visual-only canonical validation before
+motion, typed/raw authored IDs still form one namespace at their merge, and
+no-track raw-fragment failures still precede unused pose semantics. These checks
+now operate on the same compiler-owned draft instead of recreating the authored
+graph.
 
 ## Evidence
 
@@ -158,6 +169,21 @@ owner entirely instead of carrying it into behavior work.
   formatting, Clippy, all Rust tests including the unchanged compiler and motion
   characterization contracts, browser contracts, Cairn architecture validation,
   official-runtime evidence, demo, site, Playwright, and visual regression.
+- Codex review on `8c0f0298e0f1d89dde8642d7ec5be255f8f82e37` found that typed/raw
+  authored animation IDs no longer shared one namespace and that no-track raw
+  fragment failures had moved behind pose validation. Review regressions now pin
+  both contracts plus raw/raw duplicate-ID timing; hardened head
+  `aa0524bca31651115fb2cd463f019a15749aeb31` passed minimum-Rust run
+  `32871336107` and complete CI run `32871336092`.
+- Final Codex re-review on `aa0524bca31651115fb2cd463f019a15749aeb31`
+  found that tracked canonical visual validation had moved behind motion semantic
+  errors. `tests/authoring_compiler_review_regressions.rs` now pins that ordering,
+  and `PartialLowering` validates its provisional visual scene before motion while
+  retaining the same authored draft. Review-fix head
+  `6fbf9188a52d3151772b416562be9c58f4fd99bd` passed minimum-Rust run
+  `32872297769` and complete CI run `32872297773` across formatting, Clippy, all
+  Rust tests, browser contracts, Cairn architecture validation, official-runtime
+  evidence, demo, site, Playwright, and visual regression.
 
 ## Alternatives considered
 
@@ -175,23 +201,29 @@ owner entirely instead of carrying it into behavior work.
   compiler state self-referential and harder to mutate safely.
 - **Give behavior a separate compiler.** Reduces short-term coupling but creates
   competing symbol, runtime-name, and source-map ownership.
+- **Skip provisional canonical validation.** Avoids one builder preflight on
+  tracked documents but changes the established visual-vs-motion diagnostic
+  precedence. The one-pass goal removes duplicate authored lowering, not required
+  validation of an already-lowered draft.
 
 ## Trade-offs
 
 The resumable `PartialLowering` remains a JSON-oriented draft rather than a typed
 incremental `SceneSpec` builder API. Motion-target discovery therefore materializes
-a provisional scene `Value` from the already-lowered visual graph before final
-assembly. That copies the JSON representation but does not repeat authored visual
-or component lowering. The target index owns runtime names and object-type strings
-to avoid self-referential state, and `motion.rs` still creates a small
-property-resolution adapter vector. Binding-index failures remain retained until
-easing resolution to preserve characterized diagnostic precedence, while
+a provisional scene `Value` from the already-lowered visual graph. Tracked
+documents canonically validate that provisional visual scene before motion and
+validate the final assembled scene after motion/raw append. This intentionally
+adds a second canonical validation pass while still performing authored visual and
+component lowering only once; preserving public diagnostic precedence takes
+priority over avoiding validation work. The target index owns runtime names and
+object-type strings to avoid self-referential state, and `motion.rs` still creates
+a small property-resolution adapter vector. Binding-index failures remain retained
+until easing resolution to preserve characterized diagnostic precedence, while
 runtime-name collision reporting remains delayed until compiler finalization.
 
 In return, the cloned second `AuthoringSpec`, second full visual lower,
 typed-motion `RawSceneFragment` bridge, typed-prefix diagnostic/source-map repair,
 and duplicate post-motion compiler-state rebuild are gone. Typed motion and raw
-escapes now share one final SceneSpec assembly path and one canonical builder
-validation. The next delivery slice is #177's shared SceneSpec-to-`.riv`
-compilation seam; typed behavior remains downstream of the animated Authoring exit
-gate and must reuse this compiler state.
+escapes now share one final SceneSpec assembly path. The next delivery slice is
+#177's shared SceneSpec-to-`.riv` compilation seam; typed behavior remains
+downstream of the animated Authoring exit gate and must reuse this compiler state.
