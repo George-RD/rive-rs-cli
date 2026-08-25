@@ -278,10 +278,8 @@ fn lower_tracks(
             }));
         }
 
-        let runtime_name = lower::runtime_name(
-            &[spec.artboard.id.clone(), track.id.clone()],
-            "animation",
-        );
+        let runtime_name =
+            lower::runtime_name(&[spec.artboard.id.clone(), track.id.clone()], "animation");
         let mut value = json!({
             "name": runtime_name.clone(),
             "fps": track.fps,
