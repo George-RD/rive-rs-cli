@@ -101,7 +101,6 @@ impl<'a> AuthoringCompiler<'a> {
                     easing_source_entries,
                 } = motion::lower_motion(spec, motion_targets)
                     .map_err(|error| rewrite_error_paths(spec, error))?;
-                validate_typed_raw_animation_ids(spec, &source_entries)?;
                 let lowered = draft
                     .finish(animations, source_entries, easing_source_entries)
                     .map_err(|error| rewrite_error_paths(spec, error))?;
@@ -233,35 +232,6 @@ impl RuntimeNameRegistry {
             Some(diagnostic) => Err(AuthoringError::one(diagnostic)),
             None => Ok(()),
         }
-    }
-}
-
-fn validate_typed_raw_animation_ids(
-    spec: &AuthoringSpec,
-    typed_source_entries: &[SourceMapEntry],
-) -> Result<(), AuthoringError> {
-    let typed_ids = typed_source_entries
-        .iter()
-        .map(|entry| entry.authored_id.as_str())
-        .collect::<HashSet<_>>();
-    let diagnostics = spec
-        .motion
-        .raw_animations
-        .iter()
-        .enumerate()
-        .filter(|(_, fragment)| typed_ids.contains(fragment.id.as_str()))
-        .map(|(index, fragment)| {
-            AuthoringDiagnostic::new(
-                format!("$.motion.raw_animations[{index}].id"),
-                "duplicate_id",
-                format!("raw fragment id '{}' is duplicated", fragment.id),
-            )
-        })
-        .collect::<Vec<_>>();
-    if diagnostics.is_empty() {
-        Ok(())
-    } else {
-        Err(AuthoringError::many(diagnostics))
     }
 }
 
