@@ -73,6 +73,9 @@ impl<'a> AuthoringCompiler<'a> {
             });
         }
 
+        draft
+            .validate_provisional_scene()
+            .map_err(|error| rewrite_error_paths(spec, error))?;
         let runtime_names = RuntimeNameRegistry::from_source_map(draft.source_map());
         let provisional_scene = draft.provisional_scene();
         let motion_targets = MotionTargetIndex::from_output(&provisional_scene, draft.source_map());
