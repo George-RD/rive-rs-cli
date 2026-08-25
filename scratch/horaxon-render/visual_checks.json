@@ -15,6 +15,21 @@
     27,
     36
   ],
+  "inbound_token_y": [
+    111.5,
+    146.14804917156602,
+    164.7284222100055
+  ],
+  "outbound_token_y": [
+    258.3372925232222,
+    285.1484860357083,
+    299.2993654042989
+  ],
   "gold_pixels_in_action_gap": 0,
+  "fade_energy": [
+    887449,
+    505625,
+    0
+  ],
   "loop_boundary_identical": true
 }
