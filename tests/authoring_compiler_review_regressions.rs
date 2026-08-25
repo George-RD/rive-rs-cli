@@ -72,6 +72,13 @@ fn document() -> Value {
     })
 }
 
+fn duplicate_raw_animation_with_distinct_runtime_name(input: &mut Value) {
+    let first = input["motion"]["raw_animations"][0].clone();
+    let mut second = first.clone();
+    second["value"]["name"] = json!("raw_tail_2");
+    input["motion"]["raw_animations"] = json!([first, second]);
+}
+
 #[test]
 fn typed_and_raw_animation_ids_share_one_authored_namespace() {
     let mut input = document();
@@ -105,8 +112,7 @@ fn mixed_animation_id_collision_stays_after_motion_preflight() {
 fn tracked_motion_error_precedes_raw_animation_id_collision() {
     let mut input = document();
     input["motion"]["poses"][0]["targets"][0]["target"] = json!("missing");
-    let duplicate = input["motion"]["raw_animations"][0].clone();
-    input["motion"]["raw_animations"] = json!([duplicate.clone(), duplicate]);
+    duplicate_raw_animation_with_distinct_runtime_name(&mut input);
 
     let error = lower_authoring_json(&input.to_string())
         .expect_err("typed motion diagnostics must precede final raw-id merging");
@@ -121,8 +127,7 @@ fn tracked_motion_error_precedes_raw_animation_id_collision() {
 #[test]
 fn duplicate_raw_animation_ids_are_still_rejected_at_the_merge() {
     let mut input = document();
-    let duplicate = input["motion"]["raw_animations"][0].clone();
-    input["motion"]["raw_animations"] = json!([duplicate.clone(), duplicate]);
+    duplicate_raw_animation_with_distinct_runtime_name(&mut input);
 
     let error = lower_authoring_json(&input.to_string())
         .expect_err("raw animation IDs must remain unique after deferred validation");
