@@ -376,10 +376,7 @@ mod tests {
             ]),
             1,
         )
-        .append_motion_source_entries(vec![source_entry(
-            "$.motion.easings[0]",
-            "shared_easing",
-        )]);
+        .append_motion_source_entries(vec![source_entry("$.motion.easings[0]", "shared_easing")]);
 
         let actual = state
             .finish()
