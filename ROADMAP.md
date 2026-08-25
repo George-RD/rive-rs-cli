@@ -2,7 +2,8 @@
 
 This roadmap sequences development. Cairn todos under `meta/todos/` hold the
 status and acceptance criteria; accepted decisions under `meta/decisions/` govern
-architecture.
+architecture. GitHub issues are the execution surface; blocker relations determine
+the implementation frontier.
 
 ## Product direction
 
@@ -15,6 +16,39 @@ loop.
 Specialized skills for generating complex Rive files are deliberately blocked
 until that frontend and its evidence gates exist.
 
+## Current implementation frontier
+
+Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
+
+**Next item: [#176 — finish one-pass typed motion lowering in `AuthoringCompiler`](https://github.com/George-RD/rive-rs-cli/issues/176).**
+It has no blockers. A fresh implementation session should continue an open PR for
+this ticket first; otherwise claim #176 before selecting later work.
+
+The ordered execution graph is:
+
+```text
+#176 one-pass motion compiler
+  -> #177 shared SceneSpec compilation seam
+  -> #174 first-class AuthoringSpec CLI
+  -> #178 complex animated AuthoringSpec exit gate
+       |-> #179 typed statechart tracer bullet -> #180 inputs/events -> #181 interactive showcase
+       |-> #182 static + animated semantic evaluations
+
+#181 + #182 -> #183 interactive semantic evaluation
+#181        -> #184 atomic replace -> #185 insert/move/remove
+#183 + #185 -> #186 complex AI generation through AuthoringSpec
+```
+
+After #178, the behavior and static/animated semantic-evaluation branches are
+independent and may proceed in parallel. Do not invent dependencies merely to make
+the graph linear.
+
+Issues #123-#128 remain independent lower-level correctness/coverage work. They
+pre-empt the Authoring frontier only when current parity/runtime evidence shows a
+supported output depends on them, or when a bounded correctness audit is
+deliberately selected. Broad 104-type coverage is not an implicit prerequisite for
+AuthoringSpec progress.
+
 ## Priority order
 
 | Priority | Work | Status | Exit gate |
@@ -24,20 +58,31 @@ until that frontend and its evidence gates exist.
 | P0 | [AuthoringSpec v0 and lowering boundary](meta/todos/todo.authoring-spec-v0.md) | complete in PR #135 | strict schema, deterministic lowering, source map, two validated examples |
 | P0 | [Repair duplicate-reference correctness defect](meta/todos/todo.repair-engine-modularization.md#immediate-correctness-gate) | complete in PR #166 | duplicate-name repair cannot silently retarget an existing reference |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
-| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169, boundary in PR #170, compiler-owned scene/source-map/runtime-name state in PR #171, checked bindings/target index in PR #172, and compiler-owned motion source-map mutation in PR #173; direct one-pass scene mutation remains | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
-| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; gated on the one-pass compiler state | view-model bindings and named statecharts reproduce interaction with runtime proof |
-| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open | semantic evidence reported separately from structural and runtime results |
-| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open | stable-ID edits validate atomically and preserve unaffected source-map identity |
-| P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
+| P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | in progress; #176 -> #177 -> #174 -> #178 | one-pass compiler, one shared compile seam, first-class Authoring CLI, complex animated runtime proof |
+| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169, boundary in PR #170, compiler-owned scene/source-map/runtime-name state in PR #171, checked bindings/target index in PR #172, and compiler-owned motion source-map mutation in PR #173; #176 finishes one-pass mutation and #178 supplies the product exit proof | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
+| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; tickets #179-#181, gated on #178 | view-model bindings and named statecharts reproduce interaction with runtime proof |
+| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 after #178, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
+| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 -> #185 after #181 | stable-ID edits validate atomically and preserve unaffected source-map identity |
+| P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked; #186 requires #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until Authoring compiler state is stable | characterization-preserving split aligned to authored source maps |
 
 ## Delivery dependencies
 
-- The next development session lowers typed motion directly into the existing `AuthoringCompiler` scene draft, appends raw escapes afterward, and begins deleting the cloned second lower and raw-fragment bridge.
-- Complete the one-pass motion compiler architecture gate before behavior/statechart lowering or broader Authoring feature expansion.
-- Semantic evaluation can advance in parallel, but its animated and interactive exit cases require the motion and behavior showcases.
-- Add incremental operations only after the typed visual, motion, and behavior contracts are stable enough to preserve unchanged authored identity.
-- AI-generation skills remain blocked until the frontend, retained runtime and semantic evidence, and incremental operations are complete.
+- #176 completes the existing one-pass motion compiler architecture gate before
+  broader Authoring product expansion.
+- #177 deepens one canonical `SceneSpec -> .riv` compilation seam before #174;
+  the Authoring CLI must not duplicate the existing generate/build/encode flow.
+- #174 exposes AuthoringSpec explicitly through the CLI while preserving raw
+  SceneSpec `generate` as the expert path.
+- #178 turns the real consumer-shaped scattered -> overloaded -> connected ->
+  next-action animation into a generic retained animated showcase and runtime gate.
+- Typed behavior starts only after #178 and must reuse the same compiler-owned
+  scene, source-map, runtime-name, and checked-binding state.
+- Static/animated semantic evaluation (#182) may run in parallel with behavior
+  after #178; interactive semantic evaluation (#183) requires both branches.
+- Incremental operations begin only after the typed behavior contract is stable
+  enough to preserve unaffected authored identity.
+- Complex AI-generation skills remain blocked until #183 and #185 close.
 
 ## Readiness gate for complex AI generation
 
@@ -60,3 +105,7 @@ are true:
 Binary correctness, Rive type coverage, parity, fuzzing, and runtime compatibility
 continue when they unblock the roadmap or close evidenced defects. Broad object
 coverage and specialized skills are not substitutes for the authoring abstraction.
+
+Issue #122's old process-hardening programme and #129's raw-SceneSpec AI prompt
+expansion are closed as superseded. Their valid concrete correctness concerns
+remain represented by focused issues and the current Cairn/TDD/evidence workflow.
