@@ -152,3 +152,26 @@ fn no_track_raw_fragment_error_precedes_pose_target_error() {
         "$.motion.raw_animations[0].value"
     );
 }
+
+#[test]
+fn tracked_visual_validation_precedes_motion_target_error() {
+    let mut input = document();
+    input["visual"]["nodes"] = json!([
+        {
+            "kind": "raw_scene_object",
+            "id": "invalid-source",
+            "object": {
+                "type": "font_asset",
+                "name": "RawAsset",
+                "source": 42
+            }
+        }
+    ]);
+    input["motion"]["poses"][0]["targets"][0]["target"] = json!("missing");
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("visual canonical validation must precede tracked motion diagnostics");
+    assert_eq!(error.diagnostics.len(), 1);
+    assert_eq!(error.diagnostics[0].code, "invalid_lowered_scene");
+    assert_eq!(error.diagnostics[0].path, "$.lowered_scene");
+}
