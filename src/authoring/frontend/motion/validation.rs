@@ -190,6 +190,16 @@ pub(in crate::authoring::frontend) fn validate_motion(
         }
     }
 
+    for (raw_animation_index, raw_animation) in motion.raw_animations.iter().enumerate() {
+        if track_ids.contains(raw_animation.id.as_str()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("$.motion.raw_animations[{raw_animation_index}].id"),
+                "duplicate_id",
+                format!("raw fragment id '{}' is duplicated", raw_animation.id),
+            ));
+        }
+    }
+
     diagnostics
 }
 
