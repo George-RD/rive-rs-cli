@@ -128,16 +128,6 @@ pub(super) fn lower_visual(spec: &AuthoringSpec) -> Result<PartialLowering<'_>, 
         }
     }
     validate_sibling_ids(&spec.visual.nodes, "$.visual.nodes", &mut diagnostics);
-    validate_fragment_ids(
-        &spec.motion.raw_animations,
-        "$.motion.raw_animations",
-        &mut diagnostics,
-    );
-    validate_fragment_ids(
-        &spec.behavior.raw_state_machines,
-        "$.behavior.raw_state_machines",
-        &mut diagnostics,
-    );
 
     if !diagnostics.is_empty() {
         return Err(AuthoringError::many(diagnostics));
@@ -287,6 +277,22 @@ impl<'a> PartialLowering<'a> {
         typed_source_entries: Vec<SourceMapEntry>,
         easing_source_entries: Vec<SourceMapEntry>,
     ) -> Result<LoweredAuthoring, AuthoringError> {
+        let mut diagnostics = Vec::new();
+        validate_animation_fragment_ids(
+            &typed_source_entries,
+            &self.spec.motion.raw_animations,
+            "$.motion.raw_animations",
+            &mut diagnostics,
+        );
+        validate_fragment_ids(
+            &self.spec.behavior.raw_state_machines,
+            "$.behavior.raw_state_machines",
+            &mut diagnostics,
+        );
+        if !diagnostics.is_empty() {
+            return Err(AuthoringError::many(diagnostics));
+        }
+
         let typed_animation_count = typed_animations.len();
         debug_assert_eq!(typed_animation_count, typed_source_entries.len());
         self.source_map.entries.extend(typed_source_entries);
@@ -471,6 +477,29 @@ fn validate_sibling_ids_result(
         Err(first)
     } else {
         Ok(())
+    }
+}
+
+fn validate_animation_fragment_ids(
+    typed_source_entries: &[SourceMapEntry],
+    fragments: &[super::spec::RawSceneFragment],
+    list_path: &str,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    let mut ids = typed_source_entries
+        .iter()
+        .map(|entry| entry.authored_id.clone())
+        .collect::<HashSet<_>>();
+    for (index, fragment) in fragments.iter().enumerate() {
+        let id_path = format!("{list_path}[{index}].id");
+        validate_id(&fragment.id, &id_path, diagnostics);
+        if !ids.insert(fragment.id.clone()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                id_path,
+                "duplicate_id",
+                format!("raw fragment id '{}' is duplicated", fragment.id),
+            ));
+        }
     }
 }
 
