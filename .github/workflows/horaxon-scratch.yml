@@ -26,6 +26,7 @@ jobs:
           node-version: 20
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
+      - run: python -m pip install pillow
       - name: Author with typed motion and compile
         run: |
           python scratch/build_horaxon_signal.py
@@ -44,6 +45,8 @@ jobs:
             --contact-sheet \
             --preview \
             -o scratch/horaxon-render
+      - name: Inspect rendered PNG evidence
+        run: python scratch/check_horaxon_render.py
       - name: Commit generated proof
         run: |
           git config user.name github-actions[bot]
