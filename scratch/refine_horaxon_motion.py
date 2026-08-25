@@ -5,6 +5,8 @@ from pathlib import Path
 
 
 AUTHORING_PATH = Path("scratch/horaxon-signal.authoring.json")
+OUTPUT_LINE_LENGTH = 54
+OUTPUT_MARKER_X = 58
 
 
 def literal(value):
@@ -29,8 +31,39 @@ def keyframe(frame, pose, easing=None):
     return item
 
 
+def node_by_id(nodes, id):
+    for node in nodes:
+        if node.get("id") == id:
+            return node
+    raise RuntimeError(f"missing visual node: {id}")
+
+
+def target_by_id(pose, id):
+    for target in pose["targets"]:
+        if target.get("target") == id:
+            return target
+    raise RuntimeError(f"pose {pose['id']} is missing target: {id}")
+
+
+def set_px(expression, value):
+    expression["value"] = value
+    expression["unit"] = "px"
+
+
 document = json.loads(AUTHORING_PATH.read_text())
 motion = document["motion"]
+
+# Iteration 6 pulls the action payoff upward. The output route remains part of
+# the Rive geometry, while the larger accessible HTML conclusion sits just below
+# it in the website. Keeping this geometry change in the generated proof lets the
+# official-runtime screenshots verify the real endpoint rather than CSS alone.
+output_route = node_by_id(document["visual"]["nodes"], "output-route")
+children = {child["id"]: child for child in output_route["children"]}
+set_px(children["output-line"]["width"], OUTPUT_LINE_LENGTH)
+set_px(children["output-line"]["transform"]["x"], OUTPUT_LINE_LENGTH / 2)
+set_px(children["output-marker"]["transform"]["x"], OUTPUT_MARKER_X)
+set_px(children["output-check-a"]["transform"]["x"], OUTPUT_MARKER_X - 4)
+set_px(children["output-check-b"]["transform"]["x"], OUTPUT_MARKER_X + 4)
 
 # Strong ease-out is useful when an object is meant to settle. It was a poor fit
 # for travel split across several intermediate poses because each segment slowed
@@ -50,19 +83,19 @@ motion["easings"].extend(
 )
 
 poses = {pose["id"]: pose for pose in motion["poses"]}
+decision = poses["decision"]
+gate_y = target_by_id(decision, "horaxon-gate")["transform"]["y"]["value"]
+endpoint_y = gate_y + OUTPUT_MARKER_X
 
-# The existing decision pose already has the final route geometry and endpoint.
-# Clone it with the outbound token still visible so the entire Horaxon -> action
-# journey can be one continuous segment; the following decision pose only fades
-# the token away after it has arrived.
-output_arrive = copy.deepcopy(poses["decision"])
+# The existing decision pose has the final route geometry. Clone it with the
+# outbound token still visible so Horaxon -> action remains one continuous travel
+# segment; then hide the token in decision without changing its settled position.
+output_arrive = copy.deepcopy(decision)
 output_arrive["id"] = "output-arrive"
-for target in output_arrive["targets"]:
-    if target["target"] == "output-token":
-        target["opacity"] = literal(1)
-        break
-else:
-    raise RuntimeError("decision pose is missing output-token")
+arrive_token = target_by_id(output_arrive, "output-token")
+arrive_token["opacity"] = literal(1)
+set_px(arrive_token["transform"]["y"], endpoint_y)
+set_px(target_by_id(decision, "output-token")["transform"]["y"], endpoint_y)
 
 remove = {"flow-mid", "output-start", "output-flow", "dissolve", "output-arrive"}
 filtered = [pose for pose in motion["poses"] if pose["id"] not in remove]
@@ -72,7 +105,7 @@ motion["poses"] = filtered
 
 # One moving segment in, one moving segment out. Duplicate decision poses create
 # a deliberate reading hold without adding a motion waypoint. The final fade is
-# also a single segment directly to the exact empty loop boundary.
+# one segment directly to the exact empty loop boundary.
 frames = [
     (0, "empty", "settle"),
     (24, "message-arrives", "settle"),
