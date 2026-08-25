@@ -18,7 +18,7 @@ def t(x, y, rotation=0, scale=1):
     }
 
 
-def r(id, w, h, x=0, y=0, fill="#1b2834", stroke=None, radius=6, rotation=0, stroke_width=1.4):
+def r(id, w, h, x=0, y=0, fill="#1e2d39", stroke=None, radius=6, rotation=0, stroke_width=1.4):
     node = {
         "kind": "rectangle",
         "id": id,
@@ -47,22 +47,26 @@ def e(id, w, h, x=0, y=0, fill="#f1ede5"):
     return node
 
 
-CARD = "#1b2834"
-CARD_RAISED = "#263744"
+CARD = "#1e2d39"
+CARD_RAISED = "#304657"
 TEXT = "#f1ede5"
-MUTED = "#b4bec7"
-EDGE = "#77848f"
-RULE = "#64727e"
+MUTED = "#d0d8de"
+EDGE = "#aab5bf"
+RULE = "#8795a1"
 GOLD = "#c8a24b"
 
 
 def card(id, w, h, children, radius=11):
+    # The current Rive runtime paints the first sibling on top. The cue lists are
+    # authored background-to-foreground for readability, so reverse them and put
+    # the opaque surface last. Iteration 3 accidentally put the surface first and
+    # hid the very iconography intended to identify the source cards.
     return {
         "kind": "group",
         "id": id,
         "children": [
-            r(f"{id}-surface", w, h, fill=CARD, stroke=EDGE, radius=radius, stroke_width=1.6),
-            *children,
+            *reversed(children),
+            r(f"{id}-surface", w, h, fill=CARD, stroke=EDGE, radius=radius, stroke_width=1.8),
         ],
     }
 
@@ -75,7 +79,7 @@ signal_nodes = [
         110,
         76,
         [
-            r("chat-bubble", 74, 42, 3, 1, CARD_RAISED, stroke=RULE, radius=11),
+            r("chat-bubble", 74, 42, 3, 1, CARD_RAISED, stroke=RULE, radius=11, stroke_width=1.6),
             r("chat-tail", 13, 9, -24, 20, CARD_RAISED, radius=2, rotation=36),
             e("chat-dot-a", 7, 7, -17, 0, TEXT),
             e("chat-dot-b", 7, 7, 3, 0, TEXT),
@@ -88,11 +92,11 @@ signal_nodes = [
         110,
         72,
         [
-            r("mail-envelope", 68, 42, 0, 1, CARD_RAISED, stroke=EDGE, radius=4, stroke_width=1.6),
-            r("mail-flap-left", 39, 2, -15, -6, TEXT, radius=0, rotation=31),
-            r("mail-flap-right", 39, 2, 15, -6, TEXT, radius=0, rotation=-31),
-            r("mail-bottom-left", 30, 2, -19, 12, MUTED, radius=0, rotation=-27),
-            r("mail-bottom-right", 30, 2, 19, 12, MUTED, radius=0, rotation=27),
+            r("mail-envelope", 68, 42, 0, 1, CARD_RAISED, stroke=EDGE, radius=4, stroke_width=1.8),
+            r("mail-flap-left", 39, 2.3, -15, -6, TEXT, radius=0, rotation=31),
+            r("mail-flap-right", 39, 2.3, 15, -6, TEXT, radius=0, rotation=-31),
+            r("mail-bottom-left", 30, 2.2, -19, 12, MUTED, radius=0, rotation=-27),
+            r("mail-bottom-right", 30, 2.2, 19, 12, MUTED, radius=0, rotation=27),
             e("mail-unread", 10, 10, 39, -23, GOLD),
         ],
     ),
@@ -101,12 +105,12 @@ signal_nodes = [
         122,
         84,
         [
-            r("data-sheet", 94, 58, 0, 4, CARD_RAISED, stroke=RULE, radius=3),
+            r("data-sheet", 94, 58, 0, 4, CARD_RAISED, stroke=EDGE, radius=3, stroke_width=1.6),
             r("data-header", 94, 8, 0, -21, RULE, radius=2),
-            r("data-col-a", 1.5, 48, -24, 5, EDGE, radius=0),
-            r("data-col-b", 1.5, 48, 15, 5, EDGE, radius=0),
-            r("data-row-a", 90, 1.5, 0, -5, EDGE, radius=0),
-            r("data-row-b", 90, 1.5, 0, 11, EDGE, radius=0),
+            r("data-col-a", 1.8, 48, -24, 5, MUTED, radius=0),
+            r("data-col-b", 1.8, 48, 15, 5, MUTED, radius=0),
+            r("data-row-a", 90, 1.8, 0, -5, MUTED, radius=0),
+            r("data-row-b", 90, 1.8, 0, 11, MUTED, radius=0),
             r("data-highlight", 28, 10, 30, 20, GOLD, radius=2),
         ],
     ),
@@ -115,7 +119,7 @@ signal_nodes = [
         108,
         82,
         [
-            r("chart-axis", 76, 2, 0, 25, RULE, radius=0),
+            r("chart-axis", 76, 2.2, 0, 25, RULE, radius=0),
             r("chart-bar-a", 13, 24, -27, 12, MUTED, radius=2),
             r("chart-bar-b", 13, 39, -8, 5, MUTED, radius=2),
             r("chart-bar-c", 13, 57, 11, -4, GOLD, radius=2),
@@ -127,8 +131,8 @@ signal_nodes = [
         86,
         106,
         [
-            r("doc-page", 58, 78, 0, 2, CARD_RAISED, stroke=EDGE, radius=3, stroke_width=1.5),
-            r("doc-fold", 17, 17, 20, -29, CARD, stroke=EDGE, radius=1, rotation=45),
+            r("doc-page", 58, 78, 0, 2, CARD_RAISED, stroke=EDGE, radius=3, stroke_width=1.8),
+            r("doc-fold", 17, 17, 20, -29, CARD, stroke=EDGE, radius=1, rotation=45, stroke_width=1.6),
             r("doc-title", 31, 6, -7, -23, TEXT, radius=2),
             r("doc-line-a", 39, 5, -4, -6, MUTED, radius=2),
             r("doc-line-b", 43, 5, -2, 9, MUTED, radius=2),
@@ -141,7 +145,7 @@ signal_nodes = [
         92,
         68,
         [
-            r("alert-diamond", 37, 37, -20, 0, CARD_RAISED, stroke=GOLD, radius=5, rotation=45, stroke_width=1.8),
+            r("alert-diamond", 37, 37, -20, 0, CARD_RAISED, stroke=GOLD, radius=5, rotation=45, stroke_width=2),
             r("alert-mark", 4, 16, -20, -4, GOLD, radius=2),
             e("alert-dot", 5, 5, -20, 9, GOLD),
             r("alert-line-a", 32, 6, 22, -10, TEXT, radius=2),
@@ -153,11 +157,11 @@ signal_nodes = [
         104,
         72,
         [
-            r("task-calendar", 72, 48, 0, 2, CARD_RAISED, stroke=EDGE, radius=5, stroke_width=1.5),
+            r("task-calendar", 72, 48, 0, 2, CARD_RAISED, stroke=EDGE, radius=5, stroke_width=1.8),
             r("task-header", 72, 9, 0, -17, RULE, radius=4),
-            r("task-cell-a", 15, 13, -22, 5, CARD, stroke=RULE, radius=2),
-            r("task-cell-b", 15, 13, 0, 5, CARD, stroke=RULE, radius=2),
-            r("task-cell-c", 15, 13, 22, 5, CARD, stroke=RULE, radius=2),
+            r("task-cell-a", 15, 13, -22, 5, CARD, stroke=MUTED, radius=2),
+            r("task-cell-b", 15, 13, 0, 5, CARD, stroke=MUTED, radius=2),
+            r("task-cell-c", 15, 13, 22, 5, CARD, stroke=MUTED, radius=2),
             r("task-check-a", 8, 2.5, 18, 6, GOLD, radius=1, rotation=42),
             r("task-check-b", 12, 2.5, 25, 1, GOLD, radius=1, rotation=-48),
             e("task-ring-a", 5, 5, -23, -26, GOLD),
@@ -249,12 +253,13 @@ for signal_id in SIGNALS:
 
 
 def token(id):
+    # Foreground core first because first siblings paint on top.
     return {
         "kind": "group",
         "id": id,
         "children": [
-            e(f"{id}-outer", 10, 10, fill=GOLD),
             e(f"{id}-core", 4, 4, fill=TEXT),
+            e(f"{id}-outer", 10, 10, fill=GOLD),
         ],
     }
 
@@ -262,29 +267,32 @@ def token(id):
 TOKEN_IDS = {signal_id: f"token-{signal_id.removeprefix('signal-')}" for signal_id in SIGNALS}
 token_nodes = [token(token_id) for token_id in TOKEN_IDS.values()]
 
+# Same paint-order rule as the cards: H foreground first, ring background last.
 gate_node = {
     "kind": "group",
     "id": "horaxon-gate",
     "children": [
-        e("gate-outer", 74, 74, fill=GOLD),
-        e("gate-inner", 62, 62, fill=CARD),
-        e("gate-core", 48, 48, fill="#111b24"),
-        r("gate-h-left", 5, 28, -10, 0, GOLD, radius=2),
-        r("gate-h-right", 5, 28, 10, 0, GOLD, radius=2),
         r("gate-h-mid", 21, 5, 0, 0, GOLD, radius=2),
+        r("gate-h-right", 5, 28, 10, 0, GOLD, radius=2),
+        r("gate-h-left", 5, 28, -10, 0, GOLD, radius=2),
+        e("gate-core", 48, 48, fill="#111b24"),
+        e("gate-inner", 62, 62, fill=CARD),
+        e("gate-outer", 74, 74, fill=GOLD),
     ],
 }
 
-# The line starts at the Horaxon gate. Scaling the group therefore grows the
-# recommendation route outward from Horaxon rather than materialising a card.
+# Shorten the output route so its marker ends clearly above the HTML action copy.
+OUTPUT_LENGTH = 90
+OUTPUT_MARKER_X = 94
+
 output_node = {
     "kind": "group",
     "id": "output-route",
     "children": [
-        r("output-line", 116, 2.5, 58, 0, GOLD, radius=0),
-        r("output-marker", 28, 28, 118, 0, CARD_RAISED, stroke=GOLD, radius=5, rotation=45, stroke_width=1.8),
-        r("output-check-a", 9, 3, 113, 1, GOLD, radius=1, rotation=42),
-        r("output-check-b", 15, 3, 122, -4, GOLD, radius=1, rotation=-48),
+        r("output-check-b", 13, 3, 98, -4, GOLD, radius=1, rotation=-48),
+        r("output-check-a", 8, 3, 90, 1, GOLD, radius=1, rotation=42),
+        r("output-marker", 24, 24, OUTPUT_MARKER_X, 0, CARD_RAISED, stroke=GOLD, radius=5, rotation=45, stroke_width=2),
+        r("output-line", OUTPUT_LENGTH, 2.5, OUTPUT_LENGTH / 2, 0, GOLD, radius=0),
     ],
 }
 
@@ -344,10 +352,10 @@ def infrastructure(
     for signal_id, token_id in TOKEN_IDS.items():
         x, y = token_position(signal_id, token_progress)
         targets.append(target(token_id, x, y, 0, token_opacity, token_scale))
-    # Output route travels down from the gate. The separate output token makes
-    # selection direction legible before the endpoint/check marker settles.
+    # Output route travels down from the gate. Keep the endpoint above the HTML
+    # recommendation while the separate token makes selection direction legible.
     targets.append(target("output-route", GATE[0], GATE[1], 90, output_opacity, output_scale))
-    output_y = GATE[1] + 118 * output_token_progress
+    output_y = GATE[1] + OUTPUT_MARKER_X * output_token_progress
     targets.append(target("output-token", GATE[0], output_y, 0, output_token_opacity, 1))
     return targets
 
@@ -375,7 +383,7 @@ def connected_pose(id, token_opacity=0, token_progress=0, token_scale=1, gate_sc
     targets = signal_targets(CONNECTED, 0.96)
     targets.extend(
         infrastructure(
-            route_opacity=0.72,
+            route_opacity=0.78,
             gate_opacity=1,
             gate_scale=gate_scale,
             token_opacity=token_opacity,
@@ -387,12 +395,12 @@ def connected_pose(id, token_opacity=0, token_progress=0, token_scale=1, gate_sc
 
 
 def absorbed_pose():
-    targets = signal_targets(CONNECTED, 0.62)
+    targets = signal_targets(CONNECTED, 0.58)
     targets.extend(
         infrastructure(
-            route_opacity=0.68,
+            route_opacity=0.62,
             gate_opacity=1,
-            gate_scale=1.12,
+            gate_scale=1.10,
             token_opacity=0,
             token_progress=1,
             token_scale=0.45,
@@ -402,8 +410,8 @@ def absorbed_pose():
 
 
 def output_pose(id, route_scale, output_token_progress, decision=False):
-    source_opacity = 0.16 if decision else 0.34
-    route_opacity = 0.14 if decision else 0.30
+    source_opacity = 0.14 if decision else 0.30
+    route_opacity = 0.12 if decision else 0.26
     targets = signal_targets(CONNECTED, source_opacity)
     targets.extend(
         infrastructure(
