@@ -36,7 +36,7 @@ jobs:
       - name: Prove storyboard frames in the official runtime
         run: |
           cargo run --quiet -- render scratch/horaxon-signal-to-action.riv \
-            --frames 0,24,52,78,100,118,133,145,162,205,228,258 \
+            --frames 0,24,52,78,118,145,162,195,210,230,248,260,285,300,310,410,445,480 \
             --width 480 \
             --height 420 \
             --scale 1 \
@@ -50,5 +50,5 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add scratch/horaxon-signal.authoring.json scratch/horaxon-render
           git add -f scratch/horaxon-signal-to-action.riv
-          git commit -m 'scratch: compile Horaxon signal-to-action Rive proof'
+          git commit -m 'scratch: compile looping Horaxon signal-to-action proof'
           git push
