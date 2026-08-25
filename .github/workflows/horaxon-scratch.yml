@@ -1,0 +1,53 @@
+name: Horaxon scratch Rive proof
+
+on:
+  push:
+    branches: [scratch/horaxon-signal-to-action]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-proof:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Author with typed motion and compile
+        run: |
+          python scratch/build_horaxon_signal.py
+          cargo run --quiet --example compile_authoring -- \
+            scratch/horaxon-signal.authoring.json \
+            scratch/horaxon-signal-to-action.riv
+          cargo run --quiet -- validate scratch/horaxon-signal-to-action.riv
+      - name: Prove frames in the official runtime
+        run: |
+          cargo run --quiet -- render scratch/horaxon-signal-to-action.riv \
+            --frames 0,55,118,180 \
+            --width 480 \
+            --height 420 \
+            --scale 1 \
+            --background '#0f1720' \
+            --contact-sheet \
+            --preview \
+            -o scratch/horaxon-render
+      - name: Commit generated proof
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add scratch/horaxon-signal.authoring.json scratch/horaxon-signal-to-action.riv scratch/horaxon-render
+          git commit -m 'scratch: compile Horaxon signal-to-action Rive proof'
+          git push
