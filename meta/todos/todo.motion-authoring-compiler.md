@@ -185,6 +185,15 @@ The compiler-owned motion source-map continuation remains within this P2 todo. P
 - final code head `b25118b7e62c72f8865d91fe52ef5a570b46e187` registers appended motion runtime names incrementally instead of rebuilding the full registry and an unused post-motion target index; exact-head minimum-Rust run `32463482887` and complete CI run `32463482955` both passed;
 - public schema, source-map JSON, authored diagnostics, animation ordering, canonical-builder behavior, and runtime evidence remain unchanged under the PR #169 characterization contract.
 
+The one-pass compiler completion remains within this P2 todo. PR #192 completes
+architecture steps 4 and 5 without changing the public Authoring contract:
+
+- assets and visuals lower once into a resumable `PartialLowering` draft, from which the existing checked motion-target index is built without a second authored lowering pass;
+- typed tracks emit final animation objects and final `SourceMapEntry` paths directly, while raw animations append afterward at their typed-prefix scene offsets and raw state-machine escapes retain same-document references to generated animation names;
+- the cloned/cleared second `AuthoringSpec`, typed-motion `RawSceneFragment` bridge, second full visual lower, and bridge-specific diagnostic/source-path repair helpers are removed;
+- the unchanged `tests/authoring_compiler_characterization.rs` and `tests/authoring_motion_contract.rs` remain the public acceptance surface for ordering, authored paths, source-map identity, diagnostic precedence, raw offsets, and canonical builder acceptance;
+- implementation head `f5c7ae682f2255b30f16338cc5e6171d78975f5f` passed minimum-Rust run `32866478672` and complete CI run `32866478752`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression.
+
 ## Architecture gate before further feature expansion
 
 The public boundary remains:
@@ -196,10 +205,10 @@ the implementation behind that boundary in this order:
 
 1. **Characterized in PR #169.** Preserve mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
 2. **Boundary introduced in PR #170.** Route frontend lowering through one internal `AuthoringCompiler` that initially owns the authored document and current lowered target graph.
-3. **Advanced through PRs #171–#173.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, runtime-name registry, checked runtime bindings, motion-target index, motion source-path normalization, and appended motion source entries. Move only resolved symbols needed for direct scene mutation into that state next.
-4. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
-5. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
-6. Make typed behavior consume the same compiler state only after the one-pass motion path is characterized and verified.
+3. **Advanced through PRs #171–#173.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, runtime-name registry, checked runtime bindings, motion-target index, motion source-path normalization, and appended motion source entries.
+4. **Completed in PR #192.** Lower assets and visuals into that state once; lower typed motion into the same final scene assembly; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
+5. **Completed in PR #192.** Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based bridge diagnostic/source-path repair.
+6. Make typed behavior consume the same compiler state only after the animated Authoring exit gate is characterized and verified.
 7. Once compiler state exists, introduce a validated internal authoring model so ordinary authored symbol/reference rules have one user-facing owner; retain canonical lowerer and builder checks as defense in depth.
 8. Consolidate only stable contract-test helpers such as `literal`, `lower`, diagnostic assertions, and keyframe lookup. Keep scenario JSON local so tests continue to expose the public document contract.
 
@@ -210,7 +219,6 @@ solely because they exceed a line-count guideline.
 
 ## Remaining
 
-- Complete direct one-pass typed-motion scene mutation and deletion steps 4–8 above before behavior/statecharts or broad Authoring expansion.
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
 - Color and additional non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.
