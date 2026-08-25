@@ -400,6 +400,27 @@ mod tests {
     }
 
     #[test]
+    fn compiler_state_normalizes_raw_collision_path_after_typed_prefix() {
+        let result = CompilerState::from_lowered(lowered(vec![
+            source_entry("$.visual.nodes[0]", "shared"),
+            source_entry("$.motion.raw_animations[0]", "typed_motion"),
+            source_entry("$.motion.raw_animations[1]", "shared"),
+        ]))
+        .apply_motion_source_map(1, Vec::new())
+        .finish();
+        let Err(error) = result else {
+            panic!("duplicate raw runtime name must fail compiler-state finalization");
+        };
+
+        assert_eq!(error.diagnostics.len(), 1);
+        assert_eq!(
+            error.diagnostics[0].path,
+            "$.motion.raw_animations[0].value"
+        );
+        assert_eq!(error.diagnostics[0].code, "runtime_name_collision");
+    }
+
+    #[test]
     fn compiler_state_registers_appended_motion_source_names() {
         let result =
             CompilerState::from_lowered(lowered(vec![source_entry("$.visual.nodes[0]", "shared")]))
