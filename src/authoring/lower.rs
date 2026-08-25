@@ -267,6 +267,10 @@ impl<'a> PartialLowering<'a> {
         })
     }
 
+    pub(super) fn validate_provisional_scene(&self) -> Result<(), AuthoringError> {
+        validate_scene(&self.provisional_scene())
+    }
+
     pub(super) fn source_map(&self) -> &AuthoringSourceMap {
         &self.source_map
     }
@@ -336,22 +340,7 @@ impl<'a> PartialLowering<'a> {
             "artboard": artboard
         });
 
-        let validation_scene = without_asset_sources(&scene);
-        let scene_spec =
-            serde_json::from_value::<SceneSpec>(validation_scene).map_err(|error| {
-                AuthoringError::one(AuthoringDiagnostic::new(
-                    "$.lowered_scene",
-                    "invalid_lowered_scene",
-                    error.to_string(),
-                ))
-            })?;
-        build_scene(&scene_spec, None).map_err(|error| {
-            AuthoringError::one(AuthoringDiagnostic::new(
-                "$.lowered_scene",
-                "builder_rejected_scene",
-                error.to_string(),
-            ))
-        })?;
+        validate_scene(&scene)?;
 
         Ok(LoweredAuthoring {
             scene,
@@ -532,6 +521,25 @@ fn font_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {
 
 fn image_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {
     file_asset_runtime_name(artboard_id, asset_id, "image_asset")
+}
+
+fn validate_scene(scene: &Value) -> Result<(), AuthoringError> {
+    let validation_scene = without_asset_sources(scene);
+    let scene_spec = serde_json::from_value::<SceneSpec>(validation_scene).map_err(|error| {
+        AuthoringError::one(AuthoringDiagnostic::new(
+            "$.lowered_scene",
+            "invalid_lowered_scene",
+            error.to_string(),
+        ))
+    })?;
+    build_scene(&scene_spec, None).map_err(|error| {
+        AuthoringError::one(AuthoringDiagnostic::new(
+            "$.lowered_scene",
+            "builder_rejected_scene",
+            error.to_string(),
+        ))
+    })?;
+    Ok(())
 }
 
 fn without_asset_sources(scene: &Value) -> Value {
