@@ -17,35 +17,44 @@ revisit_triggers:
 
 - Keep `AuthoringSpec -> SceneSpec -> canonical builder` as the public and
   validation boundary.
-- Route frontend lowering through one internal `AuthoringCompiler` state before
-  deleting the existing cloned second lowering pass.
-- `AuthoringCompiler` retains the borrowed authored document, while its
-  `CompilerState` owns the canonical JSON scene draft, source-map state,
-  runtime-name registry, checked runtime bindings, and motion-target index while
-  preserving public schema, source maps, diagnostics, and ordering.
-- Motion source-path normalization and appended motion source entries are owned by
-  that compiler state. Normalize post-motion authored paths before rebuilding
-  state derived from the source map, so stored diagnostics use final authored
-  indices. Lower typed motion directly into the same scene draft next, then delete
-  the raw-fragment bridge, cloned `AuthoringSpec`, and second full lower.
-- Do not begin typed behavior/statechart lowering until typed motion and raw
-  escapes share one compiler-owned scene draft without the cloned second lower.
+- Route frontend lowering through one internal `AuthoringCompiler` state.
+  Assets and visuals lower once into a resumable draft; typed motion is emitted
+  into that same final animation list before raw escapes; canonical `SceneSpec`
+  construction and builder validation happen once at finalization.
+- `AuthoringCompiler` retains the borrowed authored document, while its compiler
+  state owns the resumable scene draft, source-map state, runtime-name registry,
+  checked runtime bindings, and motion-target index while preserving public
+  schema, source maps, diagnostics, and ordering.
+- Typed track entries receive their final animation paths directly. Raw animation
+  paths are created at their final typed-prefix offset while they are appended.
+  The cloned/cleared second `AuthoringSpec`, typed-motion `RawSceneFragment`
+  bridge, second full visual lower, and bridge-specific diagnostic/source-path
+  repair are removed. General authored-path rewriting for expanded visual and
+  component diagnostics remains.
+- Do not begin typed behavior/statechart lowering until the delivery roadmap's
+  animated Authoring exit gate is complete; behavior must reuse this compiler
+  state rather than introducing a second lowering graph.
 
 ## Why
 
 The mixed typed/raw characterization in PR #169 fixes ordering, cross-reference,
 source-map identity, canonical-builder acceptance, and authored diagnostic paths.
-Introducing a state boundary before moving scene ownership keeps those contracts
+Introducing a state boundary before moving scene ownership kept those contracts
 stable while giving the one-pass migration one explicit home. Compiler-owned
 output state and runtime-name validation removed one duplicate owner in PR #171;
 compiler-owned checked bindings and target indexing removed the remaining
-source-map scan from `motion.rs` in PR #172; PR #173 moves motion source-map path
+source-map scan from `motion.rs` in PR #172; PR #173 moved motion source-map path
 normalization and easing source-entry construction under the same state boundary.
-A review regression proved that source-map normalization must happen before
+A review regression proved that source-map normalization had to happen before
 runtime-name registry construction because the registry retains authored paths in
-collision diagnostics. This leaves direct typed-motion scene mutation as the next
-isolated deletion boundary rather than combining state design, indexing,
-source-map ownership, and scene mutation in one review.
+collision diagnostics.
+
+PR #192 completes that migration boundary. The visual/component graph is now
+lowered once, typed motion produces final animation objects and source entries
+without converting back to raw fragments, raw escapes are appended after the
+typed prefix at their final scene indices, and the canonical builder validates the
+assembled SceneSpec once. This removes the bridge-specific path-normalization
+owner entirely instead of carrying it into behavior work.
 
 ## Evidence
 
@@ -144,6 +153,11 @@ source-map ownership, and scene mutation in one review.
   formatting, Clippy, all Rust tests, browser contracts, Cairn architecture
   validation, official-runtime evidence, demo, site, Playwright, and visual
   regression.
+- PR #192 implementation head `f5c7ae682f2255b30f16338cc5e6171d78975f5f`
+  passed minimum-Rust run `32866478672` and complete CI run `32866478752`:
+  formatting, Clippy, all Rust tests including the unchanged compiler and motion
+  characterization contracts, browser contracts, Cairn architecture validation,
+  official-runtime evidence, demo, site, Playwright, and visual regression.
 
 ## Alternatives considered
 
@@ -158,26 +172,26 @@ source-map ownership, and scene mutation in one review.
   state-construction order but creates a second path-mutation owner and risks
   leaving other source-map-derived state stale.
 - **Use self-referential borrowed bindings.** Avoids small string clones but makes
-  `CompilerState` self-referential and harder to mutate safely.
+  compiler state self-referential and harder to mutate safely.
 - **Give behavior a separate compiler.** Reduces short-term coupling but creates
   competing symbol, runtime-name, and source-map ownership.
 
 ## Trade-offs
 
-`CompilerState` still adapts through `LoweredAuthoring` around the existing motion
-lowerer, so PR #173 does not yet remove the cloned second pass. The target index
-owns runtime names and object-type strings to avoid self-referential state, and
-`motion.rs` temporarily creates a small property-resolution adapter vector.
-Binding-index failures are retained in state and surfaced after easing resolution
-to preserve characterized diagnostic precedence. Post-motion authored paths are
-normalized before rebuilding source-map-derived state so retained diagnostics use
-final authored indices; appended source entries then update the runtime-name
-registry incrementally. The motion-target index is intentionally not rebuilt after
-those appended entries because finalization does not consume it and the previous
-pipeline did not re-index after the second lower.
+The resumable `PartialLowering` remains a JSON-oriented draft rather than a typed
+incremental `SceneSpec` builder API. Motion-target discovery therefore materializes
+a provisional scene `Value` from the already-lowered visual graph before final
+assembly. That copies the JSON representation but does not repeat authored visual
+or component lowering. The target index owns runtime names and object-type strings
+to avoid self-referential state, and `motion.rs` still creates a small
+property-resolution adapter vector. Binding-index failures remain retained until
+easing resolution to preserve characterized diagnostic precedence, while
+runtime-name collision reporting remains delayed until compiler finalization.
 
-In return, checked source-map bindings, target discovery, motion source-path
-normalization, appended motion source entries, and runtime-name registration now
-have one compiler-state owner. The next slice can lower typed motion directly into
-the existing scene draft, append raw escapes afterward, and delete the clone,
-second full visual lower, raw-fragment bridge, and remaining path-repair adapter.
+In return, the cloned second `AuthoringSpec`, second full visual lower,
+typed-motion `RawSceneFragment` bridge, typed-prefix diagnostic/source-map repair,
+and duplicate post-motion compiler-state rebuild are gone. Typed motion and raw
+escapes now share one final SceneSpec assembly path and one canonical builder
+validation. The next delivery slice is #177's shared SceneSpec-to-`.riv`
+compilation seam; typed behavior remains downstream of the animated Authoring exit
+gate and must reuse this compiler state.
