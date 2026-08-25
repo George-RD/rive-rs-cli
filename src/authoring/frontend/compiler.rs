@@ -27,6 +27,12 @@ pub(super) struct MotionLoweringInput {
     pub(super) motion_targets: Result<MotionTargetIndex, AuthoringDiagnostic>,
 }
 
+pub(super) struct MotionLoweringOutput {
+    pub(super) lowered: LoweredAuthoring,
+    pub(super) typed_animation_count: usize,
+    pub(super) source_entries: Vec<SourceMapEntry>,
+}
+
 pub(super) struct MotionTargetIndex {
     targets: HashMap<String, IndexedMotionTarget>,
 }
@@ -57,11 +63,16 @@ impl<'a> AuthoringCompiler<'a> {
 
     pub(super) fn lower_motion(self) -> Result<Self, AuthoringError> {
         let Self { spec, state } = self;
-        let lowered = motion::lower_motion(spec, state.into_motion_input())
+        let MotionLoweringOutput {
+            lowered,
+            typed_animation_count,
+            source_entries,
+        } = motion::lower_motion(spec, state.into_motion_input())
             .map_err(|error| rewrite_error_paths(spec, error))?;
         Ok(Self {
             spec,
-            state: CompilerState::from_lowered(lowered),
+            state: CompilerState::from_motion_lowered(lowered, typed_animation_count)
+                .append_motion_source_entries(source_entries),
         })
     }
 
@@ -81,6 +92,19 @@ impl CompilerState {
             runtime_names,
             motion_targets,
         }
+    }
+
+    fn from_motion_lowered(mut lowered: LoweredAuthoring, typed_animation_count: usize) -> Self {
+        rewrite_motion_source_paths(&mut lowered.source_map, typed_animation_count);
+        Self::from_lowered(lowered)
+    }
+
+    fn append_motion_source_entries(mut self, source_entries: Vec<SourceMapEntry>) -> Self {
+        for entry in source_entries {
+            self.runtime_names.register(&entry);
+            self.source_map.entries.push(entry);
+        }
+        self
     }
 
     fn into_motion_input(self) -> MotionLoweringInput {
@@ -185,6 +209,30 @@ impl RuntimeNameRegistry {
             Some(diagnostic) => Err(AuthoringError::one(diagnostic)),
             None => Ok(()),
         }
+    }
+}
+
+fn rewrite_motion_source_paths(source_map: &mut AuthoringSourceMap, typed_animation_count: usize) {
+    for entry in &mut source_map.entries {
+        if let Some(path) = rewritten_motion_path(&entry.authored_path, typed_animation_count) {
+            entry.authored_path = path;
+        }
+    }
+}
+
+pub(super) fn rewritten_motion_path(path: &str, typed_animation_count: usize) -> Option<String> {
+    let remainder = path.strip_prefix("$.motion.raw_animations[")?;
+    let close = remainder.find(']')?;
+    let index = remainder[..close].parse::<usize>().ok()?;
+    let suffix = &remainder[close + 1..];
+    if index < typed_animation_count {
+        let suffix = suffix.strip_prefix(".value").unwrap_or(suffix);
+        Some(format!("$.motion.tracks[{index}]{suffix}"))
+    } else {
+        Some(format!(
+            "$.motion.raw_animations[{}]{suffix}",
+            index - typed_animation_count
+        ))
     }
 }
 
@@ -316,5 +364,76 @@ mod tests {
 
         assert_eq!(diagnostic.code, "invalid_source_map_binding");
         assert_eq!(diagnostic.path, "$.visual.nodes[0]");
+    }
+
+    #[test]
+    fn compiler_state_owns_motion_source_map_mutation() {
+        let state = CompilerState::from_motion_lowered(
+            lowered(vec![
+                source_entry("$.visual.nodes[0]", "card"),
+                source_entry("$.motion.raw_animations[0]", "typed_motion"),
+                source_entry("$.motion.raw_animations[1]", "raw_motion"),
+            ]),
+            1,
+        )
+        .append_motion_source_entries(vec![source_entry("$.motion.easings[0]", "shared_easing")]);
+
+        let actual = state
+            .finish()
+            .expect("compiler-owned source-map mutation must preserve valid state");
+        let paths = actual
+            .source_map
+            .entries
+            .iter()
+            .map(|entry| entry.authored_path.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            paths,
+            vec![
+                "$.visual.nodes[0]",
+                "$.motion.tracks[0]",
+                "$.motion.raw_animations[0]",
+                "$.motion.easings[0]",
+            ]
+        );
+    }
+
+    #[test]
+    fn compiler_state_normalizes_raw_collision_path_after_typed_prefix() {
+        let result = CompilerState::from_motion_lowered(
+            lowered(vec![
+                source_entry("$.visual.nodes[0]", "shared"),
+                source_entry("$.motion.raw_animations[0]", "typed_motion"),
+                source_entry("$.motion.raw_animations[1]", "shared"),
+            ]),
+            1,
+        )
+        .finish();
+        let Err(error) = result else {
+            panic!("duplicate raw runtime name must fail compiler-state finalization");
+        };
+
+        assert_eq!(error.diagnostics.len(), 1);
+        assert_eq!(
+            error.diagnostics[0].path,
+            "$.motion.raw_animations[0].value"
+        );
+        assert_eq!(error.diagnostics[0].code, "runtime_name_collision");
+    }
+
+    #[test]
+    fn compiler_state_registers_appended_motion_source_names() {
+        let result =
+            CompilerState::from_lowered(lowered(vec![source_entry("$.visual.nodes[0]", "shared")]))
+                .append_motion_source_entries(vec![source_entry("$.motion.easings[0]", "shared")])
+                .finish();
+        let Err(error) = result else {
+            panic!("appended motion source names must participate in collision checks");
+        };
+
+        assert_eq!(error.diagnostics.len(), 1);
+        assert_eq!(error.diagnostics[0].path, "$.motion.easings[0]");
+        assert_eq!(error.diagnostics[0].code, "runtime_name_collision");
     }
 }

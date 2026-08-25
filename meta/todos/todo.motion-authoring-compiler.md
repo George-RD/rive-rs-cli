@@ -171,6 +171,20 @@ advances architecture step 3 rather than opening a new roadmap item:
 - exact implementation head `7faf26a31a2782a4022e54463828473109717722` passed minimum-Rust run `31962017692` and complete CI run `31962017694`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
 - public schema, source-map JSON, authored diagnostics, animation ordering, canonical-builder behavior, and runtime evidence remain unchanged under the PR #169 characterization contract.
 
+The compiler-owned motion source-map continuation remains within this P2 todo. PR
+#173 advances architecture step 3 rather than opening a new roadmap item:
+
+- the audit found no open pull request to continue; retained branches map to merged or stale documented work, while `ROADMAP.md`, this todo, and `dec.authoring-compiler-state` all identified motion source-map construction as the next compiler-state boundary;
+- RED head `6d456927aa7007f5646181230d589289df2fb918` added compiler-state contracts for typed-animation path normalization, raw-animation index preservation, and appended motion source-entry registration; CI run `32462071558` stopped at formatting before behavioral tests;
+- formatted RED head `252bc90395e933ebff65aed8c7d2c869d377779d` failed minimum-Rust run `32462193068` exactly because `CompilerState::apply_motion_source_map` did not exist;
+- `CompilerState` now owns motion source-path normalization, appended easing source entries, and incremental runtime-name registration; `motion.rs` returns structured lowering output rather than mutating source-map state itself;
+- the mutating easing source-map helper was replaced by a pure source-entry producer, and diagnostic/source-map motion path rewriting now shares one helper rather than duplicate string-offset logic;
+- implementation head `5e1355dc5a12b4f4639705794894bf0e36cbe684` passed the Rust 1.88 minimum, while stable CI run `32462491648` exposed unrelated Rust 1.98 `chunks_exact_to_as_chunks` lint drift in pre-existing `render/image.rs`;
+- commits `c2d10ce0879725f843330e727a2981cc71166ab6` and `166e831fd4c00c7231cfcc027f5a817d9ee49fc2` mechanically adopted constant chunk APIs while preserving the Rust 1.88 comparison semantics;
+- compatibility-fix head `166e831fd4c00c7231cfcc027f5a817d9ee49fc2` passed minimum-Rust run `32462871969` and complete CI run `32462872156`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
+- final code head `b25118b7e62c72f8865d91fe52ef5a570b46e187` registers appended motion runtime names incrementally instead of rebuilding the full registry and an unused post-motion target index; exact-head minimum-Rust run `32463482887` and complete CI run `32463482955` both passed;
+- public schema, source-map JSON, authored diagnostics, animation ordering, canonical-builder behavior, and runtime evidence remain unchanged under the PR #169 characterization contract.
+
 ## Architecture gate before further feature expansion
 
 The public boundary remains:
@@ -182,7 +196,7 @@ the implementation behind that boundary in this order:
 
 1. **Characterized in PR #169.** Preserve mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
 2. **Boundary introduced in PR #170.** Route frontend lowering through one internal `AuthoringCompiler` that initially owns the authored document and current lowered target graph.
-3. **Advanced through PRs #171–#172.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, runtime-name registry, checked runtime bindings, and motion-target index. Move remaining resolved symbols and mutation-oriented source-map construction into that state.
+3. **Advanced through PRs #171–#173.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, runtime-name registry, checked runtime bindings, motion-target index, motion source-path normalization, and appended motion source entries. Move only resolved symbols needed for direct scene mutation into that state next.
 4. Lower assets and visuals into that state once; lower typed motion directly into the same scene draft; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
 5. Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based diagnostic/source-path repair.
 6. Make typed behavior consume the same compiler state only after the one-pass motion path is characterized and verified.
@@ -196,7 +210,7 @@ solely because they exceed a line-count guideline.
 
 ## Remaining
 
-- Complete the remaining compiler-state step 3 and one-pass lowering steps 4–8 above before behavior/statecharts or broad Authoring expansion.
+- Complete direct one-pass typed-motion scene mutation and deletion steps 4–8 above before behavior/statecharts or broad Authoring expansion.
 - Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
 - Color and additional non-transform property tracks.
 - A complex animated showcase with retained official-runtime frame evidence.
