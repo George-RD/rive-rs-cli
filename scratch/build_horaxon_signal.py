@@ -18,7 +18,7 @@ def t(x, y, rotation=0, scale=1):
     }
 
 
-def r(id, w, h, x=0, y=0, fill="#151e27", stroke=None, radius=6, rotation=0):
+def r(id, w, h, x=0, y=0, fill="#1b2834", stroke=None, radius=6, rotation=0, stroke_width=1.4):
     node = {
         "kind": "rectangle",
         "id": id,
@@ -28,7 +28,7 @@ def r(id, w, h, x=0, y=0, fill="#151e27", stroke=None, radius=6, rotation=0):
         "fill": fill,
     }
     if stroke:
-        node["stroke"] = {"paint": stroke, "width": l(1, "px")}
+        node["stroke"] = {"paint": stroke, "width": l(stroke_width, "px")}
     if x or y or rotation:
         node["transform"] = t(x, y, rotation)
     return node
@@ -47,120 +47,121 @@ def e(id, w, h, x=0, y=0, fill="#f1ede5"):
     return node
 
 
-INK = "#151e27"
-RAISED = "#1b2631"
+CARD = "#1b2834"
+CARD_RAISED = "#263744"
 TEXT = "#f1ede5"
-MUTED = "#8795a1"
-RULE = "#52606b"
+MUTED = "#b4bec7"
+EDGE = "#77848f"
+RULE = "#64727e"
 GOLD = "#c8a24b"
 
 
-def card(id, w, h, children):
+def card(id, w, h, children, radius=11):
     return {
         "kind": "group",
         "id": id,
         "children": [
-            r(f"{id}-surface", w, h, fill=INK, stroke=RULE, radius=10),
+            r(f"{id}-surface", w, h, fill=CARD, stroke=EDGE, radius=radius, stroke_width=1.6),
             *children,
         ],
     }
 
 
+# The cues are deliberately large and simple. At phone size the category should
+# read before any small interface detail does.
 signal_nodes = [
     card(
         "signal-chat",
-        96,
-        62,
+        110,
+        76,
         [
-            e("chat-avatar", 18, 18, -32, -12, GOLD),
-            e("chat-unread", 7, 7, -24, -20, TEXT),
-            r("chat-bubble", 52, 27, 15, 3, RAISED, radius=7),
-            r("chat-line-a", 30, 4, 10, -2, TEXT, radius=2),
-            r("chat-line-b", 22, 4, 6, 8, MUTED, radius=2),
-            r("chat-tail", 9, 7, -5, 15, RAISED, radius=2, rotation=35),
+            r("chat-bubble", 74, 42, 3, 1, CARD_RAISED, stroke=RULE, radius=11),
+            r("chat-tail", 13, 9, -24, 20, CARD_RAISED, radius=2, rotation=36),
+            e("chat-dot-a", 7, 7, -17, 0, TEXT),
+            e("chat-dot-b", 7, 7, 3, 0, TEXT),
+            e("chat-dot-c", 7, 7, 23, 0, TEXT),
+            e("chat-unread", 11, 11, 39, -25, GOLD),
         ],
     ),
     card(
         "signal-mail",
-        100,
-        64,
+        110,
+        72,
         [
-            r("mail-envelope", 34, 24, -29, -4, RAISED, stroke=MUTED, radius=3),
-            r("mail-flap-left", 19, 1.5, -36, -6, MUTED, radius=0, rotation=31),
-            r("mail-flap-right", 19, 1.5, -22, -6, MUTED, radius=0, rotation=-31),
-            r("mail-line-a", 37, 4, 20, -13, TEXT, radius=2),
-            r("mail-line-b", 42, 4, 17, 1, MUTED, radius=2),
-            r("mail-line-c", 28, 4, 10, 15, MUTED, radius=2),
+            r("mail-envelope", 68, 42, 0, 1, CARD_RAISED, stroke=EDGE, radius=4, stroke_width=1.6),
+            r("mail-flap-left", 39, 2, -15, -6, TEXT, radius=0, rotation=31),
+            r("mail-flap-right", 39, 2, 15, -6, TEXT, radius=0, rotation=-31),
+            r("mail-bottom-left", 30, 2, -19, 12, MUTED, radius=0, rotation=-27),
+            r("mail-bottom-right", 30, 2, 19, 12, MUTED, radius=0, rotation=27),
+            e("mail-unread", 10, 10, 39, -23, GOLD),
         ],
     ),
     card(
         "signal-data",
-        112,
-        76,
+        122,
+        84,
         [
-            r("data-header", 92, 7, 0, -25, RAISED, radius=2),
-            r("data-col-a", 1, 44, -27, 7, RULE, radius=0),
-            r("data-col-b", 1, 44, 12, 7, RULE, radius=0),
-            r("data-row-a", 92, 1, 0, -7, RULE, radius=0),
-            r("data-row-b", 92, 1, 0, 10, RULE, radius=0),
-            r("data-cell-a", 20, 5, -38, 2, TEXT, radius=2),
-            r("data-cell-b", 22, 5, -7, 19, MUTED, radius=2),
-            r("data-cell-c", 20, 5, 35, 19, GOLD, radius=2),
+            r("data-sheet", 94, 58, 0, 4, CARD_RAISED, stroke=RULE, radius=3),
+            r("data-header", 94, 8, 0, -21, RULE, radius=2),
+            r("data-col-a", 1.5, 48, -24, 5, EDGE, radius=0),
+            r("data-col-b", 1.5, 48, 15, 5, EDGE, radius=0),
+            r("data-row-a", 90, 1.5, 0, -5, EDGE, radius=0),
+            r("data-row-b", 90, 1.5, 0, 11, EDGE, radius=0),
+            r("data-highlight", 28, 10, 30, 20, GOLD, radius=2),
         ],
     ),
     card(
         "signal-chart",
-        94,
-        74,
+        108,
+        82,
         [
-            r("chart-axis", 68, 1, 0, 25, RULE, radius=0),
-            r("chart-bar-a", 10, 20, -24, 14, MUTED, radius=2),
-            r("chart-bar-b", 10, 34, -7, 7, MUTED, radius=2),
-            r("chart-bar-c", 10, 49, 10, 0, GOLD, radius=2),
-            r("chart-bar-d", 10, 29, 27, 10, TEXT, radius=2),
-            e("chart-status", 7, 7, 31, -24, GOLD),
+            r("chart-axis", 76, 2, 0, 25, RULE, radius=0),
+            r("chart-bar-a", 13, 24, -27, 12, MUTED, radius=2),
+            r("chart-bar-b", 13, 39, -8, 5, MUTED, radius=2),
+            r("chart-bar-c", 13, 57, 11, -4, GOLD, radius=2),
+            r("chart-bar-d", 13, 33, 30, 8, TEXT, radius=2),
         ],
     ),
     card(
         "signal-doc",
-        78,
-        96,
+        86,
+        106,
         [
-            r("doc-mark", 8, 18, -27, -31, GOLD, radius=1),
-            r("doc-fold", 13, 13, 25, -36, RAISED, stroke=RULE, radius=2),
-            r("doc-title", 29, 5, 6, -31, TEXT, radius=2),
-            r("doc-line-a", 52, 4, -4, -11, MUTED, radius=2),
-            r("doc-line-b", 46, 4, -7, 3, MUTED, radius=2),
-            r("doc-line-c", 54, 4, -3, 17, MUTED, radius=2),
-            r("doc-line-d", 31, 4, -14, 31, MUTED, radius=2),
+            r("doc-page", 58, 78, 0, 2, CARD_RAISED, stroke=EDGE, radius=3, stroke_width=1.5),
+            r("doc-fold", 17, 17, 20, -29, CARD, stroke=EDGE, radius=1, rotation=45),
+            r("doc-title", 31, 6, -7, -23, TEXT, radius=2),
+            r("doc-line-a", 39, 5, -4, -6, MUTED, radius=2),
+            r("doc-line-b", 43, 5, -2, 9, MUTED, radius=2),
+            r("doc-line-c", 31, 5, -8, 24, MUTED, radius=2),
+            r("doc-mark", 6, 18, -23, -25, GOLD, radius=1),
         ],
     ),
     card(
         "signal-alert",
-        88,
-        60,
+        92,
+        68,
         [
-            e("alert-ring", 29, 29, -25, 0, GOLD),
-            e("alert-inner", 21, 21, -25, 0, INK),
-            r("alert-mark", 3, 10, -25, -3, GOLD, radius=2),
-            e("alert-dot", 4, 4, -25, 6, GOLD),
-            r("alert-line-a", 34, 5, 17, -10, TEXT, radius=2),
-            r("alert-line-b", 40, 4, 20, 4, MUTED, radius=2),
-            r("alert-line-c", 27, 4, 13, 16, MUTED, radius=2),
+            r("alert-diamond", 37, 37, -20, 0, CARD_RAISED, stroke=GOLD, radius=5, rotation=45, stroke_width=1.8),
+            r("alert-mark", 4, 16, -20, -4, GOLD, radius=2),
+            e("alert-dot", 5, 5, -20, 9, GOLD),
+            r("alert-line-a", 32, 6, 22, -10, TEXT, radius=2),
+            r("alert-line-b", 35, 5, 23, 6, MUTED, radius=2),
         ],
     ),
     card(
         "signal-task",
-        94,
-        64,
+        104,
+        72,
         [
-            r("task-header", 72, 7, 0, -21, RAISED, radius=2),
-            r("task-cell-a", 16, 14, -26, 3, RAISED, stroke=RULE, radius=3),
-            r("task-cell-b", 16, 14, 0, 3, RAISED, stroke=RULE, radius=3),
-            r("task-cell-c", 16, 14, 26, 3, RAISED, stroke=RULE, radius=3),
-            r("task-check-a", 7, 2, 22, 4, GOLD, radius=1, rotation=42),
-            r("task-check-b", 11, 2, 29, 0, GOLD, radius=1, rotation=-48),
-            r("task-line", 50, 4, -11, 21, MUTED, radius=2),
+            r("task-calendar", 72, 48, 0, 2, CARD_RAISED, stroke=EDGE, radius=5, stroke_width=1.5),
+            r("task-header", 72, 9, 0, -17, RULE, radius=4),
+            r("task-cell-a", 15, 13, -22, 5, CARD, stroke=RULE, radius=2),
+            r("task-cell-b", 15, 13, 0, 5, CARD, stroke=RULE, radius=2),
+            r("task-cell-c", 15, 13, 22, 5, CARD, stroke=RULE, radius=2),
+            r("task-check-a", 8, 2.5, 18, 6, GOLD, radius=1, rotation=42),
+            r("task-check-b", 12, 2.5, 25, 1, GOLD, radius=1, rotation=-48),
+            e("task-ring-a", 5, 5, -23, -26, GOLD),
+            e("task-ring-b", 5, 5, 23, -26, GOLD),
         ],
     ),
 ]
@@ -176,57 +177,48 @@ SIGNALS = [
 ]
 
 SPAWN = {
-    "signal-chat": (-70, 116, -8),
-    "signal-mail": (550, 105, 8),
-    "signal-data": (-85, 308, 5),
-    "signal-chart": (555, 300, -7),
-    "signal-doc": (240, -80, 8),
-    "signal-alert": (-65, 210, -10),
-    "signal-task": (545, 210, 8),
+    "signal-chat": (-75, 115, -7),
+    "signal-mail": (555, 110, 8),
+    "signal-data": (-90, 315, 5),
+    "signal-chart": (560, 300, -7),
+    "signal-doc": (240, -90, 8),
+    "signal-alert": (-70, 215, -9),
+    "signal-task": (555, 210, 8),
 }
 
 PILE = {
-    "signal-chat": (165, 132, -6),
-    "signal-mail": (277, 124, 6),
-    "signal-data": (194, 239, 3),
-    "signal-chart": (290, 239, -5),
-    "signal-doc": (241, 166, 8),
-    "signal-alert": (171, 204, -8),
-    "signal-task": (306, 193, 5),
+    "signal-chat": (154, 124, -5),
+    "signal-mail": (313, 120, 5),
+    "signal-data": (179, 251, 3),
+    "signal-chart": (307, 250, -4),
+    "signal-doc": (241, 168, 7),
+    "signal-alert": (171, 210, -7),
+    "signal-task": (309, 199, 5),
 }
 
 OVERLOAD = {
-    "signal-chat": (198, 163, -11, 1.04),
-    "signal-mail": (278, 157, 9, 1.04),
-    "signal-data": (216, 229, -5, 1.02),
-    "signal-chart": (286, 232, 8, 1.02),
-    "signal-doc": (243, 187, -9, 1.04),
-    "signal-alert": (190, 214, 11, 1.03),
-    "signal-task": (300, 201, -10, 1.03),
+    "signal-chat": (196, 163, -10, 1.03),
+    "signal-mail": (282, 158, 8, 1.03),
+    "signal-data": (214, 232, -5, 1.01),
+    "signal-chart": (286, 234, 7, 1.01),
+    "signal-doc": (243, 188, -8, 1.02),
+    "signal-alert": (188, 215, 10, 1.02),
+    "signal-task": (302, 202, -9, 1.02),
 }
 
-INTAKE = {
-    "signal-chat": (70, 70, 0, 0.55),
-    "signal-mail": (165, 70, 0, 0.54),
-    "signal-data": (70, 166, 0, 0.46),
-    "signal-chart": (165, 166, 0, 0.52),
-    "signal-doc": (70, 270, 0, 0.43),
-    "signal-alert": (165, 260, 0, 0.56),
-    "signal-task": (118, 354, 0, 0.54),
+# Connected arrangement deliberately surrounds Horaxon instead of creating a
+# left-to-right flowchart. It should read as one system gathering many sources.
+CONNECTED = {
+    "signal-chat": (94, 72, -2, 0.78),
+    "signal-mail": (240, 66, 0, 0.76),
+    "signal-data": (76, 193, 0, 0.66),
+    "signal-chart": (404, 184, 0, 0.72),
+    "signal-doc": (78, 316, 0, 0.60),
+    "signal-alert": (239, 341, 0, 0.76),
+    "signal-task": (401, 306, 0, 0.70),
 }
 
-GATE = (292, 205)
-
-ROUTE_STARTS = {
-    "signal-chat": (105, 70),
-    "signal-mail": (198, 70),
-    "signal-data": (107, 166),
-    "signal-chart": (198, 166),
-    "signal-doc": (101, 270),
-    "signal-alert": (198, 260),
-    "signal-task": (157, 354),
-}
-ROUTE_END = (263, 205)
+GATE = (240, 208)
 
 
 def route_geometry(start, end):
@@ -243,45 +235,64 @@ def route_geometry(start, end):
 ROUTES = {}
 route_nodes = []
 for signal_id in SIGNALS:
+    start = CONNECTED[signal_id][:2]
     route_id = f"route-{signal_id.removeprefix('signal-')}"
-    length, x, y, rotation = route_geometry(ROUTE_STARTS[signal_id], ROUTE_END)
+    length, x, y, rotation = route_geometry(start, GATE)
     ROUTES[route_id] = (x, y, rotation)
     route_nodes.append(
         {
             "kind": "group",
             "id": route_id,
-            "children": [
-                r(f"{route_id}-line", length, 1.5, fill=GOLD, radius=0),
-            ],
+            "children": [r(f"{route_id}-line", length, 1.8, fill=GOLD, radius=0)],
         }
     )
+
+
+def token(id):
+    return {
+        "kind": "group",
+        "id": id,
+        "children": [
+            e(f"{id}-outer", 10, 10, fill=GOLD),
+            e(f"{id}-core", 4, 4, fill=TEXT),
+        ],
+    }
+
+
+TOKEN_IDS = {signal_id: f"token-{signal_id.removeprefix('signal-')}" for signal_id in SIGNALS}
+token_nodes = [token(token_id) for token_id in TOKEN_IDS.values()]
 
 gate_node = {
     "kind": "group",
     "id": "horaxon-gate",
     "children": [
-        e("gate-outer", 66, 66, fill=GOLD),
-        e("gate-inner", 56, 56, fill=INK),
-        r("gate-h-left", 4, 25, -9, 0, GOLD, radius=2),
-        r("gate-h-right", 4, 25, 9, 0, GOLD, radius=2),
-        r("gate-h-mid", 18, 4, 0, 0, GOLD, radius=2),
+        e("gate-outer", 74, 74, fill=GOLD),
+        e("gate-inner", 62, 62, fill=CARD),
+        e("gate-core", 48, 48, fill="#111b24"),
+        r("gate-h-left", 5, 28, -10, 0, GOLD, radius=2),
+        r("gate-h-right", 5, 28, 10, 0, GOLD, radius=2),
+        r("gate-h-mid", 21, 5, 0, 0, GOLD, radius=2),
     ],
 }
 
+# The line starts at the Horaxon gate. Scaling the group therefore grows the
+# recommendation route outward from Horaxon rather than materialising a card.
 output_node = {
     "kind": "group",
     "id": "output-route",
     "children": [
-        r("output-line", 116, 2, 58, 0, GOLD, radius=0),
-        e("output-ring", 22, 22, 118, 0, GOLD),
-        e("output-core", 12, 12, 118, 0, INK),
-        e("output-point", 5, 5, 118, 0, TEXT),
+        r("output-line", 116, 2.5, 58, 0, GOLD, radius=0),
+        r("output-marker", 28, 28, 118, 0, CARD_RAISED, stroke=GOLD, radius=5, rotation=45, stroke_width=1.8),
+        r("output-check-a", 9, 3, 113, 1, GOLD, radius=1, rotation=42),
+        r("output-check-b", 15, 3, 122, -4, GOLD, radius=1, rotation=-48),
     ],
 }
 
-# First siblings paint above later siblings in the Rive runtime. Keep the gate and
-# source surfaces above route geometry, with the output rail behind both.
-nodes = [gate_node, *signal_nodes, *route_nodes, output_node]
+output_token_node = token("output-token")
+
+# First top-level siblings are retained above later infrastructure in the current
+# runtime. Tokens and gate therefore stay readable while routes sit behind them.
+nodes = [*token_nodes, output_token_node, gate_node, *signal_nodes, *route_nodes, output_node]
 
 
 def target(id, x, y, rotation=0, opacity=1, scale=1):
@@ -292,19 +303,52 @@ def target(id, x, y, rotation=0, opacity=1, scale=1):
     }
 
 
+def signal_targets(layout, opacity=1):
+    targets = []
+    for signal_id in SIGNALS:
+        values = layout[signal_id]
+        if len(values) == 3:
+            x, y, rotation = values
+            scale = 1
+        else:
+            x, y, rotation, scale = values
+        targets.append(target(signal_id, x, y, rotation, opacity, scale))
+    return targets
+
+
+def token_position(signal_id, progress):
+    sx, sy = CONNECTED[signal_id][:2]
+    return (
+        sx + (GATE[0] - sx) * progress,
+        sy + (GATE[1] - sy) * progress,
+    )
+
+
 def infrastructure(
     route_opacity=0,
     gate_opacity=0,
     gate_scale=0.84,
+    token_opacity=0,
+    token_progress=0,
+    token_scale=1,
     output_opacity=0,
     output_scale=0.05,
+    output_token_opacity=0,
+    output_token_progress=0,
 ):
     targets = [
         target(route_id, x, y, rotation, route_opacity, 1)
         for route_id, (x, y, rotation) in ROUTES.items()
     ]
     targets.append(target("horaxon-gate", GATE[0], GATE[1], 0, gate_opacity, gate_scale))
-    targets.append(target("output-route", GATE[0], GATE[1], 0, output_opacity, output_scale))
+    for signal_id, token_id in TOKEN_IDS.items():
+        x, y = token_position(signal_id, token_progress)
+        targets.append(target(token_id, x, y, 0, token_opacity, token_scale))
+    # Output route travels down from the gate. The separate output token makes
+    # selection direction legible before the endpoint/check marker settles.
+    targets.append(target("output-route", GATE[0], GATE[1], 90, output_opacity, output_scale))
+    output_y = GATE[1] + 118 * output_token_progress
+    targets.append(target("output-token", GATE[0], output_y, 0, output_token_opacity, 1))
     return targets
 
 
@@ -313,7 +357,7 @@ def arrival_pose(id, visible_count):
     for index, signal_id in enumerate(SIGNALS):
         if index < visible_count:
             x, y, rotation = PILE[signal_id]
-            targets.append(target(signal_id, x, y, rotation, 0.98, 1))
+            targets.append(target(signal_id, x, y, rotation, 1, 1))
         else:
             x, y, rotation = SPAWN[signal_id]
             targets.append(target(signal_id, x, y, rotation, 0, 0.92))
@@ -322,57 +366,73 @@ def arrival_pose(id, visible_count):
 
 
 def overload_pose():
-    targets = [
-        target(signal_id, *OVERLOAD[signal_id][:3], 1, OVERLOAD[signal_id][3])
-        for signal_id in SIGNALS
-    ]
+    targets = signal_targets(OVERLOAD)
     targets.extend(infrastructure())
     return {"id": "overload", "targets": targets}
 
 
-def intake_pose():
-    targets = [
-        target(signal_id, *INTAKE[signal_id][:3], 0.78, INTAKE[signal_id][3])
-        for signal_id in SIGNALS
-    ]
-    targets.extend(infrastructure(route_opacity=0.76, gate_opacity=1, gate_scale=1))
-    return {"id": "horaxon-intake", "targets": targets}
-
-
-def distill_pose():
-    targets = []
-    for signal_id in SIGNALS:
-        x, y, _, scale = INTAKE[signal_id]
-        tx = x + (GATE[0] - x) * 0.72
-        ty = y + (GATE[1] - y) * 0.72
-        targets.append(target(signal_id, tx, ty, 0, 0.30, scale * 0.48))
+def connected_pose(id, token_opacity=0, token_progress=0, token_scale=1, gate_scale=1):
+    targets = signal_targets(CONNECTED, 0.96)
     targets.extend(
         infrastructure(
-            route_opacity=0.92,
+            route_opacity=0.72,
             gate_opacity=1,
-            gate_scale=1.08,
-            output_opacity=0.28,
-            output_scale=0.32,
+            gate_scale=gate_scale,
+            token_opacity=token_opacity,
+            token_progress=token_progress,
+            token_scale=token_scale,
         )
     )
-    return {"id": "distill", "targets": targets}
+    return {"id": id, "targets": targets}
 
 
-def decision_pose():
-    targets = [
-        target(signal_id, GATE[0] - 10, GATE[1], 0, 0, 0.12)
-        for signal_id in SIGNALS
-    ]
+def absorbed_pose():
+    targets = signal_targets(CONNECTED, 0.62)
     targets.extend(
         infrastructure(
-            route_opacity=0.20,
+            route_opacity=0.68,
             gate_opacity=1,
-            gate_scale=1,
+            gate_scale=1.12,
+            token_opacity=0,
+            token_progress=1,
+            token_scale=0.45,
+        )
+    )
+    return {"id": "absorbed", "targets": targets}
+
+
+def output_pose(id, route_scale, output_token_progress, decision=False):
+    source_opacity = 0.16 if decision else 0.34
+    route_opacity = 0.14 if decision else 0.30
+    targets = signal_targets(CONNECTED, source_opacity)
+    targets.extend(
+        infrastructure(
+            route_opacity=route_opacity,
+            gate_opacity=1,
+            gate_scale=1.0,
             output_opacity=1,
-            output_scale=1,
+            output_scale=route_scale,
+            output_token_opacity=0 if decision else 1,
+            output_token_progress=output_token_progress,
         )
     )
-    return {"id": "decision", "targets": targets}
+    return {"id": id, "targets": targets}
+
+
+def dissolve_pose():
+    targets = signal_targets(CONNECTED, 0)
+    targets.extend(
+        infrastructure(
+            route_opacity=0,
+            gate_opacity=0.18,
+            gate_scale=0.92,
+            output_opacity=0.18,
+            output_scale=1,
+            output_token_opacity=0,
+            output_token_progress=1,
+        )
+    )
+    return {"id": "dissolve", "targets": targets}
 
 
 poses = [
@@ -385,9 +445,15 @@ poses = [
     arrival_pose("alert-arrives", 6),
     arrival_pose("task-arrives", 7),
     overload_pose(),
-    intake_pose(),
-    distill_pose(),
-    decision_pose(),
+    connected_pose("connected"),
+    connected_pose("flow-start", token_opacity=1, token_progress=0),
+    connected_pose("flow-mid", token_opacity=1, token_progress=0.56),
+    connected_pose("flow-arrive", token_opacity=1, token_progress=1, token_scale=0.62, gate_scale=1.05),
+    absorbed_pose(),
+    output_pose("output-start", 0.28, 0.12),
+    output_pose("output-flow", 0.70, 0.58),
+    output_pose("decision", 1, 1, decision=True),
+    dissolve_pose(),
 ]
 
 frames = [
@@ -400,9 +466,17 @@ frames = [
     (133, "alert-arrives", "settle"),
     (145, "task-arrives", "settle"),
     (162, "overload", "settle"),
-    (205, "horaxon-intake", "settle"),
-    (228, "distill", "settle"),
-    (258, "decision", None),
+    (195, "connected", "settle"),
+    (210, "flow-start", "settle"),
+    (230, "flow-mid", "settle"),
+    (248, "flow-arrive", "settle"),
+    (260, "absorbed", "settle"),
+    (285, "output-start", "settle"),
+    (300, "output-flow", "settle"),
+    (310, "decision", "settle"),
+    (410, "decision", "settle"),
+    (445, "dissolve", "settle"),
+    (480, "empty", None),
 ]
 
 keyframes = []
@@ -437,8 +511,8 @@ document = {
             {
                 "id": "signal-to-action",
                 "fps": 60,
-                "duration_frames": l(258, "scalar"),
-                "loop_type": "oneshot",
+                "duration_frames": l(480, "scalar"),
+                "loop_type": "loop",
                 "keyframes": keyframes,
             }
         ],
