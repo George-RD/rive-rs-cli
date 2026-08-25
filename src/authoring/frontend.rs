@@ -6,8 +6,8 @@ use std::collections::{BTreeMap, HashSet};
 use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSpec, LoweredAuthoring, Quantity, RawSceneFragment, TransformSpec, Unit,
-    VisualSection,
+    AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, Quantity, RawSceneFragment,
+    TransformSpec, Unit, VisualSection,
 };
 use super::validation::validate_numeric_values;
 use super::visual::VisualNode;
@@ -266,8 +266,8 @@ fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringE
                     transform: TransformSpec::default(),
                 }],
             },
-            motion: Default::default(),
-            behavior: Default::default(),
+            motion: MotionSection::default(),
+            behavior: BehaviorSection::default(),
         };
 
         if let Err(error) = lower::lower_authoring(&validation_spec) {
