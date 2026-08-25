@@ -1,0 +1,20 @@
+{
+  "message_text_pixels": 79,
+  "message_gold_pixels": 76,
+  "email_text_pixels": 81,
+  "email_gold_pixels": 61,
+  "spreadsheet_muted_pixels": 208,
+  "spreadsheet_gold_pixels": 238,
+  "gate_center": [
+    200,
+    162,
+    75
+  ],
+  "gate_core_above_h": [
+    17,
+    27,
+    36
+  ],
+  "gold_pixels_in_action_gap": 0,
+  "loop_boundary_identical": true
+}
