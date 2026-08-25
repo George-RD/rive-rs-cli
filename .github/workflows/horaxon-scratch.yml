@@ -33,10 +33,10 @@ jobs:
             scratch/horaxon-signal.authoring.json \
             scratch/horaxon-signal-to-action.riv
           cargo run --quiet -- validate scratch/horaxon-signal-to-action.riv
-      - name: Prove frames in the official runtime
+      - name: Prove storyboard frames in the official runtime
         run: |
           cargo run --quiet -- render scratch/horaxon-signal-to-action.riv \
-            --frames 0,55,118,180 \
+            --frames 0,24,52,78,100,118,133,145,162,205,228,258 \
             --width 480 \
             --height 420 \
             --scale 1 \
