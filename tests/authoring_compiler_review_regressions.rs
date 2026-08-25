@@ -102,6 +102,36 @@ fn mixed_animation_id_collision_stays_after_motion_preflight() {
 }
 
 #[test]
+fn tracked_motion_error_precedes_raw_animation_id_collision() {
+    let mut input = document();
+    input["motion"]["poses"][0]["targets"][0]["target"] = json!("missing");
+    let duplicate = input["motion"]["raw_animations"][0].clone();
+    input["motion"]["raw_animations"] = json!([duplicate.clone(), duplicate]);
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("typed motion diagnostics must precede final raw-id merging");
+    assert_eq!(error.diagnostics.len(), 1);
+    assert_eq!(error.diagnostics[0].code, "unknown_motion_target");
+    assert_eq!(
+        error.diagnostics[0].path,
+        "$.motion.poses[0].targets[0].target"
+    );
+}
+
+#[test]
+fn duplicate_raw_animation_ids_are_still_rejected_at_the_merge() {
+    let mut input = document();
+    let duplicate = input["motion"]["raw_animations"][0].clone();
+    input["motion"]["raw_animations"] = json!([duplicate.clone(), duplicate]);
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("raw animation IDs must remain unique after deferred validation");
+    assert_eq!(error.diagnostics.len(), 1);
+    assert_eq!(error.diagnostics[0].code, "duplicate_id");
+    assert_eq!(error.diagnostics[0].path, "$.motion.raw_animations[1].id");
+}
+
+#[test]
 fn no_track_raw_fragment_error_precedes_pose_target_error() {
     let mut input = document();
     input["motion"]["tracks"] = json!([]);
