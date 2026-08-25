@@ -52,7 +52,7 @@ PR #159 records that follow-up:
 - frame and duration expressions normalize only bounded round-off around whole numbers and continue to reject material fractional values;
 - visual motion targets are indexed once instead of rescanning the full source map for every pose target;
 - the checked pose-shape invariant now returns an authored `pose_shape_mismatch` diagnostic rather than using a panic shortcut;
-- exact implementation head `197d4cd` passed rustfmt, Clippy, the complete Rust suite, browser contracts, and Cairn scan/lint in CI run 704 before the durable contract evidence was committed.
+- exact implementation head `197d4cd` passed rustfmt, Clippy, the complete Rust suite, browser contracts, and Cairn scan/lint in CI run 704 before this durable contract evidence was committed.
 
 A review arriving immediately after #159 merged found that its absolute `1e-9`
 rounding cap could be smaller than one floating-point ULP for large supported frame
@@ -167,7 +167,7 @@ advances architecture step 3 rather than opening a new roadmap item:
 - one-to-one source-map binding checks, typed scene-object resolution, ambiguous authored-target handling, and target diagnostics moved from `motion.rs` into `compiler/target_index.rs`;
 - `motion.rs` now consumes compiler-owned bindings and only adapts them for property selection; the duplicate index, binding helpers, diagnostics, and colocated tests were removed from that module;
 - the index stores owned strings so the compiler state remains non-self-referential, while a retained `Result` surfaces binding failures after easing resolution and preserves the characterized diagnostic precedence;
-- implementation head `b7bab3149c682f8b60628f07d49a74254d9781ff` passed minimum-Rust run `31961897868`; CI run `31961897869` stopped only on two rustfmt line wraps, so no broader behavioral conclusion was drawn from that stable run;
+- implementation head `b7bab3149c682f8b60628f07d49a74254d9781ff` passed minimum-Rust run `31961897868`; stable CI run `31961897869` stopped only on two rustfmt line wraps, so no broader behavioral conclusion was drawn from that stable run;
 - exact implementation head `7faf26a31a2782a4022e54463828473109717722` passed minimum-Rust run `31962017692` and complete CI run `31962017694`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
 - public schema, source-map JSON, authored diagnostics, animation ordering, canonical-builder behavior, and runtime evidence remain unchanged under the PR #169 characterization contract.
 
@@ -176,10 +176,10 @@ The compiler-owned motion source-map continuation remains within this P2 todo. P
 
 - the audit found no open pull request to continue; retained branches map to merged or stale documented work, while `ROADMAP.md`, this todo, and `dec.authoring-compiler-state` all identified motion source-map construction as the next compiler-state boundary;
 - RED head `6d456927aa7007f5646181230d589289df2fb918` added compiler-state contracts for typed-animation path normalization, raw-animation index preservation, and appended motion source-entry registration; CI run `32462071558` stopped at formatting before behavioral tests;
-- formatted RED head `252bc90395e933ebff65aed8c7d2c869d377779d` failed minimum-Rust run `32462193068` exactly because `CompilerState::apply_motion_source_map` did not exist;
+- formatted RED head `252bc90395e933ebff65aed8c7d2c869d377779d` failed minimum-Rust run `32462193068` exactly because `CompilerState::apply_motion_source_map` did not yet exist;
 - `CompilerState` now owns motion source-path normalization, appended easing source entries, and incremental runtime-name registration; `motion.rs` returns structured lowering output rather than mutating source-map state itself;
 - the mutating easing source-map helper was replaced by a pure source-entry producer, and diagnostic/source-map motion path rewriting now shares one helper rather than duplicate string-offset logic;
-- implementation head `5e1355dc5a12b4f4639705794894bf0e36cbe684` passed the Rust 1.88 minimum, while stable CI run `32462491648` exposed unrelated Rust 1.98 `chunks_exact_to_as_chunks` lint drift in pre-existing `render/image.rs`;
+- implementation head `5e1355dc5a12b4f4639705794894bf0e36cbe684` passed the Rust 1.88 minimum, while stable CI run `32462491648` exposed unrelated toolchain drift: Rust 1.98 `chunks_exact_to_as_chunks` lint drift in pre-existing `render/image.rs`;
 - commits `c2d10ce0879725f843330e727a2981cc71166ab6` and `166e831fd4c00c7231cfcc027f5a817d9ee49fc2` mechanically adopted constant chunk APIs while preserving the Rust 1.88 comparison semantics;
 - compatibility-fix head `166e831fd4c00c7231cfcc027f5a817d9ee49fc2` passed minimum-Rust run `32462871969` and complete CI run `32462872156`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression;
 - final code head `b25118b7e62c72f8865d91fe52ef5a570b46e187` registers appended motion runtime names incrementally instead of rebuilding the full registry and an unused post-motion target index; exact-head minimum-Rust run `32463482887` and complete CI run `32463482955` both passed;
@@ -188,11 +188,13 @@ The compiler-owned motion source-map continuation remains within this P2 todo. P
 The one-pass compiler completion remains within this P2 todo. PR #192 completes
 architecture steps 4 and 5 without changing the public Authoring contract:
 
-- assets and visuals lower once into a resumable `PartialLowering` draft, from which the existing checked motion-target index is built without a second authored lowering pass;
+- assets and visuals lower once into a resumable `PartialLowering` draft; tracked documents canonically validate that provisional visual scene before motion so prior visual-error precedence is retained without a second authored lowering pass;
 - typed tracks emit final animation objects and final `SourceMapEntry` paths directly, while raw animations append afterward at their typed-prefix scene offsets and raw state-machine escapes retain same-document references to generated animation names;
+- typed and raw animations share one authored-ID namespace at their final merge; no-track documents finalize raw content before unused pose semantics are checked, preserving the prior diagnostic order;
 - the cloned/cleared second `AuthoringSpec`, typed-motion `RawSceneFragment` bridge, second full visual lower, and bridge-specific diagnostic/source-path repair helpers are removed;
-- the unchanged `tests/authoring_compiler_characterization.rs` and `tests/authoring_motion_contract.rs` remain the public acceptance surface for ordering, authored paths, source-map identity, diagnostic precedence, raw offsets, and canonical builder acceptance;
-- implementation head `f5c7ae682f2255b30f16338cc5e6171d78975f5f` passed minimum-Rust run `32866478672` and complete CI run `32866478752`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression.
+- the unchanged `tests/authoring_compiler_characterization.rs` and `tests/authoring_motion_contract.rs` remain the core public acceptance surface, while `tests/authoring_compiler_review_regressions.rs` pins the review-discovered ID and diagnostic-precedence contracts;
+- implementation head `f5c7ae682f2255b30f16338cc5e6171d78975f5f` passed minimum-Rust run `32866478672` and complete CI run `32866478752`;
+- hardened review head `6fbf9188a52d3151772b416562be9c58f4fd99bd` passed minimum-Rust run `32872297769` and complete CI run `32872297773`: rustfmt, Clippy, all Rust tests, browser contracts, Cairn architecture validation, official-runtime evidence, demo, site, Playwright, and visual regression.
 
 ## Architecture gate before further feature expansion
 
@@ -206,7 +208,7 @@ the implementation behind that boundary in this order:
 1. **Characterized in PR #169.** Preserve mixed typed/raw animation, raw state-machine references to typed tracks, deterministic ordering, exact diagnostic paths, and source-map identity.
 2. **Boundary introduced in PR #170.** Route frontend lowering through one internal `AuthoringCompiler` that initially owns the authored document and current lowered target graph.
 3. **Advanced through PRs #171–#173.** `AuthoringCompiler` owns the canonical JSON scene draft, source-map state, runtime-name registry, checked runtime bindings, motion-target index, motion source-path normalization, and appended motion source entries.
-4. **Completed in PR #192.** Lower assets and visuals into that state once; lower typed motion into the same final scene assembly; append raw escapes afterward; construct and validate canonical `SceneSpec` once.
+4. **Completed in PR #192.** Lower assets and visuals into that state once; canonically validate the provisional visual scene before tracked motion; lower typed motion into the same final scene assembly; append raw escapes afterward; then validate the final assembled SceneSpec.
 5. **Completed in PR #192.** Remove typed-motion conversion back into `RawSceneFragment`, the cloned/cleared second `AuthoringSpec`, the second full visual lowering, and string-based bridge diagnostic/source-path repair.
 6. Make typed behavior consume the same compiler state only after the animated Authoring exit gate is characterized and verified.
 7. Once compiler state exists, introduce a validated internal authoring model so ordinary authored symbol/reference rules have one user-facing owner; retain canonical lowerer and builder checks as defense in depth.
