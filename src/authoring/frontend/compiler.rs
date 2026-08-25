@@ -20,6 +20,11 @@ enum CompilerState<'a> {
         runtime_names: RuntimeNameRegistry,
         motion_targets: Result<MotionTargetIndex, AuthoringDiagnostic>,
     },
+    PendingMotionValidation {
+        lowered: LoweredAuthoring,
+        runtime_names: RuntimeNameRegistry,
+        motion_targets: Result<MotionTargetIndex, AuthoringDiagnostic>,
+    },
     Lowered {
         lowered: LoweredAuthoring,
         runtime_names: RuntimeNameRegistry,
@@ -51,6 +56,23 @@ struct RuntimeNameRegistry {
 impl<'a> AuthoringCompiler<'a> {
     pub(super) fn new(spec: &'a AuthoringSpec) -> Result<Self, AuthoringError> {
         let draft = lower::lower_visual(spec).map_err(|error| rewrite_error_paths(spec, error))?;
+        if spec.motion.tracks.is_empty() {
+            let lowered = draft
+                .finish(Vec::new(), Vec::new(), Vec::new())
+                .map_err(|error| rewrite_error_paths(spec, error))?;
+            let runtime_names = RuntimeNameRegistry::from_source_map(&lowered.source_map);
+            let motion_targets =
+                MotionTargetIndex::from_output(&lowered.scene, &lowered.source_map);
+            return Ok(Self {
+                spec,
+                state: CompilerState::PendingMotionValidation {
+                    lowered,
+                    runtime_names,
+                    motion_targets,
+                },
+            });
+        }
+
         let runtime_names = RuntimeNameRegistry::from_source_map(draft.source_map());
         let provisional_scene = draft.provisional_scene();
         let motion_targets = MotionTargetIndex::from_output(&provisional_scene, draft.source_map());
@@ -66,39 +88,64 @@ impl<'a> AuthoringCompiler<'a> {
 
     pub(super) fn lower_motion(self) -> Result<Self, AuthoringError> {
         let Self { spec, state } = self;
-        let CompilerState::Draft {
-            draft,
-            mut runtime_names,
-            motion_targets,
-        } = state
-        else {
-            unreachable!("authoring compiler motion lowering can only run from the draft state");
-        };
-        let existing_source_entries = draft.source_map().entries.len();
-        let motion::MotionLoweringOutput {
-            animations,
-            source_entries,
-            easing_source_entries,
-        } = motion::lower_motion(spec, motion_targets)
-            .map_err(|error| rewrite_error_paths(spec, error))?;
-        let lowered = draft
-            .finish(animations, source_entries, easing_source_entries)
-            .map_err(|error| rewrite_error_paths(spec, error))?;
-        for entry in lowered
-            .source_map
-            .entries
-            .iter()
-            .skip(existing_source_entries)
-        {
-            runtime_names.register(entry);
-        }
-        Ok(Self {
-            spec,
-            state: CompilerState::Lowered {
+        match state {
+            CompilerState::Draft {
+                draft,
+                mut runtime_names,
+                motion_targets,
+            } => {
+                let existing_source_entries = draft.source_map().entries.len();
+                let motion::MotionLoweringOutput {
+                    animations,
+                    source_entries,
+                    easing_source_entries,
+                } = motion::lower_motion(spec, motion_targets)
+                    .map_err(|error| rewrite_error_paths(spec, error))?;
+                let lowered = draft
+                    .finish(animations, source_entries, easing_source_entries)
+                    .map_err(|error| rewrite_error_paths(spec, error))?;
+                for entry in lowered
+                    .source_map
+                    .entries
+                    .iter()
+                    .skip(existing_source_entries)
+                {
+                    runtime_names.register(entry);
+                }
+                Ok(Self {
+                    spec,
+                    state: CompilerState::Lowered {
+                        lowered,
+                        runtime_names,
+                    },
+                })
+            }
+            CompilerState::PendingMotionValidation {
                 lowered,
                 runtime_names,
-            },
-        })
+                motion_targets,
+            } => {
+                let motion::MotionLoweringOutput {
+                    animations,
+                    source_entries,
+                    easing_source_entries,
+                } = motion::lower_motion(spec, motion_targets)
+                    .map_err(|error| rewrite_error_paths(spec, error))?;
+                debug_assert!(animations.is_empty());
+                debug_assert!(source_entries.is_empty());
+                debug_assert!(easing_source_entries.is_empty());
+                Ok(Self {
+                    spec,
+                    state: CompilerState::Lowered {
+                        lowered,
+                        runtime_names,
+                    },
+                })
+            }
+            CompilerState::Lowered { .. } => {
+                unreachable!("authoring compiler motion lowering can only run once")
+            }
+        }
     }
 
     pub(super) fn finish(self) -> Result<LoweredAuthoring, AuthoringError> {
