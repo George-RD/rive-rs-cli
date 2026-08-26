@@ -79,6 +79,25 @@ fn duplicate_raw_animation_with_distinct_runtime_name(input: &mut Value) {
     input["motion"]["raw_animations"] = json!([first, second]);
 }
 
+fn duplicate_raw_state_machine_with_distinct_runtime_name(input: &mut Value) {
+    input["behavior"]["raw_state_machines"] = json!([
+        {
+            "id": "machine",
+            "value": {
+                "name": "machine_one",
+                "layers": [{ "states": [{ "type": "entry" }, { "type": "exit" }] }]
+            }
+        },
+        {
+            "id": "machine",
+            "value": {
+                "name": "machine_two",
+                "layers": [{ "states": [{ "type": "entry" }, { "type": "exit" }] }]
+            }
+        }
+    ]);
+}
+
 #[test]
 fn typed_and_raw_animation_ids_share_one_authored_namespace() {
     let mut input = document();
@@ -174,4 +193,44 @@ fn tracked_visual_validation_precedes_motion_target_error() {
     assert_eq!(error.diagnostics.len(), 1);
     assert_eq!(error.diagnostics[0].code, "invalid_lowered_scene");
     assert_eq!(error.diagnostics[0].path, "$.lowered_scene");
+}
+
+#[test]
+fn no_track_raw_animation_id_preflight_precedes_dimension_error() {
+    let mut input = document();
+    input["motion"]["tracks"] = json!([]);
+    duplicate_raw_animation_with_distinct_runtime_name(&mut input);
+    input["artboard"]["width"]["value"] = json!(0.0);
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("raw fragment IDs must be checked before visual lowering");
+    assert_eq!(error.diagnostics.len(), 1);
+    assert_eq!(error.diagnostics[0].code, "duplicate_id");
+    assert_eq!(error.diagnostics[0].path, "$.motion.raw_animations[1].id");
+}
+
+#[test]
+fn no_track_fragment_id_preflight_batches_visual_and_raw_duplicates() {
+    let mut input = document();
+    input["motion"]["tracks"] = json!([]);
+    duplicate_raw_animation_with_distinct_runtime_name(&mut input);
+    duplicate_raw_state_machine_with_distinct_runtime_name(&mut input);
+    let first = input["visual"]["nodes"][0].clone();
+    input["visual"]["nodes"] = json!([first.clone(), first]);
+
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("visual and raw duplicate IDs must retain one diagnostic batch");
+    let diagnostics = error
+        .diagnostics
+        .iter()
+        .map(|diagnostic| (diagnostic.code.as_str(), diagnostic.path.as_str()))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        diagnostics,
+        vec![
+            ("duplicate_id", "$.visual.nodes[1].id"),
+            ("duplicate_id", "$.motion.raw_animations[1].id"),
+            ("duplicate_id", "$.behavior.raw_state_machines[1].id"),
+        ]
+    );
 }
