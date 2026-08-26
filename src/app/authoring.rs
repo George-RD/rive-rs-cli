@@ -1,6 +1,6 @@
 use super::output::{json_error, json_success};
 use crate::cli::{AuthoringCommand, Command};
-use rive_cli::authoring::{self, AuthoringError};
+use rive_cli::authoring::{self, AuthoringDiagnostic, AuthoringError};
 use rive_cli::{builder, compile};
 
 pub(super) fn run(command: Command, global_json: bool) {
@@ -46,18 +46,8 @@ pub(super) fn run(command: Command, global_json: bool) {
                 .parent()
                 .filter(|parent| !parent.as_os_str().is_empty())
                 .unwrap_or_else(|| std::path::Path::new("."));
-            let bytes =
-                compile::compile_scene(&scene, Some(base_dir), file_id).unwrap_or_else(|error| {
-                    if json {
-                        json_error(
-                            "authoring",
-                            error.code(),
-                            format!("invalid lowered SceneSpec: {error}"),
-                        );
-                    }
-                    eprintln!("invalid lowered SceneSpec: {error}");
-                    std::process::exit(1);
-                });
+            let bytes = compile::compile_scene(&scene, Some(base_dir), file_id)
+                .unwrap_or_else(|error| exit_compile_error(error, json));
             std::fs::write(&output, &bytes).unwrap_or_else(|error| {
                 if json {
                     json_error(
@@ -114,12 +104,39 @@ pub(super) fn run(command: Command, global_json: bool) {
 }
 
 fn exit_lowering_error(error: AuthoringError, json: bool) -> ! {
+    exit_authoring_error(
+        error,
+        json,
+        "lowering-failed",
+        "AuthoringSpec lowering failed".to_string(),
+    )
+}
+
+fn exit_compile_error(error: compile::CompileError, json: bool) -> ! {
+    let code = error.code();
+    let message = format!("invalid lowered SceneSpec: {error}");
+    let diagnostic = AuthoringDiagnostic {
+        path: "$.lowered_scene".to_string(),
+        code: code.to_string(),
+        message: message.clone(),
+    };
+    exit_authoring_error(
+        AuthoringError {
+            diagnostics: vec![diagnostic],
+        },
+        json,
+        code,
+        message,
+    )
+}
+
+fn exit_authoring_error(error: AuthoringError, json: bool, code: &str, message: String) -> ! {
     if json {
         let envelope = serde_json::json!({
             "ok": false,
             "command": "authoring",
-            "code": "lowering-failed",
-            "message": "AuthoringSpec lowering failed",
+            "code": code,
+            "message": message,
             "diagnostics": error.diagnostics,
         });
         eprintln!("{envelope}");
