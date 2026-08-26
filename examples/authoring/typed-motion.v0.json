@@ -1,0 +1,115 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "typed-motion-stage",
+    "width": { "value": 320.0, "unit": "px" },
+    "height": { "value": 200.0, "unit": "px" }
+  },
+  "image_assets": {
+    "aurora": "../../assets/textures/aurora.png"
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "image",
+        "id": "backdrop",
+        "asset": "aurora",
+        "transform": {
+          "x": { "kind": "literal", "value": 160.0, "unit": "px" },
+          "y": { "kind": "literal", "value": 100.0, "unit": "px" },
+          "scale_x": { "kind": "literal", "value": 0.5, "unit": "scalar" },
+          "scale_y": { "kind": "literal", "value": 0.5, "unit": "scalar" }
+        }
+      },
+      {
+        "kind": "group",
+        "id": "panel",
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "surface",
+            "width": { "kind": "literal", "value": 96.0, "unit": "px" },
+            "height": { "kind": "literal", "value": 56.0, "unit": "px" },
+            "fill": "#172554"
+          }
+        ]
+      },
+      {
+        "kind": "ellipse",
+        "id": "orb",
+        "width": { "kind": "literal", "value": 32.0, "unit": "px" },
+        "height": { "kind": "literal", "value": 32.0, "unit": "px" },
+        "fill": "#22D3EE"
+      }
+    ]
+  },
+  "motion": {
+    "poses": [
+      {
+        "id": "rest",
+        "targets": [
+          {
+            "target": "panel",
+            "transform": {
+              "x": { "kind": "literal", "value": 20.0, "unit": "px" },
+              "y": { "kind": "literal", "value": 40.0, "unit": "px" },
+              "rotation": { "kind": "literal", "value": -8.0, "unit": "degrees" }
+            }
+          },
+          {
+            "target": "orb",
+            "transform": {
+              "x": { "kind": "literal", "value": 40.0, "unit": "px" },
+              "y": { "kind": "literal", "value": 120.0, "unit": "px" },
+              "scale_x": { "kind": "literal", "value": 0.5, "unit": "scalar" },
+              "scale_y": { "kind": "literal", "value": 0.5, "unit": "scalar" }
+            }
+          }
+        ]
+      },
+      {
+        "id": "settled",
+        "targets": [
+          {
+            "target": "panel",
+            "transform": {
+              "x": { "kind": "literal", "value": 112.0, "unit": "px" },
+              "y": { "kind": "literal", "value": 40.0, "unit": "px" },
+              "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" }
+            }
+          },
+          {
+            "target": "orb",
+            "transform": {
+              "x": { "kind": "literal", "value": 240.0, "unit": "px" },
+              "y": { "kind": "literal", "value": 120.0, "unit": "px" },
+              "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+              "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" }
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "entrance",
+        "fps": 60,
+        "duration_frames": { "kind": "literal", "value": 36.0, "unit": "scalar" },
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" },
+            "pose": "rest",
+            "interpolation": "linear"
+          },
+          {
+            "frame": { "kind": "literal", "value": 36.0, "unit": "scalar" },
+            "pose": "settled",
+            "interpolation": "linear"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {}
+}
