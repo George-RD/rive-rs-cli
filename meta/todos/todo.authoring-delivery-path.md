@@ -16,8 +16,8 @@ and AI-generation todos retain their own capability acceptance criteria.
 
 - Typed motion and raw animation escapes share one compiler-owned canonical scene
   draft without cloning and lowering the full AuthoringSpec a second time.
-- Canonical SceneSpec build + encode behavior has one shared owner used by every
-  application adapter.
+- Raw SceneSpec generation and future AuthoringSpec application adapters share one
+  canonical SceneSpec build + encode owner.
 - AuthoringSpec can be compiled to `.riv` with one public CLI command while raw
   SceneSpec remains the explicit expert path.
 - Authoring diagnostics remain source-mapped and machine-actionable in JSON mode.
@@ -31,10 +31,11 @@ and AI-generation todos retain their own capability acceptance criteria.
 
 Parent spec: GitHub #175.
 
-1. #176 — finish one-pass typed motion lowering in AuthoringCompiler. No blockers;
-   this is the current frontier.
-2. #177 — deepen the canonical SceneSpec compilation seam. Blocked by #176.
-3. #174 — make AuthoringSpec a first-class CLI input. Blocked by #177.
+1. #176 — one-pass typed motion lowering in AuthoringCompiler, complete in PR #192.
+2. #177 — canonical SceneSpec compilation seam used by raw `generate`, complete in
+   PR #195.
+3. #174 — make AuthoringSpec a first-class CLI input. This is the next frontier
+   after PR #195 merges.
 4. #178 — prove the complex animated AuthoringSpec exit gate. Blocked by #174.
 
 After #178, typed behavior (#179-#181) and static/animated semantic evaluation
@@ -47,8 +48,8 @@ todos.
 - Preserve `AuthoringSpec -> SceneSpec -> canonical builder -> encoder`.
 - Do not add a direct AuthoringSpec-to-binary path.
 - Do not implement #174 by copying the existing generate/build/encode
-  orchestration into another command handler; #177 must create the shared seam
-  first.
+  orchestration into another command handler; use the shared compilation seam from
+  #177.
 - Behavior must reuse the compiler state established by the one-pass motion gate.
 - Broad lower-level object coverage remains independent unless evidence shows it
   blocks a supported Authoring output.

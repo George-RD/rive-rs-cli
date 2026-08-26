@@ -4,6 +4,7 @@ pub mod ai;
 pub mod authoring;
 pub mod builder;
 pub mod compare;
+pub mod compile;
 pub mod discovery;
 pub mod encoder;
 #[cfg(feature = "mcp")]

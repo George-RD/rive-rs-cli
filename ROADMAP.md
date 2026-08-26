@@ -20,17 +20,18 @@ until that frontend and its evidence gates exist.
 
 Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 
-**Next item: [#177 — deepen the canonical SceneSpec compilation seam](https://github.com/George-RD/rive-rs-cli/issues/177).**
+**Next item after this PR merges: [#174 — expose AuthoringSpec as a first-class CLI input](https://github.com/George-RD/rive-rs-cli/issues/174).**
 [#176](https://github.com/George-RD/rive-rs-cli/issues/176) completes the one-pass
-motion-compiler architecture gate in PR #192. A fresh implementation session
-should continue an open PR for #177 first; otherwise claim #177 before selecting
-later work.
+motion-compiler architecture gate in PR #192. [#177](https://github.com/George-RD/rive-rs-cli/issues/177)
+deepens the canonical SceneSpec compilation seam in PR #195. A fresh implementation
+session should continue an open PR #195 first; once it is merged, claim #174 before
+selecting later work.
 
 The ordered execution graph is:
 
 ```text
 #176 one-pass motion compiler (complete in PR #192)
-  -> #177 shared SceneSpec compilation seam
+  -> #177 shared SceneSpec compilation seam (complete in PR #195)
   -> #174 first-class AuthoringSpec CLI
   -> #178 complex animated AuthoringSpec exit gate
        |-> #179 typed statechart tracer bullet -> #180 inputs/events -> #181 interactive showcase
@@ -60,7 +61,7 @@ AuthoringSpec progress.
 | P0 | [AuthoringSpec v0 and lowering boundary](meta/todos/todo.authoring-spec-v0.md) | complete in PR #135 | strict schema, deterministic lowering, source map, two validated examples |
 | P0 | [Repair duplicate-reference correctness defect](meta/todos/todo.repair-engine-modularization.md#immediate-correctness-gate) | complete in PR #166 | duplicate-name repair cannot silently retarget an existing reference |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
-| P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | in progress; #176 complete in PR #192, then #177 -> #174 -> #178 | one-pass compiler, one shared compile seam, first-class Authoring CLI, complex animated runtime proof |
+| P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | in progress; #176 complete in PR #192 and #177 complete in PR #195, then #174 -> #178 | one-pass compiler, one shared compile seam, first-class Authoring CLI, complex animated runtime proof |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169, boundary in PR #170, compiler-owned scene/source-map/runtime-name state in PR #171, checked bindings/target index in PR #172, compiler-owned motion source-map mutation in PR #173, and one-pass typed motion lowering in PR #192; #178 supplies the product exit proof | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; tickets #179-#181, gated on #178 | view-model bindings and named statecharts reproduce interaction with runtime proof |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 after #178, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
@@ -70,10 +71,10 @@ AuthoringSpec progress.
 
 ## Delivery dependencies
 
-- #176 completes the existing one-pass motion compiler architecture gate in PR
-  #192; #177 is the next delivery item.
-- #177 deepens one canonical `SceneSpec -> .riv` compilation seam before #174;
-  the Authoring CLI must not duplicate the existing generate/build/encode flow.
+- #176 completes the one-pass motion compiler architecture gate in PR #192.
+- #177 completes one canonical `SceneSpec -> .riv` application seam in PR #195 so
+  #174 can add AuthoringSpec input without copying the raw generate/build/encode
+  flow.
 - #174 exposes AuthoringSpec explicitly through the CLI while preserving raw
   SceneSpec `generate` as the expert path.
 - #178 turns the real consumer-shaped scattered -> overloaded -> connected ->
