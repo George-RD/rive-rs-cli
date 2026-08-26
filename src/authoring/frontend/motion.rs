@@ -5,16 +5,14 @@ mod validation;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use serde_json::json;
+use serde_json::{Value, json};
 
 use super::super::lower;
 use super::super::spec::{
     AuthoringDiagnostic, AuthoringError, AuthoringSpec, MotionInterpolation, MotionLoop,
-    RawSceneFragment,
+    SourceMapEntry,
 };
-use super::compiler::{
-    MotionLoweringInput, MotionLoweringOutput, MotionTargetIndex, rewritten_motion_path,
-};
+use super::compiler::MotionTargetIndex;
 
 use easing::{EasingEmission, ResolvedEasing};
 use property::{MotionRuntimeObject, PoseValues};
@@ -31,50 +29,41 @@ struct ResolvedFrame {
 }
 
 struct LoweredTracks {
-    fragments: Vec<RawSceneFragment>,
+    animations: Vec<Value>,
+    source_entries: Vec<SourceMapEntry>,
     easing_emissions: Vec<EasingEmission>,
+}
+
+pub(super) struct MotionLoweringOutput {
+    pub(super) animations: Vec<Value>,
+    pub(super) source_entries: Vec<SourceMapEntry>,
+    pub(super) easing_source_entries: Vec<SourceMapEntry>,
 }
 
 pub(super) fn lower_motion(
     spec: &AuthoringSpec,
-    input: MotionLoweringInput,
+    motion_targets: Result<MotionTargetIndex, AuthoringDiagnostic>,
 ) -> Result<MotionLoweringOutput, AuthoringError> {
     let easings = easing::resolve(spec).map_err(AuthoringError::one)?;
-    let MotionLoweringInput {
-        lowered,
-        motion_targets,
-    } = input;
     let motion_targets = motion_targets.map_err(AuthoringError::one)?;
     let poses = resolve_poses(spec, &motion_targets).map_err(AuthoringError::one)?;
     if spec.motion.tracks.is_empty() {
         return Ok(MotionLoweringOutput {
-            lowered,
-            typed_animation_count: 0,
+            animations: Vec::new(),
             source_entries: Vec::new(),
+            easing_source_entries: Vec::new(),
         });
     }
 
     let LoweredTracks {
-        fragments,
+        animations,
+        source_entries,
         easing_emissions,
     } = lower_tracks(spec, &poses, &easings).map_err(AuthoringError::one)?;
-    let typed_count = fragments.len();
-
-    let mut expanded = spec.clone();
-    expanded.motion.easings.clear();
-    expanded.motion.poses.clear();
-    expanded.motion.tracks.clear();
-    expanded.motion.raw_animations = fragments
-        .into_iter()
-        .chain(spec.motion.raw_animations.iter().cloned())
-        .collect();
-
-    let lowered = lower::lower_authoring(&expanded)
-        .map_err(|error| rewrite_motion_error_paths(error, typed_count))?;
     Ok(MotionLoweringOutput {
-        lowered,
-        typed_animation_count: typed_count,
-        source_entries: easing::source_entries(easing_emissions),
+        animations,
+        source_entries,
+        easing_source_entries: easing::source_entries(easing_emissions),
     })
 }
 
@@ -130,7 +119,8 @@ fn lower_tracks(
         .enumerate()
         .map(|(index, easing)| (easing.id.as_str(), index))
         .collect::<HashMap<_, _>>();
-    let mut fragments = Vec::with_capacity(spec.motion.tracks.len());
+    let mut animations = Vec::with_capacity(spec.motion.tracks.len());
+    let mut source_entries = Vec::with_capacity(spec.motion.tracks.len());
     let mut easing_emissions = easings.iter().map(EasingEmission::new).collect::<Vec<_>>();
 
     for (track_index, track) in spec.motion.tracks.iter().enumerate() {
@@ -288,11 +278,10 @@ fn lower_tracks(
             }));
         }
 
+        let runtime_name =
+            lower::runtime_name(&[spec.artboard.id.clone(), track.id.clone()], "animation");
         let mut value = json!({
-            "name": lower::runtime_name(
-                &[spec.artboard.id.clone(), track.id.clone()],
-                "animation",
-            ),
+            "name": runtime_name.clone(),
             "fps": track.fps,
             "duration": duration,
             "loop_type": loop_name(track.loop_type),
@@ -303,14 +292,19 @@ fn lower_tracks(
         {
             object.insert("interpolators".to_string(), json!(interpolators));
         }
-        fragments.push(RawSceneFragment {
-            id: track.id.clone(),
-            value,
+        source_entries.push(SourceMapEntry {
+            authored_id: track.id.clone(),
+            authored_path: track_path,
+            definition_path: None,
+            runtime_names: vec![runtime_name],
+            scene_paths: vec![format!("/artboard/animations/{track_index}")],
         });
+        animations.push(value);
     }
 
     Ok(LoweredTracks {
-        fragments,
+        animations,
+        source_entries,
         easing_emissions,
     })
 }
@@ -321,15 +315,6 @@ fn pose_shape_mismatch(track_path: &str, authored_index: usize) -> AuthoringDiag
         "pose_shape_mismatch",
         "all poses referenced by a motion track must declare the same targets and properties",
     )
-}
-
-fn rewrite_motion_error_paths(mut error: AuthoringError, typed_count: usize) -> AuthoringError {
-    for diagnostic in &mut error.diagnostics {
-        if let Some(path) = rewritten_motion_path(&diagnostic.path, typed_count) {
-            diagnostic.path = path;
-        }
-    }
-    error
 }
 
 fn interpolation_name(interpolation: MotionInterpolation) -> &'static str {

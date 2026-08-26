@@ -32,6 +32,15 @@ struct Lowerer<'a> {
     runtime_names: HashSet<String>,
 }
 
+pub(super) struct PartialLowering<'a> {
+    spec: &'a AuthoringSpec,
+    source_map: AuthoringSourceMap,
+    children: Vec<Value>,
+    artboard_name: String,
+    width: f64,
+    height: f64,
+}
+
 struct NodeContext<'a> {
     authored_path: String,
     definition_path: Option<String>,
@@ -65,6 +74,10 @@ impl PaintTarget {
 }
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
+    lower_visual(spec)?.finish(Vec::new(), Vec::new(), Vec::new())
+}
+
+pub(super) fn lower_visual(spec: &AuthoringSpec) -> Result<PartialLowering<'_>, AuthoringError> {
     let mut diagnostics = Vec::new();
     if spec.authoring_format_version != AUTHORING_FORMAT_VERSION {
         diagnostics.push(AuthoringDiagnostic::new(
@@ -115,16 +128,18 @@ pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, Authori
         }
     }
     validate_sibling_ids(&spec.visual.nodes, "$.visual.nodes", &mut diagnostics);
-    validate_fragment_ids(
-        &spec.motion.raw_animations,
-        "$.motion.raw_animations",
-        &mut diagnostics,
-    );
-    validate_fragment_ids(
-        &spec.behavior.raw_state_machines,
-        "$.behavior.raw_state_machines",
-        &mut diagnostics,
-    );
+    if spec.motion.tracks.is_empty() {
+        validate_fragment_ids(
+            &spec.motion.raw_animations,
+            "$.motion.raw_animations",
+            &mut diagnostics,
+        );
+        validate_fragment_ids(
+            &spec.behavior.raw_state_machines,
+            "$.behavior.raw_state_machines",
+            &mut diagnostics,
+        );
+    }
 
     if !diagnostics.is_empty() {
         return Err(AuthoringError::many(diagnostics));
@@ -136,11 +151,11 @@ pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, Authori
         source_map: AuthoringSourceMap::default(),
         runtime_names: HashSet::new(),
     }
-    .lower()
+    .lower_visual()
 }
 
 impl<'a> Lowerer<'a> {
-    fn lower(mut self) -> Result<LoweredAuthoring, AuthoringError> {
+    fn lower_visual(mut self) -> Result<PartialLowering<'a>, AuthoringError> {
         let width = evaluate_quantity(self.spec.artboard.width, "$.artboard.width", Unit::Px)
             .map_err(AuthoringError::one)?;
         let height = evaluate_quantity(self.spec.artboard.height, "$.artboard.height", Unit::Px)
@@ -223,30 +238,110 @@ impl<'a> Lowerer<'a> {
             children.push(child);
         }
 
-        let animations = self
+        Ok(PartialLowering {
+            spec: self.spec,
+            source_map: self.source_map,
+            children,
+            artboard_name,
+            width,
+            height,
+        })
+    }
+
+    fn register_runtime_names(
+        &mut self,
+        names: &[String],
+        path: &str,
+    ) -> Result<(), AuthoringDiagnostic> {
+        for name in names {
+            if !self.runtime_names.insert(name.clone()) {
+                return Err(AuthoringDiagnostic::new(
+                    path,
+                    "runtime_name_collision",
+                    format!("runtime name '{name}' is generated or declared more than once"),
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<'a> PartialLowering<'a> {
+    pub(super) fn provisional_scene(&self) -> Value {
+        json!({
+            "scene_format_version": 1,
+            "artboard": {
+                "name": self.artboard_name,
+                "width": self.width,
+                "height": self.height,
+                "children": self.children
+            }
+        })
+    }
+
+    pub(super) fn validate_provisional_scene(&self) -> Result<(), AuthoringError> {
+        validate_scene(&self.provisional_scene())
+    }
+
+    pub(super) fn source_map(&self) -> &AuthoringSourceMap {
+        &self.source_map
+    }
+
+    pub(super) fn finish(
+        mut self,
+        mut typed_animations: Vec<Value>,
+        typed_source_entries: Vec<SourceMapEntry>,
+        easing_source_entries: Vec<SourceMapEntry>,
+    ) -> Result<LoweredAuthoring, AuthoringError> {
+        let mut diagnostics = Vec::new();
+        validate_animation_fragment_ids(
+            &typed_source_entries,
+            &self.spec.motion.raw_animations,
+            "$.motion.raw_animations",
+            &mut diagnostics,
+        );
+        validate_fragment_ids(
+            &self.spec.behavior.raw_state_machines,
+            "$.behavior.raw_state_machines",
+            &mut diagnostics,
+        );
+        if !diagnostics.is_empty() {
+            return Err(AuthoringError::many(diagnostics));
+        }
+
+        let typed_animation_count = typed_animations.len();
+        debug_assert_eq!(typed_animation_count, typed_source_entries.len());
+        self.source_map.entries.extend(typed_source_entries);
+
+        let raw_animations = self
             .lower_raw_fragments(
                 &self.spec.motion.raw_animations,
                 "$.motion.raw_animations",
                 "/artboard/animations",
+                typed_animation_count,
             )
             .map_err(AuthoringError::one)?;
+        typed_animations.extend(raw_animations);
+
         let state_machines = self
             .lower_raw_fragments(
                 &self.spec.behavior.raw_state_machines,
                 "$.behavior.raw_state_machines",
                 "/artboard/state_machines",
+                0,
             )
             .map_err(AuthoringError::one)?;
+        self.source_map.entries.extend(easing_source_entries);
 
         let mut artboard = json!({
-            "name": artboard_name,
-            "width": width,
-            "height": height,
-            "children": children
+            "name": self.artboard_name,
+            "width": self.width,
+            "height": self.height,
+            "children": self.children
         });
         if let Some(object) = artboard.as_object_mut() {
-            if !animations.is_empty() {
-                object.insert("animations".to_string(), Value::Array(animations));
+            if !typed_animations.is_empty() {
+                object.insert("animations".to_string(), Value::Array(typed_animations));
             }
             if !state_machines.is_empty() {
                 object.insert("state_machines".to_string(), Value::Array(state_machines));
@@ -257,22 +352,7 @@ impl<'a> Lowerer<'a> {
             "artboard": artboard
         });
 
-        let validation_scene = without_asset_sources(&scene);
-        let scene_spec =
-            serde_json::from_value::<SceneSpec>(validation_scene).map_err(|error| {
-                AuthoringError::one(AuthoringDiagnostic::new(
-                    "$.lowered_scene",
-                    "invalid_lowered_scene",
-                    error.to_string(),
-                ))
-            })?;
-        build_scene(&scene_spec, None).map_err(|error| {
-            AuthoringError::one(AuthoringDiagnostic::new(
-                "$.lowered_scene",
-                "builder_rejected_scene",
-                error.to_string(),
-            ))
-        })?;
+        validate_scene(&scene)?;
 
         Ok(LoweredAuthoring {
             scene,
@@ -285,6 +365,7 @@ impl<'a> Lowerer<'a> {
         fragments: &[super::spec::RawSceneFragment],
         authored_list_path: &str,
         scene_list_path: &str,
+        scene_index_base: usize,
     ) -> Result<Vec<Value>, AuthoringDiagnostic> {
         let mut lowered = Vec::with_capacity(fragments.len());
         for (index, fragment) in fragments.iter().enumerate() {
@@ -296,7 +377,7 @@ impl<'a> Lowerer<'a> {
                     "raw SceneSpec escape must be a JSON object",
                 ));
             }
-            let scene_path = format!("{scene_list_path}/{index}");
+            let scene_path = format!("{scene_list_path}/{}", scene_index_base + index);
             let mut runtime_names = Vec::new();
             let mut scene_paths = Vec::new();
             collect_named_paths(
@@ -319,23 +400,6 @@ impl<'a> Lowerer<'a> {
             lowered.push(fragment.value.clone());
         }
         Ok(lowered)
-    }
-
-    fn register_runtime_names(
-        &mut self,
-        names: &[String],
-        path: &str,
-    ) -> Result<(), AuthoringDiagnostic> {
-        for name in names {
-            if !self.runtime_names.insert(name.clone()) {
-                return Err(AuthoringDiagnostic::new(
-                    path,
-                    "runtime_name_collision",
-                    format!("runtime name '{name}' is generated or declared more than once"),
-                ));
-            }
-        }
-        Ok(())
     }
 }
 
@@ -417,6 +481,29 @@ fn validate_sibling_ids_result(
     }
 }
 
+fn validate_animation_fragment_ids(
+    typed_source_entries: &[SourceMapEntry],
+    fragments: &[super::spec::RawSceneFragment],
+    list_path: &str,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    let mut ids = typed_source_entries
+        .iter()
+        .map(|entry| entry.authored_id.clone())
+        .collect::<HashSet<_>>();
+    for (index, fragment) in fragments.iter().enumerate() {
+        let id_path = format!("{list_path}[{index}].id");
+        validate_id(&fragment.id, &id_path, diagnostics);
+        if !ids.insert(fragment.id.clone()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                id_path,
+                "duplicate_id",
+                format!("raw fragment id '{}' is duplicated", fragment.id),
+            ));
+        }
+    }
+}
+
 fn validate_fragment_ids(
     fragments: &[super::spec::RawSceneFragment],
     list_path: &str,
@@ -446,6 +533,25 @@ fn font_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {
 
 fn image_asset_runtime_name(artboard_id: &str, asset_id: &str) -> String {
     file_asset_runtime_name(artboard_id, asset_id, "image_asset")
+}
+
+fn validate_scene(scene: &Value) -> Result<(), AuthoringError> {
+    let validation_scene = without_asset_sources(scene);
+    let scene_spec = serde_json::from_value::<SceneSpec>(validation_scene).map_err(|error| {
+        AuthoringError::one(AuthoringDiagnostic::new(
+            "$.lowered_scene",
+            "invalid_lowered_scene",
+            error.to_string(),
+        ))
+    })?;
+    build_scene(&scene_spec, None).map_err(|error| {
+        AuthoringError::one(AuthoringDiagnostic::new(
+            "$.lowered_scene",
+            "builder_rejected_scene",
+            error.to_string(),
+        ))
+    })?;
+    Ok(())
 }
 
 fn without_asset_sources(scene: &Value) -> Value {
