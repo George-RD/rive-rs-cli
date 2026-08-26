@@ -30,23 +30,24 @@ pub(super) fn run(command: Command, global_json: bool) {
             let lowered = authoring::lower_authoring_json(&input_text)
                 .unwrap_or_else(|error| exit_lowering_error(error, json));
             let authoring::LoweredAuthoring { scene, source_map } = lowered;
-            let scene = serde_json::from_value::<builder::SceneSpec>(scene).unwrap_or_else(|error| {
-                if json {
-                    json_error(
-                        "authoring",
-                        "parse-failed",
-                        format!("lowered SceneSpec could not be parsed: {error}"),
-                    );
-                }
-                eprintln!("lowered SceneSpec could not be parsed: {error}");
-                std::process::exit(1);
-            });
+            let scene =
+                serde_json::from_value::<builder::SceneSpec>(scene).unwrap_or_else(|error| {
+                    if json {
+                        json_error(
+                            "authoring",
+                            "parse-failed",
+                            format!("lowered SceneSpec could not be parsed: {error}"),
+                        );
+                    }
+                    eprintln!("lowered SceneSpec could not be parsed: {error}");
+                    std::process::exit(1);
+                });
             let base_dir = input
                 .parent()
                 .filter(|parent| !parent.as_os_str().is_empty())
                 .unwrap_or_else(|| std::path::Path::new("."));
-            let bytes = compile::compile_scene(&scene, Some(base_dir), file_id).unwrap_or_else(
-                |error| {
+            let bytes =
+                compile::compile_scene(&scene, Some(base_dir), file_id).unwrap_or_else(|error| {
                     if json {
                         json_error(
                             "authoring",
@@ -56,8 +57,7 @@ pub(super) fn run(command: Command, global_json: bool) {
                     }
                     eprintln!("invalid lowered SceneSpec: {error}");
                     std::process::exit(1);
-                },
-            );
+                });
             std::fs::write(&output, &bytes).unwrap_or_else(|error| {
                 if json {
                     json_error(
