@@ -20,9 +20,7 @@ pub fn run() {
         .iter()
         .find_map(|argument| match argument.as_str() {
             "generate" | "new" | "validate" | "inspect" | "decompile" | "render" | "compare"
-            | "schema" | "types" | "describe" | "authoring" | "ai" => {
-                Some(argument.as_str())
-            }
+            | "schema" | "types" | "describe" | "authoring" | "ai" => Some(argument.as_str()),
             _ => None,
         })
         .unwrap_or("cli");
