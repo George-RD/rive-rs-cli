@@ -1,6 +1,6 @@
 use super::output::{json_error, json_success};
 use crate::cli::Command;
-use rive_cli::{builder, encoder, objects, scaffold, validator};
+use rive_cli::{builder, compile, scaffold, validator};
 
 pub(super) fn run(command: Command, global_json: bool) {
     match command {
@@ -37,19 +37,17 @@ pub(super) fn run(command: Command, global_json: bool) {
                 .parent()
                 .filter(|parent| !parent.as_os_str().is_empty())
                 .unwrap_or_else(|| std::path::Path::new("."));
-            let scene = builder::build_scene(&spec, Some(base_dir)).unwrap_or_else(|e| {
+            let bytes = compile::compile_scene(&spec, Some(base_dir), file_id).unwrap_or_else(|e| {
                 if json {
                     json_error(
                         "generate",
-                        "invalid-scene",
+                        e.code(),
                         format!("invalid scene spec: {}", e),
                     );
                 }
                 eprintln!("invalid scene spec: {}", e);
                 std::process::exit(1);
             });
-            let refs: Vec<&dyn objects::core::RiveObject> = scene.iter().map(|o| &**o).collect();
-            let bytes = encoder::encode_riv(&refs, file_id);
             std::fs::write(&output, &bytes).unwrap_or_else(|e| {
                 if json {
                     json_error(
