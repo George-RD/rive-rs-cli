@@ -51,8 +51,8 @@ fn public_compile_seam_resolves_relative_assets_from_base_dir() {
     let base_dir = fixture_dir();
     let bytes = compile_scene(&spec, Some(&base_dir), 0)
         .expect("relative asset sources should resolve from the supplied base directory");
-    let parsed = parse_riv(&bytes, &InspectFilter::default())
-        .expect("compiled asset scene should parse");
+    let parsed =
+        parse_riv(&bytes, &InspectFilter::default()).expect("compiled asset scene should parse");
     let content_lengths = parsed
         .objects
         .iter()

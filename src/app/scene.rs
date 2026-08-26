@@ -37,17 +37,14 @@ pub(super) fn run(command: Command, global_json: bool) {
                 .parent()
                 .filter(|parent| !parent.as_os_str().is_empty())
                 .unwrap_or_else(|| std::path::Path::new("."));
-            let bytes = compile::compile_scene(&spec, Some(base_dir), file_id).unwrap_or_else(|e| {
-                if json {
-                    json_error(
-                        "generate",
-                        e.code(),
-                        format!("invalid scene spec: {}", e),
-                    );
-                }
-                eprintln!("invalid scene spec: {}", e);
-                std::process::exit(1);
-            });
+            let bytes =
+                compile::compile_scene(&spec, Some(base_dir), file_id).unwrap_or_else(|e| {
+                    if json {
+                        json_error("generate", e.code(), format!("invalid scene spec: {}", e));
+                    }
+                    eprintln!("invalid scene spec: {}", e);
+                    std::process::exit(1);
+                });
             std::fs::write(&output, &bytes).unwrap_or_else(|e| {
                 if json {
                     json_error(
