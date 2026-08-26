@@ -128,6 +128,18 @@ pub(super) fn lower_visual(spec: &AuthoringSpec) -> Result<PartialLowering<'_>, 
         }
     }
     validate_sibling_ids(&spec.visual.nodes, "$.visual.nodes", &mut diagnostics);
+    if spec.motion.tracks.is_empty() {
+        validate_fragment_ids(
+            &spec.motion.raw_animations,
+            "$.motion.raw_animations",
+            &mut diagnostics,
+        );
+        validate_fragment_ids(
+            &spec.behavior.raw_state_machines,
+            "$.behavior.raw_state_machines",
+            &mut diagnostics,
+        );
+    }
 
     if !diagnostics.is_empty() {
         return Err(AuthoringError::many(diagnostics));
