@@ -34,8 +34,7 @@ fn final_builder_failures_retain_authored_diagnostics() {
     let fixture = std::fs::read_to_string(fixture_path()).expect("fixture must exist");
     let mut spec: serde_json::Value =
         serde_json::from_str(&fixture).expect("fixture must be valid JSON");
-    spec["image_assets"]["aurora"] =
-        serde_json::Value::String("missing-aurora.png".to_string());
+    spec["image_assets"]["aurora"] = serde_json::Value::String("missing-aurora.png".to_string());
     std::fs::write(
         &input,
         serde_json::to_vec_pretty(&spec).expect("serialize invalid asset fixture"),
