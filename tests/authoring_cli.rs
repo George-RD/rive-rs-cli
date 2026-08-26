@@ -94,7 +94,11 @@ fn authoring_compile_is_a_public_end_to_end_command() {
         payload["output_path"].as_str(),
         Some(output.to_str().expect("UTF-8 output path"))
     );
-    assert!(payload["bytes_written"].as_u64().is_some_and(|size| size > 4));
+    assert!(
+        payload["bytes_written"]
+            .as_u64()
+            .is_some_and(|size| size > 4)
+    );
     assert!(
         payload["source_map"]["entries"]
             .as_array()
@@ -206,7 +210,9 @@ fn authoring_json_failures_preserve_the_full_diagnostic_set() {
         .expect("diagnostics must be an array");
     assert!(diagnostics.len() >= 4);
     assert!(diagnostics.iter().all(|diagnostic| {
-        diagnostic["path"].as_str().is_some_and(|value| !value.is_empty())
+        diagnostic["path"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty())
             && diagnostic["code"]
                 .as_str()
                 .is_some_and(|value| !value.is_empty())
@@ -242,7 +248,9 @@ fn authoring_usage_errors_honor_json_mode_before_clap_dispatch() {
     assert_eq!(payload["ok"].as_bool(), Some(false));
     assert_eq!(payload["command"].as_str(), Some("authoring"));
     assert_eq!(payload["code"].as_str(), Some("usage"));
-    assert!(payload["message"].as_str().is_some_and(|message| {
-        message.contains("required arguments were not provided")
-    }));
+    assert!(
+        payload["message"]
+            .as_str()
+            .is_some_and(|message| { message.contains("required arguments were not provided") })
+    );
 }
