@@ -225,5 +225,5 @@ In return, the cloned second `AuthoringSpec`, second full visual lower,
 typed-motion `RawSceneFragment` bridge, typed-prefix diagnostic/source-map repair,
 and duplicate post-motion compiler-state rebuild are gone. Typed motion and raw
 escapes now share one final SceneSpec assembly path. The next delivery slice is
-#177's shared SceneSpec-to-`.riv` compilation seam; typed behavior remains
+Issue `#177`'s shared SceneSpec-to-`.riv` compilation seam; typed behavior remains
 downstream of the animated Authoring exit gate and must reuse this compiler state.
