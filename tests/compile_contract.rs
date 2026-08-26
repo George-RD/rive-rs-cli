@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use rive_cli::{
     builder::SceneSpec,
     compile::{CompileError, compile_scene},
+    objects::core::type_keys,
     validator::{InspectFilter, PropertyValueRead, parse_riv, validate_riv},
 };
 
@@ -41,8 +42,6 @@ fn public_compile_seam_preserves_file_id() {
 
 #[test]
 fn public_compile_seam_resolves_relative_assets_from_base_dir() {
-    const FILE_ASSET_CONTENTS_TYPE_KEY: u16 = 106;
-
     let spec = fixture_spec("embedded_assets.json");
     let missing_base = compile_scene(&spec, None, 0)
         .expect_err("relative asset sources should require a base directory");
@@ -56,7 +55,7 @@ fn public_compile_seam_resolves_relative_assets_from_base_dir() {
     let content_lengths = parsed
         .objects
         .iter()
-        .filter(|object| object.type_key == FILE_ASSET_CONTENTS_TYPE_KEY)
+        .filter(|object| object.type_key == type_keys::FILE_ASSET_CONTENTS)
         .flat_map(|object| &object.properties)
         .filter_map(|property| match &property.value {
             PropertyValueRead::Bytes { length } => Some(*length),
