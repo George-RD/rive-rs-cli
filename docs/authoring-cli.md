@@ -23,7 +23,7 @@ Successful JSON output includes:
 - `output_path`;
 - the authored `source_map` connecting AuthoringSpec paths and IDs to lowered SceneSpec paths and runtime names.
 
-Lowering failures return one JSON envelope with `code: "lowering-failed"` and the complete ordered `diagnostics` array. Each diagnostic contains `path`, `code`, and `message`.
+Lowering failures return one JSON envelope with `code: "lowering-failed"` and the complete ordered `diagnostics` array. Final canonical compilation failures, including asset-loading errors, preserve the same diagnostics shape at `$.lowered_scene` and retain the stable compilation error code. Each diagnostic contains `path`, `code`, and `message`.
 
 ## Discover the schema
 
