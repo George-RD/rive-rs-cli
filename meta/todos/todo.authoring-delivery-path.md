@@ -34,9 +34,9 @@ Parent spec: GitHub #175.
 1. #176 — one-pass typed motion lowering in AuthoringCompiler, complete in PR #192.
 2. #177 — canonical SceneSpec compilation seam used by raw `generate`, complete in
    PR #195.
-3. #174 — make AuthoringSpec a first-class CLI input. This is the next frontier
-   after PR #195 merges.
-4. #178 — prove the complex animated AuthoringSpec exit gate. Blocked by #174.
+3. #174 — first-class AuthoringSpec CLI input, complete in PR #196.
+4. #178 — prove the complex animated AuthoringSpec exit gate. This is the current
+   implementation frontier.
 
 After #178, typed behavior (#179-#181) and static/animated semantic evaluation
 (#182) may advance independently. Their downstream convergence, incremental edit

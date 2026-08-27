@@ -308,10 +308,41 @@ pub enum Command {
         #[arg(long, help = "Output as JSON")]
         json: bool,
     },
+    #[command(
+        about = "Compile high-level AuthoringSpec documents and inspect their schema",
+        long_about = "Compile high-level AuthoringSpec documents and inspect their schema. AuthoringSpec is the typed, semantic frontend; use `generate` for raw SceneSpec input.\n\nExamples:\n  rive-cli authoring compile examples/authoring/typed-motion.v0.json -o output.riv\n  rive-cli authoring schema"
+    )]
+    Authoring {
+        #[command(subcommand)]
+        command: AuthoringCommand,
+    },
     #[command(about = "AI-assisted .riv generation and evaluation")]
     Ai {
         #[command(subcommand)]
         command: AiCommand,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum AuthoringCommand {
+    #[command(
+        about = "Compile an AuthoringSpec document to a .riv file",
+        long_about = "Compile an AuthoringSpec document through deterministic lowering and the canonical SceneSpec compilation seam. Relative asset paths are resolved from the input document.\n\nExamples:\n  rive-cli authoring compile examples/authoring/typed-motion.v0.json -o output.riv\n  rive-cli authoring compile authoring.json --file-id 42 --json"
+    )]
+    Compile {
+        #[arg(help = "Path to the AuthoringSpec JSON input")]
+        input: PathBuf,
+        #[arg(short, long, default_value = "output.riv", help = "Output .riv path")]
+        output: PathBuf,
+        #[arg(long, default_value = "0", help = "Rive file id written in header")]
+        file_id: u64,
+        #[arg(long, help = "Output the result and authored source map as JSON")]
+        json: bool,
+    },
+    #[command(about = "Print the AuthoringSpec JSON schema")]
+    Schema {
+        #[arg(long, help = "Print compact JSON instead of indented")]
+        compact: bool,
     },
 }
 

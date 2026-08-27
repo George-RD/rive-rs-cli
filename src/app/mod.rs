@@ -1,4 +1,5 @@
 mod ai;
+mod authoring;
 mod catalog;
 mod output;
 mod scene;
@@ -19,7 +20,7 @@ pub fn run() {
         .iter()
         .find_map(|argument| match argument.as_str() {
             "generate" | "new" | "validate" | "inspect" | "decompile" | "render" | "compare"
-            | "schema" | "types" | "describe" | "ai" => Some(argument.as_str()),
+            | "schema" | "types" | "describe" | "authoring" | "ai" => Some(argument.as_str()),
             _ => None,
         })
         .unwrap_or("cli");
@@ -79,6 +80,7 @@ pub fn run() {
         command @ (Command::Schema { .. } | Command::Types { .. } | Command::Describe { .. }) => {
             catalog::run(command, global_json)
         }
+        command @ Command::Authoring { .. } => authoring::run(command, global_json),
         command @ Command::Ai { .. } => ai::run(command),
     }
 }
