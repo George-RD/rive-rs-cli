@@ -140,11 +140,14 @@ fn typed_bool_binding_lowers_named_states_and_transition_without_runtime_indices
     assert_eq!(first.source_map, second.source_map);
 
     let machine = &first.scene["artboard"]["state_machines"][0];
-    assert_eq!(machine["name"], "auth__behavior_2dstage__gate__state_machine");
+    assert_eq!(
+        machine["name"],
+        "auth__behavior_2dstage__gate__state_machine"
+    );
     assert_eq!(machine["inputs"][0]["type"], "bool");
     assert_eq!(
         machine["inputs"][0]["name"],
-        "auth__behavior_2dstage__gate_2denabled__input"
+        "auth__behavior_2dstage__gate__gate_2denabled__input"
     );
     assert_eq!(machine["inputs"][0]["value"], true);
 
@@ -167,7 +170,7 @@ fn typed_bool_binding_lowers_named_states_and_transition_without_runtime_indices
     assert_eq!(layer["transitions"][1]["to"], 2);
     assert_eq!(
         layer["transitions"][1]["conditions"][0]["input"],
-        "auth__behavior_2dstage__gate_2denabled__input"
+        "auth__behavior_2dstage__gate__gate_2denabled__input"
     );
     assert_eq!(layer["transitions"][1]["conditions"][0]["value"], true);
 
@@ -182,7 +185,10 @@ fn typed_bool_binding_lowers_named_states_and_transition_without_runtime_indices
         statechart_source.runtime_names,
         vec!["auth__behavior_2dstage__gate__state_machine"]
     );
-    assert_eq!(statechart_source.scene_paths, vec!["/artboard/state_machines/0"]);
+    assert_eq!(
+        statechart_source.scene_paths,
+        vec!["/artboard/state_machines/0"]
+    );
 
     let transition_source = first
         .source_map
