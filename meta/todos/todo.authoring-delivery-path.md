@@ -1,7 +1,8 @@
 ---
 node: rive-cli.intelligence.authoring
-status: in_progress
+status: done
 created: 2026-08-25
+completed: 2026-08-28
 ---
 
 # P1 — Deepen the Authoring delivery path
@@ -35,11 +36,10 @@ Parent spec: GitHub #175.
 2. #177 — canonical SceneSpec compilation seam used by raw `generate`, complete in
    PR #195.
 3. #174 — first-class AuthoringSpec CLI input, complete in PR #196.
-4. #178 — prove the complex animated AuthoringSpec exit gate. This is the current
-   implementation frontier.
+4. #178 — complex animated AuthoringSpec exit gate, complete in PR #197.
 
-After #178, typed behavior (#179-#181) and static/animated semantic evaluation
-(#182) may advance independently. Their downstream convergence, incremental edit
+With #178 complete, typed behavior (#179-#181) and static/animated semantic
+evaluation (#182) may advance independently. Their downstream convergence, incremental edit
 work, and AI-generation gate are recorded in ROADMAP.md and their existing Cairn
 todos.
 

@@ -1,7 +1,8 @@
 ---
 node: rive-cli.intelligence.authoring
-status: in_progress
+status: done
 created: 2026-07-29
+completed: 2026-08-28
 ---
 
 # P2 — Implement poses and compact motion tracks
@@ -219,11 +220,19 @@ not a new product milestone. Preserve exact diagnostics and public source-map JS
 Do not split cohesive solver, registry, visual sum-type, or integration-test modules
 solely because they exceed a line-count guideline.
 
-## Remaining
+## Completion evidence
 
-- Semantic entrance, exit, stagger, spring, bounce, and similar motion helpers.
-- Color and additional non-transform property tracks.
-- A complex animated showcase with retained official-runtime frame evidence.
+Issue #178 / PR #197 closes the v0 motion product gate:
+
+- a generic scattered → overloaded → connected → next-action AuthoringSpec uses stable authored IDs, four reusable poses, one shared easing, one compact track, opacity, transforms, and animated dimensions without raw escapes;
+- repeated lowering preserves the lowered SceneSpec and source-map identity;
+- the public `authoring compile` path produces the `.riv`, which passes the canonical builder, encoder, validator, and official-runtime load path;
+- representative frames at 0, 36, 78, and 120 are retained as visual-regression evidence so motion failures are inspectable.
+
+Semantic entrance/exit/stagger/spring/bounce helpers, broader color/property tracks,
+and the easing/stacking hardening tracked in #193 and #194 are follow-up
+convenience or correctness work. They are not blockers to the completed v0 motion
+milestone.
 
 ## Dependency
 

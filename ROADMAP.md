@@ -20,13 +20,12 @@ until that frontend and its evidence gates exist.
 
 Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 
-**Current next item: [#178 — prove the complex animated AuthoringSpec exit gate](https://github.com/George-RD/rive-rs-cli/issues/178).**
-[#176](https://github.com/George-RD/rive-rs-cli/issues/176) completed the one-pass
-motion-compiler architecture gate in PR #192. [#177](https://github.com/George-RD/rive-rs-cli/issues/177)
-completed the canonical SceneSpec compilation seam in PR #195.
-[#174](https://github.com/George-RD/rive-rs-cli/issues/174) completed the explicit
-AuthoringSpec CLI path in PR #196 without duplicating that shared seam. A fresh
-implementation session should claim #178 before selecting later work.
+**Current next item: [#179 — add the behavior compiler tracer-bullet slice](https://github.com/George-RD/rive-rs-cli/issues/179).**
+[#178](https://github.com/George-RD/rive-rs-cli/issues/178) completed the complex
+animated AuthoringSpec product gate in PR #197, including public-CLI compilation,
+deterministic source identity, structural validation, and retained official-runtime
+frames. [#182](https://github.com/George-RD/rive-rs-cli/issues/182) is independently
+unblocked and may proceed in parallel with the behavior branch.
 
 The ordered execution graph is:
 
@@ -34,7 +33,7 @@ The ordered execution graph is:
 #176 one-pass motion compiler (complete in PR #192)
   -> #177 shared SceneSpec compilation seam (complete in PR #195)
   -> #174 first-class AuthoringSpec CLI (complete in PR #196)
-  -> #178 complex animated AuthoringSpec exit gate
+  -> #178 complex animated AuthoringSpec exit gate (complete in PR #197)
        |-> #179 typed statechart tracer bullet -> #180 inputs/events -> #181 interactive showcase
        |-> #182 static + animated semantic evaluations
 
@@ -62,10 +61,10 @@ AuthoringSpec progress.
 | P0 | [AuthoringSpec v0 and lowering boundary](meta/todos/todo.authoring-spec-v0.md) | complete in PR #135 | strict schema, deterministic lowering, source map, two validated examples |
 | P0 | [Repair duplicate-reference correctness defect](meta/todos/todo.repair-engine-modularization.md#immediate-correctness-gate) | complete in PR #166 | duplicate-name repair cannot silently retarget an existing reference |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
-| P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | in progress; #176 complete in PR #192, #177 complete in PR #195, and #174 complete in PR #196; #178 is next | one-pass compiler, one shared compile seam, first-class Authoring CLI, complex animated runtime proof |
-| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | in progress; typed poses, tracks, easings, opacity, and dimensions complete through PR #168; compiler characterization in PR #169, boundary in PR #170, compiler-owned scene/source-map/runtime-name state in PR #171, checked bindings/target index in PR #172, compiler-owned motion source-map mutation in PR #173, and one-pass typed motion lowering in PR #192; #178 supplies the product exit proof | compact tracks and poses reproduce complex motion with runtime proof through one compiler-owned scene draft |
-| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; tickets #179-#181, gated on #178 | view-model bindings and named statecharts reproduce interaction with runtime proof |
-| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 after #178, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
+| P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
+| P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
+| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 is next, then #180-#181 | view-model bindings and named statecharts reproduce interaction with runtime proof |
+| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 independently unblocked, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 -> #185 after #181 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked; #186 requires #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until Authoring compiler state is stable | characterization-preserving split aligned to authored source maps |
@@ -78,8 +77,8 @@ AuthoringSpec progress.
   flow.
 - #174 completed the explicit AuthoringSpec CLI in PR #196 while preserving raw
   SceneSpec `generate` as the expert path.
-- #178 turns the real consumer-shaped scattered -> overloaded -> connected ->
-  next-action animation into a generic retained animated showcase and runtime gate.
+- #178 completed the generic scattered -> overloaded -> connected -> next-action
+  animated showcase and retained official-runtime gate in PR #197.
 - Typed behavior starts only after #178 and must reuse the same compiler-owned
   scene, source-map, runtime-name, and checked-binding state.
 - Static/animated semantic evaluation (#182) may run in parallel with behavior
