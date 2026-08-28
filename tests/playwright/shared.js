@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, "..", "..");
 const HARNESS_DIR = path.join(ROOT, "tests", "playwright");
 const OUT_DIR = path.join(ROOT, "target", "playwright-riv");
 const SHOWCASE_DIR = path.join(ROOT, "showcase");
+const AUTHORING_DIR = path.join(ROOT, "examples", "authoring");
 
 const BASE_FIXTURES = [
   "minimal",
@@ -80,7 +81,18 @@ const SHOWCASE_FIXTURES = fs
   .map((entry) => `showcase_${path.basename(entry.name, ".json")}`)
   .sort();
 
-const FIXTURES = [...BASE_FIXTURES, ...SHOWCASE_FIXTURES];
+const AUTHORING_FIXTURES = {
+  authoring_complex_animated_showcase: path.join(
+    AUTHORING_DIR,
+    "complex-animated-showcase.v0.json",
+  ),
+};
+
+const FIXTURES = [
+  ...BASE_FIXTURES,
+  ...SHOWCASE_FIXTURES,
+  ...Object.keys(AUTHORING_FIXTURES),
+];
 const ALL_FIXTURES = FIXTURES;
 
 const KNOWN_RUNTIME_GAPS = new Set(["scripting", "transition_comparators"]);
@@ -146,6 +158,9 @@ async function waitForServer(port, timeoutMs = 5000) {
 }
 
 function inputForFixture(fixture) {
+  if (AUTHORING_FIXTURES[fixture]) {
+    return AUTHORING_FIXTURES[fixture];
+  }
   if (fixture.startsWith("showcase_")) {
     return path.join(SHOWCASE_DIR, `${fixture.slice("showcase_".length)}.json`);
   }
@@ -157,7 +172,8 @@ function buildFixtures(fixtures = ALL_FIXTURES) {
   for (const fixture of fixtures) {
     const input = inputForFixture(fixture);
     const output = path.join(OUT_DIR, `${fixture}.riv`);
-    run("cargo", ["run", "--quiet", "--", "generate", input, "-o", output]);
+    const command = AUTHORING_FIXTURES[fixture] ? ["authoring", "compile"] : ["generate"];
+    run("cargo", ["run", "--quiet", "--", ...command, input, "-o", output]);
     fs.copyFileSync(output, path.join(HARNESS_DIR, `${fixture}.riv`));
   }
 }
@@ -317,6 +333,7 @@ module.exports = {
   FIXTURES,
   KNOWN_RUNTIME_GAPS,
   SHOWCASE_FIXTURES,
+  AUTHORING_FIXTURES,
   ALL_FIXTURES,
   VISUAL_FIXTURES,
   run,
