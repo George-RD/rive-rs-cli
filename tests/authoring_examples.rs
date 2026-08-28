@@ -6,6 +6,11 @@ use rive_cli::encoder::encode_riv;
 use rive_cli::validator::validate_riv;
 use serde_json::Value;
 
+const ANIMATED_SHOWCASE_DURATION_FRAMES: u64 = 120;
+const ANIMATED_SHOWCASE_FPS: u64 = 60;
+const ANIMATED_SHOWCASE_MIN_OBJECT_COUNT: usize = 40;
+const ANIMATED_SHOWCASE_MIN_RIV_BYTES: usize = 1_000;
+const ANIMATED_SHOWCASE_SETTLE_FRAME: f64 = 78.0;
 const COMPONENT_BADGES: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/examples/authoring/component-badges.v0.json"
@@ -217,13 +222,26 @@ fn complex_animated_showcase_compiles_without_raw_escapes() {
         .expect("showcase motion easings");
     assert_eq!(easings.len(), 1);
     assert_eq!(easings[0]["id"], "settle-out");
+    assert_eq!(easings[0]["x1"]["value"].as_f64(), Some(0.16));
+    assert_eq!(easings[0]["y1"]["value"].as_f64(), Some(1.0));
+    assert_eq!(easings[0]["x2"]["value"].as_f64(), Some(0.3));
+    assert_eq!(easings[0]["y2"]["value"].as_f64(), Some(1.0));
 
     let tracks = authored["motion"]["tracks"]
         .as_array()
         .expect("showcase motion tracks");
     assert_eq!(tracks.len(), 1);
     assert_eq!(tracks[0]["id"], "decision-flow");
-    assert_eq!(tracks[0]["fps"], 60);
+    assert_eq!(tracks[0]["fps"], ANIMATED_SHOWCASE_FPS);
+    let authored_settle_keyframe = tracks[0]["keyframes"]
+        .as_array()
+        .expect("showcase authored keyframes")
+        .iter()
+        .find(|keyframe| {
+            keyframe["frame"]["value"].as_f64() == Some(ANIMATED_SHOWCASE_SETTLE_FRAME)
+        })
+        .expect("showcase frame 78 keyframe");
+    assert_eq!(authored_settle_keyframe["easing"], "settle-out");
 
     let lowered = lower_deterministically(&input);
     for expected_id in [
@@ -254,20 +272,27 @@ fn complex_animated_showcase_compiles_without_raw_escapes() {
         .expect("showcase animations");
     assert_eq!(animations.len(), 1);
     let animation = &animations[0];
-    assert_eq!(animation["fps"], 60);
-    assert_eq!(animation["duration"], 120);
+    assert_eq!(animation["fps"], ANIMATED_SHOWCASE_FPS);
+    assert_eq!(animation["duration"], ANIMATED_SHOWCASE_DURATION_FRAMES);
     assert_eq!(animation["loop_type"], "oneshot");
-    assert_eq!(
-        animation["interpolators"]
-            .as_array()
-            .expect("shared cubic easing declaration")
-            .len(),
-        1
-    );
-
-    let keyed_properties = animation["keyframes"]
+    let interpolators = animation["interpolators"]
         .as_array()
-        .expect("showcase keyframe groups")
+        .expect("shared cubic easing declaration");
+    assert_eq!(interpolators.len(), 1);
+    let interpolator = &interpolators[0];
+    assert_eq!(interpolator["type"], "cubic");
+    assert_eq!(interpolator["x1"].as_f64(), Some(0.16));
+    assert_eq!(interpolator["y1"].as_f64(), Some(1.0));
+    assert_eq!(interpolator["x2"].as_f64(), Some(0.3));
+    assert_eq!(interpolator["y2"].as_f64(), Some(1.0));
+    let interpolator_name = interpolator["name"]
+        .as_str()
+        .expect("shared cubic easing runtime name");
+
+    let keyframe_groups = animation["keyframes"]
+        .as_array()
+        .expect("showcase keyframe groups");
+    let keyed_properties = keyframe_groups
         .iter()
         .filter_map(|group| group["property"].as_str())
         .collect::<BTreeSet<_>>();
@@ -277,6 +302,23 @@ fn complex_animated_showcase_compiles_without_raw_escapes() {
             "showcase animation is missing {expected} motion"
         );
     }
+    let settled_frames = keyframe_groups
+        .iter()
+        .flat_map(|group| {
+            group["frames"]
+                .as_array()
+                .expect("showcase property frames")
+                .iter()
+        })
+        .filter(|frame| frame["frame"].as_f64() == Some(ANIMATED_SHOWCASE_SETTLE_FRAME))
+        .collect::<Vec<_>>();
+    assert!(
+        !settled_frames.is_empty(),
+        "showcase must lower frame 78 property keyframes"
+    );
+    assert!(settled_frames.iter().all(|frame| {
+        frame["interpolation"] == "cubic" && frame["interpolator"] == interpolator_name
+    }));
 
     let scene: SceneSpec =
         serde_json::from_value(lowered.scene).expect("showcase SceneSpec must deserialize");
@@ -293,6 +335,6 @@ fn complex_animated_showcase_compiles_without_raw_escapes() {
     let report = validate_riv(&bytes).expect("encoded showcase must parse");
 
     assert!(report.valid, "encoded showcase errors: {:?}", report.errors);
-    assert!(report.object_count >= 40);
-    assert!(bytes.len() >= 1_000);
+    assert!(report.object_count >= ANIMATED_SHOWCASE_MIN_OBJECT_COUNT);
+    assert!(bytes.len() >= ANIMATED_SHOWCASE_MIN_RIV_BYTES);
 }
