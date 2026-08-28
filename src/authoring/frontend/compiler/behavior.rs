@@ -6,8 +6,8 @@ use crate::builder::{SceneSpec, build_scene};
 
 use super::super::super::lower::runtime_name;
 use super::super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSourceMap, AuthoringSpec, BehaviorBindingSpec,
-    BehaviorModelSpec, BehaviorPropertySpec, SourceMapEntry,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec, BehaviorModelSpec,
+    BehaviorPropertySpec, SourceMapEntry,
 };
 
 pub(super) struct BehaviorLoweringOutput {
@@ -27,14 +27,6 @@ pub(super) fn lower_behavior(
     let mut state_machines = Vec::with_capacity(spec.behavior.statecharts.len());
     let mut source_entries = Vec::new();
     let mut binding_runtime: HashMap<usize, (Vec<String>, Vec<String>)> = HashMap::new();
-
-    let bindings_by_id = spec
-        .behavior
-        .bindings
-        .iter()
-        .enumerate()
-        .map(|(index, binding)| (binding.id.as_str(), index))
-        .collect::<HashMap<_, _>>();
 
     for (statechart_index, statechart) in spec.behavior.statecharts.iter().enumerate() {
         let scene_machine_index = state_machine_index_base + statechart_index;
@@ -231,7 +223,8 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                     "duplicate_behavior_property",
                     format!(
                         "behavior property id '{}' is duplicated in model '{}'",
-                        property.id(), model.id
+                        property.id(),
+                        model.id
                     ),
                 ));
             }
@@ -241,11 +234,7 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     let mut bindings = HashMap::new();
     for (binding_index, binding) in spec.behavior.bindings.iter().enumerate() {
         let binding_path = format!("$.behavior.bindings[{binding_index}]");
-        validate_id(
-            &binding.id,
-            &format!("{binding_path}.id"),
-            &mut diagnostics,
-        );
+        validate_id(&binding.id, &format!("{binding_path}.id"), &mut diagnostics);
         if bindings.insert(binding.id.as_str(), binding).is_some() {
             diagnostics.push(AuthoringDiagnostic::new(
                 format!("{binding_path}.id"),
