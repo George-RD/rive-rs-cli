@@ -1,6 +1,9 @@
+mod behavior;
 mod target_index;
 
 use std::collections::{HashMap, HashSet};
+
+use serde_json::Value;
 
 use super::super::lower;
 use super::super::spec::{
@@ -115,6 +118,8 @@ impl<'a> AuthoringCompiler<'a> {
                 {
                     runtime_names.register(entry);
                 }
+                let (lowered, runtime_names) =
+                    Self::lower_behavior(spec, lowered, runtime_names)?;
                 Ok(Self {
                     spec,
                     state: CompilerState::Lowered {
@@ -137,6 +142,8 @@ impl<'a> AuthoringCompiler<'a> {
                 debug_assert!(animations.is_empty());
                 debug_assert!(source_entries.is_empty());
                 debug_assert!(easing_source_entries.is_empty());
+                let (lowered, runtime_names) =
+                    Self::lower_behavior(spec, lowered, runtime_names)?;
                 Ok(Self {
                     spec,
                     state: CompilerState::Lowered {
@@ -149,6 +156,46 @@ impl<'a> AuthoringCompiler<'a> {
                 unreachable!("authoring compiler motion lowering can only run once")
             }
         }
+    }
+
+    fn lower_behavior(
+        spec: &AuthoringSpec,
+        mut lowered: LoweredAuthoring,
+        mut runtime_names: RuntimeNameRegistry,
+    ) -> Result<(LoweredAuthoring, RuntimeNameRegistry), AuthoringError> {
+        let state_machine_index_base = lowered.scene["artboard"]["state_machines"]
+            .as_array()
+            .map_or(0, Vec::len);
+        let behavior::BehaviorLoweringOutput {
+            state_machines,
+            source_entries,
+        } = behavior::lower_behavior(spec, state_machine_index_base)
+            .map_err(|error| rewrite_error_paths(spec, error))?;
+
+        if state_machines.is_empty() {
+            debug_assert!(source_entries.is_empty());
+            return Ok((lowered, runtime_names));
+        }
+
+        let artboard = lowered.scene["artboard"]
+            .as_object_mut()
+            .expect("canonical AuthoringSpec lowering always produces an artboard object");
+        let state_machine_value = artboard
+            .entry("state_machines")
+            .or_insert_with(|| Value::Array(Vec::new()));
+        let state_machine_list = state_machine_value
+            .as_array_mut()
+            .expect("canonical state_machines value must remain an array");
+        state_machine_list.extend(state_machines);
+
+        for entry in &source_entries {
+            runtime_names.register(entry);
+        }
+        lowered.source_map.entries.extend(source_entries);
+        behavior::validate_lowered_scene(&lowered.scene)
+            .map_err(|error| rewrite_error_paths(spec, error))?;
+
+        Ok((lowered, runtime_names))
     }
 
     pub(super) fn finish(self) -> Result<LoweredAuthoring, AuthoringError> {
