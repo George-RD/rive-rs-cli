@@ -331,9 +331,84 @@ pub struct MotionSection {
     pub raw_animations: Vec<RawSceneFragment>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorModelSpec {
+    pub id: String,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub properties: Vec<BehaviorPropertySpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum BehaviorPropertySpec {
+    Bool { id: String, value: bool },
+}
+
+impl BehaviorPropertySpec {
+    pub(crate) fn id(&self) -> &str {
+        match self {
+            Self::Bool { id, .. } => id,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorBindingSpec {
+    pub id: String,
+    pub model: String,
+    pub property: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorStateSpec {
+    pub id: String,
+    pub motion: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorTransitionConditionSpec {
+    pub binding: String,
+    pub equals: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorTransitionSpec {
+    pub id: String,
+    pub from: String,
+    pub to: String,
+    pub when: BehaviorTransitionConditionSpec,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorStatechartSpec {
+    pub id: String,
+    pub initial: String,
+    #[schemars(length(min = 1, max = 1000))]
+    pub states: Vec<BehaviorStateSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub transitions: Vec<BehaviorTransitionSpec>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct BehaviorSection {
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub models: Vec<BehaviorModelSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub bindings: Vec<BehaviorBindingSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub statecharts: Vec<BehaviorStatechartSpec>,
     #[serde(default)]
     pub raw_state_machines: Vec<RawSceneFragment>,
 }
