@@ -180,7 +180,8 @@ fn complex_static_showcase_compiles_without_raw_escapes() {
 
 #[test]
 fn complex_animated_showcase_compiles_without_raw_escapes() {
-    let input = fs::read_to_string(complex_animated_showcase_path())
+    let showcase_path = complex_animated_showcase_path();
+    let input = fs::read_to_string(&showcase_path)
         .expect("complex animated AuthoringSpec showcase must exist");
     let authored: Value = serde_json::from_str(&input).expect("showcase must be valid JSON");
 
@@ -279,7 +280,11 @@ fn complex_animated_showcase_compiles_without_raw_escapes() {
 
     let scene: SceneSpec =
         serde_json::from_value(lowered.scene).expect("showcase SceneSpec must deserialize");
-    let objects = build_scene(&scene, None).expect("showcase must pass the canonical builder");
+    let source_dir = showcase_path
+        .parent()
+        .expect("showcase fixture must have a source directory");
+    let objects =
+        build_scene(&scene, Some(source_dir)).expect("showcase must pass the canonical builder");
     let object_refs = objects
         .iter()
         .map(|object| object.as_ref())
