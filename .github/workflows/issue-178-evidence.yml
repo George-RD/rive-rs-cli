@@ -1,0 +1,82 @@
+name: Issue 178 evidence refresh
+
+on:
+  push:
+    branches: [issue-178-complex-animated-showcase]
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Make showcase text runtime-visible
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('examples/authoring/complex-animated-showcase.v0.json')
+          document = json.loads(path.read_text())
+          document['font_assets'] = {'inter': '../../assets/fonts/Inter-Bold-Subset.ttf'}
+
+          def visit(value):
+              if isinstance(value, dict):
+                  if value.get('kind') == 'text':
+                      value['font'] = 'inter'
+                  for child in value.values():
+                      visit(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      visit(child)
+
+          visit(document['visual'])
+
+          nodes = document['visual']['nodes']
+          by_id = {node['id']: node for node in nodes}
+          order = [
+              'showcase-title',
+              'showcase-subtitle',
+              'next-action',
+              'input-mail',
+              'input-chat',
+              'input-sheet',
+              'input-ops',
+              'decision-hub',
+              'focus-ring',
+              'link-mail',
+              'link-chat',
+              'link-sheet',
+              'link-ops',
+              'background',
+          ]
+          document['visual']['nodes'] = [by_id[node_id] for node_id in order]
+          path.write_text(json.dumps(document, separators=(',', ':'), ensure_ascii=False))
+          PY
+      - run: cargo build
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Capture official-runtime frames
+        run: node tests/playwright/visual-regression.js || true
+      - name: Retain showcase baselines
+        run: |
+          cp target/playwright-visual/authoring_complex_animated_showcase-f0.png tests/playwright/baselines/
+          cp target/playwright-visual/authoring_complex_animated_showcase-f36.png tests/playwright/baselines/
+          cp target/playwright-visual/authoring_complex_animated_showcase-f78.png tests/playwright/baselines/
+          cp target/playwright-visual/authoring_complex_animated_showcase-f120.png tests/playwright/baselines/
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add examples/authoring/complex-animated-showcase.v0.json tests/playwright/baselines/authoring_complex_animated_showcase-f*.png
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'test(authoring): retain runtime showcase evidence'
+          git push origin HEAD:issue-178-complex-animated-showcase
