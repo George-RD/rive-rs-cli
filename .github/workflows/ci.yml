@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,23 +18,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-      - name: Apply issue 179 builder seam
-        if: github.head_ref == 'issue-179-typed-behavior'
-        run: |
-          python scripts/issue179_builder_patch.py
-          cargo fmt --all
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src
-            git commit -m "feat(builder): support view-model-bound bool inputs"
-            git push
-          fi
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
       - name: Run Clippy
