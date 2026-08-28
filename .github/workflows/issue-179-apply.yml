@@ -5,7 +5,7 @@ on:
     branches:
       - issue-179-typed-behavior
     paths:
-      - scripts/issue179_builder_patch.py
+      - scripts/issue179_trigger
 
 permissions:
   contents: write
