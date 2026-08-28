@@ -4,36 +4,33 @@ on:
   push:
     branches:
       - issue-179-typed-behavior
+    paths:
+      - scripts/issue179_builder_patch.py
 
 permissions:
   contents: write
 
 jobs:
   apply:
-    if: "!contains(github.event.head_commit.message, '[issue179-applied]')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
       - name: Apply focused builder patch
         run: python scripts/issue179_builder_patch.py
       - name: Format
         run: cargo fmt --all
       - name: Focused builder check
         run: cargo test --lib builder:: --quiet
-      - name: Commit generated branch changes
+      - name: Commit branch changes
         shell: bash
         run: |
           if git diff --quiet; then
-            echo "No changes to commit"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src
-          git commit -m "feat(builder): support view-model-bound bool inputs [issue179-applied]"
+          git commit -m "feat(builder): support view-model-bound bool inputs"
           git push
