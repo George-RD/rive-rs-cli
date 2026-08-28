@@ -118,8 +118,7 @@ impl<'a> AuthoringCompiler<'a> {
                 {
                     runtime_names.register(entry);
                 }
-                let (lowered, runtime_names) =
-                    Self::lower_behavior(spec, lowered, runtime_names)?;
+                let (lowered, runtime_names) = Self::lower_behavior(spec, lowered, runtime_names)?;
                 Ok(Self {
                     spec,
                     state: CompilerState::Lowered {
@@ -142,8 +141,7 @@ impl<'a> AuthoringCompiler<'a> {
                 debug_assert!(animations.is_empty());
                 debug_assert!(source_entries.is_empty());
                 debug_assert!(easing_source_entries.is_empty());
-                let (lowered, runtime_names) =
-                    Self::lower_behavior(spec, lowered, runtime_names)?;
+                let (lowered, runtime_names) = Self::lower_behavior(spec, lowered, runtime_names)?;
                 Ok(Self {
                     spec,
                     state: CompilerState::Lowered {
