@@ -146,6 +146,7 @@ pub mod type_keys {
     pub const VIEW_MODEL_COMPONENT: u16 = 436;
     pub const VIEW_MODEL_PROPERTY: u16 = 430;
     pub const DATA_BIND: u16 = 446;
+    pub const DATA_BIND_CONTEXT: u16 = 447;
     pub const TEXT: u16 = 134;
     pub const TEXT_VALUE_RUN: u16 = 135;
     pub const TEXT_STYLE: u16 = 573;
@@ -601,6 +602,7 @@ pub mod property_keys {
     pub const VIEW_MODEL_PROPERTY_TYPE_VALUE: u16 = 875;
     pub const DATA_BIND_PROPERTY_KEY: u16 = 586;
     pub const DATA_BIND_FLAGS: u16 = 587;
+    pub const DATA_BIND_CONTEXT_SOURCE_PATH_IDS: u16 = 588;
     pub const DATA_BIND_CONVERTER_ID: u16 = 660;
     pub const BLEND_ANIMATION_ANIMATION_ID: u16 = 165;
     pub const BLEND_ANIMATION_1D_VALUE: u16 = 166;

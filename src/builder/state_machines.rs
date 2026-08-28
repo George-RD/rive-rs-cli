@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::objects::core::RiveObject;
+use crate::objects::core::{RiveObject, property_keys};
+use crate::objects::data_binding::DataBindContext;
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
     BlendState1DInput, BlendState1DViewModel, BlendStateDirect, EntryState, ExitState,
@@ -29,6 +30,25 @@ use super::spec::{
     TransitionChildSpec,
 };
 
+fn encode_id_path(ids: &[u64]) -> Vec<u8> {
+    let mut output = Vec::new();
+    for &id in ids {
+        let mut value = id;
+        loop {
+            let mut byte = (value & 0x7f) as u8;
+            value >>= 7;
+            if value != 0 {
+                byte |= 0x80;
+            }
+            output.push(byte);
+            if value == 0 {
+                break;
+            }
+        }
+    }
+    output
+}
+
 /// Builds all state machine objects for an artboard.
 pub(crate) fn build_state_machines(
     state_machines: &[StateMachineSpec],
@@ -51,11 +71,53 @@ pub(crate) fn build_state_machines(
                         }));
                         input_name_to_index.insert(name.clone(), input_index);
                     }
-                    InputSpec::Bool { name, value } => {
+                    InputSpec::Bool {
+                        name,
+                        value,
+                        view_model_binding,
+                    } => {
                         objects.push(Box::new(StateMachineBool {
                             name: name.clone(),
                             value: if *value { 1 } else { 0 },
                         }));
+                        if let Some(binding) = view_model_binding {
+                            let view_model_global = *object_name_to_index
+                                .get(&binding.view_model)
+                                .ok_or_else(|| {
+                                    format!(
+                                        "unknown view model referenced by bool input '{}': '{}'",
+                                        name, binding.view_model
+                                    )
+                                })?;
+                            let property_global = *object_name_to_index
+                                .get(&binding.property)
+                                .ok_or_else(|| {
+                                    format!(
+                                        "unknown view-model property referenced by bool input '{}': '{}'",
+                                        name, binding.property
+                                    )
+                                })?;
+                            let view_model_id = view_model_global
+                                .checked_sub(artboard_start)
+                                .ok_or_else(|| {
+                                    format!(
+                                        "view model '{}' precedes current artboard",
+                                        binding.view_model
+                                    )
+                                })? as u64;
+                            let property_id =
+                                property_global.checked_sub(artboard_start).ok_or_else(|| {
+                                    format!(
+                                        "view-model property '{}' precedes current artboard",
+                                        binding.property
+                                    )
+                                })? as u64;
+                            objects.push(Box::new(DataBindContext::new(
+                                property_keys::STATE_MACHINE_BOOL_VALUE as u64,
+                                0,
+                                encode_id_path(&[view_model_id, property_id]),
+                            )));
+                        }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
                     InputSpec::Trigger { name } => {
