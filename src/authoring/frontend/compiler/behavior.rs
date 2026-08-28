@@ -100,6 +100,7 @@ pub(super) fn lower_behavior(
                 )],
             });
         }
+        states.push(json!({ "type": "exit" }));
 
         let initial_state = *state_index_by_id
             .get(statechart.initial.as_str())
