@@ -6,6 +6,7 @@ const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const PORT = Number(process.env.SITE_PLAYBACK_PORT || 8772);
+const POLLING_MS = 50;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -49,7 +50,7 @@ async function selectFrame(page, card, frame) {
       return status.startsWith(`frame ${expected} `) && toggle?.textContent === "Play";
     },
     { rungId: id, expected: frame },
-    { timeout: 10000 }
+    { timeout: 10000, polling: POLLING_MS }
   );
 }
 
@@ -92,7 +93,7 @@ async function selectFrame(page, card, frame) {
         });
       },
       null,
-      { timeout: 20000 }
+      { timeout: 20000, polling: POLLING_MS }
     );
 
     const coffeeCard = page.locator('.card[data-rung-id="coffee_loader"]');
@@ -109,12 +110,14 @@ async function selectFrame(page, card, frame) {
         return toggle?.textContent === "Pause" && Number(match?.[1] || 0) > 0;
       },
       null,
-      { timeout: 10000 }
+      { timeout: 10000, polling: POLLING_MS }
     );
     await wait(300);
     await coffeeToggle.click();
     await page.waitForFunction(
-      () => document.querySelector('.card[data-rung-id="coffee_loader"] button.playback-toggle')?.textContent === "Play"
+      () => document.querySelector('.card[data-rung-id="coffee_loader"] button.playback-toggle')?.textContent === "Play",
+      null,
+      { timeout: 10000, polling: POLLING_MS }
     );
 
     const paused = await canvasSnapshots(coffeeCard);
