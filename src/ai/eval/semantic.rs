@@ -130,7 +130,7 @@ fn source_entry<'a>(
         .find(|entry| entry.authored_id == authored_id)
 }
 
-fn runtime_name(source_map: &AuthoringSourceMap, authored_id: &str) -> Option<&str> {
+fn runtime_name<'a>(source_map: &'a AuthoringSourceMap, authored_id: &str) -> Option<&'a str> {
     source_entry(source_map, authored_id).and_then(|entry| match entry.runtime_names.as_slice() {
         [name] => Some(name.as_str()),
         _ => None,
