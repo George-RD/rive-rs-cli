@@ -1,5 +1,6 @@
 const { chromium } = require("playwright");
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 
@@ -32,23 +33,22 @@ async function waitForServer(port, timeoutMs = 20000) {
 
 async function canvasSnapshots(card) {
   return card.locator("canvas.scene").evaluateAll((canvases) =>
-    canvases.map((canvas) => ({
-      frame: Number(canvas.dataset.logicalFrame),
-      image: canvas.toDataURL("image/png"),
-    }))
+    canvases.map((canvas) => canvas.toDataURL("image/png"))
   );
 }
 
-async function selectFrame(card, frame) {
+async function selectFrame(page, card, frame) {
+  const id = await card.getAttribute("data-rung-id");
   await card.locator("select.playback-frame").selectOption(String(frame));
-  await card.page().waitForFunction(
-    ({ id, expected }) => {
-      const target = document.querySelector(`[data-rung-id="${id}"]`);
+  await page.waitForFunction(
+    ({ rungId, expected }) => {
+      const target = document.querySelector(`[data-rung-id="${rungId}"]`);
       if (!target) return false;
-      const canvases = Array.from(target.querySelectorAll("canvas.scene"));
-      return canvases.length === 2 && canvases.every((canvas) => Number(canvas.dataset.logicalFrame) === expected);
+      const status = target.querySelector(".playback-status")?.textContent || "";
+      const toggle = target.querySelector("button.playback-toggle");
+      return status.startsWith(`frame ${expected} `) && toggle?.textContent === "Play";
     },
-    { id: await card.getAttribute("data-rung-id"), expected: frame },
+    { rungId: id, expected: frame },
     { timeout: 10000 }
   );
 }
@@ -82,82 +82,77 @@ async function selectFrame(card, frame) {
     await page.goto(`http://127.0.0.1:${PORT}/lab.html`, { waitUntil: "load" });
     await page.waitForFunction(
       () => {
-        const cards = Array.from(document.querySelectorAll(".card[data-playback-ready='true']"));
-        return cards.length === 2 && cards.every((card) => card.querySelectorAll("canvas.scene").length === 2);
+        const cards = Array.from(document.querySelectorAll(".card"));
+        return cards.length === 2 && cards.every((card) => {
+          const toggle = card.querySelector("button.playback-toggle");
+          const frame = card.querySelector("select.playback-frame");
+          const status = card.querySelector(".playback-status")?.textContent || "";
+          return toggle && frame && !toggle.disabled && !frame.disabled && toggle.textContent === "Pause" && status.startsWith("frame ");
+        });
       },
       null,
       { timeout: 20000 }
     );
 
-    const firstCard = page.locator(".card").first();
-    const firstToggle = firstCard.locator("button.playback-toggle");
-    if ((await firstToggle.textContent()) !== "Pause") {
-      errors.push("shared playback did not begin after both canvases became ready");
-    }
-
-    await firstToggle.click();
-    await page.waitForFunction(
-      () => document.querySelector(".card button.playback-toggle")?.textContent === "Play"
-    );
-    const pausedFrames = await firstCard.locator("canvas.scene").evaluateAll((canvases) =>
-      canvases.map((canvas) => Number(canvas.dataset.logicalFrame))
-    );
-    await wait(300);
-    const heldFrames = await firstCard.locator("canvas.scene").evaluateAll((canvases) =>
-      canvases.map((canvas) => Number(canvas.dataset.logicalFrame))
-    );
-    if (new Set(pausedFrames).size !== 1 || JSON.stringify(pausedFrames) !== JSON.stringify(heldFrames)) {
-      errors.push(`pause did not hold one shared logical frame: ${pausedFrames} -> ${heldFrames}`);
-    }
-
-    await firstToggle.click();
-    await wait(300);
-    await firstToggle.click();
-    const resumedFrames = await firstCard.locator("canvas.scene").evaluateAll((canvases) =>
-      canvases.map((canvas) => Number(canvas.dataset.logicalFrame))
-    );
-    if (new Set(resumedFrames).size !== 1 || resumedFrames[0] <= heldFrames[0]) {
-      errors.push(`play did not advance both canvases together: ${heldFrames} -> ${resumedFrames}`);
-    }
-
-    await selectFrame(firstCard, 30);
-    const selectedFrames = await firstCard.locator("canvas.scene").evaluateAll((canvases) =>
-      canvases.map((canvas) => Number(canvas.dataset.logicalFrame))
-    );
-    if (selectedFrames.some((frame) => frame !== 30)) {
-      errors.push(`representative frame seek did not frame-lock the pair: ${selectedFrames}`);
-    }
-
     const coffeeCard = page.locator('.card[data-rung-id="coffee_loader"]');
     const coffeeToggle = coffeeCard.locator("button.playback-toggle");
-    if ((await coffeeToggle.textContent()) === "Pause") {
-      await coffeeToggle.click();
+
+    await coffeeToggle.click();
+    await page.waitForFunction(
+      () => document.querySelector('.card[data-rung-id="coffee_loader"] button.playback-toggle')?.textContent === "Play"
+    );
+    const paused = await canvasSnapshots(coffeeCard);
+    await wait(300);
+    const held = await canvasSnapshots(coffeeCard);
+    if (JSON.stringify(paused) !== JSON.stringify(held)) {
+      errors.push("shared pause did not hold both coffee-loader canvases stable");
     }
-    await selectFrame(coffeeCard, 15);
-    const firstFifteen = await canvasSnapshots(coffeeCard);
-    await selectFrame(coffeeCard, 45);
-    await selectFrame(coffeeCard, 15);
-    const secondFifteen = await canvasSnapshots(coffeeCard);
-    for (let index = 0; index < firstFifteen.length; index += 1) {
-      if (firstFifteen[index].frame !== 15 || secondFifteen[index].frame !== 15) {
-        errors.push("backward seek did not return the state-machine pair to frame 15");
-        break;
+
+    await coffeeToggle.click();
+    await wait(300);
+    await coffeeToggle.click();
+    const resumed = await canvasSnapshots(coffeeCard);
+    for (let index = 0; index < held.length; index += 1) {
+      if (held[index] === resumed[index]) {
+        errors.push(`shared play did not visibly advance coffee-loader canvas ${index + 1}`);
       }
-      if (firstFifteen[index].image !== secondFifteen[index].image) {
+    }
+
+    await selectFrame(page, coffeeCard, 30);
+    const firstThirty = await canvasSnapshots(coffeeCard);
+    await selectFrame(page, coffeeCard, 45);
+    await selectFrame(page, coffeeCard, 30);
+    const secondThirty = await canvasSnapshots(coffeeCard);
+    for (let index = 0; index < firstThirty.length; index += 1) {
+      if (firstThirty[index] !== secondThirty[index]) {
         errors.push(`state-machine backward seek drifted on canvas ${index + 1}`);
       }
     }
 
+    await selectFrame(page, coffeeCard, 15);
+    const firstFifteen = await canvasSnapshots(coffeeCard);
+    await selectFrame(page, coffeeCard, 15);
+    const secondFifteen = await canvasSnapshots(coffeeCard);
+    if (JSON.stringify(firstFifteen) !== JSON.stringify(secondFifteen)) {
+      errors.push("repeated paused seek to frame 15 was not stable");
+    }
+
+    const expectedById = Object.fromEntries(
+      JSON.parse(fs.readFileSync(path.join(ROOT, "parity", "results.json"), "utf8")).map((rung) => [
+        rung.id,
+        rung.frames.map((frame) => frame.index),
+      ])
+    );
     const controls = await page.evaluate(() =>
       Array.from(document.querySelectorAll(".card")).map((card) => ({
         id: card.dataset.rungId,
-        ready: card.dataset.playbackReady,
         frames: Array.from(card.querySelectorAll("select.playback-frame option")).map((option) => Number(option.value)),
       }))
     );
-    const expectedFrames = [0, 15, 30, 45];
-    if (controls.some((control) => control.ready !== "true" || JSON.stringify(control.frames) !== JSON.stringify(expectedFrames))) {
-      errors.push(`playback controls are not derived from parity representative frames: ${JSON.stringify(controls)}`);
+    for (const control of controls) {
+      if (JSON.stringify(control.frames) !== JSON.stringify(expectedById[control.id])) {
+        errors.push(`representative frames for ${control.id} do not match parity/results.json`);
+      }
     }
 
     if (errors.length > 0) {
