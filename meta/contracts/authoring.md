@@ -24,22 +24,44 @@ It must provide:
 - validation at each lowering stage and no direct binary encoding path.
 
 Incremental authoring operations target stable authored IDs and never runtime names,
-SceneSpec paths, or binary indices. The initial shared operation envelope supports
-replacing one node in the root authored visual tree, including nodes nested through
-groups. Nested targets use the same ancestor-scoped identity as the visual source map,
-for example `frame/panel`; a local leaf ID such as `panel` is not an alias for that
-nested concept. Pattern containers and component instances remain targetable as visual
-nodes, but repeated pattern-item definitions, component definitions, and expanded
-instance children are not independent replace targets in this first slice. Those
-concepts can expand to multiple source-map identities or live outside the root visual
-tree. A target must resolve exactly once: no match returns `unknown_authored_id`,
-while multiple matches return `ambiguous_authored_id`. The operation applies to a
-cloned `AuthoringSpec`, then lowers the complete candidate through the normal
-AuthoringCompiler and canonical SceneSpec validation path. A failed operation returns
-authored-path diagnostics and leaves the caller's input unchanged. A successful
+SceneSpec paths, generated array indices, or binary indices. The shared operation
+envelope supports replace, insert, move, and remove over authored visual concepts,
+components, typed motion concepts, typed behavior concepts, and raw motion or behavior
+fragments. Visual inserts can target the root visual list or an authored group;
+ordered concepts can also be placed before or after an authored same-domain anchor.
+For list-backed domains, insertion into the matching domain appends to authored order,
+while before and after placements resolve one authored anchor in that domain. A move
+removes one authored entity and inserts that same entity at the requested placement;
+it never recreates the entity from lowered runtime state.
+
+Visual targets use the same ancestor-scoped identity as the visual source map, for
+example `frame/panel`; a local leaf ID such as `panel` is not an alias for that nested
+concept. Pattern containers and component instances remain targetable as visual nodes,
+but repeated pattern-item definitions, component definitions, and expanded instance
+children are not independent visual-tree targets. Those concepts can expand to
+multiple source-map identities or live outside the root visual tree. Non-visual
+top-level concepts resolve by their stable authored IDs inside their typed domain. A
+target or anchor must resolve exactly once: no match returns `unknown_authored_id`,
+while multiple matches return `ambiguous_authored_id`. Placements cannot cross typed
+authoring domains and return `invalid_operation_placement` when the entity, anchor,
+or container types do not agree.
+
+Every operation applies to a cloned `AuthoringSpec` and lowers the complete candidate
+through the normal AuthoringCompiler and canonical SceneSpec validation path before a
+changed document can be returned. `apply_operations` applies the same rule after each
+step in a sequence, so every intermediate authored document is valid; a later failure
+returns no partially mutated result. Reference and dependency failures therefore use
+the existing authored-path diagnostics, such as `unknown_motion_target` or
+`unknown_behavior_motion`, rather than silently deleting, rebinding, or retargeting a
+dependent concept. The caller's input remains unchanged on every failure. A successful
 operation returns both the changed `AuthoringSpec` and its lowered result;
 deterministic lowering must preserve source-map entries and runtime bindings for
 unaffected authored IDs unless the edited dependency genuinely requires a change.
+
+The original `ReplaceVisualNode { target_id, node: VisualNode }` public operation shape
+remains compatible with the first incremental slice. New visual insert entities use an
+indirected payload internally so the broader operation envelope stays compact without
+changing that replace API.
 
 The current motion subset supports named transform, opacity, and positive pixel-valued
 parametric shape-dimension poses, compact pose tracks, and shared cubic Bézier easing
