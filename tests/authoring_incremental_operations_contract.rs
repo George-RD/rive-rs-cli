@@ -141,6 +141,10 @@ fn ellipse(id: &str) -> VisualNode {
     .expect("valid visual node")
 }
 
+fn visual_entity(id: &str) -> AuthoringEntity {
+    AuthoringEntity::VisualNode(Box::new(ellipse(id)))
+}
+
 fn source_entry<'a>(lowered: &'a LoweredAuthoring, authored_id: &str) -> &'a SourceMapEntry {
     lowered
         .source_map
@@ -161,7 +165,7 @@ fn insert_badge(document: &AuthoringSpec) -> AuthoringSpec {
     apply_operation(
         document,
         &AuthoringOperation::Insert {
-            entity: AuthoringEntity::VisualNode(ellipse("badge")),
+            entity: visual_entity("badge"),
             placement: AuthoringPlacement::Into {
                 container: AuthoringContainer::VisualGroup {
                     target_id: "frame".to_string(),
@@ -179,7 +183,7 @@ fn insert_visual_node_uses_authored_containment_and_preserves_unaffected_identit
     let before = lower_authoring(&document).expect("base document lowers");
     let untouched = source_entry(&before, "untouched").clone();
     let operation = AuthoringOperation::Insert {
-        entity: AuthoringEntity::VisualNode(ellipse("badge")),
+        entity: visual_entity("badge"),
         placement: AuthoringPlacement::Into {
             container: AuthoringContainer::VisualGroup {
                 target_id: "frame".to_string(),
@@ -206,7 +210,7 @@ fn invalid_insert_rolls_back_at_the_authored_boundary() {
     let document = spec();
     let before = serde_json::to_value(&document).expect("serialize input");
     let operation = AuthoringOperation::Insert {
-        entity: AuthoringEntity::VisualNode(ellipse("panel")),
+        entity: visual_entity("panel"),
         placement: AuthoringPlacement::Into {
             container: AuthoringContainer::VisualGroup {
                 target_id: "frame".to_string(),
@@ -339,7 +343,7 @@ fn one_transaction_can_insert_typed_visual_motion_and_behavior_concepts() {
     .expect("valid behavior model");
     let operations = vec![
         AuthoringOperation::Insert {
-            entity: AuthoringEntity::VisualNode(ellipse("badge")),
+            entity: visual_entity("badge"),
             placement: AuthoringPlacement::Into {
                 container: AuthoringContainer::VisualGroup {
                     target_id: "frame".to_string(),
@@ -375,7 +379,7 @@ fn a_failing_multi_operation_sequence_exposes_no_partial_document() {
     let before = serde_json::to_value(&document).expect("serialize input");
     let operations = vec![
         AuthoringOperation::Insert {
-            entity: AuthoringEntity::VisualNode(ellipse("badge")),
+            entity: visual_entity("badge"),
             placement: AuthoringPlacement::Into {
                 container: AuthoringContainer::VisualGroup {
                     target_id: "frame".to_string(),
@@ -383,7 +387,7 @@ fn a_failing_multi_operation_sequence_exposes_no_partial_document() {
             },
         },
         AuthoringOperation::Insert {
-            entity: AuthoringEntity::VisualNode(ellipse("panel")),
+            entity: visual_entity("panel"),
             placement: AuthoringPlacement::Into {
                 container: AuthoringContainer::VisualGroup {
                     target_id: "frame".to_string(),
@@ -431,7 +435,7 @@ fn repeated_multi_operation_sequences_are_deterministic() {
     let document = spec();
     let operations = vec![
         AuthoringOperation::Insert {
-            entity: AuthoringEntity::VisualNode(ellipse("badge")),
+            entity: visual_entity("badge"),
             placement: AuthoringPlacement::Into {
                 container: AuthoringContainer::VisualGroup {
                     target_id: "frame".to_string(),
