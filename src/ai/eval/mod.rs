@@ -241,7 +241,9 @@ mod tests {
                     authored_path: "$.behavior.statecharts[0].transitions[0]".to_string(),
                     definition_path: None,
                     runtime_names: Vec::new(),
-                    scene_paths: vec!["/artboard/state_machines/0/layers/0/transitions/1".to_string()],
+                    scene_paths: vec![
+                        "/artboard/state_machines/0/layers/0/transitions/1".to_string(),
+                    ],
                 },
             ],
         };
