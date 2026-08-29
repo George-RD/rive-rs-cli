@@ -20,7 +20,7 @@ until that frontend and its evidence gates exist.
 
 Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 
-**Current next item: [#184 — make atomic stable-ID replacements](https://github.com/George-RD/rive-rs-cli/issues/184).**
+**Current next item: [#185 — complete incremental AuthoringSpec insert, move and remove operations](https://github.com/George-RD/rive-rs-cli/issues/185).**
 [#179](https://github.com/George-RD/rive-rs-cli/issues/179) completed the first typed
 behavior tracer bullet in PR #203. [#180](https://github.com/George-RD/rive-rs-cli/issues/180)
 completed authored inputs, events, typed listeners, and retained `render --input` /
@@ -28,8 +28,10 @@ completed authored inputs, events, typed listeners, and retained `render --input
 completed the complex interactive AuthoringSpec showcase gate in PR #206 with an
 exact canonical SceneSpec equivalence contract. [#182](https://github.com/George-RD/rive-rs-cli/issues/182)
 completed deterministic static and animated AuthoringSpec semantic evidence in PR #207.
-[#183](https://github.com/George-RD/rive-rs-cli/issues/183) completes interactive semantic
-evaluation in PR #209, leaving #184 as the next unblocked authoring item.
+[#183](https://github.com/George-RD/rive-rs-cli/issues/183) completed interactive semantic
+evaluation in PR #209. [#184](https://github.com/George-RD/rive-rs-cli/issues/184)
+establishes atomic stable-ID visual replacement in PR #210, leaving #185 as the next
+incremental-authoring item after #210 merges.
 
 The ordered execution graph is:
 
@@ -42,7 +44,7 @@ The ordered execution graph is:
        |-> #182 static + animated semantic evaluations (complete in PR #207)
 
 #181 + #182 -> #183 interactive semantic evaluation (complete in PR #209)
-#181        -> #184 atomic replace -> #185 insert/move/remove
+#181        -> #184 atomic replace (PR #210) -> #185 insert/move/remove
 #183 + #185 -> #186 complex AI generation through AuthoringSpec
 ```
 
@@ -69,7 +71,7 @@ AuthoringSpec progress.
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
-| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 next -> #185 | stable-ID edits validate atomically and preserve unaffected source-map identity |
+| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 in PR #210; #185 next | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked; #186 requires complete #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until Authoring compiler state is stable | characterization-preserving split aligned to authored source maps |
 
@@ -97,11 +99,14 @@ AuthoringSpec progress.
   evidence in PR #207. The report retains source-map/static assertions and official-
   runtime frame-difference assertions as separate dimensions from structural validity,
   runtime pass/fail, reproducibility, and drift.
-- #183 completes interactive AuthoringSpec semantic evaluation in PR #209. The same
+- #183 completed interactive AuthoringSpec semantic evaluation in PR #209. The same
   evidence model now drives authored inputs and pointer events, retains resolved
   interaction evidence, checks authored state-motion/transition intent, and gates
   visible runtime response separately from structural and runtime validity.
-- Incremental operations are the current frontier at #184, followed by #185.
+- #184 establishes the first stable-ID transactional operation in PR #210: root visual
+  replacement is applied to a clone, validated through the normal AuthoringCompiler,
+  and preserves unaffected source-map identity. #185 is the next frontier and extends
+  the shared operation contract to insert, move, and remove.
 - Complex AI-generation skills remain blocked until #185 closes; #183 is complete.
 
 ## Readiness gate for complex AI generation
