@@ -35,14 +35,14 @@ fn replace_visual_node(
     target_id: &str,
     replacement: &VisualNode,
 ) -> Result<(), AuthoringError> {
-    match count_visual_nodes(nodes, target_id) {
+    match count_visual_nodes(nodes, target_id, None) {
         0 => Err(target_error(
             "unknown_authored_id",
             target_id,
             "does not identify a visual node in the root visual tree",
         )),
         1 => {
-            if replace_visual_node_once(nodes, target_id, replacement) {
+            if replace_visual_node_once(nodes, target_id, replacement, None) {
                 Ok(())
             } else {
                 Err(target_error(
@@ -68,23 +68,21 @@ fn target_error(code: &str, target_id: &str, detail: &str) -> AuthoringError {
     ))
 }
 
-fn count_visual_nodes(nodes: &[VisualNode], target_id: &str) -> usize {
+fn count_visual_nodes(nodes: &[VisualNode], target_id: &str, parent_id: Option<&str>) -> usize {
     nodes
         .iter()
-        .map(|node| count_visual_node(node, target_id))
+        .map(|node| count_visual_node(node, target_id, parent_id))
         .sum()
 }
 
-fn count_visual_node(node: &VisualNode, target_id: &str) -> usize {
-    let own_match = usize::from(node.id() == target_id);
+fn count_visual_node(node: &VisualNode, target_id: &str, parent_id: Option<&str>) -> usize {
+    let authored_id = scoped_authored_id(parent_id, node.id());
+    let own_match = usize::from(authored_id == target_id);
     own_match
         + match node {
-            VisualNode::Grid { item, .. }
-            | VisualNode::Radial { item, .. }
-            | VisualNode::Mirror { item, .. }
-            | VisualNode::Distribute { item, .. }
-            | VisualNode::AlongPath { item, .. } => count_visual_node(item, target_id),
-            VisualNode::Group { children, .. } => count_visual_nodes(children, target_id),
+            VisualNode::Group { children, .. } => {
+                count_visual_nodes(children, target_id, Some(&authored_id))
+            }
             _ => 0,
         }
 }
@@ -93,9 +91,10 @@ fn replace_visual_node_once(
     nodes: &mut [VisualNode],
     target_id: &str,
     replacement: &VisualNode,
+    parent_id: Option<&str>,
 ) -> bool {
     for node in nodes {
-        if replace_visual_node_in(node, target_id, replacement) {
+        if replace_visual_node_in(node, target_id, replacement, parent_id) {
             return true;
         }
     }
@@ -106,23 +105,25 @@ fn replace_visual_node_in(
     node: &mut VisualNode,
     target_id: &str,
     replacement: &VisualNode,
+    parent_id: Option<&str>,
 ) -> bool {
-    if node.id() == target_id {
+    let authored_id = scoped_authored_id(parent_id, node.id());
+    if authored_id == target_id {
         *node = replacement.clone();
         return true;
     }
 
     match node {
-        VisualNode::Grid { item, .. }
-        | VisualNode::Radial { item, .. }
-        | VisualNode::Mirror { item, .. }
-        | VisualNode::Distribute { item, .. }
-        | VisualNode::AlongPath { item, .. } => {
-            replace_visual_node_in(item, target_id, replacement)
-        }
         VisualNode::Group { children, .. } => {
-            replace_visual_node_once(children, target_id, replacement)
+            replace_visual_node_once(children, target_id, replacement, Some(&authored_id))
         }
         _ => false,
+    }
+}
+
+fn scoped_authored_id(parent_id: Option<&str>, local_id: &str) -> String {
+    match parent_id {
+        Some(parent_id) => format!("{parent_id}/{local_id}"),
+        None => local_id.to_string(),
     }
 }
