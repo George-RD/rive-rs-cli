@@ -20,6 +20,7 @@ const CURRENT_DIR = path.join(ROOT, "target", "playwright-behavior");
 const BASELINE_DIR = path.join(ROOT, "tests", "playwright", "baselines");
 const PORT = Number(process.env.PLAYWRIGHT_PORT || 8767);
 const PLAN = {
+  fixture: FIXTURE,
   stateMachine: "auth__behavior_2dstage__gate__state_machine",
   viewModel: "auth__behavior_2dstage__gate_2dmodel__view_model",
   property: "auth__behavior_2dstage__gate_2dmodel__enabled__view_model_property",
@@ -71,7 +72,7 @@ async function mountBehavior(page) {
       let runtime;
       await new Promise((resolve, reject) => {
         runtime = new rive.Rive({
-          src: `${FIXTURE}.riv`,
+          src: `${plan.fixture}.riv`,
           canvas: controlledCanvas,
           autoplay: false,
           autoBind: false,
