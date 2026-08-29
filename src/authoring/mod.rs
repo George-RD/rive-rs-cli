@@ -12,21 +12,14 @@ mod visual;
 use schemars::schema_for;
 use serde_json::Value;
 
-pub use operations::{
-    AppliedOperation, AuthoringContainer, AuthoringEntity, AuthoringOperation, AuthoringPlacement,
-    AuthoringTarget, apply_operation, apply_operations,
-};
+pub use operations::{AppliedOperation, AuthoringOperation, apply_operation};
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSourceMap, AuthoringSpec, BehaviorBindingConditionSpec, BehaviorBindingSpec,
-    BehaviorEventSpec, BehaviorInputConditionSpec, BehaviorInputSpec, BehaviorListenerActionSpec,
-    BehaviorListenerSpec, BehaviorListenerType, BehaviorModelSpec, BehaviorPropertySpec,
-    BehaviorSection, BehaviorStateSpec, BehaviorStatechartSpec, BehaviorTransitionConditionSpec,
-    BehaviorTransitionSpec, ComponentSpec, ConstraintAxis, ConstraintSpec, GradientKind,
-    GradientPaintSpec, GradientStopSpec, LoweredAuthoring, MotionEasingSpec, MotionInterpolation,
-    MotionLoop, MotionSection, MotionTrackSpec, PaintSpec, PoseKeyframeSpec, PoseSpec,
-    PoseTargetSpec, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec,
-    TransformSpec, Unit, VisualSection,
+    AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, ConstraintAxis,
+    ConstraintSpec, GradientKind, GradientPaintSpec, GradientStopSpec, LoweredAuthoring,
+    MotionEasingSpec, MotionInterpolation, MotionLoop, MotionSection, MotionTrackSpec, PaintSpec,
+    PoseKeyframeSpec, PoseSpec, PoseTargetSpec, Quantity, RawSceneFragment, ScalarExpr,
+    SourceMapEntry, StrokeSpec, TransformSpec, Unit, VisualSection,
 };
 pub use visual::{MirrorAxis, PathPointSpec, VisualNode};
 
@@ -228,7 +221,7 @@ mod tests {
             ]
         });
 
-        let error = lower(&input).expect_err("duplicate runtime names must fail");
+        let error = lower(&input).expect_err("duplicate runtime name must fail before the builder");
         assert!(has_diagnostic(
             &error,
             "runtime_name_collision",
@@ -237,117 +230,231 @@ mod tests {
     }
 
     #[test]
-    fn duplicate_raw_fragment_ids_are_rejected_before_lowering() {
+    fn authored_ids_reserve_the_source_map_path_separator() {
         let mut input = document();
-        input["motion"] = json!({
-            "raw_animations": [
-                {
-                    "id": "same",
-                    "value": {
-                        "name": "first",
-                        "fps": 60,
-                        "duration": 1,
-                        "keyframes": []
-                    }
-                },
-                {
-                    "id": "same",
-                    "value": {
-                        "name": "second",
-                        "fps": 60,
-                        "duration": 1,
-                        "keyframes": []
-                    }
-                }
-            ]
+        input["visual"]["nodes"] = json!([
+            { "kind": "group", "id": "left/disc", "children": [] }
+        ]);
+
+        let error = lower(&input).expect_err("ambiguous authored id must fail");
+        assert!(has_diagnostic(&error, "invalid_id", "$.visual.nodes[0].id"));
+    }
+
+    #[test]
+    fn parameter_names_cannot_contain_diagnostic_path_metacharacters() {
+        let mut input = document();
+        input["parameters"] = json!({
+            "layout.width": { "value": 80.0, "unit": "px" }
         });
 
-        let error = lower(&input).expect_err("duplicate fragment ids must fail");
-        assert!(has_diagnostic(
-            &error,
-            "duplicate_id",
-            "$.motion.raw_animations[1].id"
-        ));
+        let error = lower(&input).expect_err("ambiguous parameter name must fail");
+        assert!(has_diagnostic(&error, "invalid_parameter", "$.parameters"));
     }
 
     #[test]
-    fn behavior_raw_fragment_runtime_names_share_the_collision_registry() {
+    fn acyclic_component_depth_is_bounded() {
         let mut input = document();
-        input["behavior"] = json!({
-            "raw_state_machines": [
-                {
-                    "id": "first",
-                    "value": {
-                        "name": "duplicate",
-                        "layers": [{ "states": [{ "type": "entry" }] }]
-                    }
-                },
-                {
-                    "id": "second",
-                    "value": {
-                        "name": "duplicate",
-                        "layers": [{ "states": [{ "type": "entry" }] }]
-                    }
-                }
-            ]
-        });
+        let components = (0..65)
+            .map(|index| {
+                let visual = if index == 64 {
+                    json!([
+                        {
+                            "kind": "ellipse",
+                            "id": "leaf",
+                            "width": { "kind": "literal", "value": 1.0, "unit": "px" },
+                            "height": { "kind": "literal", "value": 1.0, "unit": "px" },
+                            "fill": "#000000"
+                        }
+                    ])
+                } else {
+                    json!([
+                        {
+                            "kind": "instance",
+                            "id": format!("next-{index}"),
+                            "component": format!("component-{}", index + 1)
+                        }
+                    ])
+                };
+                json!({
+                    "id": format!("component-{index}"),
+                    "visual": visual
+                })
+            })
+            .collect::<Vec<_>>();
+        input["components"] = json!(components);
+        input["visual"]["nodes"] = json!([
+            { "kind": "instance", "id": "root", "component": "component-0" }
+        ]);
 
-        let error = lower(&input).expect_err("duplicate runtime names must fail");
+        let error = lower(&input).expect_err("deep acyclic expansion must be bounded");
         assert!(has_diagnostic(
             &error,
-            "runtime_name_collision",
-            "$.behavior.raw_state_machines[1].value"
+            "component_expansion_depth_limit",
+            "$.components[63].visual[0].component"
         ));
     }
 
     #[test]
-    fn unsupported_authoring_version_is_reported_at_authored_path() {
+    fn generated_component_nodes_have_a_total_budget() {
         let mut input = document();
-        input["authoring_format_version"] = json!(1);
+        let component_nodes = (0..100)
+            .map(|index| {
+                json!({
+                    "kind": "ellipse",
+                    "id": format!("dot-{index}"),
+                    "width": { "kind": "literal", "value": 1.0, "unit": "px" },
+                    "height": { "kind": "literal", "value": 1.0, "unit": "px" },
+                    "fill": "#000000"
+                })
+            })
+            .collect::<Vec<_>>();
+        input["components"] = json!([
+            { "id": "field", "visual": component_nodes }
+        ]);
+        let instances = (0..101)
+            .map(|index| {
+                json!({
+                    "kind": "instance",
+                    "id": format!("field-{index}"),
+                    "component": "field"
+                })
+            })
+            .collect::<Vec<_>>();
+        input["visual"]["nodes"] = json!(instances);
 
-        let error = lower(&input).expect_err("unsupported version must fail");
-        assert!(has_diagnostic(
-            &error,
-            "unsupported_version",
-            "$.authoring_format_version"
-        ));
+        let error = lower(&input).expect_err("generated nodes must have a total budget");
+        assert!(
+            error
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "component_expansion_node_limit")
+        );
     }
 
     #[test]
-    fn malformed_raw_scene_object_is_rejected_at_authored_path() {
+    fn common_shape_primitives_lower_deterministically_and_build() {
         let mut input = document();
         input["visual"]["nodes"] = json!([
             {
-                "kind": "raw_scene_object",
-                "id": "raw",
-                "object": []
-            }
-        ]);
-
-        let error = lower(&input).expect_err("raw escape must be an object");
-        assert!(has_diagnostic(
-            &error,
-            "invalid_raw_scene_object",
-            "$.visual.nodes[0].object"
-        ));
-    }
-
-    #[test]
-    fn raw_scene_object_can_lower_when_it_is_object_shaped() {
-        let mut input = document();
-        input["visual"]["nodes"] = json!([
+                "kind": "triangle",
+                "id": "triangle",
+                "width": { "kind": "literal", "value": 72.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 64.0, "unit": "px" },
+                "fill": "#EF4444",
+                "transform": {
+                    "x": { "kind": "literal", "value": 64.0, "unit": "px" },
+                    "y": { "kind": "literal", "value": 120.0, "unit": "px" }
+                }
+            },
             {
-                "kind": "raw_scene_object",
-                "id": "raw",
-                "object": {
-                    "type": "node",
-                    "name": "raw_node",
-                    "children": []
+                "kind": "polygon",
+                "id": "hexagon",
+                "width": { "kind": "literal", "value": 80.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 80.0, "unit": "px" },
+                "points": 6,
+                "corner_radius": { "kind": "literal", "value": 4.0, "unit": "px" },
+                "fill": "#22C55E",
+                "transform": {
+                    "x": { "kind": "literal", "value": 160.0, "unit": "px" },
+                    "y": { "kind": "literal", "value": 120.0, "unit": "px" }
+                }
+            },
+            {
+                "kind": "star",
+                "id": "star",
+                "width": { "kind": "literal", "value": 88.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 88.0, "unit": "px" },
+                "points": 5,
+                "inner_radius": { "kind": "literal", "value": 0.42, "unit": "scalar" },
+                "corner_radius": { "kind": "literal", "value": 2.0, "unit": "px" },
+                "fill": "#3B82F6",
+                "transform": {
+                    "x": { "kind": "literal", "value": 256.0, "unit": "px" },
+                    "y": { "kind": "literal", "value": 120.0, "unit": "px" }
                 }
             }
         ]);
 
-        let lowered = lower(&input).expect("object-shaped raw escape must lower");
-        assert_builds(lowered.scene);
+        let first = lower(&input).expect("first primitive lowering");
+        let second = lower(&input).expect("second primitive lowering");
+        assert_eq!(first.scene, second.scene);
+        assert_eq!(first.source_map, second.source_map);
+
+        let children = first.scene["artboard"]["children"]
+            .as_array()
+            .expect("lowered artboard children");
+        assert_eq!(children[0]["children"][0]["type"], "triangle");
+        assert_eq!(children[1]["children"][0]["type"], "polygon");
+        assert_eq!(children[1]["children"][0]["points"], 6);
+        assert_eq!(children[1]["children"][0]["corner_radius"], 4.0);
+        assert_eq!(children[2]["children"][0]["type"], "star");
+        assert_eq!(children[2]["children"][0]["points"], 5);
+        assert_eq!(children[2]["children"][0]["inner_radius"], 0.42);
+
+        for authored_id in ["triangle", "hexagon", "star"] {
+            let entry = first
+                .source_map
+                .entries
+                .iter()
+                .find(|entry| entry.authored_id == authored_id)
+                .expect("primitive source-map entry");
+            assert_eq!(entry.runtime_names.len(), 4);
+            assert_eq!(entry.scene_paths.len(), 4);
+        }
+        assert_builds(first.scene);
+    }
+
+    #[test]
+    fn polygons_and_stars_require_at_least_three_points() {
+        for kind in ["polygon", "star"] {
+            let mut input = document();
+            let mut node = json!({
+                "kind": kind,
+                "id": kind,
+                "width": { "kind": "literal", "value": 40.0, "unit": "px" },
+                "height": { "kind": "literal", "value": 40.0, "unit": "px" },
+                "points": 2,
+                "fill": "#111827"
+            });
+            if kind == "star" {
+                node["inner_radius"] = json!({ "kind": "literal", "value": 0.5, "unit": "scalar" });
+            }
+            input["visual"]["nodes"] = json!([node]);
+
+            let error = lower(&input).expect_err("too few points must fail");
+            assert!(has_diagnostic(
+                &error,
+                "invalid_points",
+                "$.visual.nodes[0].points"
+            ));
+        }
+    }
+
+    #[test]
+    fn star_inner_radius_requires_a_bounded_scalar_ratio() {
+        for (value, unit, expected_code) in [
+            (0.5, "px", "unit_mismatch"),
+            (1.1, "scalar", "invalid_ratio"),
+        ] {
+            let mut input = document();
+            input["visual"]["nodes"] = json!([
+                {
+                    "kind": "star",
+                    "id": "star",
+                    "width": { "kind": "literal", "value": 40.0, "unit": "px" },
+                    "height": { "kind": "literal", "value": 40.0, "unit": "px" },
+                    "points": 5,
+                    "inner_radius": { "kind": "literal", "value": value, "unit": unit },
+                    "fill": "#111827"
+                }
+            ]);
+
+            let error = lower(&input).expect_err("invalid inner radius must fail");
+            assert!(has_diagnostic(
+                &error,
+                expected_code,
+                "$.visual.nodes[0].inner_radius"
+            ));
+        }
     }
 }
