@@ -6,7 +6,8 @@ use crate::ai::config::ProviderKind;
 use crate::ai::templates;
 
 use super::model::{
-    AnimatedSemanticCheck, EvalBaseline, EvalGates, EvalSuite, InputKind, StaticSemanticCheck,
+    AnimatedSemanticCheck, EvalBaseline, EvalGates, EvalSuite, InputKind, InteractiveSemanticCheck,
+    StaticSemanticCheck,
 };
 use super::traits::SUPPORTED_TRAITS;
 
@@ -43,6 +44,102 @@ fn validate_repo_relative_path(case_id: &str, label: &str, path: &str) -> Result
     }
 }
 
+fn validate_non_empty_ids(case_id: &str, label: &str, ids: &[&str]) -> Result<(), String> {
+    if ids.iter().any(|id| id.trim().is_empty()) {
+        Err(format!(
+            "case '{}' interactive semantic {} identifiers must not be empty",
+            case_id, label
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_interactive_check(
+    case_id: &str,
+    check: &InteractiveSemanticCheck,
+    runtime: &super::model::RuntimeExpectations,
+) -> Result<(), String> {
+    match check {
+        InteractiveSemanticCheck::InputApplied {
+            authored_id,
+            value,
+            frame,
+        } => {
+            validate_non_empty_ids(case_id, "input", &[authored_id])?;
+            let expected = format!("{authored_id}={value}@{frame}");
+            if !runtime.inputs.iter().any(|input| input.trim() == expected) {
+                return Err(format!(
+                    "case '{}' interactive input check '{}' must match a declared runtime input",
+                    case_id, authored_id
+                ));
+            }
+        }
+        InteractiveSemanticCheck::PointerApplied { event, x, y, frame } => {
+            const POINTER_EVENTS: [&str; 5] = ["down", "up", "move", "enter", "exit"];
+            if !POINTER_EVENTS.contains(&event.as_str()) || !x.is_finite() || !y.is_finite() {
+                return Err(format!(
+                    "case '{}' interactive pointer check must use a supported event and finite coordinates",
+                    case_id
+                ));
+            }
+            let expected = format!("{event}:{x},{y}@{frame}");
+            if !runtime
+                .pointers
+                .iter()
+                .any(|pointer| pointer.trim() == expected)
+            {
+                return Err(format!(
+                    "case '{}' interactive pointer check must match a declared runtime pointer",
+                    case_id
+                ));
+            }
+        }
+        InteractiveSemanticCheck::StateMotionBinding {
+            statechart_id,
+            state_id,
+            motion_id,
+        } => validate_non_empty_ids(
+            case_id,
+            "state-motion",
+            &[statechart_id, state_id, motion_id],
+        )?,
+        InteractiveSemanticCheck::Transition {
+            statechart_id,
+            transition_id,
+            from_state,
+            to_state,
+            input_id,
+            ..
+        } => validate_non_empty_ids(
+            case_id,
+            "transition",
+            &[
+                statechart_id,
+                transition_id,
+                from_state,
+                to_state,
+                input_id,
+            ],
+        )?,
+        InteractiveSemanticCheck::FramesDiffer { from, to } => {
+            if from == to {
+                return Err(format!(
+                    "case '{}' interactive semantic frame pair must use different frames",
+                    case_id
+                ));
+            }
+            if !runtime.frames.contains(from) || !runtime.frames.contains(to) {
+                return Err(format!(
+                    "case '{}' interactive semantic frames {} and {} must both be rendered",
+                    case_id, from, to
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
     if suite.suite_name.trim().is_empty() {
         return Err("suite name must not be empty".to_string());
@@ -71,6 +168,10 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
     validate_rate(
         "min_semantic_animated_pass_rate",
         suite.gates.min_semantic_animated_pass_rate,
+    )?;
+    validate_rate(
+        "min_semantic_interactive_pass_rate",
+        suite.gates.min_semantic_interactive_pass_rate,
     )?;
     if suite
         .gates
@@ -155,6 +256,25 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                     case.id
                 ));
             }
+            if (!runtime.inputs.is_empty() || !runtime.pointers.is_empty())
+                && runtime.state_machine.is_none()
+            {
+                return Err(format!(
+                    "case '{}' runtime inputs and pointers require a state machine",
+                    case.id
+                ));
+            }
+            if runtime.inputs.iter().any(|input| input.trim().is_empty())
+                || runtime
+                    .pointers
+                    .iter()
+                    .any(|pointer| pointer.trim().is_empty())
+            {
+                return Err(format!(
+                    "case '{}' runtime inputs and pointers must not contain empty entries",
+                    case.id
+                ));
+            }
         }
 
         if let Some(semantic) = &case.semantic {
@@ -164,7 +284,10 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                     case.id
                 ));
             }
-            if semantic.static_checks.is_empty() && semantic.animated_checks.is_empty() {
+            if semantic.static_checks.is_empty()
+                && semantic.animated_checks.is_empty()
+                && semantic.interactive_checks.is_empty()
+            {
                 return Err(format!(
                     "case '{}' semantic expectations must contain at least one check",
                     case.id
@@ -199,6 +322,12 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                     case.id
                 ));
             }
+            if !semantic.interactive_checks.is_empty() && case.runtime.is_none() {
+                return Err(format!(
+                    "case '{}' interactive semantic checks require runtime expectations",
+                    case.id
+                ));
+            }
             if let Some(runtime) = &case.runtime {
                 for check in &semantic.animated_checks {
                     match check {
@@ -217,6 +346,15 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                             }
                         }
                     }
+                }
+                if !semantic.interactive_checks.is_empty() && runtime.state_machine.is_none() {
+                    return Err(format!(
+                        "case '{}' interactive semantic checks require a state machine",
+                        case.id
+                    ));
+                }
+                for check in &semantic.interactive_checks {
+                    validate_interactive_check(&case.id, check, runtime)?;
                 }
             }
         }
@@ -309,6 +447,7 @@ pub fn evaluate_gates(
     runtime_pass_rate: f64,
     semantic_static_pass_rate: f64,
     semantic_animated_pass_rate: f64,
+    semantic_interactive_pass_rate: f64,
     average_retries: f64,
     drift_count: usize,
 ) -> Vec<String> {
@@ -347,6 +486,12 @@ pub fn evaluate_gates(
         failures.push(format!(
             "animated semantic pass rate {:.3} is below {:.3}",
             semantic_animated_pass_rate, gates.min_semantic_animated_pass_rate
+        ));
+    }
+    if semantic_interactive_pass_rate < gates.min_semantic_interactive_pass_rate {
+        failures.push(format!(
+            "interactive semantic pass rate {:.3} is below {:.3}",
+            semantic_interactive_pass_rate, gates.min_semantic_interactive_pass_rate
         ));
     }
     if gates
