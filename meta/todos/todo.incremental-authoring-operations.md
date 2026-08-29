@@ -29,7 +29,19 @@ source maps after every change.
 - Repair and agent workflows can apply the smallest corrective operation and compile immediately instead of regenerating the complete document.
 - A multi-step integration suite proves insert, replace, move, remove, rollback, and deterministic reapplication.
 
+## Delivered slices
+
+- #184 / PR #210 establishes the shared operation envelope with atomic
+  `ReplaceVisualNode`: it targets stable IDs in the root authored visual tree,
+  including nested groups and typed pattern items; edits are applied to a clone and
+  the complete candidate is lowered through the normal AuthoringCompiler before it
+  can be returned. Unknown and ambiguous targets have authored diagnostics, failed
+  candidates do not mutate the input, and contract tests retain unaffected source-map
+  identity and deterministic reapplication. Insert, move, remove, broader entity
+  coverage, and multi-operation transactions remain #185.
+
 ## Dependencies
 
 Depends on stable visual, motion, and behavior frontend contracts and their source
-maps. This work blocks the complex AI-generation skills milestone.
+maps. #184 is the first delivered slice; #185 completes the milestone and remains
+the blocker for complex AI-generation skills.
