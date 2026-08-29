@@ -227,8 +227,9 @@
       frameRequestId = global.requestAnimationFrame(tick);
     }
 
-    const ready = Promise.all(controllers.map((controller) => controller.ready)).then(async () => {
-      await enqueueSeek(0);
+    const ready = Promise.all(controllers.map((controller) => controller.ready)).then(() => {
+      logicalFrame = 0;
+      reportFrame();
       reportPlaying();
       if (options.autoplay === true && !reducedMotion) startPlaying();
     });
