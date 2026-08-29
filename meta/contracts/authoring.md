@@ -59,9 +59,8 @@ deterministic lowering must preserve source-map entries and runtime bindings for
 unaffected authored IDs unless the edited dependency genuinely requires a change.
 
 The original `ReplaceVisualNode { target_id, node: VisualNode }` public operation shape
-remains compatible with the first incremental slice. New visual insert entities use an
-indirected payload internally so the broader operation envelope stays compact without
-changing that replace API.
+remains source-compatible with the first incremental slice; insert, move, remove, and
+multi-operation application extend that contract rather than replacing it.
 
 The current motion subset supports named transform, opacity, and positive pixel-valued
 parametric shape-dimension poses, compact pose tracks, and shared cubic Bézier easing
