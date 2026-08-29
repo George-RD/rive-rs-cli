@@ -29,7 +29,7 @@ reusable site playback seam. Backward state-machine seeks rebuild and replay fro
 fixed logical clock instead of carrying later state backward.
 
 [#200](https://github.com/George-RD/rive-rs-cli/issues/200) completes the dedicated,
-manifest-driven original-work showcase in PR #217. It reuses the #199 playback seam,
+manifest-driven original-work showcase in PR #218. It reuses the #199 playback seam,
 keeps AuthoringSpec and SceneSpec provenance inspectable, stages local evidence, and
 promotes the complex animated AuthoringSpec behind a public-CLI drift guard.
 
@@ -90,7 +90,7 @@ AuthoringSpec or Verification Lab progress.
 | P0 | [Repair duplicate-reference correctness defect](meta/todos/todo.repair-engine-modularization.md#immediate-correctness-gate) | complete in PR #166 | duplicate-name repair cannot silently retarget an existing reference |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
-| P1 | [Public verification and original-work proof](meta/todos/todo.verification-lab-public-proof.md) | open; #199 complete in PR #216; #200 completes in PR #217; #201 next | frame-locked parity proof, manifest-driven original showcase, then landing/production proof with separate provenance |
+| P1 | [Public verification and original-work proof](meta/todos/todo.verification-lab-public-proof.md) | open; #199 complete in PR #216; #200 completes in PR #218; #201 next | frame-locked parity proof, manifest-driven original showcase, then landing/production proof with separate provenance |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
@@ -141,7 +141,7 @@ AuthoringSpec or Verification Lab progress.
 - #198 is the independent public-proof delivery spec. #199 completed its first slice
   in PR #216 by replacing per-canvas autoplay with one deterministic paired playback
   seam while keeping `parity/results.json` authoritative for measured evidence.
-- #200 completes the separate provenance-aware original-work showcase in PR #217,
+- #200 completes the separate provenance-aware original-work showcase in PR #218,
   including manifest-driven staging and a public-CLI drift-guarded AuthoringSpec
   artifact. #201 is the next slice and moves the landing page to original/production
   proof without adding a dependency into the completed Authoring execution graph.
