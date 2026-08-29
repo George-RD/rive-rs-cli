@@ -13,9 +13,7 @@ fn resolve_runtime_name(name: &str, source_map: Option<&AuthoringSourceMap>) -> 
                 .iter()
                 .find(|entry| entry.authored_id == name)
         })
-        .and_then(|entry| {
-            (entry.runtime_names.len() == 1).then(|| entry.runtime_names[0].clone())
-        })
+        .and_then(|entry| (entry.runtime_names.len() == 1).then(|| entry.runtime_names[0].clone()))
         .unwrap_or_else(|| name.to_string())
 }
 
@@ -23,10 +21,7 @@ fn resolve_input(entry: &str, source_map: Option<&AuthoringSourceMap>) -> String
     let Some((name, value)) = entry.split_once('=') else {
         return entry.to_string();
     };
-    format!(
-        "{}={value}",
-        resolve_runtime_name(name.trim(), source_map)
-    )
+    format!("{}={value}", resolve_runtime_name(name.trim(), source_map))
 }
 
 pub fn evaluate_runtime_frames(
