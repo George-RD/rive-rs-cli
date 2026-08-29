@@ -19,9 +19,9 @@ escape-hatch work.
 - Incremental typed authoring operations can compile and validate after each step.
 
 All four readiness conditions are satisfied by the Authoring delivery through
-#185 / PR #211. #183 already retained interactive semantic/runtime evidence; #185
+#185 / PR #212. #183 already retained interactive semantic/runtime evidence; #185
 adds transactional stable-ID insert, move, remove, and multi-operation validation.
-This todo becomes the next Authoring frontier as #186 after PR #211 merges.
+This todo becomes the next Authoring frontier as #186 after PR #212 merges.
 
 ## Acceptance criteria after unblocking
 

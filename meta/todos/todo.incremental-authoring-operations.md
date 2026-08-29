@@ -41,7 +41,7 @@ source maps after every change.
   definitions, component definitions, and expanded instance children remain outside
   the root visual target space because they expand to multiple source-map identities
   or live outside the root visual tree.
-- #185 / PR #211 completes the milestone with typed insert, move, and remove across
+- #185 / PR #212 completes the milestone with typed insert, move, and remove across
   visual concepts, components, motion concepts, behavior concepts, and raw motion or
   behavior fragments. `AuthoringPlacement` addresses authored containers or
   same-domain before/after anchors without runtime indices. Visual targets retain the
@@ -60,5 +60,5 @@ source maps after every change.
 
 Depends on stable visual, motion, and behavior frontend contracts and their source
 maps. #184 delivered the initial replace seam and #185 completes the incremental
-operations milestone. Complex AI generation in #186 can now proceed once this PR's
-exact-head verification is green and merged.
+operations milestone. Complex AI generation in #186 can now proceed because PR #212
+is verified and merged.
