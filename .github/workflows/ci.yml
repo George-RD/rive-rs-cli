@@ -91,6 +91,13 @@ jobs:
             --suite evals/suites/authoring_semantic.v1.json \
             --provider template \
             --output-dir target/eval-authoring-semantic 2>&1 | tee authoring-semantic-eval.log
+      - name: Run interactive AuthoringSpec semantic evaluation suite
+        run: |
+          set -o pipefail
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/interactive_semantic.v1.json \
+            --provider template \
+            --output-dir target/eval-interactive-semantic 2>&1 | tee interactive-semantic-eval.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -98,8 +105,10 @@ jobs:
           path: |
             runtime-eval.log
             authoring-semantic-eval.log
+            interactive-semantic-eval.log
             target/eval-runtime
             target/eval-authoring-semantic
+            target/eval-interactive-semantic
           retention-days: 7
 
   architecture:
