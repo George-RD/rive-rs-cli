@@ -1,7 +1,8 @@
 ---
 node: rive-cli.intelligence.authoring
-status: open
+status: complete
 created: 2026-08-03
+completed: 2026-08-29
 ---
 
 # P3 — Add incremental typed authoring operations
@@ -31,22 +32,33 @@ source maps after every change.
 
 ## Delivered slices
 
-- #184 / PR #210 establishes the shared operation envelope with atomic
+- #184 / PR #210 established the shared operation envelope with atomic
   `ReplaceVisualNode`: it targets root visual nodes and group descendants by the
   same stable ancestor-scoped identities used by the visual source map, such as
   `frame/panel`; edits are applied to a clone and the complete candidate is lowered
   through the normal AuthoringCompiler before it can be returned. Pattern containers
   and component instances are targetable visual nodes, while repeated pattern-item
   definitions, component definitions, and expanded instance children remain outside
-  this first replace slice because they expand to multiple source-map identities or
-  live outside the root visual tree. Unknown and ambiguous targets have authored
-  diagnostics, failed candidates do not mutate the input, and contract tests retain
-  all unaffected source-map identities and deterministic reapplication. Insert,
-  move, remove, broader entity coverage, and multi-operation transactions remain
-  future slices; #185 is the next ready incremental-operations item.
+  the root visual target space because they expand to multiple source-map identities
+  or live outside the root visual tree.
+- #185 / PR #211 completes the milestone with typed insert, move, and remove across
+  visual concepts, components, motion concepts, behavior concepts, and raw motion or
+  behavior fragments. `AuthoringPlacement` addresses authored containers or
+  same-domain before/after anchors without runtime indices. Visual targets retain the
+  scoped source-map identity contract; list-backed concepts resolve stable IDs within
+  their typed domain.
+- `apply_operations` makes multi-step edits transactional at the API boundary and
+  runs canonical lowering after every step. A dependency-invalid intermediate or
+  final document returns authored diagnostics and exposes no partial changed document.
+  Motion and behavior references are never silently retargeted after remove or move.
+- Contract tests cover insert, move, remove, rollback, dependency failures,
+  cross-domain placement rejection, unaffected source-map/runtime identity, canonical
+  builder validation, cross-domain visual/motion/behavior insertion, and deterministic
+  replay. Existing #184 replacement contracts continue to cover replace behavior.
 
 ## Dependencies
 
 Depends on stable visual, motion, and behavior frontend contracts and their source
-maps. #184 is the first delivered slice; #185 completes the milestone and remains
-the blocker for complex AI-generation skills.
+maps. #184 delivered the initial replace seam and #185 completes the incremental
+operations milestone. Complex AI generation in #186 can now proceed once this PR's
+exact-head verification is green and merged.
