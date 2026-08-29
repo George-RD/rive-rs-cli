@@ -26,9 +26,13 @@ It must provide:
 Incremental authoring operations target stable authored IDs and never runtime names,
 SceneSpec paths, or binary indices. The initial shared operation envelope supports
 replacing one node in the root authored visual tree, including nodes nested through
-groups and typed pattern items. A target must resolve exactly once: no match returns
-`unknown_authored_id`, while multiple matches return `ambiguous_authored_id`. The
-operation applies to a cloned `AuthoringSpec`, then lowers the complete candidate
+groups. Nested targets use the same ancestor-scoped identity as the visual source map,
+for example `frame/panel`; a local leaf ID such as `panel` is not an alias for that
+nested concept. Pattern containers remain targetable as visual nodes, but their
+repeated item definitions do not have one source-map identity and are not independent
+replace targets in this first slice. A target must resolve exactly once: no match
+returns `unknown_authored_id`, while multiple matches return `ambiguous_authored_id`.
+The operation applies to a cloned `AuthoringSpec`, then lowers the complete candidate
 through the normal AuthoringCompiler and canonical SceneSpec validation path. A
 failed operation returns authored-path diagnostics and leaves the caller's input
 unchanged. A successful operation returns both the changed `AuthoringSpec` and its
