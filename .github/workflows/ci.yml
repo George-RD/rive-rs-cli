@@ -208,3 +208,4 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: node tests/playwright/site-validation.js
       - run: node tests/playwright/site-playback.js
+      - run: node tests/playwright/showcase-validation.js

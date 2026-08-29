@@ -45,8 +45,8 @@
 
     const fps = options.fps || CAPTURE_FPS;
     const stateMachine = options.stateMachine || null;
-    const animation = options.animation || null;
-    const mode = stateMachine ? "stateMachine" : animation ? "animation" : "static";
+    let animation = options.animation || null;
+    let mode = stateMachine ? "stateMachine" : animation ? "animation" : "static";
     const sceneBuffer = loadSceneBuffer(src);
     const stepMs = 1000 / fps;
 
@@ -116,6 +116,10 @@
         return;
       }
       instance.resizeDrawingSurfaceToCanvas();
+      if (!stateMachine && !animation && instance.animationNames?.length > 0) {
+        animation = instance.animationNames[0];
+        mode = "animation";
+      }
       if (mode === "stateMachine") {
         startStateMachine();
       } else if (mode === "animation") {
@@ -179,18 +183,11 @@
     return { ready, seekToFrame, resize, destroy };
   }
 
-  function createPairedTimeline(options) {
+  function createLogicalTimeline(controllers, options = {}) {
     const fps = options.fps || CAPTURE_FPS;
-    const left = createControlledRive(options.left.canvas, options.left.src, {
-      fps,
-      stateMachine: options.left.stateMachine || options.stateMachine,
-      animation: options.left.animation || options.animation,
-    });
-    const right = createControlledRive(options.right.canvas, options.right.src, {
-      fps,
-      stateMachine: options.right.stateMachine || options.stateMachine,
-      animation: options.right.animation || options.animation,
-    });
+    const reducedMotion = Boolean(
+      global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
 
     let logicalFrame = 0;
     let playing = false;
@@ -214,16 +211,27 @@
       const target = Math.max(0, Math.round(frame));
       seekChain = seekChain.then(async () => {
         if (destroyed) return;
-        await Promise.all([left.seekToFrame(target), right.seekToFrame(target)]);
+        await Promise.all(controllers.map((controller) => controller.seekToFrame(target)));
         logicalFrame = target;
         reportFrame();
       });
       return seekChain;
     }
 
-    const ready = Promise.all([left.ready, right.ready]).then(() => {
+    function startPlaying() {
+      if (destroyed || playing) return;
+      playing = true;
+      frameOrigin = logicalFrame;
+      wallOrigin = global.performance.now();
+      reportPlaying();
+      frameRequestId = global.requestAnimationFrame(tick);
+    }
+
+    const ready = Promise.all(controllers.map((controller) => controller.ready)).then(() => {
       logicalFrame = 0;
       reportFrame();
+      reportPlaying();
+      if (options.autoplay === true && !reducedMotion) startPlaying();
     });
 
     async function tick(now) {
@@ -240,12 +248,7 @@
     async function play() {
       await ready;
       await seekChain;
-      if (destroyed || playing) return;
-      playing = true;
-      frameOrigin = logicalFrame;
-      wallOrigin = global.performance.now();
-      reportPlaying();
-      frameRequestId = global.requestAnimationFrame(tick);
+      startPlaying();
     }
 
     async function pause() {
@@ -269,8 +272,7 @@
     }
 
     function resize() {
-      left.resize();
-      right.resize();
+      for (const controller of controllers) controller.resize();
     }
 
     function destroy() {
@@ -279,8 +281,7 @@
       playing = false;
       if (frameRequestId !== null) global.cancelAnimationFrame(frameRequestId);
       frameRequestId = null;
-      left.destroy();
-      right.destroy();
+      for (const controller of controllers) controller.destroy();
       reportPlaying();
     }
 
@@ -297,12 +298,49 @@
       get isPlaying() {
         return playing;
       },
+      get reducedMotion() {
+        return reducedMotion;
+      },
     };
+  }
+
+  function createTimeline(options) {
+    const fps = options.fps || CAPTURE_FPS;
+    const scene = createControlledRive(options.canvas, options.src, {
+      fps,
+      stateMachine: options.stateMachine,
+      animation: options.animation,
+    });
+    return createLogicalTimeline([scene], {
+      ...options,
+      fps,
+      autoplay: options.autoplay === true,
+    });
+  }
+
+  function createPairedTimeline(options) {
+    const fps = options.fps || CAPTURE_FPS;
+    const left = createControlledRive(options.left.canvas, options.left.src, {
+      fps,
+      stateMachine: options.left.stateMachine || options.stateMachine,
+      animation: options.left.animation || options.animation,
+    });
+    const right = createControlledRive(options.right.canvas, options.right.src, {
+      fps,
+      stateMachine: options.right.stateMachine || options.stateMachine,
+      animation: options.right.animation || options.animation,
+    });
+    return createLogicalTimeline([left, right], {
+      ...options,
+      fps,
+      autoplay: options.autoplay === true,
+    });
   }
 
   global.RivePlayback = {
     CAPTURE_FPS,
     createControlledRive,
+    createTimeline,
     createPairedTimeline,
   };
 })(window);
