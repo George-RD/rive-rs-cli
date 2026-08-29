@@ -1,6 +1,4 @@
-use crate::ai::authoring::{
-    AuthoringRepairRequest, GenerationTarget, authoring_repair_schema,
-};
+use crate::ai::authoring::{AuthoringRepairRequest, GenerationTarget, authoring_repair_schema};
 use crate::ai::provider::AiProvider;
 use crate::ai::{AiConfig, AiError};
 
