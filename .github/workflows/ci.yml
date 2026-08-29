@@ -2,50 +2,199 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
 
 jobs:
-  review-fix:
-    if: github.actor != 'github-actions[bot]'
+  check:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: feat/182-authoring-semantic-evals
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - name: Run Clippy
+        id: clippy
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee clippy.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clippy-diagnostics
+          path: clippy.log
+          retention-days: 1
+      - name: Fail when Clippy failed
+        if: steps.clippy.outcome == 'failure'
+        run: exit 1
+      - name: Run Rust tests
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo test --locked --all-features 2>&1 | tee rust-tests.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rust-test-diagnostics
+          path: rust-tests.log
+          retention-days: 1
+      - name: Fail when Rust tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1
+
+  browser-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Apply reviewed source patch
+      - run: node tests/playwright/shared-contract.js
+      - run: node tests/playwright/visual-contract.js
+
+  runtime-eval-evidence:
+    needs: [check, browser-contracts]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Run official-runtime evaluation suite
         run: |
-          python3 .github/review-fix.py
-          cargo fmt
-      - name: Verify Rust gates
+          set -o pipefail
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/runtime_contract.v1.json \
+            --provider template \
+            --output-dir target/eval-runtime 2>&1 | tee runtime-eval.log
+      - name: Run AuthoringSpec semantic evaluation suite
         run: |
-          cargo fmt --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          cargo test --locked --all-features
-      - name: Verify semantic evals
+          set -o pipefail
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/authoring_semantic.v1.json \
+            --provider template \
+            --output-dir target/eval-authoring-semantic 2>&1 | tee authoring-semantic-eval.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-eval-evidence
+          path: |
+            runtime-eval.log
+            authoring-semantic-eval.log
+            target/eval-runtime
+            target/eval-authoring-semantic
+          retention-days: 7
+
+  architecture:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cairn 0.9.0
         run: |
-          npm install --no-save playwright@1.62.0
-          npx playwright install --with-deps chromium
-          cargo run --quiet -- ai lab --suite evals/suites/runtime_contract.v1.json --provider template --output-dir target/eval-runtime
-          cargo run --quiet -- ai lab --suite evals/suites/authoring_semantic.v1.json --provider template --output-dir target/eval-authoring-semantic
-      - name: Commit verified source fixes
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+      - name: Validate architecture graph
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/ai/repair.rs src/ai/eval/runner.rs src/ai/eval/semantic.rs src/ai/eval/mod.rs
-          git commit -m "fix: complete authoring semantic eval evidence"
-          git push origin HEAD:feat/182-authoring-semantic-evals
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          set -o pipefail
+          cairn scan --json | tee cairn-scan.json
+          cairn lint --json | tee cairn-lint.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cairn-diagnostics
+          path: |
+            cairn-scan.json
+            cairn-lint.json
+          retention-days: 7
+
+  playwright:
+    needs: [check, browser-contracts]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Run typed behavior runtime contract
+        run: node tests/playwright/authoring-behavior-runtime.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: typed-behavior-runtime-evidence
+          path: target/playwright-behavior
+          retention-days: 7
+      - run: node tests/playwright/regression.js
+      - name: Run visual regression
+        id: visual
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/playwright/visual-regression.js 2>&1 | tee visual-regression.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-regression-diagnostics
+          path: |
+            visual-regression.log
+            target/playwright-visual
+          retention-days: 1
+      - name: Fail when visual regression failed
+        if: steps.visual.outcome == 'failure'
+        run: exit 1
+
+  demo:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build
+      - run: npm install --no-save playwright@1.62.0 wait-on@8.0.1
+      - run: npx playwright install --with-deps chromium
+      - name: Run demo validation
+        run: |
+          node demo/serve.js &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          npx wait-on http://localhost:3021 --timeout 300000
+          node tests/playwright/demo-validation.js
+
+  site:
+    needs: [check]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - run: node tests/playwright/site-validation.js
