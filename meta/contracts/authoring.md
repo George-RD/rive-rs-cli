@@ -28,17 +28,18 @@ SceneSpec paths, or binary indices. The initial shared operation envelope suppor
 replacing one node in the root authored visual tree, including nodes nested through
 groups. Nested targets use the same ancestor-scoped identity as the visual source map,
 for example `frame/panel`; a local leaf ID such as `panel` is not an alias for that
-nested concept. Pattern containers remain targetable as visual nodes, but their
-repeated item definitions do not have one source-map identity and are not independent
-replace targets in this first slice. A target must resolve exactly once: no match
-returns `unknown_authored_id`, while multiple matches return `ambiguous_authored_id`.
-The operation applies to a cloned `AuthoringSpec`, then lowers the complete candidate
-through the normal AuthoringCompiler and canonical SceneSpec validation path. A
-failed operation returns authored-path diagnostics and leaves the caller's input
-unchanged. A successful operation returns both the changed `AuthoringSpec` and its
-lowered result; deterministic lowering must preserve source-map entries and runtime
-bindings for unaffected authored IDs unless the edited dependency genuinely requires
-a change.
+nested concept. Pattern containers and component instances remain targetable as visual
+nodes, but repeated pattern-item definitions, component definitions, and expanded
+instance children are not independent replace targets in this first slice. Those
+concepts can expand to multiple source-map identities or live outside the root visual
+tree. A target must resolve exactly once: no match returns `unknown_authored_id`,
+while multiple matches return `ambiguous_authored_id`. The operation applies to a
+cloned `AuthoringSpec`, then lowers the complete candidate through the normal
+AuthoringCompiler and canonical SceneSpec validation path. A failed operation returns
+authored-path diagnostics and leaves the caller's input unchanged. A successful
+operation returns both the changed `AuthoringSpec` and its lowered result;
+deterministic lowering must preserve source-map entries and runtime bindings for
+unaffected authored IDs unless the edited dependency genuinely requires a change.
 
 The current motion subset supports named transform, opacity, and positive pixel-valued
 parametric shape-dimension poses, compact pose tracks, and shared cubic Bézier easing
