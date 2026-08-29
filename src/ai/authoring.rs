@@ -164,7 +164,7 @@ impl From<AiAuthoringPlacement> for AuthoringPlacement {
 pub enum AiAuthoringOperation {
     ReplaceVisualNode {
         target_id: String,
-        node: VisualNode,
+        node: Box<VisualNode>,
     },
     Insert {
         entity: AiAuthoringEntity,
@@ -183,7 +183,10 @@ impl From<AiAuthoringOperation> for AuthoringOperation {
     fn from(value: AiAuthoringOperation) -> Self {
         match value {
             AiAuthoringOperation::ReplaceVisualNode { target_id, node } => {
-                Self::ReplaceVisualNode { target_id, node }
+                Self::ReplaceVisualNode {
+                    target_id,
+                    node: *node,
+                }
             }
             AiAuthoringOperation::Insert { entity, placement } => Self::Insert {
                 entity: entity.into(),
