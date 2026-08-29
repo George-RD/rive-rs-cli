@@ -837,6 +837,7 @@ mod tests {
                     inputs: Some(vec![InputSpec::Bool {
                         name: "is_on".to_string(),
                         value: false,
+                        view_model_binding: None,
                     }]),
                     listeners: Some(vec![StateMachineListenerSpec {
                         target: "Target".to_string(),
@@ -1053,6 +1054,7 @@ mod tests {
                     inputs: Some(vec![InputSpec::Bool {
                         name: "enabled".to_string(),
                         value: false,
+                        view_model_binding: None,
                     }]),
                     listeners: None,
                     components: None,
@@ -1150,6 +1152,7 @@ mod tests {
                     inputs: Some(vec![InputSpec::Bool {
                         name: "enabled".to_string(),
                         value: false,
+                        view_model_binding: None,
                     }]),
                     listeners: None,
                     components: None,
