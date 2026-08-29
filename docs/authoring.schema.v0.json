@@ -20,6 +20,22 @@
       ],
       "type": "object"
     },
+    "BehaviorBindingConditionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "binding": {
+          "type": "string"
+        },
+        "equals": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "binding",
+        "equals"
+      ],
+      "type": "object"
+    },
     "BehaviorBindingSpec": {
       "additionalProperties": false,
       "properties": {
@@ -39,6 +55,124 @@
         "property"
       ],
       "type": "object"
+    },
+    "BehaviorEventSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "BehaviorInputConditionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "equals": {
+          "type": "boolean"
+        },
+        "input": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "equals"
+      ],
+      "type": "object"
+    },
+    "BehaviorInputSpec": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bool",
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "BehaviorListenerActionSpec": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bool_change",
+              "type": "string"
+            },
+            "value": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "input"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "BehaviorListenerSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "actions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorListenerActionSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "listener_type": {
+          "$ref": "#/$defs/BehaviorListenerType"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "target",
+        "listener_type"
+      ],
+      "type": "object"
+    },
+    "BehaviorListenerType": {
+      "enum": [
+        "enter",
+        "exit",
+        "down",
+        "up",
+        "move",
+        "event",
+        "click"
+      ],
+      "type": "string"
     },
     "BehaviorModelSpec": {
       "additionalProperties": false,
@@ -141,11 +275,35 @@
     "BehaviorStatechartSpec": {
       "additionalProperties": false,
       "properties": {
+        "events": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorEventSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
         "id": {
           "type": "string"
         },
         "initial": {
           "type": "string"
+        },
+        "inputs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorInputSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
+        "listeners": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorListenerSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
         },
         "states": {
           "items": {
@@ -172,20 +330,14 @@
       "type": "object"
     },
     "BehaviorTransitionConditionSpec": {
-      "additionalProperties": false,
-      "properties": {
-        "binding": {
-          "type": "string"
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BehaviorBindingConditionSpec"
         },
-        "equals": {
-          "type": "boolean"
+        {
+          "$ref": "#/$defs/BehaviorInputConditionSpec"
         }
-      },
-      "required": [
-        "binding",
-        "equals"
-      ],
-      "type": "object"
+      ]
     },
     "BehaviorTransitionSpec": {
       "additionalProperties": false,
