@@ -117,26 +117,26 @@ fn invalid_replace_rolls_back_without_mutating_the_input_document() {
 fn replace_preserves_unaffected_source_map_identity() {
     let document = spec();
     let before = lower_authoring(&document).expect("base document lowers");
-    let before_entry = before
+    let before_unaffected = before
         .source_map
         .entries
         .iter()
-        .find(|entry| entry.authored_id == "untouched")
+        .filter(|entry| entry.authored_id != "frame/panel")
         .cloned()
-        .expect("unaffected source-map entry before replace");
+        .collect::<Vec<_>>();
 
     let applied = apply_operation(&document, &replace("frame/panel", replacement("panel")))
         .expect("valid replacement applies");
-    let after_entry = applied
+    let after_unaffected = applied
         .lowered
         .source_map
         .entries
         .iter()
-        .find(|entry| entry.authored_id == "untouched")
+        .filter(|entry| entry.authored_id != "frame/panel")
         .cloned()
-        .expect("unaffected source-map entry after replace");
+        .collect::<Vec<_>>();
 
-    assert_eq!(after_entry, before_entry);
+    assert_eq!(after_unaffected, before_unaffected);
 }
 
 #[test]
