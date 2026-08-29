@@ -383,12 +383,11 @@ fn remove_entity(
     target: &AuthoringTarget,
 ) -> Result<AuthoringEntity, AuthoringError> {
     match target {
-        AuthoringTarget::VisualNode { target_id } => remove_visual_node(
-            &mut spec.visual.nodes,
-            target_id,
-        )
-        .map(Box::new)
-        .map(AuthoringEntity::VisualNode),
+        AuthoringTarget::VisualNode { target_id } => {
+            remove_visual_node(&mut spec.visual.nodes, target_id)
+                .map(Box::new)
+                .map(AuthoringEntity::VisualNode)
+        }
         AuthoringTarget::Component { target_id } => {
             remove_unique(&mut spec.components, target_id, "$.components")
                 .map(AuthoringEntity::Component)
@@ -714,8 +713,7 @@ fn remove_visual_node_once(
             return Some(nodes.remove(index));
         }
         if let VisualNode::Group { children, .. } = &mut nodes[index]
-            && let Some(removed) =
-                remove_visual_node_once(children, target_id, Some(&authored_id))
+            && let Some(removed) = remove_visual_node_once(children, target_id, Some(&authored_id))
         {
             return Some(removed);
         }
