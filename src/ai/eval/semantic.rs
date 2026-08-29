@@ -84,14 +84,19 @@ fn static_check(
     }
 }
 
-fn frame_difference(case_dir: &Path, from: u32, to: u32, axis: &str) -> SemanticCheckEvidence {
+fn frame_difference(
+    case_dir: &Path,
+    from: u32,
+    to: u32,
+    check_prefix: &str,
+) -> SemanticCheckEvidence {
     let from_path = case_dir.join("render").join(format!("frame_{from:05}.png"));
     let to_path = case_dir.join("render").join(format!("frame_{to:05}.png"));
     let result = fs::read(&from_path)
         .and_then(|from_bytes| fs::read(&to_path).map(|to_bytes| from_bytes != to_bytes));
     match result {
         Ok(passed) => SemanticCheckEvidence {
-            check: format!("{axis}_frames_differ:{from}:{to}"),
+            check: format!("{check_prefix}:{from}:{to}"),
             passed,
             detail: if passed {
                 format!("rendered frames {from} and {to} differ")
@@ -100,7 +105,7 @@ fn frame_difference(case_dir: &Path, from: u32, to: u32, axis: &str) -> Semantic
             },
         },
         Err(error) => SemanticCheckEvidence {
-            check: format!("{axis}_frames_differ:{from}:{to}"),
+            check: format!("{check_prefix}:{from}:{to}"),
             passed: false,
             detail: format!("could not compare rendered frames {from} and {to}: {error}"),
         },
@@ -110,7 +115,7 @@ fn frame_difference(case_dir: &Path, from: u32, to: u32, axis: &str) -> Semantic
 fn animated_check(case_dir: &Path, check: &AnimatedSemanticCheck) -> SemanticCheckEvidence {
     match check {
         AnimatedSemanticCheck::FramesDiffer { from, to } => {
-            frame_difference(case_dir, *from, *to, "animated")
+            frame_difference(case_dir, *from, *to, "frames_differ")
         }
     }
 }
@@ -133,7 +138,10 @@ fn runtime_name(source_map: &AuthoringSourceMap, authored_id: &str) -> Option<&s
 }
 
 fn scene_value<'a>(scene: &'a Value, entry: &SourceMapEntry) -> Option<&'a Value> {
-    entry.scene_paths.iter().find_map(|path| scene.pointer(path))
+    entry
+        .scene_paths
+        .iter()
+        .find_map(|path| scene.pointer(path))
 }
 
 fn scene_index(source_map: &AuthoringSourceMap, authored_id: &str) -> Option<u64> {
@@ -217,7 +225,8 @@ fn interactive_state_motion_binding(
 ) -> SemanticCheckEvidence {
     let authored_state = format!("{statechart_id}/{state_id}");
     let expected_motion = runtime_name(source_map, motion_id);
-    let observed = source_entry(source_map, &authored_state).and_then(|entry| scene_value(scene, entry));
+    let observed =
+        source_entry(source_map, &authored_state).and_then(|entry| scene_value(scene, entry));
     let passed = expected_motion.is_some_and(|expected| {
         observed
             .and_then(|state| state.get("animation"))
@@ -255,8 +264,8 @@ fn interactive_transition(
     let expected_from = scene_index(source_map, &authored_from);
     let expected_to = scene_index(source_map, &authored_to);
     let expected_input = runtime_name(source_map, &authored_input);
-    let observed = source_entry(source_map, &authored_transition)
-        .and_then(|entry| scene_value(scene, entry));
+    let observed =
+        source_entry(source_map, &authored_transition).and_then(|entry| scene_value(scene, entry));
     let passed = match (observed, expected_from, expected_to, expected_input) {
         (Some(transition), Some(from), Some(to), Some(input)) => {
             transition.get("from").and_then(Value::as_u64) == Some(from)
@@ -307,7 +316,9 @@ fn interactive_check(
             statechart_id,
             state_id,
             motion_id,
-        } => interactive_state_motion_binding(scene, source_map, statechart_id, state_id, motion_id),
+        } => {
+            interactive_state_motion_binding(scene, source_map, statechart_id, state_id, motion_id)
+        }
         InteractiveSemanticCheck::Transition {
             statechart_id,
             transition_id,
@@ -326,7 +337,7 @@ fn interactive_check(
             *equals,
         ),
         InteractiveSemanticCheck::FramesDiffer { from, to } => {
-            frame_difference(case_dir, *from, *to, "interactive")
+            frame_difference(case_dir, *from, *to, "interactive_frames_differ")
         }
     }
 }
