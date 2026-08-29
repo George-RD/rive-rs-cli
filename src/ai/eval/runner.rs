@@ -9,8 +9,13 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::ai::config::ProviderKind;
-use crate::ai::{AiConfig, AiError, RepairEngine, create_provider};
+use crate::ai::{
+    AiConfig, AiError, AuthoringRepairFailure, GenerationTarget, RepairEngine, create_provider,
+    repair_authoring_spec,
+};
 use crate::authoring::{AuthoringError, AuthoringSourceMap, lower_authoring_json};
+use crate::builder::SceneSpec;
+use crate::compile;
 use crate::validator::{InspectFilter, ValidationReport, parse_riv, validate_riv};
 
 use super::model::{
@@ -27,6 +32,7 @@ struct CaseRunError {
     reason: String,
     stage: Option<EvalFailureStage>,
     diagnostics: Vec<EvalDiagnosticEvidence>,
+    retries: u8,
 }
 
 impl CaseRunError {
@@ -35,12 +41,30 @@ impl CaseRunError {
             reason: reason.into(),
             stage: Some(EvalFailureStage::Structural),
             diagnostics: Vec::new(),
+            retries: 0,
         }
     }
 
     fn authoring(error: AuthoringError) -> Self {
-        let stage = if error
-            .diagnostics
+        Self::authoring_parts(error.diagnostics, 0)
+    }
+
+    fn authoring_repair(error: AuthoringRepairFailure) -> Self {
+        let retries = error
+            .attempts
+            .last()
+            .map(|attempt| attempt.attempt)
+            .unwrap_or(0);
+        let mut result = Self::authoring_parts(error.diagnostics, retries);
+        result.reason = error.message;
+        result
+    }
+
+    fn authoring_parts(
+        diagnostics: Vec<crate::authoring::AuthoringDiagnostic>,
+        retries: u8,
+    ) -> Self {
+        let stage = if diagnostics
             .iter()
             .any(|diagnostic| diagnostic.path == "$" && diagnostic.code == "invalid_json")
         {
@@ -48,8 +72,7 @@ impl CaseRunError {
         } else {
             EvalFailureStage::Lowering
         };
-        let diagnostics = error
-            .diagnostics
+        let diagnostics = diagnostics
             .iter()
             .map(|diagnostic| EvalDiagnosticEvidence {
                 path: diagnostic.path.clone(),
@@ -71,8 +94,32 @@ impl CaseRunError {
             reason,
             stage: Some(stage),
             diagnostics,
+            retries,
         }
     }
+}
+
+#[derive(Debug)]
+enum ResolvedCaseScene {
+    Authoring {
+        scene: Value,
+        source_map: AuthoringSourceMap,
+        lowering_reproducible: bool,
+        retries: u8,
+        base_dir: Option<PathBuf>,
+    },
+    Scene {
+        scene: Value,
+    },
+}
+
+#[derive(Debug)]
+struct CompiledCase {
+    scene_json: Value,
+    riv_bytes: Vec<u8>,
+    retries: u8,
+    reproducible: bool,
+    source_map: Option<AuthoringSourceMap>,
 }
 
 fn run_id() -> Result<String, String> {
@@ -123,7 +170,7 @@ fn failed_case(case: &EvalCase, case_dir: &Path, error: CaseRunError) -> EvalCas
         style_matched_traits: Vec::new(),
         style_score: 0.0,
         valid: false,
-        retries: 0,
+        retries: error.retries,
         reproducible: false,
         output_hash: None,
         drifted: false,
@@ -146,7 +193,8 @@ fn resolve_case_scene(
     case: &EvalCase,
     case_dir: &Path,
     config: &AiConfig,
-) -> Result<(Value, Option<AuthoringSourceMap>, bool, Option<PathBuf>), CaseRunError> {
+    max_retries: u8,
+) -> Result<ResolvedCaseScene, CaseRunError> {
     if case.input_kind == InputKind::AuthoringExample {
         let fixture_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(&case.input);
         let input = fs::read_to_string(&fixture_path).map_err(|error| {
@@ -166,22 +214,130 @@ fn resolve_case_scene(
             .map_err(CaseRunError::structural)?;
         write_json(case_dir.join("source-map.json"), &lowered.source_map)
             .map_err(CaseRunError::structural)?;
-        return Ok((
-            lowered.scene,
-            Some(lowered.source_map),
+        return Ok(ResolvedCaseScene::Authoring {
+            scene: lowered.scene,
+            source_map: lowered.source_map,
             lowering_reproducible,
-            fixture_path.parent().map(Path::to_path_buf),
-        ));
+            retries: 0,
+            base_dir: fixture_path.parent().map(Path::to_path_buf),
+        });
     }
 
     let provider = create_provider(config, case.input_kind == InputKind::Template)
         .map_err(|error| CaseRunError::structural(format!("AI provider error: {}", error)))?;
+
+    if case.input_kind == InputKind::Prompt {
+        let generated = provider
+            .generate(&case.input, config, GenerationTarget::Authoring)
+            .map_err(|error| CaseRunError::structural(format!("generation failed: {}", error)))?;
+        write_json(case_dir.join("generated-authoring-spec.json"), &generated)
+            .map_err(CaseRunError::structural)?;
+        let repaired = repair_authoring_spec(&*provider, config, generated, max_retries)
+            .map_err(CaseRunError::authoring_repair)?;
+        write_json(
+            case_dir.join("authoring-spec.json"),
+            &repaired.authoring_json,
+        )
+        .map_err(CaseRunError::structural)?;
+        write_json(case_dir.join("lowered-scene.json"), &repaired.lowered.scene)
+            .map_err(CaseRunError::structural)?;
+        write_json(
+            case_dir.join("source-map.json"),
+            &repaired.lowered.source_map,
+        )
+        .map_err(CaseRunError::structural)?;
+        write_json(case_dir.join("repair-attempts.json"), &repaired.attempts)
+            .map_err(CaseRunError::structural)?;
+        let repeated_input = serde_json::to_string(&repaired.authoring_json).map_err(|error| {
+            CaseRunError::structural(format!(
+                "failed to serialize repaired AuthoringSpec: {error}"
+            ))
+        })?;
+        let repeated = lower_authoring_json(&repeated_input).map_err(CaseRunError::authoring)?;
+        let lowering_reproducible = repaired.lowered == repeated;
+        return Ok(ResolvedCaseScene::Authoring {
+            scene: repaired.lowered.scene,
+            source_map: repaired.lowered.source_map,
+            lowering_reproducible,
+            retries: repaired.total_retries,
+            base_dir: None,
+        });
+    }
+
     let generated_scene = provider
-        .generate(&case.input, config)
+        .generate(&case.input, config, GenerationTarget::Scene)
         .map_err(|error| CaseRunError::structural(format!("generation failed: {}", error)))?;
     write_json(case_dir.join("generated-scene.json"), &generated_scene)
         .map_err(CaseRunError::structural)?;
-    Ok((generated_scene, None, true, None))
+    Ok(ResolvedCaseScene::Scene {
+        scene: generated_scene,
+    })
+}
+
+fn compile_case(
+    resolved: ResolvedCaseScene,
+    file_id: u64,
+    max_retries: u8,
+) -> Result<CompiledCase, CaseRunError> {
+    match resolved {
+        ResolvedCaseScene::Authoring {
+            scene,
+            source_map,
+            lowering_reproducible,
+            retries,
+            base_dir,
+        } => {
+            let spec = serde_json::from_value::<SceneSpec>(scene.clone()).map_err(|error| {
+                CaseRunError::structural(format!(
+                    "lowered AuthoringSpec produced invalid SceneSpec: {error}"
+                ))
+            })?;
+            let riv_bytes = compile::compile_scene(&spec, base_dir.as_deref(), file_id)
+                .map_err(|error| CaseRunError::structural(format!("compile failed: {error}")))?;
+            let repeat =
+                compile::compile_scene(&spec, base_dir.as_deref(), file_id).map_err(|error| {
+                    CaseRunError::structural(format!(
+                        "pipeline reproducibility compile failed: {error}"
+                    ))
+                })?;
+            Ok(CompiledCase {
+                scene_json: scene,
+                reproducible: lowering_reproducible && riv_bytes == repeat,
+                riv_bytes,
+                retries,
+                source_map: Some(source_map),
+            })
+        }
+        ResolvedCaseScene::Scene { scene } => {
+            let engine = RepairEngine::new(max_retries);
+            let repaired = engine
+                .repair(scene.clone(), file_id)
+                .map_err(|error| match error {
+                    AiError::RepairFailed {
+                        attempts,
+                        final_error,
+                    } => CaseRunError::structural(format!(
+                        "repair failed after {} attempts: {}",
+                        attempts.len(),
+                        final_error
+                    )),
+                    other => CaseRunError::structural(format!("repair failed: {}", other)),
+                })?;
+            let repeat = engine.repair(scene, file_id).map_err(|error| {
+                CaseRunError::structural(format!(
+                    "pipeline reproducibility check failed: {}",
+                    error
+                ))
+            })?;
+            Ok(CompiledCase {
+                scene_json: repaired.scene_json,
+                reproducible: repaired.riv_bytes == repeat.riv_bytes,
+                riv_bytes: repaired.riv_bytes,
+                retries: repaired.total_retries,
+                source_map: None,
+            })
+        }
+    }
 }
 
 fn run_case(
@@ -203,58 +359,37 @@ fn run_case(
         CaseRunError::structural(format!("failed to write input.txt: {}", error))
     })?;
 
-    let (generated_scene, source_map, lowering_reproducible, source_base_dir) =
-        resolve_case_scene(case, case_dir, config)?;
-
-    let engine = RepairEngine::new(max_retries);
-    let repaired = engine
-        .repair_with_base_dir(generated_scene.clone(), file_id, source_base_dir.as_deref())
-        .map_err(|error| match error {
-            AiError::RepairFailed {
-                attempts,
-                final_error,
-            } => CaseRunError::structural(format!(
-                "repair failed after {} attempts: {}",
-                attempts.len(),
-                final_error
-            )),
-            other => CaseRunError::structural(format!("repair failed: {}", other)),
-        })?;
-    write_json(case_dir.join("scene.json"), &repaired.scene_json)
+    let resolved = resolve_case_scene(case, case_dir, config, max_retries)?;
+    let compiled = compile_case(resolved, file_id, max_retries)?;
+    write_json(case_dir.join("scene.json"), &compiled.scene_json)
         .map_err(CaseRunError::structural)?;
-    fs::write(case_dir.join("output.riv"), &repaired.riv_bytes).map_err(|error| {
+    fs::write(case_dir.join("output.riv"), &compiled.riv_bytes).map_err(|error| {
         CaseRunError::structural(format!("failed to write output.riv: {}", error))
     })?;
 
-    let validation: ValidationReport = validate_riv(&repaired.riv_bytes)
+    let validation: ValidationReport = validate_riv(&compiled.riv_bytes)
         .map_err(|error| CaseRunError::structural(format!("validate failed: {}", error)))?;
     write_json(case_dir.join("validate.json"), &validation).map_err(CaseRunError::structural)?;
-    let parsed = parse_riv(&repaired.riv_bytes, &InspectFilter::default())
+    let parsed = parse_riv(&compiled.riv_bytes, &InspectFilter::default())
         .map_err(|error| CaseRunError::structural(format!("inspect parse failed: {}", error)))?;
     write_json(case_dir.join("inspect.json"), &parsed).map_err(CaseRunError::structural)?;
 
-    let repeat = engine
-        .repair_with_base_dir(generated_scene, file_id, source_base_dir.as_deref())
-        .map_err(|error| {
-            CaseRunError::structural(format!("pipeline reproducibility check failed: {}", error))
-        })?;
-    let reproducible = lowering_reproducible && repaired.riv_bytes == repeat.riv_bytes;
-    let output_hash = hash_bytes(&repaired.riv_bytes);
-    let (style_score, matched_traits) = trait_score(&repaired.scene_json, &case.expected_traits);
+    let output_hash = hash_bytes(&compiled.riv_bytes);
+    let (style_score, matched_traits) = trait_score(&compiled.scene_json, &case.expected_traits);
     let drifted = baseline_hash.is_some_and(|hash| hash != &output_hash);
     let runtime = case.runtime.as_ref().map(|expectations| {
         render_runtime_evidence(
             case_dir,
-            &repaired.riv_bytes,
+            &compiled.riv_bytes,
             expectations,
-            source_map.as_ref(),
+            compiled.source_map.as_ref(),
         )
     });
     let semantic = case.semantic.as_ref().and_then(|expectations| {
-        source_map.as_ref().map(|source_map| {
+        compiled.source_map.as_ref().map(|source_map| {
             evaluate_semantics(
                 case_dir,
-                &repaired.scene_json,
+                &compiled.scene_json,
                 source_map,
                 expectations,
                 runtime.as_ref(),
@@ -299,8 +434,8 @@ fn run_case(
         style_matched_traits: matched_traits,
         style_score,
         valid: validation.valid,
-        retries: repaired.total_retries,
-        reproducible,
+        retries: compiled.retries,
+        reproducible: compiled.reproducible,
         output_hash: Some(output_hash),
         drifted,
         failure_reason,

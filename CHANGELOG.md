@@ -8,6 +8,9 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Added
 
+- **AuthoringSpec-first AI generation.** Prompt-based `ai generate` now asks providers for the live high-level AuthoringSpec contract, focuses context on the relevant static/animated/interactive schema slice, includes the closest checked-in showcase plus authored-to-runtime source-map evidence, lowers through the canonical Authoring compiler, and retains SceneSpec as the explicit expert/template escape path.
+- **Incremental AuthoringSpec AI repair.** Typed lowering failures can request one stable-ID insert/move/remove/replace operation at a time and apply it atomically through the existing Authoring operation seam instead of regenerating the whole authored document. Prompt eval cases retain AuthoringSpec, repair attempts, source maps, runtime evidence, and semantic evidence separately.
+- **AuthoringSpec over MCP.** The MCP server exposes the live `schema://authoring/v0` resource and a `generate_authoring` tool that compiles through the typed frontend and returns source-map evidence alongside the output.
 - `render` renders deterministic animation or state-machine frames through embedded `assets/rive.js` and `assets/rive.wasm`, driving headless Chromium over CDP from Rust. It supports frame lists/ranges, `--fps`, `--animation`, `--state-machine`, repeatable typed `--input`, `--artboard`, `--width`, `--height`, `--scale`, `--background`, `--contact-sheet`, `--preview`, `--browser`, and `--json`, and writes PNGs plus `manifest.json` and optional `preview.txt`.
 - `schema`, `types`, and `describe` expose the SceneSpec schema, object-type catalogue, valid parents, fields, enum values, and per-type animatable properties.
 - `new` scaffolds the `shape`, `animated`, `gradient`, `spinner`, `button`, and `multi` starter scenes.
@@ -27,6 +30,8 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Changed
 
+- AI/agent guidance now routes complex work through `rive-cli authoring schema` and `authoring compile`; the retained SceneSpec skill is explicitly a bounded expert escape-hatch reference and relies on live CLI discovery instead of copied schema tables. The legacy OpenCode validation entry now redirects to this Authoring-first verification contract.
+- Prompt `ai lab` cases now generate and retain AuthoringSpec/source-map evidence before canonical SceneSpec compilation, so the existing static, animated, interactive, runtime, reproducibility, and drift gates evaluate the same authored representation used by the AI generation path.
 - The site's landing hero now plays `parity/reproductions/coffee_loader.riv`, the file this tool generated, rather than the official one. The page's headline animation is now the tool's own output. `site/stage.js` also scans `landing.js` for referenced scenes, so a future hero swap cannot publish a missing file.
 - README rewritten for users rather than for the repository: what the tool is for, badges, and a link to the published site and verification lab. Adds the `compare` reference section, which was previously undocumented.
 
@@ -65,6 +70,7 @@ The format is based on Keep a Changelog, and this project follows Semantic Versi
 
 ### Removed
 
+- Stale duplicate `.opencode/skills/rive-animation`, `rive-scene-schema`, and `rive-anti-patterns` skill files whose copied low-level rules contradicted the authoritative resolver/runtime contract. The remaining OpenCode validation entry is intentionally a thin redirect to live CLI discovery and canonical Authoring-first guidance.
 - Superseded `skills/opencode/rive-animation.md` guidance, whose animation table contradicted the authoritative discovery resolver (including `stroke.thickness` and trim `start`/`end`/`offset`). Claude Code command aliases remain available.
 
 ## [0.1.0] - 2026-02-24

@@ -8,19 +8,24 @@ the implementation frontier.
 ## Product direction
 
 `SceneSpec` remains the canonical explicit IR and expert escape hatch. It is not
-the long-term AI authoring interface for complex files. The next product layer is
-a parametric, component-based, view-model-first `AuthoringSpec` that compiles to
-SceneSpec and inherits the existing validation, encoding, rendering, and parity
-loop.
+the long-term AI authoring interface for complex files. Complex AI generation now
+targets the parametric, component-based, view-model-first `AuthoringSpec`, which
+compiles to SceneSpec and inherits the existing validation, encoding, rendering,
+parity, runtime, and semantic-evidence loop.
 
-Specialized skills for generating complex Rive files are deliberately blocked
-until that frontend and its evidence gates exist.
+Specialized low-level SceneSpec guidance remains bounded to expert escape-hatch
+work. Complex generation guidance must stay aligned to the live AuthoringSpec
+schema, stable authored identity, source maps, and incremental operation seam.
 
 ## Current implementation frontier
 
-Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
+Authoring delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
+Public Verification Lab delivery spec: [#198](https://github.com/George-RD/rive-rs-cli/issues/198).
 
-**Current next item: [#186 — complex AI generation through AuthoringSpec](https://github.com/George-RD/rive-rs-cli/issues/186).**
+**Current next item: [#199 — Frame-lock Verification Lab playback](https://github.com/George-RD/rive-rs-cli/issues/199).**
+It is ready, has no blockers, and is the next selected item on the independent
+public-proof track now that the current Authoring frontier is complete.
+
 [#179](https://github.com/George-RD/rive-rs-cli/issues/179) completed the first typed
 behavior tracer bullet in PR #203. [#180](https://github.com/George-RD/rive-rs-cli/issues/180)
 completed authored inputs, events, typed listeners, and retained `render --input` /
@@ -31,10 +36,12 @@ completed deterministic static and animated AuthoringSpec semantic evidence in P
 [#183](https://github.com/George-RD/rive-rs-cli/issues/183) completed interactive semantic
 evaluation in PR #209. [#184](https://github.com/George-RD/rive-rs-cli/issues/184)
 completed atomic stable-ID visual replacement in PR #210. [#185](https://github.com/George-RD/rive-rs-cli/issues/185)
-completed typed insert, move, remove, and multi-operation transactions in PR #212,
-clearing the incremental-authoring blocker for #186.
+completed typed insert, move, remove, and multi-operation transactions in PR #212.
+[#186](https://github.com/George-RD/rive-rs-cli/issues/186) completes complex AI
+generation through AuthoringSpec in PR #215, including Authoring-first prompts,
+incremental repair, source-mapped eval evidence, MCP exposure, and skill governance.
 
-The ordered execution graph is:
+The ordered Authoring execution graph is:
 
 ```text
 #176 one-pass motion compiler (complete in PR #192)
@@ -46,18 +53,20 @@ The ordered execution graph is:
 
 #181 + #182 -> #183 interactive semantic evaluation (complete in PR #209)
 #181        -> #184 atomic replace (complete in PR #210) -> #185 insert/move/remove (complete in PR #212)
-#183 + #185 -> #186 complex AI generation through AuthoringSpec
+#183 + #185 -> #186 complex AI generation through AuthoringSpec (complete in PR #215)
 ```
 
-After #178, the behavior and static/animated semantic-evaluation branches are
-independent and may proceed in parallel. Do not invent dependencies merely to make
-the graph linear.
+The behavior and semantic-evaluation branches were intentionally independent where
+the dependency graph allowed it. Do not invent dependencies merely to make future
+work linear. The Verification Lab/public-proof track remains independent of the
+completed Authoring chain unless a measured runtime or parity defect creates a real
+cross-track blocker.
 
 Issues #123-#128 remain independent lower-level correctness/coverage work. They
-pre-empt the Authoring frontier only when current parity/runtime evidence shows a
+pre-empt selected roadmap work only when current parity/runtime evidence shows a
 supported output depends on them, or when a bounded correctness audit is
 deliberately selected. Broad 104-type coverage is not an implicit prerequisite for
-AuthoringSpec progress.
+AuthoringSpec or Verification Lab progress.
 
 ## Priority order
 
@@ -73,8 +82,8 @@ AuthoringSpec progress.
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | complete in PR #212 | stable-ID edits validate atomically and preserve unaffected source-map identity |
-| P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | ready; #186 requires complete #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
-| P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until Authoring compiler state is stable | characterization-preserving split aligned to authored source maps |
+| P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | complete in PR #215 | complex prompts target AuthoringSpec; task-focused schema/source-map context and stable-ID repair are integrated with eval evidence |
+| P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until a measured lower-level repair need justifies it | characterization-preserving split aligned to authored source maps |
 
 ## Delivery dependencies
 
@@ -110,13 +119,16 @@ AuthoringSpec progress.
 - #185 completed incremental authoring in PR #212 with typed insert, move, remove,
   and multi-operation transactions across visual, motion, and behavior concepts. Each
   step reuses canonical lowering, dependency validation, authored diagnostics, and
-  source-map identity rules. With #183 and #185 complete, #186 is the next Authoring
-  frontier.
+  source-map identity rules.
+- #186 completes the Authoring AI-generation frontier in PR #215: prompts target the
+  current AuthoringSpec schema, choose a task-focused schema slice/showcase/source-map
+  context, apply one stable-ID repair operation at a time through #185, retain the
+  existing semantic/runtime evidence in prompt evals, and expose AuthoringSpec through
+  skills and MCP without displacing SceneSpec as the expert lower IR.
 
-## Readiness gate for complex AI generation
+## Delivered readiness gate for complex AI generation
 
-Complex generation is ready for skill investment only when all of the following
-are true:
+The gate required all of the following and is satisfied by #174-#186:
 
 1. An agent authors stable IDs, components, parameters, poses, motion, bindings,
    and named statecharts without handling runtime indices or containment objects.
@@ -126,14 +138,15 @@ are true:
    compile through the frontend without raw escapes for the supported subset.
 4. Structural, official-runtime, semantic, and drift eval dimensions all pass and
    retain inspectable evidence.
-5. Incremental authoring operations can validate after each change, so repair is
-   local rather than whole-document regeneration.
+5. Incremental authoring operations validate after each change, so generated
+   AuthoringSpec repair can be local rather than whole-document regeneration.
 
 ## Continuing lower-level work
 
 Binary correctness, Rive type coverage, parity, fuzzing, and runtime compatibility
 continue when they unblock the roadmap or close evidenced defects. Broad object
-coverage and specialized skills are not substitutes for the authoring abstraction.
+coverage and specialized low-level skills are not substitutes for the authoring
+abstraction.
 
 Issue #122's old process-hardening programme and #129's raw-SceneSpec AI prompt
 expansion are closed as superseded. Their valid concrete correctness concerns
