@@ -88,11 +88,8 @@ fn replace_visual_node_validates_through_the_canonical_authoring_path() {
     let document = spec();
     let before = lower_authoring(&document).expect("base document lowers");
 
-    let applied = apply_operation(
-        &document,
-        &replace("frame/panel", replacement("panel")),
-    )
-    .expect("valid replacement applies");
+    let applied = apply_operation(&document, &replace("frame/panel", replacement("panel")))
+        .expect("valid replacement applies");
 
     assert_ne!(applied.lowered.scene, before.scene);
     assert_builds(applied.lowered.scene);
@@ -128,11 +125,8 @@ fn replace_preserves_unaffected_source_map_identity() {
         .cloned()
         .expect("unaffected source-map entry before replace");
 
-    let applied = apply_operation(
-        &document,
-        &replace("frame/panel", replacement("panel")),
-    )
-    .expect("valid replacement applies");
+    let applied = apply_operation(&document, &replace("frame/panel", replacement("panel")))
+        .expect("valid replacement applies");
     let after_entry = applied
         .lowered
         .source_map
