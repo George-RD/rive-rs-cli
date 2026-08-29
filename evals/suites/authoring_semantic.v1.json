@@ -19,7 +19,7 @@
       "semantic": {
         "static_checks": [
           {"kind": "authored_id_present", "authored_id": "hero-panel"},
-          {"kind": "authored_id_present", "authored_id": "proof-grid"},
+          {"kind": "authored_id_present", "authored_id": "hero-panel/proof-grid"},
           {"kind": "authored_id_has_runtime_type", "authored_id": "background", "object_type": "rectangle"}
         ]
       }
