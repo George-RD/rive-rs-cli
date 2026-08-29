@@ -158,8 +158,9 @@ fn resolve_case_scene(
             stage: Some(EvalFailureStage::AuthoringSchema),
             diagnostics: Vec::new(),
         })?;
-        fs::write(case_dir.join("authoring-spec.json"), &input)
-            .map_err(|error| CaseRunError::structural(format!("failed to retain AuthoringSpec: {error}")))?;
+        fs::write(case_dir.join("authoring-spec.json"), &input).map_err(|error| {
+            CaseRunError::structural(format!("failed to retain AuthoringSpec: {error}"))
+        })?;
         let lowered = lower_authoring_json(&input).map_err(CaseRunError::authoring)?;
         let repeated = lower_authoring_json(&input).map_err(CaseRunError::authoring)?;
         let lowering_reproducible = lowered == repeated;
@@ -195,8 +196,9 @@ fn run_case(
     fs::create_dir_all(case_dir).map_err(|error| {
         CaseRunError::structural(format!("failed to create {}: {}", case_dir.display(), error))
     })?;
-    fs::write(case_dir.join("input.txt"), &case.input)
-        .map_err(|error| CaseRunError::structural(format!("failed to write input.txt: {}", error)))?;
+    fs::write(case_dir.join("input.txt"), &case.input).map_err(|error| {
+        CaseRunError::structural(format!("failed to write input.txt: {}", error))
+    })?;
 
     let (generated_scene, source_map, lowering_reproducible) =
         resolve_case_scene(case, case_dir, config)?;
@@ -217,19 +219,21 @@ fn run_case(
         })?;
     write_json(case_dir.join("scene.json"), &repaired.scene_json)
         .map_err(CaseRunError::structural)?;
-    fs::write(case_dir.join("output.riv"), &repaired.riv_bytes)
-        .map_err(|error| CaseRunError::structural(format!("failed to write output.riv: {}", error)))?;
+    fs::write(case_dir.join("output.riv"), &repaired.riv_bytes).map_err(|error| {
+        CaseRunError::structural(format!("failed to write output.riv: {}", error))
+    })?;
 
     let validation: ValidationReport = validate_riv(&repaired.riv_bytes)
         .map_err(|error| CaseRunError::structural(format!("validate failed: {}", error)))?;
-    write_json(case_dir.join("validate.json"), &validation).map_err(CaseRunError::structural)?;
+    write_json(case_dir.join("validate.json"), &validation)
+        .map_err(CaseRunError::structural)?;
     let parsed = parse_riv(&repaired.riv_bytes, &InspectFilter::default())
         .map_err(|error| CaseRunError::structural(format!("inspect parse failed: {}", error)))?;
     write_json(case_dir.join("inspect.json"), &parsed).map_err(CaseRunError::structural)?;
 
-    let repeat = engine
-        .repair(generated_scene, file_id)
-        .map_err(|error| CaseRunError::structural(format!("pipeline reproducibility check failed: {}", error)))?;
+    let repeat = engine.repair(generated_scene, file_id).map_err(|error| {
+        CaseRunError::structural(format!("pipeline reproducibility check failed: {}", error))
+    })?;
     let reproducible = lowering_reproducible && repaired.riv_bytes == repeat.riv_bytes;
     let output_hash = hash_bytes(&repaired.riv_bytes);
     let (style_score, matched_traits) = trait_score(&repaired.scene_json, &case.expected_traits);
