@@ -20,12 +20,12 @@ until that frontend and its evidence gates exist.
 
 Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 
-**Current next item: [#179 — add the behavior compiler tracer-bullet slice](https://github.com/George-RD/rive-rs-cli/issues/179).**
-[#178](https://github.com/George-RD/rive-rs-cli/issues/178) completed the complex
-animated AuthoringSpec product gate in PR #197, including public-CLI compilation,
-deterministic source identity, structural validation, and retained official-runtime
-frames. [#182](https://github.com/George-RD/rive-rs-cli/issues/182) is independently
-unblocked and may proceed in parallel with the behavior branch.
+**Current next item: [#180 — drive typed behavior from inputs and pointer events](https://github.com/George-RD/rive-rs-cli/issues/180).**
+[#179](https://github.com/George-RD/rive-rs-cli/issues/179) completed the first typed
+behavior tracer bullet in PR #202, including boolean view-model binding, named state
+transitions, authored-path source identity, canonical-builder validation, and retained
+official-runtime transition evidence. [#182](https://github.com/George-RD/rive-rs-cli/issues/182)
+is independently unblocked and may proceed in parallel with the behavior branch.
 
 The ordered execution graph is:
 
@@ -34,7 +34,7 @@ The ordered execution graph is:
   -> #177 shared SceneSpec compilation seam (complete in PR #195)
   -> #174 first-class AuthoringSpec CLI (complete in PR #196)
   -> #178 complex animated AuthoringSpec exit gate (complete in PR #197)
-       |-> #179 typed statechart tracer bullet -> #180 inputs/events -> #181 interactive showcase
+       |-> #179 typed statechart tracer bullet (complete in PR #202) -> #180 inputs/events -> #181 interactive showcase
        |-> #182 static + animated semantic evaluations
 
 #181 + #182 -> #183 interactive semantic evaluation
@@ -63,7 +63,7 @@ AuthoringSpec progress.
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
-| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 is next, then #180-#181 | view-model bindings and named statecharts reproduce interaction with runtime proof |
+| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #202; #180 is next, then #181 | view-model bindings and named statecharts reproduce interaction with runtime proof |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 independently unblocked, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 -> #185 after #181 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked; #186 requires #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
@@ -79,8 +79,10 @@ AuthoringSpec progress.
   SceneSpec `generate` as the expert path.
 - #178 completed the generic scattered -> overloaded -> connected -> next-action
   animated showcase and retained official-runtime gate in PR #197.
-- Typed behavior starts only after #178 and must reuse the same compiler-owned
-  scene, source-map, runtime-name, and checked-binding state.
+- #179 completed the first typed statechart tracer bullet in PR #202 on the same
+  compiler-owned scene, source-map, runtime-name, and checked-binding state.
+- #180 extends that slice with typed inputs, events, and listeners plus retained
+  interaction evidence before #181 closes the complex interactive showcase gate.
 - Static/animated semantic evaluation (#182) may run in parallel with behavior
   after #178; interactive semantic evaluation (#183) requires both branches.
 - Incremental operations begin only after the typed behavior contract is stable
