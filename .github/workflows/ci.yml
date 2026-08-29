@@ -132,6 +132,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Run typed behavior runtime contract
         run: node tests/playwright/authoring-behavior-runtime.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: typed-behavior-runtime-evidence
+          path: target/playwright-behavior
+          retention-days: 7
       - run: node tests/playwright/regression.js
       - name: Run visual regression
         id: visual
