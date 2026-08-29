@@ -20,11 +20,18 @@ schema, stable authored identity, source maps, and incremental operation seam.
 ## Current implementation frontier
 
 Authoring delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
-Public Verification Lab delivery spec: [#198](https://github.com/George-RD/rive-rs-cli/issues/198).
+Public proof delivery spec: [#198](https://github.com/George-RD/rive-rs-cli/issues/198).
 
-**Current next item: [#199 — Frame-lock Verification Lab playback](https://github.com/George-RD/rive-rs-cli/issues/199).**
-It is ready, has no blockers, and is the next selected item on the independent
-public-proof track now that the current Authoring frontier is complete.
+[#199](https://github.com/George-RD/rive-rs-cli/issues/199) completes frame-locked
+Verification Lab playback in PR #216: each parity pair waits for both Rive runtimes,
+then shares deterministic play/pause and representative-frame seeking through one
+reusable site playback seam. Backward state-machine seeks rebuild and replay from a
+fixed logical clock instead of carrying later state backward.
+
+**Current next item: [#200 — Add a dedicated original-work showcase surface](https://github.com/George-RD/rive-rs-cli/issues/200).**
+It follows #199 on the independent public-proof track and reuses the corrected site
+playback seam without introducing a dependency on the completed Authoring chain.
+[#201](https://github.com/George-RD/rive-rs-cli/issues/201) remains blocked by #200.
 
 [#179](https://github.com/George-RD/rive-rs-cli/issues/179) completed the first typed
 behavior tracer bullet in PR #203. [#180](https://github.com/George-RD/rive-rs-cli/issues/180)
@@ -78,6 +85,7 @@ AuthoringSpec or Verification Lab progress.
 | P0 | [Repair duplicate-reference correctness defect](meta/todos/todo.repair-engine-modularization.md#immediate-correctness-gate) | complete in PR #166 | duplicate-name repair cannot silently retarget an existing reference |
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
+| P1 | [Public verification and original-work proof](meta/todos/todo.verification-lab-public-proof.md) | open; #199 complete in PR #216; #200 next; #201 blocked by #200 | frame-locked parity proof, manifest-driven original showcase, then landing/production proof with separate provenance |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
@@ -125,6 +133,12 @@ AuthoringSpec or Verification Lab progress.
   context, apply one stable-ID repair operation at a time through #185, retain the
   existing semantic/runtime evidence in prompt evals, and expose AuthoringSpec through
   skills and MCP without displacing SceneSpec as the expert lower IR.
+- #198 is the independent public-proof delivery spec. #199 completes its first slice
+  in PR #216 by replacing per-canvas autoplay with one deterministic paired playback
+  seam while keeping `parity/results.json` authoritative for measured evidence.
+- #200 reuses that playback seam for a separate provenance-aware original-work
+  showcase; #201 then moves the landing page to original/production proof. Neither
+  introduces a dependency into the completed Authoring execution graph.
 
 ## Delivered readiness gate for complex AI generation
 
