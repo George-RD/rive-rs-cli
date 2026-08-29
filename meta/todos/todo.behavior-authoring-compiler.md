@@ -31,4 +31,6 @@ re-entry pass or a second full document lowering.
 
 PR #202 / issue #179 establishes the first typed behavior tracer bullet on the shared Authoring compiler state: boolean view-model properties, authored bindings, named states, named transitions, deterministic source maps, canonical-builder validation, and retained official-runtime evidence that mutating the bound view-model boolean changes state. The slice preserves `raw_state_machines` as an expert escape without introducing a second full-document lowering pass.
 
-This todo remains open. Issue #180 extends the typed surface to inputs, events, and listeners; issue #181 completes the complex interactive showcase and broader behavior exit gate.
+PR #204 / issue #180 extends that same compiler path with authored boolean state-machine inputs, named Rive events, typed pointer/event listeners, boolean listener actions, and input-driven transitions. Authored visual and event IDs resolve to generated runtime names without exposing runtime indices; invalid input, event, action, and listener references report authored JSON paths. The retained behavior runtime contract compiles the typed fixture through `authoring compile` and drives the resulting `.riv` through both `render --input` and `render --pointer`, requiring both paths to converge on the same visible state.
+
+This todo remains open. Issue #181 completes the complex interactive showcase and broader behavior exit gate.
