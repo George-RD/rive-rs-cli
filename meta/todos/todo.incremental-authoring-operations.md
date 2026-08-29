@@ -32,13 +32,17 @@ source maps after every change.
 ## Delivered slices
 
 - #184 / PR #210 establishes the shared operation envelope with atomic
-  `ReplaceVisualNode`: it targets stable IDs in the root authored visual tree,
-  including nested groups and typed pattern items; edits are applied to a clone and
-  the complete candidate is lowered through the normal AuthoringCompiler before it
-  can be returned. Unknown and ambiguous targets have authored diagnostics, failed
+  `ReplaceVisualNode`: it targets root visual nodes and group descendants by the
+  same stable ancestor-scoped identities used by the visual source map, such as
+  `frame/panel`; edits are applied to a clone and the complete candidate is lowered
+  through the normal AuthoringCompiler before it can be returned. Pattern containers
+  are targetable visual nodes, while repeated pattern-item definitions remain outside
+  this first replace slice because one definition expands to multiple source-map
+  identities. Unknown and ambiguous targets have authored diagnostics, failed
   candidates do not mutate the input, and contract tests retain unaffected source-map
   identity and deterministic reapplication. Insert, move, remove, broader entity
-  coverage, and multi-operation transactions remain #185.
+  coverage, pattern-item containment semantics, and multi-operation transactions
+  remain #185.
 
 ## Dependencies
 
