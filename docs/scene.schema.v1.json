@@ -320,6 +320,16 @@
             },
             "value": {
               "type": "boolean"
+            },
+            "view_model_binding": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ViewModelInputBindingSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "required": [
@@ -8859,6 +8869,21 @@
       "required": [
         "from",
         "to"
+      ],
+      "type": "object"
+    },
+    "ViewModelInputBindingSpec": {
+      "properties": {
+        "property": {
+          "type": "string"
+        },
+        "view_model": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "view_model",
+        "property"
       ],
       "type": "object"
     }
