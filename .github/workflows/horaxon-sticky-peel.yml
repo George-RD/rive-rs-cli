@@ -1,0 +1,24 @@
+name: Horaxon sticky peel asset
+
+on:
+  push:
+    branches: [experiment/horaxon-sticky-peel-asset]
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Compile typed AuthoringSpec
+        run: cargo run --quiet -- authoring compile scratch/horaxon-sticky-peel.v0.json -o scratch/horaxon-sticky-peel.riv --json
+      - name: Upload generated Rive asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: horaxon-sticky-peel-riv
+          path: scratch/horaxon-sticky-peel.riv
+          retention-days: 7
