@@ -29,7 +29,7 @@ added transactional stable-ID insert, move, remove, and multi-operation validati
 - The model receives task-specific schema slices and relevant source-map context.
 - Repairs target the smallest failed authored concept rather than regenerating the document.
 
-## Delivered in #186 / PR #214
+## Delivered in #186 / PR #215
 
 - Prompt-based `ai generate` targets AuthoringSpec and lowers through the canonical
   Authoring frontend; built-in templates and direct SceneSpec generation remain the
