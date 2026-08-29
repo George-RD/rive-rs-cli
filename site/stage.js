@@ -8,6 +8,7 @@ const PAGE_FILES = [
   "index.html",
   "lab.html",
   "styles.css",
+  "playback.css",
   "landing.js",
   "main.js",
   "playback.js",
