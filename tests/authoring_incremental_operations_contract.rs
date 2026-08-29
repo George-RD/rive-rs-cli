@@ -5,7 +5,7 @@ use rive_cli::authoring::{
     AuthoringTarget, BehaviorModelSpec, LoweredAuthoring, PoseSpec, SourceMapEntry, VisualNode,
     apply_operation, apply_operations, lower_authoring,
 };
-use serde_json::{Value, json};
+use serde_json::json;
 use support::assert_builds;
 
 const BASE_DOCUMENT: &str = r##"
@@ -286,7 +286,8 @@ fn removing_a_visual_motion_target_fails_transactionally_with_authored_diagnosti
         },
     };
 
-    let error = apply_operation(&document, &operation).expect_err("dangling motion target must fail");
+    let error =
+        apply_operation(&document, &operation).expect_err("dangling motion target must fail");
 
     assert!(has_diagnostic(
         &error,
@@ -359,7 +360,8 @@ fn one_transaction_can_insert_typed_visual_motion_and_behavior_concepts() {
         },
     ];
 
-    let applied = apply_operations(&document, &operations).expect("cross-domain transaction applies");
+    let applied =
+        apply_operations(&document, &operations).expect("cross-domain transaction applies");
     let value = serde_json::to_value(&applied.spec).expect("serialize applied spec");
 
     assert_eq!(value["motion"]["poses"][0]["id"], "badge-pose");
