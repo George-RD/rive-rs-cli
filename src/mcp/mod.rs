@@ -103,24 +103,24 @@ impl RiveMcpServer {
         &self,
         params: Parameters<GenerateAuthoringParams>,
     ) -> Result<CallToolResult, McpError> {
-        let lowered = crate::authoring::lower_authoring_json(&params.0.authoring_json).map_err(|e| {
-            let diagnostics = serde_json::to_string(&e.diagnostics)
-                .unwrap_or_else(|_| "[]".to_string());
-            McpError::new(
-                ErrorCode::INVALID_PARAMS,
-                format!("AuthoringSpec lowering failed: {diagnostics}"),
-                None,
-            )
-        })?;
-        let spec: crate::builder::SceneSpec = serde_json::from_value(lowered.scene.clone()).map_err(
-            |e| {
+        let lowered =
+            crate::authoring::lower_authoring_json(&params.0.authoring_json).map_err(|e| {
+                let diagnostics =
+                    serde_json::to_string(&e.diagnostics).unwrap_or_else(|_| "[]".to_string());
+                McpError::new(
+                    ErrorCode::INVALID_PARAMS,
+                    format!("AuthoringSpec lowering failed: {diagnostics}"),
+                    None,
+                )
+            })?;
+        let spec: crate::builder::SceneSpec = serde_json::from_value(lowered.scene.clone())
+            .map_err(|e| {
                 McpError::new(
                     ErrorCode::INTERNAL_ERROR,
                     format!("lowered AuthoringSpec produced invalid SceneSpec: {e}"),
                     None,
                 )
-            },
-        )?;
+            })?;
         let file_id = params.0.file_id.unwrap_or(0);
         let bytes = crate::compile::compile_scene(&spec, None, file_id).map_err(|e| {
             McpError::new(
