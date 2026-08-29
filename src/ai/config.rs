@@ -59,6 +59,18 @@ impl AiConfig {
 }
 
 #[cfg(test)]
+impl Default for AiConfig {
+    fn default() -> Self {
+        Self {
+            provider: ProviderKind::Template,
+            model: "test".to_string(),
+            api_key: None,
+            base_url: "https://api.openai.com/v1".to_string(),
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::sync::{Mutex, OnceLock};
