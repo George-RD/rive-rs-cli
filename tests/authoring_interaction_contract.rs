@@ -178,9 +178,15 @@ fn typed_input_event_and_listeners_lower_without_authored_runtime_indices() {
         .iter()
         .find(|entry| entry.authored_id == "gate/completed")
         .expect("event source map");
-    assert_eq!(event_source.authored_path, "$.behavior.statecharts[0].events[0]");
+    assert_eq!(
+        event_source.authored_path,
+        "$.behavior.statecharts[0].events[0]"
+    );
     assert_eq!(event_source.runtime_names.len(), 1);
-    assert_eq!(machine["listeners"][1]["target"], event_source.runtime_names[0]);
+    assert_eq!(
+        machine["listeners"][1]["target"],
+        event_source.runtime_names[0]
+    );
     assert_eq!(machine["listeners"][1]["listener_type"], "event");
 
     let transition = &machine["layers"][0]["transitions"][1];
@@ -232,8 +238,7 @@ fn event_listener_with_unknown_event_reports_authored_path() {
 #[test]
 fn listener_action_with_unknown_input_reports_authored_path() {
     let mut input = document();
-    input["behavior"]["statecharts"][0]["listeners"][0]["actions"][0]["input"] =
-        json!("missing");
+    input["behavior"]["statecharts"][0]["listeners"][0]["actions"][0]["input"] = json!("missing");
 
     assert_diagnostic(
         &input,
