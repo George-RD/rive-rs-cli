@@ -23,6 +23,19 @@ It must provide:
 - a raw SceneSpec escape hatch for unsupported advanced Rive objects;
 - validation at each lowering stage and no direct binary encoding path.
 
+Incremental authoring operations target stable authored IDs and never runtime names,
+SceneSpec paths, or binary indices. The initial shared operation envelope supports
+replacing one node in the root authored visual tree, including nodes nested through
+groups and typed pattern items. A target must resolve exactly once: no match returns
+`unknown_authored_id`, while multiple matches return `ambiguous_authored_id`. The
+operation applies to a cloned `AuthoringSpec`, then lowers the complete candidate
+through the normal AuthoringCompiler and canonical SceneSpec validation path. A
+failed operation returns authored-path diagnostics and leaves the caller's input
+unchanged. A successful operation returns both the changed `AuthoringSpec` and its
+lowered result; deterministic lowering must preserve source-map entries and runtime
+bindings for unaffected authored IDs unless the edited dependency genuinely requires
+a change.
+
 The current motion subset supports named transform, opacity, and positive pixel-valued
 parametric shape-dimension poses, compact pose tracks, and shared cubic Bézier easing
 definitions with authored visual targets,
