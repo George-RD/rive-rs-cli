@@ -7,17 +7,21 @@ const SITE = __dirname;
 const PAGE_FILES = [
   "index.html",
   "lab.html",
+  "showcase.html",
+  "showcase.json",
   "styles.css",
   "playback.css",
   "landing.js",
   "main.js",
   "playback.js",
+  "showcase.js",
   "verify.txt",
 ];
 const VENDORED = [
   ["assets/rive.js", "assets/rive.js"],
   ["assets/rive.wasm", "assets/rive.wasm"],
 ];
+const SHOWCASE_GUIDES = [["docs/authoring-cli.md", "docs/authoring-cli.md"]];
 
 function parityFiles() {
   const entries = [["parity/results.json", "parity/results.json"]];
@@ -61,12 +65,56 @@ function assertReferencedScenesExist() {
   return referencedScenes().length;
 }
 
+function showcaseEntries() {
+  const manifest = path.join(SITE, "showcase.json");
+  const entries = JSON.parse(fs.readFileSync(manifest, "utf8"));
+  if (!Array.isArray(entries)) {
+    throw new Error("site/showcase.json must contain an array");
+  }
+  return entries;
+}
+
+function showcaseFiles(entries = showcaseEntries()) {
+  const files = new Map(SHOWCASE_GUIDES);
+  for (const entry of entries) {
+    for (const field of ["artifact", "source"]) {
+      const value = entry[field];
+      if (typeof value === "string" && value.length > 0) files.set(value, value);
+    }
+  }
+  return [...files.entries()];
+}
+
+function assertShowcaseEntriesExist(entries = showcaseEntries()) {
+  const missing = [];
+  for (const entry of entries) {
+    for (const field of ["artifact", "source"]) {
+      const value = entry[field];
+      if (typeof value !== "string" || value.length === 0) {
+        missing.push(`${entry.id || "<unnamed>"}.${field} is missing`);
+      } else if (!fs.existsSync(path.join(ROOT, value))) {
+        missing.push(`${entry.id || "<unnamed>"}.${field}: ${value}`);
+      }
+    }
+  }
+  for (const [from] of SHOWCASE_GUIDES) {
+    if (!fs.existsSync(path.join(ROOT, from))) missing.push(`guide: ${from}`);
+  }
+  if (missing.length > 0) {
+    throw new Error(`showcase manifest references missing files: ${missing.join(", ")}`);
+  }
+  return entries.length;
+}
+
 function plan() {
   assertReferencedScenesExist();
+  const entries = showcaseEntries();
+  assertShowcaseEntriesExist(entries);
   return [
     ...PAGE_FILES.map((name) => [`site/${name}`, name]),
     ...VENDORED,
     ...parityFiles(),
+    ...showcaseFiles(entries),
   ];
 }
 
@@ -84,7 +132,17 @@ function stage(destination) {
   return plan().length;
 }
 
-module.exports = { plan, stage, referencedScenes, assertReferencedScenesExist, ROOT, SITE };
+module.exports = {
+  plan,
+  stage,
+  referencedScenes,
+  assertReferencedScenesExist,
+  showcaseEntries,
+  showcaseFiles,
+  assertShowcaseEntriesExist,
+  ROOT,
+  SITE,
+};
 
 if (require.main === module) {
   const destination = path.resolve(process.argv[2] || path.join(ROOT, "target", "site"));
