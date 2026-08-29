@@ -100,6 +100,17 @@ async function readCards(page) {
   );
 }
 
+async function readSourceStatuses(page) {
+  return page.evaluate(async () =>
+    Promise.all(
+      Array.from(document.querySelectorAll("details.source a")).map(async (link) => {
+        const response = await fetch(link.href);
+        return { href: link.getAttribute("href"), status: response.status };
+      })
+    )
+  );
+}
+
 (async () => {
   const entries = showcaseEntries();
   assertStagingContract(entries);
@@ -144,8 +155,16 @@ async function readCards(page) {
     }
     for (const card of cards) {
       if (card.painted === 0) errors.push(`${card.id} rendered nothing`);
+      if (card.playing !== "true") errors.push(`${card.id} did not enter live playback`);
       if (!card.aria) errors.push(`${card.id} is missing a canvas text alternative`);
       if (!card.source) errors.push(`${card.id} is missing a retained source link`);
+    }
+
+    const sourceStatuses = await readSourceStatuses(page);
+    for (const source of sourceStatuses) {
+      if (source.status !== 200) {
+        errors.push(`source/provenance link ${source.href} returned HTTP ${source.status}`);
+      }
     }
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -194,7 +213,7 @@ async function readCards(page) {
     }
 
     process.stdout.write(
-      `Showcase validation passed: ${entries.length} manifest-driven cards, live runtime paint, phone layout, reduced motion\n`
+      `Showcase validation passed: ${entries.length} manifest-driven cards, live runtime paint, staged source links, phone layout, reduced motion\n`
     );
     shutdown();
     process.exit(0);
