@@ -31,9 +31,8 @@ completed deterministic static and animated AuthoringSpec semantic evidence in P
 [#183](https://github.com/George-RD/rive-rs-cli/issues/183) completed interactive semantic
 evaluation in PR #209. [#184](https://github.com/George-RD/rive-rs-cli/issues/184)
 completed atomic stable-ID visual replacement in PR #210. [#185](https://github.com/George-RD/rive-rs-cli/issues/185)
-completes typed insert, move, remove, and multi-operation transactions in PR #211,
-clearing the incremental-authoring blocker for #186 once exact-head verification is
-green and the PR is merged.
+completed typed insert, move, remove, and multi-operation transactions in PR #212,
+clearing the incremental-authoring blocker for #186.
 
 The ordered execution graph is:
 
@@ -46,7 +45,7 @@ The ordered execution graph is:
        |-> #182 static + animated semantic evaluations (complete in PR #207)
 
 #181 + #182 -> #183 interactive semantic evaluation (complete in PR #209)
-#181        -> #184 atomic replace (complete in PR #210) -> #185 insert/move/remove (complete in PR #211)
+#181        -> #184 atomic replace (complete in PR #210) -> #185 insert/move/remove (complete in PR #212)
 #183 + #185 -> #186 complex AI generation through AuthoringSpec
 ```
 
@@ -73,7 +72,7 @@ AuthoringSpec progress.
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
-| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | complete in PR #211 | stable-ID edits validate atomically and preserve unaffected source-map identity |
+| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | complete in PR #212 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | ready; #186 requires complete #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until Authoring compiler state is stable | characterization-preserving split aligned to authored source maps |
 
@@ -108,11 +107,11 @@ AuthoringSpec progress.
 - #184 completed the first stable-ID transactional operation in PR #210: root visual
   replacement is applied to a clone, validated through the normal AuthoringCompiler,
   and preserves unaffected source-map identity.
-- #185 completes incremental authoring in PR #211 with typed insert, move, remove,
+- #185 completed incremental authoring in PR #212 with typed insert, move, remove,
   and multi-operation transactions across visual, motion, and behavior concepts. Each
   step reuses canonical lowering, dependency validation, authored diagnostics, and
-  source-map identity rules. With #183 already complete, #186 becomes the next
-  Authoring frontier after #211 is verified and merged.
+  source-map identity rules. With #183 and #185 complete, #186 is the next Authoring
+  frontier.
 
 ## Readiness gate for complex AI generation
 
