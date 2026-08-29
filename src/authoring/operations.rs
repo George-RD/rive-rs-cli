@@ -57,7 +57,10 @@ pub enum AuthoringPlacement {
 
 #[derive(Debug, Clone)]
 pub enum AuthoringOperation {
-    ReplaceVisualNode { target_id: String, node: VisualNode },
+    ReplaceVisualNode {
+        target_id: String,
+        node: VisualNode,
+    },
     Insert {
         entity: AuthoringEntity,
         placement: AuthoringPlacement,
@@ -66,13 +69,129 @@ pub enum AuthoringOperation {
         target: AuthoringTarget,
         placement: AuthoringPlacement,
     },
-    Remove { target: AuthoringTarget },
+    Remove {
+        target: AuthoringTarget,
+    },
 }
 
 #[derive(Debug, Clone)]
 pub struct AppliedOperation {
     pub spec: AuthoringSpec,
     pub lowered: LoweredAuthoring,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum EntityKind {
+    Visual,
+    Component,
+    MotionEasing,
+    MotionPose,
+    MotionTrack,
+    MotionRawAnimation,
+    BehaviorModel,
+    BehaviorBinding,
+    BehaviorStatechart,
+    BehaviorRawStateMachine,
+}
+
+enum ListPlacement<'a> {
+    Append,
+    Before(&'a str),
+    After(&'a str),
+}
+
+trait AuthoredId {
+    fn authored_id(&self) -> &str;
+}
+
+macro_rules! field_authored_id {
+    ($type:ty) => {
+        impl AuthoredId for $type {
+            fn authored_id(&self) -> &str {
+                self.id.as_str()
+            }
+        }
+    };
+}
+
+field_authored_id!(ComponentSpec);
+field_authored_id!(PoseSpec);
+field_authored_id!(MotionTrackSpec);
+field_authored_id!(RawSceneFragment);
+field_authored_id!(BehaviorModelSpec);
+field_authored_id!(BehaviorBindingSpec);
+field_authored_id!(BehaviorStatechartSpec);
+
+impl AuthoredId for MotionEasingSpec {
+    fn authored_id(&self) -> &str {
+        self.id()
+    }
+}
+
+impl AuthoringEntity {
+    fn kind(&self) -> EntityKind {
+        match self {
+            Self::VisualNode(_) => EntityKind::Visual,
+            Self::Component(_) => EntityKind::Component,
+            Self::MotionEasing(_) => EntityKind::MotionEasing,
+            Self::MotionPose(_) => EntityKind::MotionPose,
+            Self::MotionTrack(_) => EntityKind::MotionTrack,
+            Self::MotionRawAnimation(_) => EntityKind::MotionRawAnimation,
+            Self::BehaviorModel(_) => EntityKind::BehaviorModel,
+            Self::BehaviorBinding(_) => EntityKind::BehaviorBinding,
+            Self::BehaviorStatechart(_) => EntityKind::BehaviorStatechart,
+            Self::BehaviorRawStateMachine(_) => EntityKind::BehaviorRawStateMachine,
+        }
+    }
+}
+
+impl AuthoringTarget {
+    fn kind(&self) -> EntityKind {
+        match self {
+            Self::VisualNode { .. } => EntityKind::Visual,
+            Self::Component { .. } => EntityKind::Component,
+            Self::MotionEasing { .. } => EntityKind::MotionEasing,
+            Self::MotionPose { .. } => EntityKind::MotionPose,
+            Self::MotionTrack { .. } => EntityKind::MotionTrack,
+            Self::MotionRawAnimation { .. } => EntityKind::MotionRawAnimation,
+            Self::BehaviorModel { .. } => EntityKind::BehaviorModel,
+            Self::BehaviorBinding { .. } => EntityKind::BehaviorBinding,
+            Self::BehaviorStatechart { .. } => EntityKind::BehaviorStatechart,
+            Self::BehaviorRawStateMachine { .. } => EntityKind::BehaviorRawStateMachine,
+        }
+    }
+
+    fn target_id(&self) -> &str {
+        match self {
+            Self::VisualNode { target_id }
+            | Self::Component { target_id }
+            | Self::MotionEasing { target_id }
+            | Self::MotionPose { target_id }
+            | Self::MotionTrack { target_id }
+            | Self::MotionRawAnimation { target_id }
+            | Self::BehaviorModel { target_id }
+            | Self::BehaviorBinding { target_id }
+            | Self::BehaviorStatechart { target_id }
+            | Self::BehaviorRawStateMachine { target_id } => target_id,
+        }
+    }
+}
+
+impl AuthoringContainer {
+    fn kind(&self) -> EntityKind {
+        match self {
+            Self::VisualRoot | Self::VisualGroup { .. } => EntityKind::Visual,
+            Self::Components => EntityKind::Component,
+            Self::MotionEasings => EntityKind::MotionEasing,
+            Self::MotionPoses => EntityKind::MotionPose,
+            Self::MotionTracks => EntityKind::MotionTrack,
+            Self::MotionRawAnimations => EntityKind::MotionRawAnimation,
+            Self::BehaviorModels => EntityKind::BehaviorModel,
+            Self::BehaviorBindings => EntityKind::BehaviorBinding,
+            Self::BehaviorStatecharts => EntityKind::BehaviorStatechart,
+            Self::BehaviorRawStateMachines => EntityKind::BehaviorRawStateMachine,
+        }
+    }
 }
 
 pub fn apply_operation(
@@ -129,281 +248,112 @@ fn insert_entity(
     entity: AuthoringEntity,
     placement: &AuthoringPlacement,
 ) -> Result<(), AuthoringError> {
+    let kind = entity.kind();
     match entity {
         AuthoringEntity::VisualNode(node) => insert_visual(spec, node, placement),
-        AuthoringEntity::Component(component) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::Components,
-            } => {
-                spec.components.push(component);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::Component { target_id },
-            } => insert_relative(
-                &mut spec.components,
-                target_id,
-                component,
-                false,
-                "$.components",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::Component { target_id },
-            } => insert_relative(
-                &mut spec.components,
-                target_id,
-                component,
-                true,
-                "$.components",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement("component", "$.components")),
-        },
-        AuthoringEntity::MotionEasing(easing) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::MotionEasings,
-            } => {
-                spec.motion.easings.push(easing);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::MotionEasing { target_id },
-            } => insert_relative(
-                &mut spec.motion.easings,
-                target_id,
-                easing,
-                false,
-                "$.motion.easings",
-                MotionEasingSpec::id,
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::MotionEasing { target_id },
-            } => insert_relative(
-                &mut spec.motion.easings,
-                target_id,
-                easing,
-                true,
-                "$.motion.easings",
-                MotionEasingSpec::id,
-            ),
-            _ => Err(invalid_placement("motion easing", "$.motion.easings")),
-        },
-        AuthoringEntity::MotionPose(pose) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::MotionPoses,
-            } => {
-                spec.motion.poses.push(pose);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::MotionPose { target_id },
-            } => insert_relative(
-                &mut spec.motion.poses,
-                target_id,
-                pose,
-                false,
-                "$.motion.poses",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::MotionPose { target_id },
-            } => insert_relative(
-                &mut spec.motion.poses,
-                target_id,
-                pose,
-                true,
-                "$.motion.poses",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement("motion pose", "$.motion.poses")),
-        },
-        AuthoringEntity::MotionTrack(track) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::MotionTracks,
-            } => {
-                spec.motion.tracks.push(track);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::MotionTrack { target_id },
-            } => insert_relative(
-                &mut spec.motion.tracks,
-                target_id,
-                track,
-                false,
-                "$.motion.tracks",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::MotionTrack { target_id },
-            } => insert_relative(
-                &mut spec.motion.tracks,
-                target_id,
-                track,
-                true,
-                "$.motion.tracks",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement("motion track", "$.motion.tracks")),
-        },
-        AuthoringEntity::MotionRawAnimation(fragment) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::MotionRawAnimations,
-            } => {
-                spec.motion.raw_animations.push(fragment);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::MotionRawAnimation { target_id },
-            } => insert_relative(
-                &mut spec.motion.raw_animations,
-                target_id,
-                fragment,
-                false,
-                "$.motion.raw_animations",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::MotionRawAnimation { target_id },
-            } => insert_relative(
-                &mut spec.motion.raw_animations,
-                target_id,
-                fragment,
-                true,
-                "$.motion.raw_animations",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement(
-                "raw motion animation",
-                "$.motion.raw_animations",
-            )),
-        },
-        AuthoringEntity::BehaviorModel(model) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::BehaviorModels,
-            } => {
-                spec.behavior.models.push(model);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::BehaviorModel { target_id },
-            } => insert_relative(
-                &mut spec.behavior.models,
-                target_id,
-                model,
-                false,
-                "$.behavior.models",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::BehaviorModel { target_id },
-            } => insert_relative(
-                &mut spec.behavior.models,
-                target_id,
-                model,
-                true,
-                "$.behavior.models",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement("behavior model", "$.behavior.models")),
-        },
-        AuthoringEntity::BehaviorBinding(binding) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::BehaviorBindings,
-            } => {
-                spec.behavior.bindings.push(binding);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::BehaviorBinding { target_id },
-            } => insert_relative(
-                &mut spec.behavior.bindings,
-                target_id,
-                binding,
-                false,
-                "$.behavior.bindings",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::BehaviorBinding { target_id },
-            } => insert_relative(
-                &mut spec.behavior.bindings,
-                target_id,
-                binding,
-                true,
-                "$.behavior.bindings",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement(
-                "behavior binding",
-                "$.behavior.bindings",
-            )),
-        },
-        AuthoringEntity::BehaviorStatechart(statechart) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::BehaviorStatecharts,
-            } => {
-                spec.behavior.statecharts.push(statechart);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::BehaviorStatechart { target_id },
-            } => insert_relative(
-                &mut spec.behavior.statecharts,
-                target_id,
-                statechart,
-                false,
-                "$.behavior.statecharts",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::BehaviorStatechart { target_id },
-            } => insert_relative(
-                &mut spec.behavior.statecharts,
-                target_id,
-                statechart,
-                true,
-                "$.behavior.statecharts",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement(
-                "behavior statechart",
-                "$.behavior.statecharts",
-            )),
-        },
-        AuthoringEntity::BehaviorRawStateMachine(fragment) => match placement {
-            AuthoringPlacement::Into {
-                container: AuthoringContainer::BehaviorRawStateMachines,
-            } => {
-                spec.behavior.raw_state_machines.push(fragment);
-                Ok(())
-            }
-            AuthoringPlacement::Before {
-                anchor: AuthoringTarget::BehaviorRawStateMachine { target_id },
-            } => insert_relative(
-                &mut spec.behavior.raw_state_machines,
-                target_id,
-                fragment,
-                false,
-                "$.behavior.raw_state_machines",
-                |item| item.id.as_str(),
-            ),
-            AuthoringPlacement::After {
-                anchor: AuthoringTarget::BehaviorRawStateMachine { target_id },
-            } => insert_relative(
-                &mut spec.behavior.raw_state_machines,
-                target_id,
-                fragment,
-                true,
-                "$.behavior.raw_state_machines",
-                |item| item.id.as_str(),
-            ),
-            _ => Err(invalid_placement(
-                "raw behavior state machine",
-                "$.behavior.raw_state_machines",
-            )),
-        },
+        AuthoringEntity::Component(item) => insert_list(
+            &mut spec.components,
+            item,
+            placement,
+            kind,
+            "$.components",
+        ),
+        AuthoringEntity::MotionEasing(item) => insert_list(
+            &mut spec.motion.easings,
+            item,
+            placement,
+            kind,
+            "$.motion.easings",
+        ),
+        AuthoringEntity::MotionPose(item) => insert_list(
+            &mut spec.motion.poses,
+            item,
+            placement,
+            kind,
+            "$.motion.poses",
+        ),
+        AuthoringEntity::MotionTrack(item) => insert_list(
+            &mut spec.motion.tracks,
+            item,
+            placement,
+            kind,
+            "$.motion.tracks",
+        ),
+        AuthoringEntity::MotionRawAnimation(item) => insert_list(
+            &mut spec.motion.raw_animations,
+            item,
+            placement,
+            kind,
+            "$.motion.raw_animations",
+        ),
+        AuthoringEntity::BehaviorModel(item) => insert_list(
+            &mut spec.behavior.models,
+            item,
+            placement,
+            kind,
+            "$.behavior.models",
+        ),
+        AuthoringEntity::BehaviorBinding(item) => insert_list(
+            &mut spec.behavior.bindings,
+            item,
+            placement,
+            kind,
+            "$.behavior.bindings",
+        ),
+        AuthoringEntity::BehaviorStatechart(item) => insert_list(
+            &mut spec.behavior.statecharts,
+            item,
+            placement,
+            kind,
+            "$.behavior.statecharts",
+        ),
+        AuthoringEntity::BehaviorRawStateMachine(item) => insert_list(
+            &mut spec.behavior.raw_state_machines,
+            item,
+            placement,
+            kind,
+            "$.behavior.raw_state_machines",
+        ),
+    }
+}
+
+fn insert_list<T: AuthoredId>(
+    items: &mut Vec<T>,
+    item: T,
+    placement: &AuthoringPlacement,
+    kind: EntityKind,
+    path: &str,
+) -> Result<(), AuthoringError> {
+    match list_placement(placement, kind, path)? {
+        ListPlacement::Append => items.push(item),
+        ListPlacement::Before(target_id) => {
+            let index = unique_index(items, target_id, path)?;
+            items.insert(index, item);
+        }
+        ListPlacement::After(target_id) => {
+            let index = unique_index(items, target_id, path)?;
+            items.insert(index + 1, item);
+        }
+    }
+    Ok(())
+}
+
+fn list_placement<'a>(
+    placement: &'a AuthoringPlacement,
+    kind: EntityKind,
+    path: &str,
+) -> Result<ListPlacement<'a>, AuthoringError> {
+    match placement {
+        AuthoringPlacement::Into { container } if container.kind() == kind => {
+            Ok(ListPlacement::Append)
+        }
+        AuthoringPlacement::Before { anchor } if anchor.kind() == kind => {
+            Ok(ListPlacement::Before(anchor.target_id()))
+        }
+        AuthoringPlacement::After { anchor } if anchor.kind() == kind => {
+            Ok(ListPlacement::After(anchor.target_id()))
+        }
+        _ => Err(invalid_placement(path)),
     }
 }
 
@@ -422,13 +372,13 @@ fn insert_visual(
         AuthoringPlacement::Into {
             container: AuthoringContainer::VisualGroup { target_id },
         } => append_visual_to_group(&mut spec.visual.nodes, target_id, node),
-        AuthoringPlacement::Before {
-            anchor: AuthoringTarget::VisualNode { target_id },
-        } => insert_visual_relative(&mut spec.visual.nodes, target_id, node, false),
-        AuthoringPlacement::After {
-            anchor: AuthoringTarget::VisualNode { target_id },
-        } => insert_visual_relative(&mut spec.visual.nodes, target_id, node, true),
-        _ => Err(invalid_placement("visual node", "$.visual.nodes")),
+        AuthoringPlacement::Before { anchor } if anchor.kind() == EntityKind::Visual => {
+            insert_visual_relative(&mut spec.visual.nodes, anchor.target_id(), node, false)
+        }
+        AuthoringPlacement::After { anchor } if anchor.kind() == EntityKind::Visual => {
+            insert_visual_relative(&mut spec.visual.nodes, anchor.target_id(), node, true)
+        }
+        _ => Err(invalid_placement("$.visual.nodes")),
     }
 }
 
@@ -437,246 +387,74 @@ fn remove_entity(
     target: &AuthoringTarget,
 ) -> Result<AuthoringEntity, AuthoringError> {
     match target {
-        AuthoringTarget::VisualNode { target_id } => remove_visual_node(&mut spec.visual.nodes, target_id)
-            .map(AuthoringEntity::VisualNode),
-        AuthoringTarget::Component { target_id } => remove_unique(
-            &mut spec.components,
-            target_id,
-            "$.components",
-            |item| item.id.as_str(),
-        )
-        .map(AuthoringEntity::Component),
-        AuthoringTarget::MotionEasing { target_id } => remove_unique(
-            &mut spec.motion.easings,
-            target_id,
-            "$.motion.easings",
-            MotionEasingSpec::id,
-        )
-        .map(AuthoringEntity::MotionEasing),
-        AuthoringTarget::MotionPose { target_id } => remove_unique(
-            &mut spec.motion.poses,
-            target_id,
-            "$.motion.poses",
-            |item| item.id.as_str(),
-        )
-        .map(AuthoringEntity::MotionPose),
-        AuthoringTarget::MotionTrack { target_id } => remove_unique(
-            &mut spec.motion.tracks,
-            target_id,
-            "$.motion.tracks",
-            |item| item.id.as_str(),
-        )
-        .map(AuthoringEntity::MotionTrack),
+        AuthoringTarget::VisualNode { target_id } => {
+            remove_visual_node(&mut spec.visual.nodes, target_id).map(AuthoringEntity::VisualNode)
+        }
+        AuthoringTarget::Component { target_id } => {
+            remove_unique(&mut spec.components, target_id, "$.components")
+                .map(AuthoringEntity::Component)
+        }
+        AuthoringTarget::MotionEasing { target_id } => {
+            remove_unique(&mut spec.motion.easings, target_id, "$.motion.easings")
+                .map(AuthoringEntity::MotionEasing)
+        }
+        AuthoringTarget::MotionPose { target_id } => {
+            remove_unique(&mut spec.motion.poses, target_id, "$.motion.poses")
+                .map(AuthoringEntity::MotionPose)
+        }
+        AuthoringTarget::MotionTrack { target_id } => {
+            remove_unique(&mut spec.motion.tracks, target_id, "$.motion.tracks")
+                .map(AuthoringEntity::MotionTrack)
+        }
         AuthoringTarget::MotionRawAnimation { target_id } => remove_unique(
             &mut spec.motion.raw_animations,
             target_id,
             "$.motion.raw_animations",
-            |item| item.id.as_str(),
         )
         .map(AuthoringEntity::MotionRawAnimation),
-        AuthoringTarget::BehaviorModel { target_id } => remove_unique(
-            &mut spec.behavior.models,
-            target_id,
-            "$.behavior.models",
-            |item| item.id.as_str(),
-        )
-        .map(AuthoringEntity::BehaviorModel),
+        AuthoringTarget::BehaviorModel { target_id } => {
+            remove_unique(&mut spec.behavior.models, target_id, "$.behavior.models")
+                .map(AuthoringEntity::BehaviorModel)
+        }
         AuthoringTarget::BehaviorBinding { target_id } => remove_unique(
             &mut spec.behavior.bindings,
             target_id,
             "$.behavior.bindings",
-            |item| item.id.as_str(),
         )
         .map(AuthoringEntity::BehaviorBinding),
         AuthoringTarget::BehaviorStatechart { target_id } => remove_unique(
             &mut spec.behavior.statecharts,
             target_id,
             "$.behavior.statecharts",
-            |item| item.id.as_str(),
         )
         .map(AuthoringEntity::BehaviorStatechart),
         AuthoringTarget::BehaviorRawStateMachine { target_id } => remove_unique(
             &mut spec.behavior.raw_state_machines,
             target_id,
             "$.behavior.raw_state_machines",
-            |item| item.id.as_str(),
         )
         .map(AuthoringEntity::BehaviorRawStateMachine),
     }
 }
 
-fn replace_visual_node(
-    nodes: &mut [VisualNode],
-    target_id: &str,
-    replacement: &VisualNode,
-) -> Result<(), AuthoringError> {
-    match count_visual_nodes(nodes, target_id, None) {
-        0 => Err(target_error(
-            "$.visual.nodes",
-            "unknown_authored_id",
-            target_id,
-            "does not identify a visual node in the root visual tree",
-        )),
-        1 => {
-            if replace_visual_node_once(nodes, target_id, replacement, None) {
-                Ok(())
-            } else {
-                Err(target_error(
-                    "$.visual.nodes",
-                    "unknown_authored_id",
-                    target_id,
-                    "does not identify a visual node in the root visual tree",
-                ))
-            }
-        }
-        _ => Err(target_error(
-            "$.visual.nodes",
-            "ambiguous_authored_id",
-            target_id,
-            "identifies more than one visual node in the root visual tree",
-        )),
-    }
-}
-
-fn append_visual_to_group(
-    nodes: &mut [VisualNode],
-    target_id: &str,
-    node: VisualNode,
-) -> Result<(), AuthoringError> {
-    match count_visual_groups(nodes, target_id, None) {
-        0 => Err(target_error(
-            "$.visual.nodes",
-            "unknown_authored_id",
-            target_id,
-            "does not identify a group in the root visual tree",
-        )),
-        1 => {
-            let mut node = Some(node);
-            if append_visual_to_group_once(nodes, target_id, &mut node, None) {
-                Ok(())
-            } else {
-                Err(target_error(
-                    "$.visual.nodes",
-                    "unknown_authored_id",
-                    target_id,
-                    "does not identify a group in the root visual tree",
-                ))
-            }
-        }
-        _ => Err(target_error(
-            "$.visual.nodes",
-            "ambiguous_authored_id",
-            target_id,
-            "identifies more than one group in the root visual tree",
-        )),
-    }
-}
-
-fn insert_visual_relative(
-    nodes: &mut Vec<VisualNode>,
-    target_id: &str,
-    node: VisualNode,
-    after: bool,
-) -> Result<(), AuthoringError> {
-    match count_visual_nodes(nodes, target_id, None) {
-        0 => Err(target_error(
-            "$.visual.nodes",
-            "unknown_authored_id",
-            target_id,
-            "does not identify a visual node in the root visual tree",
-        )),
-        1 => {
-            let mut node = Some(node);
-            if insert_visual_relative_once(nodes, target_id, &mut node, after, None) {
-                Ok(())
-            } else {
-                Err(target_error(
-                    "$.visual.nodes",
-                    "unknown_authored_id",
-                    target_id,
-                    "does not identify a visual node in the root visual tree",
-                ))
-            }
-        }
-        _ => Err(target_error(
-            "$.visual.nodes",
-            "ambiguous_authored_id",
-            target_id,
-            "identifies more than one visual node in the root visual tree",
-        )),
-    }
-}
-
-fn remove_visual_node(
-    nodes: &mut Vec<VisualNode>,
-    target_id: &str,
-) -> Result<VisualNode, AuthoringError> {
-    match count_visual_nodes(nodes, target_id, None) {
-        0 => Err(target_error(
-            "$.visual.nodes",
-            "unknown_authored_id",
-            target_id,
-            "does not identify a visual node in the root visual tree",
-        )),
-        1 => remove_visual_node_once(nodes, target_id, None).ok_or_else(|| {
-            target_error(
-                "$.visual.nodes",
-                "unknown_authored_id",
-                target_id,
-                "does not identify a visual node in the root visual tree",
-            )
-        }),
-        _ => Err(target_error(
-            "$.visual.nodes",
-            "ambiguous_authored_id",
-            target_id,
-            "identifies more than one visual node in the root visual tree",
-        )),
-    }
-}
-
-fn insert_relative<T, F>(
-    items: &mut Vec<T>,
-    target_id: &str,
-    item: T,
-    after: bool,
-    path: &str,
-    id_of: F,
-) -> Result<(), AuthoringError>
-where
-    F: Fn(&T) -> &str,
-{
-    let index = unique_index(items, target_id, path, &id_of)?;
-    items.insert(index + usize::from(after), item);
-    Ok(())
-}
-
-fn remove_unique<T, F>(
+fn remove_unique<T: AuthoredId>(
     items: &mut Vec<T>,
     target_id: &str,
     path: &str,
-    id_of: F,
-) -> Result<T, AuthoringError>
-where
-    F: Fn(&T) -> &str,
-{
-    let index = unique_index(items, target_id, path, &id_of)?;
+) -> Result<T, AuthoringError> {
+    let index = unique_index(items, target_id, path)?;
     Ok(items.remove(index))
 }
 
-fn unique_index<T, F>(
+fn unique_index<T: AuthoredId>(
     items: &[T],
     target_id: &str,
     path: &str,
-    id_of: &F,
-) -> Result<usize, AuthoringError>
-where
-    F: Fn(&T) -> &str,
-{
+) -> Result<usize, AuthoringError> {
     let matches = items
         .iter()
         .enumerate()
-        .filter_map(|(index, item)| (id_of(item) == target_id).then_some(index))
+        .filter_map(|(index, item)| (item.authored_id() == target_id).then_some(index))
         .collect::<Vec<_>>();
     match matches.as_slice() {
         [] => Err(target_error(
@@ -695,17 +473,104 @@ where
     }
 }
 
-fn invalid_placement(entity: &str, path: &str) -> AuthoringError {
+fn replace_visual_node(
+    nodes: &mut [VisualNode],
+    target_id: &str,
+    replacement: &VisualNode,
+) -> Result<(), AuthoringError> {
+    match count_visual_nodes(nodes, target_id, None) {
+        0 => Err(visual_target_error(target_id, "does not identify a visual node")),
+        1 => {
+            if replace_visual_node_once(nodes, target_id, replacement, None) {
+                Ok(())
+            } else {
+                Err(visual_target_error(target_id, "does not identify a visual node"))
+            }
+        }
+        _ => Err(visual_ambiguous_error(target_id, "visual node")),
+    }
+}
+
+fn append_visual_to_group(
+    nodes: &mut [VisualNode],
+    target_id: &str,
+    node: VisualNode,
+) -> Result<(), AuthoringError> {
+    match count_visual_groups(nodes, target_id, None) {
+        0 => Err(visual_target_error(target_id, "does not identify a group")),
+        1 => {
+            let mut node = Some(node);
+            if append_visual_to_group_once(nodes, target_id, &mut node, None) {
+                Ok(())
+            } else {
+                Err(visual_target_error(target_id, "does not identify a group"))
+            }
+        }
+        _ => Err(visual_ambiguous_error(target_id, "group")),
+    }
+}
+
+fn insert_visual_relative(
+    nodes: &mut Vec<VisualNode>,
+    target_id: &str,
+    node: VisualNode,
+    after: bool,
+) -> Result<(), AuthoringError> {
+    match count_visual_nodes(nodes, target_id, None) {
+        0 => Err(visual_target_error(target_id, "does not identify a visual node")),
+        1 => {
+            let mut node = Some(node);
+            if insert_visual_relative_once(nodes, target_id, &mut node, after, None) {
+                Ok(())
+            } else {
+                Err(visual_target_error(target_id, "does not identify a visual node"))
+            }
+        }
+        _ => Err(visual_ambiguous_error(target_id, "visual node")),
+    }
+}
+
+fn remove_visual_node(
+    nodes: &mut Vec<VisualNode>,
+    target_id: &str,
+) -> Result<VisualNode, AuthoringError> {
+    match count_visual_nodes(nodes, target_id, None) {
+        0 => Err(visual_target_error(target_id, "does not identify a visual node")),
+        1 => remove_visual_node_once(nodes, target_id, None)
+            .ok_or_else(|| visual_target_error(target_id, "does not identify a visual node")),
+        _ => Err(visual_ambiguous_error(target_id, "visual node")),
+    }
+}
+
+fn invalid_placement(path: &str) -> AuthoringError {
     AuthoringError::one(AuthoringDiagnostic::new(
         path,
         "invalid_operation_placement",
-        format!("placement is not compatible with {entity}"),
+        "placement and authored entity types must match",
     ))
 }
 
-fn target_error(code_path: &str, code: &str, target_id: &str, detail: &str) -> AuthoringError {
+fn visual_target_error(target_id: &str, detail: &str) -> AuthoringError {
+    target_error(
+        "$.visual.nodes",
+        "unknown_authored_id",
+        target_id,
+        detail,
+    )
+}
+
+fn visual_ambiguous_error(target_id: &str, entity: &str) -> AuthoringError {
+    target_error(
+        "$.visual.nodes",
+        "ambiguous_authored_id",
+        target_id,
+        &format!("identifies more than one {entity}"),
+    )
+}
+
+fn target_error(path: &str, code: &str, target_id: &str, detail: &str) -> AuthoringError {
     AuthoringError::one(AuthoringDiagnostic::new(
-        code_path,
+        path,
         code,
         format!("authored id `{target_id}` {detail}"),
     ))
@@ -818,10 +683,10 @@ fn insert_visual_relative_once(
             );
             return true;
         }
-        if let VisualNode::Group { children, .. } = &mut nodes[index]
-            && insert_visual_relative_once(children, target_id, node, after, Some(&authored_id))
-        {
-            return true;
+        if let VisualNode::Group { children, .. } = &mut nodes[index] {
+            if insert_visual_relative_once(children, target_id, node, after, Some(&authored_id)) {
+                return true;
+            }
         }
         index += 1;
     }
@@ -839,10 +704,10 @@ fn remove_visual_node_once(
         if authored_id == target_id {
             return Some(nodes.remove(index));
         }
-        if let VisualNode::Group { children, .. } = &mut nodes[index]
-            && let Some(removed) = remove_visual_node_once(children, target_id, Some(&authored_id))
-        {
-            return Some(removed);
+        if let VisualNode::Group { children, .. } = &mut nodes[index] {
+            if let Some(removed) = remove_visual_node_once(children, target_id, Some(&authored_id)) {
+                return Some(removed);
+            }
         }
         index += 1;
     }
