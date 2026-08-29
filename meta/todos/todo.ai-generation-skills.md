@@ -1,7 +1,8 @@
 ---
 node: rive-cli.intelligence.ai
-status: blocked
+status: open
 created: 2026-07-29
+unblocked: 2026-08-29
 ---
 
 # P3 — Build AI generation skills on AuthoringSpec
@@ -16,6 +17,11 @@ escape-hatch work.
 - Representative complex showcases compile through the frontend.
 - Runtime and semantic eval suites pass with retained evidence.
 - Incremental typed authoring operations can compile and validate after each step.
+
+All four readiness conditions are satisfied by the Authoring delivery through
+#185 / PR #211. #183 already retained interactive semantic/runtime evidence; #185
+adds transactional stable-ID insert, move, remove, and multi-operation validation.
+This todo becomes the next Authoring frontier as #186 after PR #211 merges.
 
 ## Acceptance criteria after unblocking
 
