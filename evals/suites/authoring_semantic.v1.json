@@ -18,9 +18,19 @@
       "input": "examples/authoring/complex-static-showcase.v0.json",
       "semantic": {
         "static_checks": [
-          {"kind": "authored_id_present", "authored_id": "hero-panel"},
-          {"kind": "authored_id_present", "authored_id": "hero-panel/proof-grid"},
-          {"kind": "authored_id_has_runtime_type", "authored_id": "background", "object_type": "rectangle"}
+          {
+            "kind": "authored_id_present",
+            "authored_id": "hero-panel"
+          },
+          {
+            "kind": "authored_id_present",
+            "authored_id": "hero-panel/proof-grid"
+          },
+          {
+            "kind": "authored_id_has_runtime_type",
+            "authored_id": "background",
+            "object_type": "rectangle"
+          }
         ]
       }
     },
@@ -40,14 +50,36 @@
       },
       "semantic": {
         "static_checks": [
-          {"kind": "authored_id_present", "authored_id": "decision-flow"},
-          {"kind": "authored_id_present", "authored_id": "next-action"},
-          {"kind": "authored_id_has_runtime_type", "authored_id": "decision-hub", "object_type": "ellipse"}
+          {
+            "kind": "authored_id_present",
+            "authored_id": "decision-flow"
+          },
+          {
+            "kind": "authored_id_present",
+            "authored_id": "next-action"
+          },
+          {
+            "kind": "authored_id_has_runtime_type",
+            "authored_id": "decision-hub",
+            "object_type": "ellipse"
+          }
         ],
         "animated_checks": [
-          {"kind": "frames_differ", "from": 0, "to": 42},
-          {"kind": "frames_differ", "from": 42, "to": 78},
-          {"kind": "frames_differ", "from": 78, "to": 119}
+          {
+            "kind": "frames_differ",
+            "from": 0,
+            "to": 42
+          },
+          {
+            "kind": "frames_differ",
+            "from": 42,
+            "to": 78
+          },
+          {
+            "kind": "frames_differ",
+            "from": 78,
+            "to": 119
+          }
         ]
       }
     }
