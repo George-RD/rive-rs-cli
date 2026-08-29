@@ -124,7 +124,6 @@
       } else {
         instance.drawFrame();
       }
-      await nextPaint();
       detachScheduledFrame();
     }
 
