@@ -216,10 +216,7 @@ fn authoring_example(task: AuthoringTask) -> &'static str {
     }
 }
 
-fn authoring_schema_slice(
-    schema: &serde_json::Value,
-    task: AuthoringTask,
-) -> serde_json::Value {
+fn authoring_schema_slice(schema: &serde_json::Value, task: AuthoringTask) -> serde_json::Value {
     let mut names = vec![
         "authoring_format_version",
         "artboard",
