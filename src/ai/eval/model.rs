@@ -45,6 +45,10 @@ pub struct EvalGates {
     pub min_pipeline_reproducibility_rate: f64,
     #[serde(default = "one")]
     pub min_runtime_pass_rate: f64,
+    #[serde(default = "one")]
+    pub min_semantic_static_pass_rate: f64,
+    #[serde(default = "one")]
+    pub min_semantic_animated_pass_rate: f64,
     #[serde(default)]
     pub max_average_retries: Option<f64>,
     #[serde(default)]
@@ -58,6 +62,8 @@ impl Default for EvalGates {
             min_trait_adherence_rate: 1.0,
             min_pipeline_reproducibility_rate: 1.0,
             min_runtime_pass_rate: 1.0,
+            min_semantic_static_pass_rate: 1.0,
+            min_semantic_animated_pass_rate: 1.0,
             max_average_retries: None,
             max_drift_count: 0,
         }
@@ -77,6 +83,50 @@ pub struct EvalCase {
     pub image_path: Option<String>,
     #[serde(default)]
     pub runtime: Option<RuntimeExpectations>,
+    #[serde(default)]
+    pub semantic: Option<SemanticExpectations>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SemanticExpectations {
+    #[serde(default)]
+    pub static_checks: Vec<StaticSemanticCheck>,
+    #[serde(default)]
+    pub animated_checks: Vec<AnimatedSemanticCheck>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum StaticSemanticCheck {
+    AuthoredIdPresent {
+        authored_id: String,
+    },
+    AuthoredIdHasRuntimeType {
+        authored_id: String,
+        object_type: String,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum AnimatedSemanticCheck {
+    FramesDiffer { from: u32, to: u32 },
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SemanticCheckEvidence {
+    pub check: String,
+    pub passed: bool,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SemanticEvidence {
+    pub static_passed: Option<bool>,
+    pub animated_passed: Option<bool>,
+    pub static_checks: Vec<SemanticCheckEvidence>,
+    pub animated_checks: Vec<SemanticCheckEvidence>,
+    pub failure_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -138,6 +188,7 @@ pub struct RuntimeEvidence {
 pub enum InputKind {
     Template,
     Prompt,
+    AuthoringExample,
 }
 
 impl InputKind {
@@ -145,8 +196,26 @@ impl InputKind {
         match self {
             Self::Template => "template",
             Self::Prompt => "prompt",
+            Self::AuthoringExample => "authoring_example",
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EvalFailureStage {
+    AuthoringSchema,
+    Lowering,
+    Structural,
+    Runtime,
+    SemanticMismatch,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct EvalDiagnosticEvidence {
+    pub path: String,
+    pub code: String,
+    pub message: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -178,6 +247,12 @@ pub struct EvalReport {
     pub runtime_case_count: usize,
     pub runtime_pass_count: usize,
     pub runtime_pass_rate: f64,
+    pub semantic_static_case_count: usize,
+    pub semantic_static_pass_count: usize,
+    pub semantic_static_pass_rate: f64,
+    pub semantic_animated_case_count: usize,
+    pub semantic_animated_pass_count: usize,
+    pub semantic_animated_pass_rate: f64,
     pub drift_count: usize,
     pub cases: Vec<EvalCaseReport>,
 }
@@ -196,9 +271,15 @@ pub struct EvalCaseReport {
     pub output_hash: Option<String>,
     pub drifted: bool,
     pub failure_reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub failure_stage: Option<EvalFailureStage>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub diagnostics: Vec<EvalDiagnosticEvidence>,
     pub artifact_dir: String,
     pub text_hint: Option<String>,
     pub image_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub runtime: Option<RuntimeEvidence>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub semantic: Option<SemanticEvidence>,
 }
