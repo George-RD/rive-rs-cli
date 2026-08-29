@@ -26,7 +26,7 @@ use super::parsers::{
 use super::references::{self, Namespace};
 use super::spec::{
     BlendState1DChildSpec, BlendStateChildSpec, BlendStateDirectChildSpec, InputSpec,
-    ListenerActionSpec, StateMachineComponentSpec, StateMachineSpec, StateSpec,
+    ListenerActionSpec, ObjectSpec, StateMachineComponentSpec, StateMachineSpec, StateSpec,
     TransitionChildSpec,
 };
 
@@ -49,6 +49,55 @@ fn encode_id_path(ids: &[u64]) -> Vec<u8> {
     output
 }
 
+fn view_model_property_name(object: &ObjectSpec) -> Option<&str> {
+    match object {
+        ObjectSpec::ViewModelProperty { name, .. }
+        | ObjectSpec::ViewModelPropertyNumber { name, .. }
+        | ObjectSpec::ViewModelPropertyBoolean { name, .. }
+        | ObjectSpec::ViewModelPropertyString { name, .. }
+        | ObjectSpec::ViewModelPropertyColor { name, .. }
+        | ObjectSpec::ViewModelPropertyList { name, .. }
+        | ObjectSpec::ViewModelPropertyViewModel { name, .. }
+        | ObjectSpec::ViewModelPropertyEnum { name, .. }
+        | ObjectSpec::ViewModelPropertyEnumCustom { name, .. }
+        | ObjectSpec::ViewModelPropertyEnumSystem { name, .. }
+        | ObjectSpec::ViewModelPropertyTrigger { name, .. }
+        | ObjectSpec::ViewModelPropertyAssetImage { name, .. }
+        | ObjectSpec::ViewModelPropertyArtboard { name, .. }
+        | ObjectSpec::ViewModelPropertySymbol { name, .. }
+        | ObjectSpec::ViewModelPropertySymbolListIndex { name, .. } => Some(name),
+        _ => None,
+    }
+}
+
+fn resolve_view_model_binding_ids(
+    artboard_children: &[ObjectSpec],
+    view_model_id_base: u64,
+    view_model_name: &str,
+    property_name: &str,
+) -> Option<(u64, u64)> {
+    let mut view_model_id = view_model_id_base;
+    for child in artboard_children {
+        let ObjectSpec::ViewModel { name, children } = child else {
+            continue;
+        };
+        if name == view_model_name {
+            let mut property_id = 0u64;
+            for property in children.as_deref().unwrap_or_default() {
+                if let Some(name) = view_model_property_name(property) {
+                    if name == property_name {
+                        return Some((view_model_id, property_id));
+                    }
+                    property_id += 1;
+                }
+            }
+            return None;
+        }
+        view_model_id += 1;
+    }
+    None
+}
+
 /// Builds all state machine objects for an artboard.
 pub(crate) fn build_state_machines(
     state_machines: &[StateMachineSpec],
@@ -56,6 +105,8 @@ pub(crate) fn build_state_machines(
     objects: &mut Vec<Box<dyn RiveObject>>,
     object_name_to_index: &HashMap<String, usize>,
     animation_name_to_index: &HashMap<String, usize>,
+    artboard_children: &[ObjectSpec],
+    view_model_id_base: u64,
 ) -> Result<(), String> {
     for state_machine in state_machines {
         objects.push(Box::new(StateMachine::new(state_machine.name.clone())));
@@ -81,37 +132,19 @@ pub(crate) fn build_state_machines(
                             value: if *value { 1 } else { 0 },
                         }));
                         if let Some(binding) = view_model_binding {
-                            let view_model_global = *object_name_to_index
-                                .get(&binding.view_model)
+                            let (view_model_id, property_id) =
+                                resolve_view_model_binding_ids(
+                                    artboard_children,
+                                    view_model_id_base,
+                                    &binding.view_model,
+                                    &binding.property,
+                                )
                                 .ok_or_else(|| {
                                     format!(
-                                        "unknown view model referenced by bool input '{}': '{}'",
-                                        name, binding.view_model
+                                        "unknown view-model binding referenced by bool input '{}': '{}.{}'",
+                                        name, binding.view_model, binding.property
                                     )
                                 })?;
-                            let property_global = *object_name_to_index
-                                .get(&binding.property)
-                                .ok_or_else(|| {
-                                    format!(
-                                        "unknown view-model property referenced by bool input '{}': '{}'",
-                                        name, binding.property
-                                    )
-                                })?;
-                            let view_model_id = view_model_global
-                                .checked_sub(artboard_start)
-                                .ok_or_else(|| {
-                                    format!(
-                                        "view model '{}' precedes current artboard",
-                                        binding.view_model
-                                    )
-                                })? as u64;
-                            let property_id =
-                                property_global.checked_sub(artboard_start).ok_or_else(|| {
-                                    format!(
-                                        "view-model property '{}' precedes current artboard",
-                                        binding.property
-                                    )
-                                })? as u64;
                             objects.push(Box::new(DataBindContext::new(
                                 property_keys::STATE_MACHINE_BOOL_VALUE as u64,
                                 0,

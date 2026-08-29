@@ -357,6 +357,7 @@ pub mod type_keys {
 pub mod property_keys {
     pub const COMPONENT_NAME: u16 = 4;
     pub const COMPONENT_PARENT_ID: u16 = 5;
+    pub const VIEW_MODEL_COMPONENT_NAME: u16 = 557;
     pub const LAYOUT_COMPONENT_WIDTH: u16 = 7;
     pub const LAYOUT_COMPONENT_HEIGHT: u16 = 8;
     pub const NODE_X_ARTBOARD: u16 = 9;
@@ -871,6 +872,7 @@ pub fn is_bytes_property(key: u16) -> bool {
 pub fn property_backing_type(key: u16) -> Option<BackingType> {
     match key {
         property_keys::COMPONENT_NAME
+        | property_keys::VIEW_MODEL_COMPONENT_NAME
         | property_keys::ANIMATION_NAME
         | property_keys::STATE_MACHINE_COMPONENT_NAME
         | property_keys::ASSET_NAME

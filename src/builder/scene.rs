@@ -185,6 +185,7 @@ pub fn build_scene(
             }
         }
     }
+    let mut view_model_id_base = 0u64;
     for artboard_spec in &artboard_specs {
         let ctx = SceneContext {
             asset_ids: &asset_ids,
@@ -270,8 +271,16 @@ pub fn build_scene(
                 &mut objects,
                 &object_name_to_index,
                 &animation_name_to_index,
+                &artboard_spec.children,
+                view_model_id_base,
             )?;
         }
+
+        view_model_id_base += artboard_spec
+            .children
+            .iter()
+            .filter(|child| matches!(child, ObjectSpec::ViewModel { .. }))
+            .count() as u64;
     }
 
     Ok(objects)
