@@ -3,10 +3,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::authoring::{
-    AuthoringContainer, AuthoringDiagnostic, AuthoringEntity, AuthoringOperation, AuthoringPlacement,
-    AuthoringSourceMap, AuthoringSpec, AuthoringTarget, BehaviorBindingSpec, BehaviorModelSpec,
-    BehaviorStatechartSpec, ComponentSpec, LoweredAuthoring, MotionEasingSpec, MotionTrackSpec,
-    PoseSpec, RawSceneFragment, VisualNode, apply_operation, lower_authoring,
+    AuthoringContainer, AuthoringDiagnostic, AuthoringEntity, AuthoringOperation,
+    AuthoringPlacement, AuthoringSourceMap, AuthoringSpec, AuthoringTarget, BehaviorBindingSpec,
+    BehaviorModelSpec, BehaviorStatechartSpec, ComponentSpec, LoweredAuthoring, MotionEasingSpec,
+    MotionTrackSpec, PoseSpec, RawSceneFragment, VisualNode, apply_operation, lower_authoring,
 };
 
 use super::provider::AiProvider;
@@ -281,9 +281,8 @@ pub fn repair_authoring_spec(
                 succeeded: true,
             });
             return Ok(AuthoringRepairResult {
-                authoring_json: serde_json::to_value(&spec).map_err(|error| {
-                    serialization_failure(error.to_string(), attempts.clone())
-                })?,
+                authoring_json: serde_json::to_value(&spec)
+                    .map_err(|error| serialization_failure(error.to_string(), attempts.clone()))?,
                 lowered,
                 attempts,
                 total_retries: 0,
@@ -399,7 +398,10 @@ pub fn format_authoring_repair_summary(attempts: &[AuthoringRepairAttempt]) -> S
     output
 }
 
-fn serialization_failure(message: String, attempts: Vec<AuthoringRepairAttempt>) -> AuthoringRepairFailure {
+fn serialization_failure(
+    message: String,
+    attempts: Vec<AuthoringRepairAttempt>,
+) -> AuthoringRepairFailure {
     AuthoringRepairFailure {
         message: format!("failed to serialize AuthoringSpec: {message}"),
         diagnostics: Vec::new(),
