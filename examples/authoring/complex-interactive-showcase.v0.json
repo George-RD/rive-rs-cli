@@ -1,0 +1,187 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "showcase",
+    "width": { "value": 360.0, "unit": "px" },
+    "height": { "value": 200.0, "unit": "px" }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "rectangle",
+        "id": "card",
+        "width": { "kind": "literal", "value": 96.0, "unit": "px" },
+        "height": { "kind": "literal", "value": 56.0, "unit": "px" },
+        "corner_radius": { "kind": "literal", "value": 12.0, "unit": "px" },
+        "fill": "#246BFD"
+      }
+    ]
+  },
+  "motion": {
+    "poses": [
+      {
+        "id": "queued",
+        "targets": [
+          {
+            "target": "card",
+            "transform": {
+              "x": { "kind": "literal", "value": 70.0, "unit": "px" },
+              "y": { "kind": "literal", "value": 100.0, "unit": "px" }
+            },
+            "opacity": { "kind": "literal", "value": 0.65, "unit": "scalar" }
+          }
+        ]
+      },
+      {
+        "id": "focused",
+        "targets": [
+          {
+            "target": "card",
+            "transform": {
+              "x": { "kind": "literal", "value": 180.0, "unit": "px" },
+              "y": { "kind": "literal", "value": 100.0, "unit": "px" },
+              "scale_x": { "kind": "literal", "value": 1.08, "unit": "scalar" },
+              "scale_y": { "kind": "literal", "value": 1.08, "unit": "scalar" }
+            },
+            "opacity": { "kind": "literal", "value": 1.0, "unit": "scalar" }
+          }
+        ]
+      },
+      {
+        "id": "approved",
+        "targets": [
+          {
+            "target": "card",
+            "transform": {
+              "x": { "kind": "literal", "value": 290.0, "unit": "px" },
+              "y": { "kind": "literal", "value": 100.0, "unit": "px" },
+              "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+              "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" }
+            },
+            "opacity": { "kind": "literal", "value": 1.0, "unit": "scalar" }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "queuedtrack",
+        "fps": 60,
+        "duration_frames": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+        "keyframes": [
+          {
+            "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" },
+            "pose": "queued"
+          },
+          {
+            "frame": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+            "pose": "queued"
+          }
+        ]
+      },
+      {
+        "id": "focusedtrack",
+        "fps": 60,
+        "duration_frames": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+        "keyframes": [
+          {
+            "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" },
+            "pose": "focused"
+          },
+          {
+            "frame": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+            "pose": "focused"
+          }
+        ]
+      },
+      {
+        "id": "approvedtrack",
+        "fps": 60,
+        "duration_frames": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+        "keyframes": [
+          {
+            "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" },
+            "pose": "approved"
+          },
+          {
+            "frame": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+            "pose": "approved"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "statecharts": [
+      {
+        "id": "flow",
+        "inputs": [
+          { "kind": "bool", "id": "selected", "value": false },
+          { "kind": "bool", "id": "approved", "value": false }
+        ],
+        "events": [
+          { "id": "reset" }
+        ],
+        "listeners": [
+          {
+            "id": "select",
+            "target": "card",
+            "listener_type": "click",
+            "actions": [
+              { "kind": "bool_change", "input": "selected", "value": true }
+            ]
+          },
+          {
+            "id": "approve",
+            "target": "card",
+            "listener_type": "up",
+            "actions": [
+              { "kind": "bool_change", "input": "approved", "value": true }
+            ]
+          },
+          {
+            "id": "reset-listener",
+            "target": "reset",
+            "listener_type": "event",
+            "actions": [
+              { "kind": "bool_change", "input": "selected", "value": false },
+              { "kind": "bool_change", "input": "approved", "value": false }
+            ]
+          }
+        ],
+        "initial": "queued-state",
+        "states": [
+          { "id": "queued-state", "motion": "queuedtrack" },
+          { "id": "focused-state", "motion": "focusedtrack" },
+          { "id": "approved-state", "motion": "approvedtrack" }
+        ],
+        "transitions": [
+          {
+            "id": "focus",
+            "from": "queued-state",
+            "to": "focused-state",
+            "when": { "input": "selected", "equals": true }
+          },
+          {
+            "id": "approve-state",
+            "from": "focused-state",
+            "to": "approved-state",
+            "when": { "input": "approved", "equals": true }
+          },
+          {
+            "id": "unapprove",
+            "from": "approved-state",
+            "to": "focused-state",
+            "when": { "input": "approved", "equals": false }
+          },
+          {
+            "id": "unselect",
+            "from": "focused-state",
+            "to": "queued-state",
+            "when": { "input": "selected", "equals": false }
+          }
+        ]
+      }
+    ]
+  }
+}

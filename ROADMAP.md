@@ -20,14 +20,14 @@ until that frontend and its evidence gates exist.
 
 Parent delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 
-**Current next item: [#181 — close the complex interactive AuthoringSpec showcase gate](https://github.com/George-RD/rive-rs-cli/issues/181).**
+**Current next item: [#182 — add static + animated semantic evaluations](https://github.com/George-RD/rive-rs-cli/issues/182).**
 [#179](https://github.com/George-RD/rive-rs-cli/issues/179) completed the first typed
-behavior tracer bullet in PR #203, including boolean view-model binding, named state
-transitions, authored-path source identity, canonical-builder validation, and retained
-official-runtime transition evidence. [#180](https://github.com/George-RD/rive-rs-cli/issues/180)
-extends that contract in PR #204 with authored inputs, events, typed listeners, and retained
-`render --input` / `render --pointer` evidence. [#182](https://github.com/George-RD/rive-rs-cli/issues/182)
-is independently unblocked and may proceed in parallel with the behavior branch.
+behavior tracer bullet in PR #203. [#180](https://github.com/George-RD/rive-rs-cli/issues/180)
+completed authored inputs, events, typed listeners, and retained `render --input` /
+`render --pointer` evidence in PR #204. [#181](https://github.com/George-RD/rive-rs-cli/issues/181)
+completes the complex interactive AuthoringSpec showcase gate in PR #206 with an
+exact canonical SceneSpec equivalence contract. [#184](https://github.com/George-RD/rive-rs-cli/issues/184)
+is also unblocked by #181, but #182 remains the higher-priority P2 frontier.
 
 The ordered execution graph is:
 
@@ -36,7 +36,7 @@ The ordered execution graph is:
   -> #177 shared SceneSpec compilation seam (complete in PR #195)
   -> #174 first-class AuthoringSpec CLI (complete in PR #196)
   -> #178 complex animated AuthoringSpec exit gate (complete in PR #197)
-       |-> #179 typed statechart tracer bullet (complete in PR #203) -> #180 inputs/events (PR #204) -> #181 interactive showcase
+       |-> #179 typed statechart tracer bullet (complete in PR #203) -> #180 inputs/events (complete in PR #204) -> #181 interactive showcase (complete in PR #206)
        |-> #182 static + animated semantic evaluations
 
 #181 + #182 -> #183 interactive semantic evaluation
@@ -65,9 +65,9 @@ AuthoringSpec progress.
 | P1 | [Visual/component compiler slice](meta/todos/todo.visual-authoring-compiler.md) | complete in PR #156 | components, parameters, patterns, simple constraints, complex static showcase |
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
-| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 in PR #204; #181 next | view-model bindings and named statecharts reproduce interaction with runtime proof |
-| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 independently unblocked, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
-| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 -> #185 after #181 | stable-ID edits validate atomically and preserve unaffected source-map identity |
+| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
+| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | open; #182 next, #183 after #181 + #182 | semantic evidence reported separately from structural and runtime results |
+| P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 now unblocked -> #185 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked; #186 requires #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until Authoring compiler state is stable | characterization-preserving split aligned to authored source maps |
 
@@ -83,13 +83,18 @@ AuthoringSpec progress.
   animated showcase and retained official-runtime gate in PR #197.
 - #179 completed the first typed statechart tracer bullet in PR #203 on the same
   compiler-owned scene, source-map, runtime-name, and checked-binding state.
-- #180 adds typed boolean state-machine inputs, named events, typed listeners,
+- #180 completed typed boolean state-machine inputs, named events, typed listeners,
   input-driven transitions, authored-path diagnostics, and retained CLI interaction
-  evidence in PR #204 before #181 closes the complex interactive showcase gate.
-- Static/animated semantic evaluation (#182) may run in parallel with behavior
-  after #178; interactive semantic evaluation (#183) requires both branches.
-- Incremental operations begin only after the typed behavior contract is stable
-  enough to preserve unaffected authored identity.
+  evidence in PR #204.
+- #181 completes the complex interactive showcase gate in PR #206 with three typed
+  states, four bidirectional transitions, two authored inputs, pointer/event listeners,
+  a named reset event, exact whole-scene equivalence against a directly specified
+  canonical state machine, and canonical-builder validation. It does not claim the
+  broader behavior todo's blend-state or parallel-layer capability.
+- Static/animated semantic evaluation (#182) is the next P2 frontier; interactive
+  semantic evaluation (#183) requires both #181 and #182.
+- Incremental operations may begin in parallel at #184 now that the typed behavior
+  showcase contract is stable enough to preserve unaffected authored identity.
 - Complex AI-generation skills remain blocked until #183 and #185 close.
 
 ## Readiness gate for complex AI generation
