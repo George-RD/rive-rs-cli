@@ -131,7 +131,10 @@ mod tests {
         let source_map = AuthoringSourceMap::default();
         let expectations = SemanticExpectations {
             static_checks: Vec::new(),
-            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
+            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer {
+                from: 0,
+                to: 30,
+            }],
         };
         let evidence = evaluate_semantics(
             &root,
