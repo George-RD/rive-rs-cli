@@ -7,7 +7,7 @@ use super::visual::VisualNode;
 
 #[derive(Debug, Clone)]
 pub enum AuthoringEntity {
-    VisualNode(VisualNode),
+    VisualNode(Box<VisualNode>),
     Component(ComponentSpec),
     MotionEasing(MotionEasingSpec),
     MotionPose(PoseSpec),
@@ -250,7 +250,7 @@ fn insert_entity(
 ) -> Result<(), AuthoringError> {
     let kind = entity.kind();
     match entity {
-        AuthoringEntity::VisualNode(node) => insert_visual(spec, node, placement),
+        AuthoringEntity::VisualNode(node) => insert_visual(spec, *node, placement),
         AuthoringEntity::Component(item) => {
             insert_list(&mut spec.components, item, placement, kind, "$.components")
         }
@@ -383,9 +383,12 @@ fn remove_entity(
     target: &AuthoringTarget,
 ) -> Result<AuthoringEntity, AuthoringError> {
     match target {
-        AuthoringTarget::VisualNode { target_id } => {
-            remove_visual_node(&mut spec.visual.nodes, target_id).map(AuthoringEntity::VisualNode)
-        }
+        AuthoringTarget::VisualNode { target_id } => remove_visual_node(
+            &mut spec.visual.nodes,
+            target_id,
+        )
+        .map(Box::new)
+        .map(AuthoringEntity::VisualNode),
         AuthoringTarget::Component { target_id } => {
             remove_unique(&mut spec.components, target_id, "$.components")
                 .map(AuthoringEntity::Component)
@@ -689,10 +692,10 @@ fn insert_visual_relative_once(
             );
             return true;
         }
-        if let VisualNode::Group { children, .. } = &mut nodes[index] {
-            if insert_visual_relative_once(children, target_id, node, after, Some(&authored_id)) {
-                return true;
-            }
+        if let VisualNode::Group { children, .. } = &mut nodes[index]
+            && insert_visual_relative_once(children, target_id, node, after, Some(&authored_id))
+        {
+            return true;
         }
         index += 1;
     }
@@ -710,11 +713,11 @@ fn remove_visual_node_once(
         if authored_id == target_id {
             return Some(nodes.remove(index));
         }
-        if let VisualNode::Group { children, .. } = &mut nodes[index] {
-            if let Some(removed) = remove_visual_node_once(children, target_id, Some(&authored_id))
-            {
-                return Some(removed);
-            }
+        if let VisualNode::Group { children, .. } = &mut nodes[index]
+            && let Some(removed) =
+                remove_visual_node_once(children, target_id, Some(&authored_id))
+        {
+            return Some(removed);
         }
         index += 1;
     }
