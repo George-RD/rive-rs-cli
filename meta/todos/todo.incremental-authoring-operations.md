@@ -39,10 +39,10 @@ source maps after every change.
   are targetable visual nodes, while repeated pattern-item definitions remain outside
   this first replace slice because one definition expands to multiple source-map
   identities. Unknown and ambiguous targets have authored diagnostics, failed
-  candidates do not mutate the input, and contract tests retain unaffected source-map
-  identity and deterministic reapplication. Insert, move, remove, broader entity
-  coverage, pattern-item containment semantics, and multi-operation transactions
-  remain #185.
+  candidates do not mutate the input, and contract tests retain all unaffected
+  source-map identities and deterministic reapplication. Insert, move, remove,
+  broader entity coverage, and multi-operation transactions remain future slices;
+  #185 is the next ready incremental-operations item.
 
 ## Dependencies
 
