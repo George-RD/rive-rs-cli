@@ -38,7 +38,7 @@ evaluation in PR #209. [#184](https://github.com/George-RD/rive-rs-cli/issues/18
 completed atomic stable-ID visual replacement in PR #210. [#185](https://github.com/George-RD/rive-rs-cli/issues/185)
 completed typed insert, move, remove, and multi-operation transactions in PR #212.
 [#186](https://github.com/George-RD/rive-rs-cli/issues/186) completes complex AI
-generation through AuthoringSpec in PR #214, including Authoring-first prompts,
+generation through AuthoringSpec in PR #215, including Authoring-first prompts,
 incremental repair, source-mapped eval evidence, MCP exposure, and skill governance.
 
 The ordered Authoring execution graph is:
@@ -53,7 +53,7 @@ The ordered Authoring execution graph is:
 
 #181 + #182 -> #183 interactive semantic evaluation (complete in PR #209)
 #181        -> #184 atomic replace (complete in PR #210) -> #185 insert/move/remove (complete in PR #212)
-#183 + #185 -> #186 complex AI generation through AuthoringSpec (complete in PR #214)
+#183 + #185 -> #186 complex AI generation through AuthoringSpec (complete in PR #215)
 ```
 
 The behavior and semantic-evaluation branches were intentionally independent where
@@ -82,7 +82,7 @@ AuthoringSpec or Verification Lab progress.
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | complete in PR #212 | stable-ID edits validate atomically and preserve unaffected source-map identity |
-| P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | complete in PR #214 | complex prompts target AuthoringSpec; task-focused schema/source-map context and stable-ID repair are integrated with eval evidence |
+| P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | complete in PR #215 | complex prompts target AuthoringSpec; task-focused schema/source-map context and stable-ID repair are integrated with eval evidence |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until a measured lower-level repair need justifies it | characterization-preserving split aligned to authored source maps |
 
 ## Delivery dependencies
@@ -120,7 +120,7 @@ AuthoringSpec or Verification Lab progress.
   and multi-operation transactions across visual, motion, and behavior concepts. Each
   step reuses canonical lowering, dependency validation, authored diagnostics, and
   source-map identity rules.
-- #186 completes the Authoring AI-generation frontier in PR #214: prompts target the
+- #186 completes the Authoring AI-generation frontier in PR #215: prompts target the
   current AuthoringSpec schema, choose a task-focused schema slice/showcase/source-map
   context, apply one stable-ID repair operation at a time through #185, retain the
   existing semantic/runtime evidence in prompt evals, and expose AuthoringSpec through
