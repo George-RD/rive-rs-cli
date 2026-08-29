@@ -1,0 +1,37 @@
+[
+  {
+    "id": "decision-flow",
+    "title": "Signals to one next action",
+    "summary": "A high-level AuthoringSpec turns scattered business inputs into a focused next-action story.",
+    "provenance": "authoring",
+    "artifact": "examples/authoring/complex-animated-showcase.v0.riv",
+    "source": "examples/authoring/complex-animated-showcase.v0.json",
+    "sourceLabel": "High-level AuthoringSpec source",
+    "capability": "decision flow",
+    "alt": "Animated decision flow moving scattered business signals into one connected next action"
+  },
+  {
+    "id": "liquid-loader",
+    "title": "Liquid path morph",
+    "summary": "An explicit SceneSpec combines vertex morphing, gradients, trim paths, and motion in one looping loader.",
+    "provenance": "scenespec",
+    "artifact": "showcase/liquid_loader.riv",
+    "source": "showcase/liquid_loader.json",
+    "sourceLabel": "Explicit SceneSpec source",
+    "capability": "path morphing",
+    "animation": "liquid",
+    "alt": "Liquid gradient blob morphing while a satellite and trimmed halo animate around it"
+  },
+  {
+    "id": "control-panel",
+    "title": "Interactive control panel",
+    "summary": "An explicit SceneSpec demonstrates a state-machine-driven interface rather than a linear playback-only animation.",
+    "provenance": "scenespec",
+    "artifact": "showcase/control_panel.riv",
+    "source": "showcase/control_panel.json",
+    "sourceLabel": "Explicit SceneSpec source",
+    "capability": "interaction",
+    "stateMachine": "Panel",
+    "alt": "Interactive control panel driven by a Rive state machine"
+  }
+]
