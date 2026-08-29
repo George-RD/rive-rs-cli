@@ -74,7 +74,7 @@ async function mountBehavior(page) {
         runtime = new rive.Rive({
           src: `${plan.fixture}.riv`,
           canvas: controlledCanvas,
-          autoplay: false,
+          autoplay: true,
           autoBind: false,
           stateMachines: [plan.stateMachine],
           onLoad: resolve,
