@@ -68,62 +68,36 @@ jobs:
 
           runner = Path("src/ai/eval/runner.rs")
           text = runner.read_text()
-          text = replace_once(
-              text,
-              "use std::path::Path;",
-              "use std::path::{Path, PathBuf};",
-              "runner PathBuf import",
-          )
+          text = replace_once(text, "use std::path::Path;", "use std::path::{Path, PathBuf};", "runner PathBuf import")
           text = replace_once(
               text,
               ") -> Result<(Value, Option<AuthoringSourceMap>, bool), CaseRunError> {",
               ") -> Result<(Value, Option<AuthoringSourceMap>, bool, Option<PathBuf>), CaseRunError> {",
               "runner resolved scene tuple",
           )
-          old_read = '''        let input = fs::read_to_string(&fixture_path).map_err(|error| CaseRunError {
-              reason: format!(
-                  "failed to read AuthoringSpec fixture {}: {}",
-                  fixture_path.display(),
-                  error
-              ),
-              stage: Some(EvalFailureStage::AuthoringSchema),
-              diagnostics: Vec::new(),
-          })?;'''
-          new_read = '''        let input = fs::read_to_string(&fixture_path).map_err(|error| {
+          start = text.index("        let input = fs::read_to_string(&fixture_path)")
+          end = text.index("        fs::write(case_dir.join(\"authoring-spec.json\")", start)
+          text = text[:start] + '''        let input = fs::read_to_string(&fixture_path).map_err(|error| {
               CaseRunError::structural(format!(
                   "failed to read AuthoringSpec fixture {}: {}",
                   fixture_path.display(),
                   error
               ))
-          })?;'''
-          text = replace_once(text, old_read, new_read, "fixture read classification")
-          text = replace_once(
-              text,
-              '''        return Ok((
-              lowered.scene,
-              Some(lowered.source_map),
-              lowering_reproducible,
-          ));''',
-              '''        return Ok((
+          })?;
+''' + text[end:]
+          return_start = text.index("        return Ok((", start)
+          return_end = text.index("        ));", return_start) + len("        ));")
+          text = text[:return_start] + '''        return Ok((
               lowered.scene,
               Some(lowered.source_map),
               lowering_reproducible,
               fixture_path.parent().map(Path::to_path_buf),
-          ));''',
-              "authoring base dir",
-          )
+          ));''' + text[return_end:]
+          text = replace_once(text, "    Ok((generated_scene, None, true))", "    Ok((generated_scene, None, true, None))", "provider tuple")
           text = replace_once(
               text,
-              "    Ok((generated_scene, None, true))",
-              "    Ok((generated_scene, None, true, None))",
-              "provider tuple",
-          )
-          text = replace_once(
-              text,
-              '''    let (generated_scene, source_map, lowering_reproducible) =
-              resolve_case_scene(case, case_dir, config)?;''',
-              '''    let (generated_scene, source_map, lowering_reproducible, source_base_dir) =
-              resolve_case_scene(case, case_dir, config)?;''',
+              "    let (generated_scene, source_map, lowering_reproducible) =",
+              "    let (generated_scene, source_map, lowering_reproducible, source_base_dir) =",
               "runner tuple destructure",
           )
           text = replace_once(
@@ -135,21 +109,21 @@ jobs:
           text = replace_once(
               text,
               "let repeat = engine.repair(generated_scene, file_id).map_err(|error| {",
-              '''let repeat = engine
+              """let repeat = engine
               .repair_with_base_dir(generated_scene, file_id, source_base_dir.as_deref())
-              .map_err(|error| {''',
+              .map_err(|error| {""",
               "repeat repair base dir",
           )
           text = replace_once(
               text,
-              '''            evaluate_semantics(case_dir, &repaired.scene_json, source_map, expectations)''',
-              '''            evaluate_semantics(
+              "            evaluate_semantics(case_dir, &repaired.scene_json, source_map, expectations)",
+              """            evaluate_semantics(
                   case_dir,
                   &repaired.scene_json,
                   source_map,
                   expectations,
                   runtime.as_ref().is_some_and(|evidence| evidence.passed),
-              )''',
+              )""",
               "semantic runtime gating",
           )
           runner.write_text(text)
@@ -158,23 +132,13 @@ jobs:
           text = semantic.read_text()
           text = replace_once(
               text,
-              '''    source_map: &AuthoringSourceMap,
-              expectations: &SemanticExpectations,
-          ) -> SemanticEvidence {''',
-              '''    source_map: &AuthoringSourceMap,
-              expectations: &SemanticExpectations,
-              animated_runtime_available: bool,
-          ) -> SemanticEvidence {''',
+              "    expectations: &SemanticExpectations,\n) -> SemanticEvidence {",
+              "    expectations: &SemanticExpectations,\n    animated_runtime_available: bool,\n) -> SemanticEvidence {",
               "semantic runtime parameter",
           )
-          text = replace_once(
-              text,
-              '''    let animated_checks = expectations
-              .animated_checks
-              .iter()
-              .map(|check| animated_check(case_dir, check))
-              .collect::<Vec<_>>();''',
-              '''    let animated_checks = if animated_runtime_available {
+          start = text.index("    let animated_checks = expectations")
+          end = text.index(";", start) + 1
+          text = text[:start] + '''    let animated_checks = if animated_runtime_available {
               expectations
                   .animated_checks
                   .iter()
@@ -182,50 +146,30 @@ jobs:
                   .collect::<Vec<_>>()
           } else {
               Vec::new()
-          };''',
-              "semantic animated gating",
-          )
+          };''' + text[end:]
           semantic.write_text(text)
 
           tests = Path("src/ai/eval/mod.rs")
           text = tests.read_text()
+          static_start = text.index("    fn semantic_static_checks_use_authored_identity_and_runtime_type()")
+          static_call = text.index("        let evidence = evaluate_semantics(", static_start)
+          static_close = text.index("        );", static_call)
+          text = text[:static_close] + "            false,\n" + text[static_close:]
+          animated_start = text.index("    fn semantic_animated_check_compares_retained_frames()")
           text = replace_once(
               text,
-              '''            &source_map,
-              &expectations,
-          );
-          assert_eq!(evidence.static_passed, Some(true));''',
-              '''            &source_map,
-              &expectations,
-              false,
-          );
-          assert_eq!(evidence.static_passed, Some(true));''',
-              "static semantic test argument",
-          )
-          text = replace_once(
-              text,
-              '''        let evidence =
-              evaluate_semantics(&root, &serde_json::json!({}), &source_map, &expectations);''',
-              '''        let evidence = evaluate_semantics(
-              &root,
-              &serde_json::json!({}),
-              &source_map,
-              &expectations,
-              true,
-          );''',
+              "            evaluate_semantics(&root, &serde_json::json!({}), &source_map, &expectations);",
+              """            evaluate_semantics(
+                  &root,
+                  &serde_json::json!({}),
+                  &source_map,
+                  &expectations,
+                  true,
+              );""",
               "animated semantic test argument",
           )
-          anchor = '''        assert_eq!(evidence.animated_passed, Some(true));
-              let _ = std::fs::remove_dir_all(root);
-          }
-
-          #[test]
-          fn hash_bytes_is_deterministic()'''
-          added = '''        assert_eq!(evidence.animated_passed, Some(true));
-              let _ = std::fs::remove_dir_all(root);
-          }
-
-          #[test]
+          insert_at = text.index("    #[test]\n    fn hash_bytes_is_deterministic()", animated_start)
+          regression = '''    #[test]
           fn semantic_animated_checks_skip_without_runtime_evidence() {
               let source_map = AuthoringSourceMap::default();
               let expectations = SemanticExpectations {
@@ -244,9 +188,8 @@ jobs:
               assert_eq!(evidence.failure_reason, None);
           }
 
-          #[test]
-          fn hash_bytes_is_deterministic()'''
-          text = replace_once(text, anchor, added, "runtime semantic regression test")
+          '''
+          text = text[:insert_at] + regression + text[insert_at:]
           tests.write_text(text)
 
           suite = Path("evals/suites/authoring_semantic.v1.json")
