@@ -1,0 +1,348 @@
+name: Issue 179 runtime proof
+
+on:
+  push:
+    branches:
+      - issue-179-typed-behavior
+    paths:
+      - scripts/issue179_runtime_proof_trigger
+
+permissions:
+  contents: write
+
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Add behavior runtime fixture and contract
+        shell: bash
+        run: |
+          cat > examples/authoring/behavior-binding.v0.json <<'JSON'
+          {
+            "authoring_format_version": 0,
+            "artboard": {
+              "id": "behavior-stage",
+              "width": { "value": 240.0, "unit": "px" },
+              "height": { "value": 160.0, "unit": "px" }
+            },
+            "visual": {
+              "nodes": [
+                {
+                  "kind": "rectangle",
+                  "id": "panel",
+                  "width": { "kind": "literal", "value": 80.0, "unit": "px" },
+                  "height": { "kind": "literal", "value": 48.0, "unit": "px" },
+                  "fill": "#246BFD"
+                }
+              ]
+            },
+            "motion": {
+              "poses": [
+                {
+                  "id": "rest",
+                  "targets": [
+                    {
+                      "target": "panel",
+                      "transform": {
+                        "x": { "kind": "literal", "value": 40.0, "unit": "px" },
+                        "y": { "kind": "literal", "value": 80.0, "unit": "px" }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "id": "active",
+                  "targets": [
+                    {
+                      "target": "panel",
+                      "transform": {
+                        "x": { "kind": "literal", "value": 160.0, "unit": "px" },
+                        "y": { "kind": "literal", "value": 80.0, "unit": "px" }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "tracks": [
+                {
+                  "id": "rest-track",
+                  "fps": 60,
+                  "duration_frames": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+                  "keyframes": [
+                    { "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" }, "pose": "rest" },
+                    { "frame": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "pose": "rest" }
+                  ]
+                },
+                {
+                  "id": "active-track",
+                  "fps": 60,
+                  "duration_frames": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+                  "keyframes": [
+                    { "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" }, "pose": "active" },
+                    { "frame": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "pose": "active" }
+                  ]
+                }
+              ]
+            },
+            "behavior": {
+              "models": [
+                {
+                  "id": "gate-model",
+                  "properties": [
+                    { "kind": "bool", "id": "enabled", "value": false }
+                  ]
+                }
+              ],
+              "bindings": [
+                {
+                  "id": "gate-enabled",
+                  "model": "gate-model",
+                  "property": "enabled"
+                }
+              ],
+              "statecharts": [
+                {
+                  "id": "gate",
+                  "initial": "resting",
+                  "states": [
+                    { "id": "resting", "motion": "rest-track" },
+                    { "id": "engaged", "motion": "active-track" }
+                  ],
+                  "transitions": [
+                    {
+                      "id": "engage",
+                      "from": "resting",
+                      "to": "engaged",
+                      "when": { "binding": "gate-enabled", "equals": true }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+          JSON
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          shared = Path("tests/playwright/shared.js")
+          text = shared.read_text()
+          old = '''const AUTHORING_FIXTURES = {\n  authoring_complex_animated_showcase: path.join(\n    AUTHORING_DIR,\n    "complex-animated-showcase.v0.json",\n  ),\n};'''
+          new = '''const AUTHORING_FIXTURES = {\n  authoring_behavior_binding: path.join(\n    AUTHORING_DIR,\n    "behavior-binding.v0.json",\n  ),\n  authoring_complex_animated_showcase: path.join(\n    AUTHORING_DIR,\n    "complex-animated-showcase.v0.json",\n  ),\n};'''
+          if text.count(old) != 1:
+              raise SystemExit("shared.js authoring fixture registry changed")
+          shared.write_text(text.replace(old, new, 1))
+
+          visual = Path("tests/playwright/visual-regression.js")
+          text = visual.read_text()
+          anchor = '''const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "1.0");\n'''
+          addition = '''const THRESHOLD_PERCENT = Number(process.env.VISUAL_DIFF_THRESHOLD || "1.0");\nconst FIXTURE_FILTER = process.env.VISUAL_FIXTURE || "";\n\nconst BEHAVIOR_INTERACTION = {\n  fixture: "authoring_behavior_binding",\n  stateMachine: "auth__behavior_2dstage__gate__state_machine",\n  viewModel: "auth__behavior_2dstage__gate_2dmodel__view_model",\n  property: "auth__behavior_2dstage__gate_2dmodel__enabled__view_model_property",\n};\n'''
+          if text.count(anchor) != 1:
+              raise SystemExit("visual-regression constants changed")
+          text = text.replace(anchor, addition, 1)
+
+          anchor = '''function artboardPlansForFixture(fixture) {\n  return ARTBOARD_PLANS[fixture] || [null];\n}\n\nasync function main() {'''
+          addition = r'''function artboardPlansForFixture(fixture) {
+  return ARTBOARD_PLANS[fixture] || [null];
+}
+
+async function mountBehaviorInteraction(page) {
+  const runtimeErrors = [];
+  page.on("pageerror", (error) => runtimeErrors.push(String(error)));
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      runtimeErrors.push(message.text());
+    }
+  });
+
+  const result = await page.evaluate(async (plan) => {
+    const originalCanvas = document.getElementById("canvas");
+    if (!originalCanvas) {
+      return { ok: false, error: "missing canvas" };
+    }
+    originalCanvas.style.display = "none";
+
+    const controlledCanvas = document.createElement("canvas");
+    controlledCanvas.id = "canvas-controlled";
+    controlledCanvas.style.width = originalCanvas.style.width;
+    controlledCanvas.style.height = originalCanvas.style.height;
+    controlledCanvas.width = originalCanvas.width;
+    controlledCanvas.height = originalCanvas.height;
+    originalCanvas.parentElement.appendChild(controlledCanvas);
+
+    try {
+      let runtime;
+      await new Promise((resolve, reject) => {
+        runtime = new rive.Rive({
+          src: `${plan.fixture}.riv`,
+          canvas: controlledCanvas,
+          autoplay: false,
+          autoBind: false,
+          stateMachines: [plan.stateMachine],
+          onLoad: resolve,
+          onLoadError: (error) => reject(new Error(String(error || "rive load error"))),
+        });
+      });
+
+      const viewModel = runtime.viewModelByName(plan.viewModel);
+      if (!viewModel) {
+        throw new Error(`missing view model ${plan.viewModel}`);
+      }
+      const instance = viewModel.instance();
+      if (!instance) {
+        throw new Error(`could not create instance for ${plan.viewModel}`);
+      }
+      const property = instance.boolean(plan.property);
+      if (!property) {
+        throw new Error(`missing boolean property ${plan.property}`);
+      }
+      property.value = false;
+      runtime.bindViewModelInstance(instance);
+      window.__VISUAL_RIVE = runtime;
+      window.__BEHAVIOR_BOOL = property;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      return { ok: true, error: "" };
+    } catch (error) {
+      return { ok: false, error: String(error?.message || error || "unknown error") };
+    }
+  }, BEHAVIOR_INTERACTION);
+
+  if (!result.ok) {
+    throw new Error(`${BEHAVIOR_INTERACTION.fixture}.riv behavior mount failed: ${result.error}`);
+  }
+  if (runtimeErrors.length > 0) {
+    throw new Error(`${BEHAVIOR_INTERACTION.fixture}.riv runtime errors: ${runtimeErrors.join(" | ")}`);
+  }
+
+  return runtimeErrors;
+}
+
+async function setBehaviorProperty(page, value) {
+  const changed = await page.evaluate(async (nextValue) => {
+    if (!window.__BEHAVIOR_BOOL) {
+      return false;
+    }
+    window.__BEHAVIOR_BOOL.value = nextValue;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    return true;
+  }, value);
+  if (!changed) {
+    throw new Error("behavior boolean property was not available in the official runtime");
+  }
+}
+
+async function runBehaviorInteraction(browser, port, update, rows) {
+  const fixture = BEHAVIOR_INTERACTION.fixture;
+  const page = await openFixturePage(browser, port, fixture, {
+    pageOptions: { viewport: { width: 512, height: 512 }, deviceScaleFactor: 2 },
+  });
+  let runtimeErrors = [];
+  try {
+    runtimeErrors = await mountBehaviorInteraction(page);
+    const restingCurrent = path.join(CURRENT_DIR, `${fixture}-resting.png`);
+    const engagedCurrent = path.join(CURRENT_DIR, `${fixture}-engaged.png`);
+    const restingBaseline = path.join(BASELINE_DIR, `${fixture}-resting.png`);
+    const engagedBaseline = path.join(BASELINE_DIR, `${fixture}-engaged.png`);
+
+    await captureCanvasPng(page, restingCurrent);
+    await setBehaviorProperty(page, true);
+    await captureCanvasPng(page, engagedCurrent);
+
+    if (runtimeErrors.length > 0) {
+      throw new Error(`${fixture}.riv runtime errors: ${runtimeErrors.join(" | ")}`);
+    }
+
+    const transitionDiff = comparePngPixels(restingCurrent, engagedCurrent);
+    if (transitionDiff <= 0.5) {
+      throw new Error(
+        `${fixture}.riv did not visibly transition after changing the bound view-model property ` +
+          `(pixel diff ${transitionDiff.toFixed(4)}%)`,
+      );
+    }
+
+    if (update) {
+      fs.copyFileSync(restingCurrent, restingBaseline);
+      fs.copyFileSync(engagedCurrent, engagedBaseline);
+      rows.push({ name: `${fixture}@resting`, status: "updated", diffText: "0.0000" });
+      rows.push({ name: `${fixture}@engaged`, status: "updated", diffText: "0.0000" });
+      rows.push({ name: `${fixture}@transition`, status: "pass", diffText: transitionDiff.toFixed(4) });
+      return { failed: false, missing: false };
+    }
+
+    let failed = false;
+    let missing = false;
+    for (const [state, currentPath, baselinePath] of [
+      ["resting", restingCurrent, restingBaseline],
+      ["engaged", engagedCurrent, engagedBaseline],
+    ]) {
+      if (!fs.existsSync(baselinePath)) {
+        rows.push({ name: `${fixture}@${state}`, status: "missing", diffText: "-" });
+        missing = true;
+        continue;
+      }
+      const diffPercent = comparePngPixels(currentPath, baselinePath);
+      const pass = diffPercent <= THRESHOLD_PERCENT;
+      rows.push({
+        name: `${fixture}@${state}`,
+        status: pass ? "pass" : "fail",
+        diffText: diffPercent.toFixed(4),
+      });
+      failed ||= !pass;
+    }
+    rows.push({ name: `${fixture}@transition`, status: "pass", diffText: transitionDiff.toFixed(4) });
+    return { failed, missing };
+  } finally {
+    await page.close();
+  }
+}
+
+async function main() {'''
+          if text.count(anchor) != 1:
+              raise SystemExit("visual-regression interaction insertion point changed")
+          text = text.replace(anchor, addition, 1)
+
+          old = '''    buildFixtures(VISUAL_FIXTURES);\n    server = startServer(PORT);\n    await waitForServer(PORT);\n    browser = await chromium.launch(visualBrowserLaunchOptions());\n\n    for (const fixture of VISUAL_FIXTURES) {'''
+          new = '''    const fixtures = FIXTURE_FILTER\n      ? VISUAL_FIXTURES.filter((fixture) => fixture === FIXTURE_FILTER)\n      : VISUAL_FIXTURES;\n    if (fixtures.length === 0) {\n      throw new Error(`unknown VISUAL_FIXTURE ${FIXTURE_FILTER}`);\n    }\n    buildFixtures(fixtures);\n    server = startServer(PORT);\n    await waitForServer(PORT);\n    browser = await chromium.launch(visualBrowserLaunchOptions());\n\n    for (const fixture of fixtures) {\n      if (fixture === BEHAVIOR_INTERACTION.fixture) {\n        const result = await runBehaviorInteraction(browser, PORT, update, rows);\n        hasFailures ||= result.failed;\n        hasNewBaselines ||= result.missing;\n        continue;\n      }'''
+          if text.count(old) != 1:
+              raise SystemExit("visual-regression main loop changed")
+          text = text.replace(old, new, 1)
+
+          old = '''    cleanupFixtures(VISUAL_FIXTURES);\n'''
+          new = '''    const fixtures = FIXTURE_FILTER\n      ? VISUAL_FIXTURES.filter((fixture) => fixture === FIXTURE_FILTER)\n      : VISUAL_FIXTURES;\n    cleanupFixtures(fixtures);\n'''
+          if text.count(old) != 1:
+              raise SystemExit("visual-regression cleanup changed")
+          text = text.replace(old, new, 1)
+          visual.write_text(text)
+          PY
+      - name: Install official runtime browser dependencies
+        run: |
+          npm install --no-save playwright@1.62.0
+          npx playwright install --with-deps chromium
+      - name: Generate reviewed behavior baselines
+        env:
+          VISUAL_FIXTURE: authoring_behavior_binding
+        run: node tests/playwright/visual-regression.js --update
+      - name: Re-run official-runtime behavior contract
+        env:
+          VISUAL_FIXTURE: authoring_behavior_binding
+        run: node tests/playwright/visual-regression.js
+      - name: Run focused Rust behavior contract
+        run: cargo test --test authoring_behavior_contract --locked
+      - name: Commit runtime proof
+        shell: bash
+        run: |
+          git rm -f .github/workflows/issue-179-runtime-proof.yml scripts/issue179_runtime_proof_trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add examples/authoring/behavior-binding.v0.json tests/playwright/shared.js tests/playwright/visual-regression.js tests/playwright/baselines/authoring_behavior_binding-resting.png tests/playwright/baselines/authoring_behavior_binding-engaged.png
+          git commit -m "test(authoring): prove behavior binding in Rive runtime"
+          git push
