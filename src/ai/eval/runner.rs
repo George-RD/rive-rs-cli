@@ -242,10 +242,14 @@ fn run_case(
     let output_hash = hash_bytes(&repaired.riv_bytes);
     let (style_score, matched_traits) = trait_score(&repaired.scene_json, &case.expected_traits);
     let drifted = baseline_hash.is_some_and(|hash| hash != &output_hash);
-    let runtime = case
-        .runtime
-        .as_ref()
-        .map(|expectations| render_runtime_evidence(case_dir, &repaired.riv_bytes, expectations));
+    let runtime = case.runtime.as_ref().map(|expectations| {
+        render_runtime_evidence(
+            case_dir,
+            &repaired.riv_bytes,
+            expectations,
+            source_map.as_ref(),
+        )
+    });
     let semantic = case.semantic.as_ref().and_then(|expectations| {
         source_map.as_ref().map(|source_map| {
             evaluate_semantics(
@@ -253,14 +257,16 @@ fn run_case(
                 &repaired.scene_json,
                 source_map,
                 expectations,
-                runtime.as_ref().is_some_and(|evidence| evidence.passed),
+                runtime.as_ref(),
             )
         })
     });
 
     let runtime_failed = runtime.as_ref().is_some_and(|evidence| !evidence.passed);
     let semantic_failed = semantic.as_ref().is_some_and(|evidence| {
-        evidence.static_passed == Some(false) || evidence.animated_passed == Some(false)
+        evidence.static_passed == Some(false)
+            || evidence.animated_passed == Some(false)
+            || evidence.interactive_passed == Some(false)
     });
     let failure_stage = if !validation.valid {
         Some(EvalFailureStage::Structural)
@@ -461,6 +467,29 @@ pub fn run_eval_suite_configured(
     } else {
         semantic_animated_pass_count as f64 / semantic_animated_case_count as f64
     };
+    let semantic_interactive_case_count = cases
+        .iter()
+        .filter(|case| {
+            case.semantic
+                .as_ref()
+                .and_then(|semantic| semantic.interactive_passed)
+                .is_some()
+        })
+        .count();
+    let semantic_interactive_pass_count = cases
+        .iter()
+        .filter(|case| {
+            case.semantic
+                .as_ref()
+                .and_then(|semantic| semantic.interactive_passed)
+                == Some(true)
+        })
+        .count();
+    let semantic_interactive_pass_rate = if semantic_interactive_case_count == 0 {
+        1.0
+    } else {
+        semantic_interactive_pass_count as f64 / semantic_interactive_case_count as f64
+    };
     let drift_count = cases.iter().filter(|case| case.drifted).count();
     let gate_failures = evaluate_gates(
         &suite.gates,
@@ -470,6 +499,7 @@ pub fn run_eval_suite_configured(
         runtime_pass_rate,
         semantic_static_pass_rate,
         semantic_animated_pass_rate,
+        semantic_interactive_pass_rate,
         average_retries,
         drift_count,
     );
@@ -501,6 +531,9 @@ pub fn run_eval_suite_configured(
         semantic_animated_case_count,
         semantic_animated_pass_count,
         semantic_animated_pass_rate,
+        semantic_interactive_case_count,
+        semantic_interactive_pass_count,
+        semantic_interactive_pass_rate,
         drift_count,
         cases,
     };

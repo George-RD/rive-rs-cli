@@ -1,0 +1,151 @@
+{
+  "suite_name": "interactive-semantic-v1",
+  "suite_version": 1,
+  "gates": {
+    "min_validity_rate": 1.0,
+    "min_trait_adherence_rate": 1.0,
+    "min_pipeline_reproducibility_rate": 1.0,
+    "min_runtime_pass_rate": 1.0,
+    "min_semantic_static_pass_rate": 1.0,
+    "min_semantic_animated_pass_rate": 1.0,
+    "min_semantic_interactive_pass_rate": 1.0,
+    "max_average_retries": 0.0,
+    "max_drift_count": 0
+  },
+  "cases": [
+    {
+      "id": "complex_interactive_authoring",
+      "input_kind": "authoring_example",
+      "input": "examples/authoring/complex-interactive-showcase.v0.json",
+      "runtime": {
+        "frames": [0, 12, 24],
+        "fps": 60.0,
+        "state_machine": "flow",
+        "inputs": [
+          "flow/selected=true@1",
+          "flow/approved=true@13"
+        ],
+        "width": 360,
+        "height": 200,
+        "scale": 1,
+        "min_non_blank_frames": 3,
+        "min_distinct_colors": 2
+      },
+      "semantic": {
+        "interactive_checks": [
+          {
+            "kind": "input_applied",
+            "authored_id": "flow/selected",
+            "value": true,
+            "frame": 1
+          },
+          {
+            "kind": "input_applied",
+            "authored_id": "flow/approved",
+            "value": true,
+            "frame": 13
+          },
+          {
+            "kind": "state_motion_binding",
+            "statechart_id": "flow",
+            "state_id": "queued-state",
+            "motion_id": "queuedtrack"
+          },
+          {
+            "kind": "state_motion_binding",
+            "statechart_id": "flow",
+            "state_id": "focused-state",
+            "motion_id": "focusedtrack"
+          },
+          {
+            "kind": "state_motion_binding",
+            "statechart_id": "flow",
+            "state_id": "approved-state",
+            "motion_id": "approvedtrack"
+          },
+          {
+            "kind": "transition",
+            "statechart_id": "flow",
+            "transition_id": "focus",
+            "from_state": "queued-state",
+            "to_state": "focused-state",
+            "input_id": "selected",
+            "equals": true
+          },
+          {
+            "kind": "transition",
+            "statechart_id": "flow",
+            "transition_id": "approve-state",
+            "from_state": "focused-state",
+            "to_state": "approved-state",
+            "input_id": "approved",
+            "equals": true
+          },
+          {
+            "kind": "frames_differ",
+            "from": 0,
+            "to": 12
+          },
+          {
+            "kind": "frames_differ",
+            "from": 12,
+            "to": 24
+          }
+        ]
+      }
+    },
+    {
+      "id": "pointer_interactive_authoring",
+      "input_kind": "authoring_example",
+      "input": "examples/authoring/pointer-statechart.v0.json",
+      "runtime": {
+        "frames": [0, 12],
+        "fps": 60.0,
+        "state_machine": "gate",
+        "pointers": ["down:60,100@1"],
+        "width": 240,
+        "height": 160,
+        "scale": 1,
+        "min_non_blank_frames": 2,
+        "min_distinct_colors": 2
+      },
+      "semantic": {
+        "interactive_checks": [
+          {
+            "kind": "pointer_applied",
+            "event": "down",
+            "x": 60.0,
+            "y": 100.0,
+            "frame": 1
+          },
+          {
+            "kind": "state_motion_binding",
+            "statechart_id": "gate",
+            "state_id": "resting",
+            "motion_id": "rest-track"
+          },
+          {
+            "kind": "state_motion_binding",
+            "statechart_id": "gate",
+            "state_id": "engaged",
+            "motion_id": "active-track"
+          },
+          {
+            "kind": "transition",
+            "statechart_id": "gate",
+            "transition_id": "engage",
+            "from_state": "resting",
+            "to_state": "engaged",
+            "input_id": "pressed",
+            "equals": true
+          },
+          {
+            "kind": "frames_differ",
+            "from": 0,
+            "to": 12
+          }
+        ]
+      }
+    }
+  ]
+}

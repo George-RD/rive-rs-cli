@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 fn one() -> f64 {
     1.0
@@ -49,6 +50,8 @@ pub struct EvalGates {
     pub min_semantic_static_pass_rate: f64,
     #[serde(default = "one")]
     pub min_semantic_animated_pass_rate: f64,
+    #[serde(default = "one")]
+    pub min_semantic_interactive_pass_rate: f64,
     #[serde(default)]
     pub max_average_retries: Option<f64>,
     #[serde(default)]
@@ -64,6 +67,7 @@ impl Default for EvalGates {
             min_runtime_pass_rate: 1.0,
             min_semantic_static_pass_rate: 1.0,
             min_semantic_animated_pass_rate: 1.0,
+            min_semantic_interactive_pass_rate: 1.0,
             max_average_retries: None,
             max_drift_count: 0,
         }
@@ -93,6 +97,8 @@ pub struct SemanticExpectations {
     pub static_checks: Vec<StaticSemanticCheck>,
     #[serde(default)]
     pub animated_checks: Vec<AnimatedSemanticCheck>,
+    #[serde(default)]
+    pub interactive_checks: Vec<InteractiveSemanticCheck>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,6 +119,39 @@ pub enum AnimatedSemanticCheck {
     FramesDiffer { from: u32, to: u32 },
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum InteractiveSemanticCheck {
+    InputApplied {
+        authored_id: String,
+        value: bool,
+        frame: u32,
+    },
+    PointerApplied {
+        event: String,
+        x: f64,
+        y: f64,
+        frame: u32,
+    },
+    StateMotionBinding {
+        statechart_id: String,
+        state_id: String,
+        motion_id: String,
+    },
+    Transition {
+        statechart_id: String,
+        transition_id: String,
+        from_state: String,
+        to_state: String,
+        input_id: String,
+        equals: bool,
+    },
+    FramesDiffer {
+        from: u32,
+        to: u32,
+    },
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct SemanticCheckEvidence {
     pub check: String,
@@ -124,8 +163,10 @@ pub struct SemanticCheckEvidence {
 pub struct SemanticEvidence {
     pub static_passed: Option<bool>,
     pub animated_passed: Option<bool>,
+    pub interactive_passed: Option<bool>,
     pub static_checks: Vec<SemanticCheckEvidence>,
     pub animated_checks: Vec<SemanticCheckEvidence>,
+    pub interactive_checks: Vec<SemanticCheckEvidence>,
     pub failure_reason: Option<String>,
 }
 
@@ -139,6 +180,10 @@ pub struct RuntimeExpectations {
     pub animation: Option<String>,
     #[serde(default)]
     pub state_machine: Option<String>,
+    #[serde(default)]
+    pub inputs: Vec<String>,
+    #[serde(default)]
+    pub pointers: Vec<String>,
     #[serde(default)]
     pub artboard: Option<String>,
     #[serde(default)]
@@ -162,6 +207,8 @@ impl Default for RuntimeExpectations {
             fps: runtime_fps(),
             animation: None,
             state_machine: None,
+            inputs: Vec::new(),
+            pointers: Vec::new(),
             artboard: None,
             background: None,
             width: runtime_dimension(),
@@ -179,6 +226,9 @@ pub struct RuntimeEvidence {
     pub rendered_frame_count: usize,
     pub non_blank_frame_count: usize,
     pub minimum_distinct_colors_observed: usize,
+    pub selected_state_machine: Option<String>,
+    pub applied_inputs: Vec<Value>,
+    pub applied_pointers: Vec<Value>,
     pub manifest_path: Option<String>,
     pub failure_reason: Option<String>,
 }
@@ -253,6 +303,9 @@ pub struct EvalReport {
     pub semantic_animated_case_count: usize,
     pub semantic_animated_pass_count: usize,
     pub semantic_animated_pass_rate: f64,
+    pub semantic_interactive_case_count: usize,
+    pub semantic_interactive_pass_count: usize,
+    pub semantic_interactive_pass_rate: f64,
     pub drift_count: usize,
     pub cases: Vec<EvalCaseReport>,
 }
