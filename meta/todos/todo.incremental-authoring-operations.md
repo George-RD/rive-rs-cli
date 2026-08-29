@@ -36,13 +36,14 @@ source maps after every change.
   same stable ancestor-scoped identities used by the visual source map, such as
   `frame/panel`; edits are applied to a clone and the complete candidate is lowered
   through the normal AuthoringCompiler before it can be returned. Pattern containers
-  are targetable visual nodes, while repeated pattern-item definitions remain outside
-  this first replace slice because one definition expands to multiple source-map
-  identities. Unknown and ambiguous targets have authored diagnostics, failed
-  candidates do not mutate the input, and contract tests retain all unaffected
-  source-map identities and deterministic reapplication. Insert, move, remove,
-  broader entity coverage, and multi-operation transactions remain future slices;
-  #185 is the next ready incremental-operations item.
+  and component instances are targetable visual nodes, while repeated pattern-item
+  definitions, component definitions, and expanded instance children remain outside
+  this first replace slice because they expand to multiple source-map identities or
+  live outside the root visual tree. Unknown and ambiguous targets have authored
+  diagnostics, failed candidates do not mutate the input, and contract tests retain
+  all unaffected source-map identities and deterministic reapplication. Insert,
+  move, remove, broader entity coverage, and multi-operation transactions remain
+  future slices; #185 is the next ready incremental-operations item.
 
 ## Dependencies
 
