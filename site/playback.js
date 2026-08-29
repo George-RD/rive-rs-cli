@@ -13,7 +13,9 @@
   }
 
   function nextPaint() {
-    return new Promise((resolve) => global.requestAnimationFrame(resolve));
+    return new Promise((resolve) => {
+      global.requestAnimationFrame(() => global.requestAnimationFrame(resolve));
+    });
   }
 
   function describeError(error) {
