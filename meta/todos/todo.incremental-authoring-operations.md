@@ -1,6 +1,6 @@
 ---
 node: rive-cli.intelligence.authoring
-status: complete
+status: done
 created: 2026-08-03
 completed: 2026-08-29
 ---
