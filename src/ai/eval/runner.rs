@@ -234,16 +234,24 @@ fn resolve_case_scene(
             .map_err(CaseRunError::structural)?;
         let repaired = repair_authoring_spec(&*provider, config, generated, max_retries)
             .map_err(CaseRunError::authoring_repair)?;
-        write_json(case_dir.join("authoring-spec.json"), &repaired.authoring_json)
-            .map_err(CaseRunError::structural)?;
+        write_json(
+            case_dir.join("authoring-spec.json"),
+            &repaired.authoring_json,
+        )
+        .map_err(CaseRunError::structural)?;
         write_json(case_dir.join("lowered-scene.json"), &repaired.lowered.scene)
             .map_err(CaseRunError::structural)?;
-        write_json(case_dir.join("source-map.json"), &repaired.lowered.source_map)
-            .map_err(CaseRunError::structural)?;
+        write_json(
+            case_dir.join("source-map.json"),
+            &repaired.lowered.source_map,
+        )
+        .map_err(CaseRunError::structural)?;
         write_json(case_dir.join("repair-attempts.json"), &repaired.attempts)
             .map_err(CaseRunError::structural)?;
         let repeated_input = serde_json::to_string(&repaired.authoring_json).map_err(|error| {
-            CaseRunError::structural(format!("failed to serialize repaired AuthoringSpec: {error}"))
+            CaseRunError::structural(format!(
+                "failed to serialize repaired AuthoringSpec: {error}"
+            ))
         })?;
         let repeated = lower_authoring_json(&repeated_input).map_err(CaseRunError::authoring)?;
         let lowering_reproducible = repaired.lowered == repeated;
@@ -286,13 +294,12 @@ fn compile_case(
             })?;
             let riv_bytes = compile::compile_scene(&spec, base_dir.as_deref(), file_id)
                 .map_err(|error| CaseRunError::structural(format!("compile failed: {error}")))?;
-            let repeat = compile::compile_scene(&spec, base_dir.as_deref(), file_id).map_err(
-                |error| {
+            let repeat =
+                compile::compile_scene(&spec, base_dir.as_deref(), file_id).map_err(|error| {
                     CaseRunError::structural(format!(
                         "pipeline reproducibility compile failed: {error}"
                     ))
-                },
-            )?;
+                })?;
             Ok(CompiledCase {
                 scene_json: scene,
                 reproducible: lowering_reproducible && riv_bytes == repeat,
@@ -303,17 +310,19 @@ fn compile_case(
         }
         ResolvedCaseScene::Scene { scene } => {
             let engine = RepairEngine::new(max_retries);
-            let repaired = engine.repair(scene.clone(), file_id).map_err(|error| match error {
-                AiError::RepairFailed {
-                    attempts,
-                    final_error,
-                } => CaseRunError::structural(format!(
-                    "repair failed after {} attempts: {}",
-                    attempts.len(),
-                    final_error
-                )),
-                other => CaseRunError::structural(format!("repair failed: {}", other)),
-            })?;
+            let repaired = engine
+                .repair(scene.clone(), file_id)
+                .map_err(|error| match error {
+                    AiError::RepairFailed {
+                        attempts,
+                        final_error,
+                    } => CaseRunError::structural(format!(
+                        "repair failed after {} attempts: {}",
+                        attempts.len(),
+                        final_error
+                    )),
+                    other => CaseRunError::structural(format!("repair failed: {}", other)),
+                })?;
             let repeat = engine.repair(scene, file_id).map_err(|error| {
                 CaseRunError::structural(format!(
                     "pipeline reproducibility check failed: {}",
