@@ -862,7 +862,10 @@ pub fn is_bool_property(key: u16) -> bool {
 }
 
 pub fn is_bytes_property(key: u16) -> bool {
-    key == property_keys::FILE_ASSET_CONTENTS_BYTES
+    matches!(
+        key,
+        property_keys::FILE_ASSET_CONTENTS_BYTES | property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS
+    )
 }
 
 pub fn property_backing_type(key: u16) -> Option<BackingType> {
@@ -888,7 +891,8 @@ pub fn property_backing_type(key: u16) -> Option<BackingType> {
         | property_keys::TEXT_INPUT_TEXT_VALUE
         | property_keys::FOLDER_PATH
         | property_keys::MESH_TRIANGLE_INDEX_BYTES
-        | property_keys::FILE_ASSET_CONTENTS_BYTES => Some(BackingType::String),
+        | property_keys::FILE_ASSET_CONTENTS_BYTES
+        | property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS => Some(BackingType::String),
         property_keys::LAYOUT_COMPONENT_WIDTH
         | property_keys::LAYOUT_COMPONENT_HEIGHT
         | property_keys::NODE_X_ARTBOARD

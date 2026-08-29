@@ -53,6 +53,16 @@ mod tests {
     }
 
     #[test]
+    fn test_data_bind_context_source_path_has_string_backing() {
+        let key = crate::objects::core::property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS;
+        let result = encode_toc(&[key]);
+        let key_len = if key < 128 { 1 } else { 2 };
+        let backing_offset = key_len + 1;
+        assert_eq!(result[backing_offset] & 0x03, 0b01);
+        assert!(crate::objects::core::is_bytes_property(key));
+    }
+
+    #[test]
     fn test_two_properties_color_and_float() {
         let result = encode_toc(&[37, 7]);
         assert_eq!(result, vec![0x25, 0x07, 0x00, 0x0B, 0x00, 0x00, 0x00]);
