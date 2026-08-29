@@ -1,6 +1,6 @@
 ---
 node: rive-cli.intelligence.ai
-status: complete
+status: done
 created: 2026-07-29
 ---
 
