@@ -194,7 +194,11 @@ fn run_case(
     config: &AiConfig,
 ) -> Result<EvalCaseReport, CaseRunError> {
     fs::create_dir_all(case_dir).map_err(|error| {
-        CaseRunError::structural(format!("failed to create {}: {}", case_dir.display(), error))
+        CaseRunError::structural(format!(
+            "failed to create {}: {}",
+            case_dir.display(),
+            error
+        ))
     })?;
     fs::write(case_dir.join("input.txt"), &case.input).map_err(|error| {
         CaseRunError::structural(format!("failed to write input.txt: {}", error))
@@ -204,19 +208,20 @@ fn run_case(
         resolve_case_scene(case, case_dir, config)?;
 
     let engine = RepairEngine::new(max_retries);
-    let repaired = engine
-        .repair(generated_scene.clone(), file_id)
-        .map_err(|error| match error {
-            AiError::RepairFailed {
-                attempts,
-                final_error,
-            } => CaseRunError::structural(format!(
-                "repair failed after {} attempts: {}",
-                attempts.len(),
-                final_error
-            )),
-            other => CaseRunError::structural(format!("repair failed: {}", other)),
-        })?;
+    let repaired =
+        engine
+            .repair(generated_scene.clone(), file_id)
+            .map_err(|error| match error {
+                AiError::RepairFailed {
+                    attempts,
+                    final_error,
+                } => CaseRunError::structural(format!(
+                    "repair failed after {} attempts: {}",
+                    attempts.len(),
+                    final_error
+                )),
+                other => CaseRunError::structural(format!("repair failed: {}", other)),
+            })?;
     write_json(case_dir.join("scene.json"), &repaired.scene_json)
         .map_err(CaseRunError::structural)?;
     fs::write(case_dir.join("output.riv"), &repaired.riv_bytes).map_err(|error| {
@@ -225,8 +230,7 @@ fn run_case(
 
     let validation: ValidationReport = validate_riv(&repaired.riv_bytes)
         .map_err(|error| CaseRunError::structural(format!("validate failed: {}", error)))?;
-    write_json(case_dir.join("validate.json"), &validation)
-        .map_err(CaseRunError::structural)?;
+    write_json(case_dir.join("validate.json"), &validation).map_err(CaseRunError::structural)?;
     let parsed = parse_riv(&repaired.riv_bytes, &InspectFilter::default())
         .map_err(|error| CaseRunError::structural(format!("inspect parse failed: {}", error)))?;
     write_json(case_dir.join("inspect.json"), &parsed).map_err(CaseRunError::structural)?;
@@ -244,12 +248,7 @@ fn run_case(
         .map(|expectations| render_runtime_evidence(case_dir, &repaired.riv_bytes, expectations));
     let semantic = case.semantic.as_ref().and_then(|expectations| {
         source_map.as_ref().map(|source_map| {
-            evaluate_semantics(
-                case_dir,
-                &repaired.scene_json,
-                source_map,
-                expectations,
-            )
+            evaluate_semantics(case_dir, &repaired.scene_json, source_map, expectations)
         })
     });
 

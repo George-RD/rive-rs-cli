@@ -119,13 +119,7 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                     case.id
                 ));
             }
-            if runtime
-                .frames
-                .iter()
-                .copied()
-                .collect::<HashSet<_>>()
-                .len()
-                != runtime.frames.len()
+            if runtime.frames.iter().copied().collect::<HashSet<_>>().len() != runtime.frames.len()
             {
                 return Err(format!("case '{}' runtime frames must be unique", case.id));
             }

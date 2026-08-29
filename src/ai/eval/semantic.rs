@@ -87,13 +87,10 @@ fn static_check(
 fn animated_check(case_dir: &Path, check: &AnimatedSemanticCheck) -> SemanticCheckEvidence {
     match check {
         AnimatedSemanticCheck::FramesDiffer { from, to } => {
-            let from_path = case_dir
-                .join("render")
-                .join(format!("frame_{from:05}.png"));
+            let from_path = case_dir.join("render").join(format!("frame_{from:05}.png"));
             let to_path = case_dir.join("render").join(format!("frame_{to:05}.png"));
-            let result = fs::read(&from_path).and_then(|from_bytes| {
-                fs::read(&to_path).map(|to_bytes| from_bytes != to_bytes)
-            });
+            let result = fs::read(&from_path)
+                .and_then(|from_bytes| fs::read(&to_path).map(|to_bytes| from_bytes != to_bytes));
             match result {
                 Ok(passed) => SemanticCheckEvidence {
                     check: format!("frames_differ:{from}:{to}"),
@@ -131,8 +128,8 @@ pub fn evaluate_semantics(
         .map(|check| animated_check(case_dir, check))
         .collect::<Vec<_>>();
 
-    let static_passed = (!static_checks.is_empty())
-        .then(|| static_checks.iter().all(|evidence| evidence.passed));
+    let static_passed =
+        (!static_checks.is_empty()).then(|| static_checks.iter().all(|evidence| evidence.passed));
     let animated_passed = (!animated_checks.is_empty())
         .then(|| animated_checks.iter().all(|evidence| evidence.passed));
     let failures = static_checks

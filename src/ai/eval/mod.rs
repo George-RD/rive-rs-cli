@@ -131,17 +131,10 @@ mod tests {
         let source_map = AuthoringSourceMap::default();
         let expectations = SemanticExpectations {
             static_checks: Vec::new(),
-            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer {
-                from: 0,
-                to: 30,
-            }],
+            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
         };
-        let evidence = evaluate_semantics(
-            &root,
-            &serde_json::json!({}),
-            &source_map,
-            &expectations,
-        );
+        let evidence =
+            evaluate_semantics(&root, &serde_json::json!({}), &source_map, &expectations);
         assert_eq!(evidence.static_passed, None);
         assert_eq!(evidence.animated_passed, Some(true));
         let _ = std::fs::remove_dir_all(root);
