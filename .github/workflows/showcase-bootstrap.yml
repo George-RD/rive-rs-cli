@@ -24,6 +24,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add examples/authoring/complex-animated-showcase.v0.riv
+          git add -f examples/authoring/complex-animated-showcase.v0.riv
           git commit -m "test(showcase): commit reproducible authoring artifact"
           git push origin HEAD:${{ github.head_ref }}
