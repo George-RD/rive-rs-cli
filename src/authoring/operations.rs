@@ -251,13 +251,9 @@ fn insert_entity(
     let kind = entity.kind();
     match entity {
         AuthoringEntity::VisualNode(node) => insert_visual(spec, node, placement),
-        AuthoringEntity::Component(item) => insert_list(
-            &mut spec.components,
-            item,
-            placement,
-            kind,
-            "$.components",
-        ),
+        AuthoringEntity::Component(item) => {
+            insert_list(&mut spec.components, item, placement, kind, "$.components")
+        }
         AuthoringEntity::MotionEasing(item) => insert_list(
             &mut spec.motion.easings,
             item,
@@ -479,12 +475,18 @@ fn replace_visual_node(
     replacement: &VisualNode,
 ) -> Result<(), AuthoringError> {
     match count_visual_nodes(nodes, target_id, None) {
-        0 => Err(visual_target_error(target_id, "does not identify a visual node")),
+        0 => Err(visual_target_error(
+            target_id,
+            "does not identify a visual node",
+        )),
         1 => {
             if replace_visual_node_once(nodes, target_id, replacement, None) {
                 Ok(())
             } else {
-                Err(visual_target_error(target_id, "does not identify a visual node"))
+                Err(visual_target_error(
+                    target_id,
+                    "does not identify a visual node",
+                ))
             }
         }
         _ => Err(visual_ambiguous_error(target_id, "visual node")),
@@ -517,13 +519,19 @@ fn insert_visual_relative(
     after: bool,
 ) -> Result<(), AuthoringError> {
     match count_visual_nodes(nodes, target_id, None) {
-        0 => Err(visual_target_error(target_id, "does not identify a visual node")),
+        0 => Err(visual_target_error(
+            target_id,
+            "does not identify a visual node",
+        )),
         1 => {
             let mut node = Some(node);
             if insert_visual_relative_once(nodes, target_id, &mut node, after, None) {
                 Ok(())
             } else {
-                Err(visual_target_error(target_id, "does not identify a visual node"))
+                Err(visual_target_error(
+                    target_id,
+                    "does not identify a visual node",
+                ))
             }
         }
         _ => Err(visual_ambiguous_error(target_id, "visual node")),
@@ -535,7 +543,10 @@ fn remove_visual_node(
     target_id: &str,
 ) -> Result<VisualNode, AuthoringError> {
     match count_visual_nodes(nodes, target_id, None) {
-        0 => Err(visual_target_error(target_id, "does not identify a visual node")),
+        0 => Err(visual_target_error(
+            target_id,
+            "does not identify a visual node",
+        )),
         1 => remove_visual_node_once(nodes, target_id, None)
             .ok_or_else(|| visual_target_error(target_id, "does not identify a visual node")),
         _ => Err(visual_ambiguous_error(target_id, "visual node")),
@@ -551,12 +562,7 @@ fn invalid_placement(path: &str) -> AuthoringError {
 }
 
 fn visual_target_error(target_id: &str, detail: &str) -> AuthoringError {
-    target_error(
-        "$.visual.nodes",
-        "unknown_authored_id",
-        target_id,
-        detail,
-    )
+    target_error("$.visual.nodes", "unknown_authored_id", target_id, detail)
 }
 
 fn visual_ambiguous_error(target_id: &str, entity: &str) -> AuthoringError {
@@ -705,7 +711,8 @@ fn remove_visual_node_once(
             return Some(nodes.remove(index));
         }
         if let VisualNode::Group { children, .. } = &mut nodes[index] {
-            if let Some(removed) = remove_visual_node_once(children, target_id, Some(&authored_id)) {
+            if let Some(removed) = remove_visual_node_once(children, target_id, Some(&authored_id))
+            {
                 return Some(removed);
             }
         }
