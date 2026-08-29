@@ -6,7 +6,7 @@ use crate::builder::{SceneSpec, build_scene};
 
 use super::super::super::lower::runtime_name;
 use super::super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec, BehaviorInputSpec,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec,
     BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec, BehaviorPropertySpec,
     BehaviorTransitionConditionSpec, SourceMapEntry,
 };
