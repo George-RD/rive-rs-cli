@@ -12,14 +12,18 @@ mod visual;
 use schemars::schema_for;
 use serde_json::Value;
 
-pub use operations::{AppliedOperation, AuthoringOperation, apply_operation};
+pub use operations::{
+    AppliedOperation, AuthoringContainer, AuthoringEntity, AuthoringOperation, AuthoringPlacement,
+    AuthoringTarget, apply_operation, apply_operations,
+};
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
-    AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, ConstraintAxis,
-    ConstraintSpec, GradientKind, GradientPaintSpec, GradientStopSpec, LoweredAuthoring,
-    MotionEasingSpec, MotionInterpolation, MotionLoop, MotionSection, MotionTrackSpec, PaintSpec,
-    PoseKeyframeSpec, PoseSpec, PoseTargetSpec, Quantity, RawSceneFragment, ScalarExpr,
-    SourceMapEntry, StrokeSpec, TransformSpec, Unit, VisualSection,
+    AuthoringSourceMap, AuthoringSpec, BehaviorBindingSpec, BehaviorModelSpec, BehaviorSection,
+    BehaviorStatechartSpec, ComponentSpec, ConstraintAxis, ConstraintSpec, GradientKind,
+    GradientPaintSpec, GradientStopSpec, LoweredAuthoring, MotionEasingSpec, MotionInterpolation,
+    MotionLoop, MotionSection, MotionTrackSpec, PaintSpec, PoseKeyframeSpec, PoseSpec,
+    PoseTargetSpec, Quantity, RawSceneFragment, ScalarExpr, SourceMapEntry, StrokeSpec,
+    TransformSpec, Unit, VisualSection,
 };
 pub use visual::{MirrorAxis, PathPointSpec, VisualNode};
 
