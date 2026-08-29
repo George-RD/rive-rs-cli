@@ -130,6 +130,8 @@ jobs:
       - run: cargo build
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
+      - name: Run typed behavior runtime contract
+        run: node tests/playwright/authoring-behavior-runtime.js
       - run: node tests/playwright/regression.js
       - name: Run visual regression
         id: visual

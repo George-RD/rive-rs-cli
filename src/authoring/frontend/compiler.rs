@@ -1,6 +1,9 @@
+mod behavior;
 mod target_index;
 
 use std::collections::{HashMap, HashSet};
+
+use serde_json::Value;
 
 use super::super::lower;
 use super::super::spec::{
@@ -115,6 +118,7 @@ impl<'a> AuthoringCompiler<'a> {
                 {
                     runtime_names.register(entry);
                 }
+                let (lowered, runtime_names) = Self::lower_behavior(spec, lowered, runtime_names)?;
                 Ok(Self {
                     spec,
                     state: CompilerState::Lowered {
@@ -137,6 +141,7 @@ impl<'a> AuthoringCompiler<'a> {
                 debug_assert!(animations.is_empty());
                 debug_assert!(source_entries.is_empty());
                 debug_assert!(easing_source_entries.is_empty());
+                let (lowered, runtime_names) = Self::lower_behavior(spec, lowered, runtime_names)?;
                 Ok(Self {
                     spec,
                     state: CompilerState::Lowered {
@@ -149,6 +154,81 @@ impl<'a> AuthoringCompiler<'a> {
                 unreachable!("authoring compiler motion lowering can only run once")
             }
         }
+    }
+
+    fn lower_behavior(
+        spec: &AuthoringSpec,
+        mut lowered: LoweredAuthoring,
+        mut runtime_names: RuntimeNameRegistry,
+    ) -> Result<(LoweredAuthoring, RuntimeNameRegistry), AuthoringError> {
+        let child_index_base = lowered.scene["artboard"]["children"]
+            .as_array()
+            .map_or(0, Vec::len);
+        let behavior::BehaviorLoweringOutput {
+            view_models,
+            state_machines,
+            source_entries,
+        } = behavior::lower_behavior(spec, child_index_base, 0)
+            .map_err(|error| rewrite_error_paths(spec, error))?;
+
+        if view_models.is_empty() && state_machines.is_empty() {
+            debug_assert!(source_entries.is_empty());
+            return Ok((lowered, runtime_names));
+        }
+
+        let typed_state_machine_count = state_machines.len();
+        if typed_state_machine_count > 0 {
+            for entry in &mut lowered.source_map.entries {
+                if !entry
+                    .authored_path
+                    .starts_with("$.behavior.raw_state_machines[")
+                {
+                    continue;
+                }
+                for scene_path in &mut entry.scene_paths {
+                    if let Some(index) = scene_path
+                        .strip_prefix("/artboard/state_machines/")
+                        .and_then(|index| index.parse::<usize>().ok())
+                    {
+                        *scene_path = format!(
+                            "/artboard/state_machines/{}",
+                            index + typed_state_machine_count
+                        );
+                    }
+                }
+            }
+        }
+
+        let artboard = lowered.scene["artboard"]
+            .as_object_mut()
+            .expect("canonical AuthoringSpec lowering always produces an artboard object");
+        if !view_models.is_empty() {
+            let children = artboard
+                .entry("children")
+                .or_insert_with(|| Value::Array(Vec::new()))
+                .as_array_mut()
+                .expect("canonical children value must remain an array");
+            children.extend(view_models);
+        }
+
+        if !state_machines.is_empty() {
+            let existing_raw = artboard
+                .remove("state_machines")
+                .and_then(|value| value.as_array().cloned())
+                .unwrap_or_default();
+            let mut ordered = state_machines;
+            ordered.extend(existing_raw);
+            artboard.insert("state_machines".to_string(), Value::Array(ordered));
+        }
+
+        for entry in &source_entries {
+            runtime_names.register(entry);
+        }
+        lowered.source_map.entries.extend(source_entries);
+        behavior::validate_lowered_scene(&lowered.scene)
+            .map_err(|error| rewrite_error_paths(spec, error))?;
+
+        Ok((lowered, runtime_names))
     }
 
     pub(super) fn finish(self) -> Result<LoweredAuthoring, AuthoringError> {

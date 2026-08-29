@@ -20,17 +20,195 @@
       ],
       "type": "object"
     },
+    "BehaviorBindingSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "property": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "model",
+        "property"
+      ],
+      "type": "object"
+    },
+    "BehaviorModelSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "properties": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorPropertySpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "BehaviorPropertySpec": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "bool",
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "value"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "BehaviorSection": {
       "additionalProperties": false,
       "properties": {
+        "bindings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorBindingSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
+        "models": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorModelSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
         "raw_state_machines": {
           "default": [],
           "items": {
             "$ref": "#/$defs/RawSceneFragment"
           },
           "type": "array"
+        },
+        "statecharts": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorStatechartSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
         }
       },
+      "type": "object"
+    },
+    "BehaviorStateSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "motion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "motion"
+      ],
+      "type": "object"
+    },
+    "BehaviorStatechartSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "initial": {
+          "type": "string"
+        },
+        "states": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStateSpec"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array"
+        },
+        "transitions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorTransitionSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "initial",
+        "states"
+      ],
+      "type": "object"
+    },
+    "BehaviorTransitionConditionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "binding": {
+          "type": "string"
+        },
+        "equals": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "binding",
+        "equals"
+      ],
+      "type": "object"
+    },
+    "BehaviorTransitionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/BehaviorTransitionConditionSpec"
+        }
+      },
+      "required": [
+        "id",
+        "from",
+        "to",
+        "when"
+      ],
       "type": "object"
     },
     "ComponentSpec": {

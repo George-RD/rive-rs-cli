@@ -1496,11 +1496,27 @@ pub(crate) enum InterpolatorDef {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct ViewModelInputBindingSpec {
+    pub view_model: String,
+    pub property: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum InputSpec {
-    Number { name: String, value: f32 },
-    Bool { name: String, value: bool },
-    Trigger { name: String },
+    Number {
+        name: String,
+        value: f32,
+    },
+    Bool {
+        name: String,
+        value: bool,
+        #[serde(default)]
+        view_model_binding: Option<ViewModelInputBindingSpec>,
+    },
+    Trigger {
+        name: String,
+    },
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]

@@ -17,16 +17,10 @@ impl RiveObject for ViewModel {
     }
 
     fn properties(&self) -> Vec<Property> {
-        vec![
-            Property {
-                key: property_keys::COMPONENT_NAME,
-                value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
-            },
-        ]
+        vec![Property {
+            key: property_keys::VIEW_MODEL_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
     }
 }
 
@@ -111,6 +105,45 @@ impl RiveObject for DataBind {
             });
         }
         props
+    }
+}
+
+pub struct DataBindContext {
+    pub property_key: u64,
+    pub flags: u64,
+    pub source_path_ids: Vec<u8>,
+}
+
+impl DataBindContext {
+    pub fn new(property_key: u64, flags: u64, source_path_ids: Vec<u8>) -> Self {
+        Self {
+            property_key,
+            flags,
+            source_path_ids,
+        }
+    }
+}
+
+impl RiveObject for DataBindContext {
+    fn type_key(&self) -> u16 {
+        type_keys::DATA_BIND_CONTEXT
+    }
+
+    fn properties(&self) -> Vec<Property> {
+        vec![
+            Property {
+                key: property_keys::DATA_BIND_PROPERTY_KEY,
+                value: PropertyValue::UInt(self.property_key),
+            },
+            Property {
+                key: property_keys::DATA_BIND_FLAGS,
+                value: PropertyValue::UInt(self.flags),
+            },
+            Property {
+                key: property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS,
+                value: PropertyValue::Bytes(self.source_path_ids.clone()),
+            },
+        ]
     }
 }
 
@@ -379,16 +412,10 @@ impl RiveObject for ViewModelPropertyBoolean {
         type_keys::VIEW_MODEL_PROPERTY_BOOLEAN
     }
     fn properties(&self) -> Vec<Property> {
-        vec![
-            Property {
-                key: property_keys::COMPONENT_NAME,
-                value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
-            },
-        ]
+        vec![Property {
+            key: property_keys::VIEW_MODEL_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
     }
 }
 
@@ -1239,9 +1266,9 @@ mod tests {
     fn test_view_model_properties() {
         let vm = ViewModel::new("vm1".to_string(), 1);
         let props = vm.properties();
-        assert_eq!(props.len(), 2);
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::VIEW_MODEL_COMPONENT_NAME);
         assert_eq!(props[0].value, PropertyValue::String("vm1".to_string()));
-        assert_eq!(props[1].value, PropertyValue::UInt(1));
     }
 
     #[test]
