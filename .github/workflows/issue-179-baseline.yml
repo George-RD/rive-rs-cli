@@ -23,6 +23,163 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Apply canonical view-model transition binding
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/builder/state_machines.rs")
+          text = path.read_text()
+
+          old = "use crate::objects::data_binding::DataBindContext;"
+          new = "use crate::objects::data_binding::{BindablePropertyBoolean, DataBindContext};"
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = "        let mut input_name_to_index: HashMap<String, usize> = HashMap::new();\n"
+          new = (
+              "        let mut input_name_to_index: HashMap<String, usize> = HashMap::new();\n"
+              "        let mut bound_bool_input_paths: HashMap<String, (u64, u64)> = HashMap::new();\n"
+          )
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''                    InputSpec::Bool {
+                        name,
+                        value,
+                        view_model_binding,
+                    } => {
+                        objects.push(Box::new(StateMachineBool {
+                            name: name.clone(),
+                            value: if *value { 1 } else { 0 },
+                        }));
+                        if let Some(binding) = view_model_binding {
+                            let (view_model_id, property_id) =
+                                resolve_view_model_binding_ids(
+                                    artboard_children,
+                                    view_model_id_base,
+                                    &binding.view_model,
+                                    &binding.property,
+                                )
+                                .ok_or_else(|| {
+                                    format!(
+                                        "unknown view-model binding referenced by bool input '{}': '{}.{}'",
+                                        name, binding.view_model, binding.property
+                                    )
+                                })?;
+                            objects.push(Box::new(DataBindContext::new(
+                                property_keys::STATE_MACHINE_BOOL_VALUE as u64,
+                                0,
+                                encode_id_path(&[view_model_id, property_id]),
+                            )));
+                        }
+                        input_name_to_index.insert(name.clone(), input_index);
+                    }
+'''
+          new = '''                    InputSpec::Bool {
+                        name,
+                        value,
+                        view_model_binding,
+                    } => {
+                        objects.push(Box::new(StateMachineBool {
+                            name: name.clone(),
+                            value: if *value { 1 } else { 0 },
+                        }));
+                        if let Some(binding) = view_model_binding {
+                            let (view_model_id, property_id) =
+                                resolve_view_model_binding_ids(
+                                    artboard_children,
+                                    view_model_id_base,
+                                    &binding.view_model,
+                                    &binding.property,
+                                )
+                                .ok_or_else(|| {
+                                    format!(
+                                        "unknown view-model binding referenced by bool input '{}': '{}.{}'",
+                                        name, binding.view_model, binding.property
+                                    )
+                                })?;
+                            bound_bool_input_paths
+                                .insert(name.clone(), (view_model_id, property_id));
+                        }
+                        input_name_to_index.insert(name.clone(), input_index);
+                    }
+'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          old = '''                                        Some(serde_json::Value::Bool(v)) => {
+                                            let bool_op = if condition.op.is_some() {
+                                                condition
+                                                    .op
+                                                    .as_deref()
+                                                    .map(parse_condition_op)
+                                                    .unwrap_or(0)
+                                            } else if *v {
+                                                0 // equal: true when input is true
+                                            } else {
+                                                1 // notEqual: true when input is false
+                                            };
+                                            objects.push(Box::new(TransitionBoolCondition::new(
+                                                input_id, bool_op,
+                                            )));
+                                        }
+'''
+          new = '''                                        Some(serde_json::Value::Bool(v)) => {
+                                            if let Some(&(view_model_id, property_id)) =
+                                                bound_bool_input_paths.get(&condition.input)
+                                            {
+                                                let vm_op = condition
+                                                    .op
+                                                    .as_deref()
+                                                    .map(parse_condition_op)
+                                                    .unwrap_or(0);
+                                                objects.push(Box::new(TransitionViewModelCondition {
+                                                    op_value: vm_op,
+                                                }));
+                                                objects.push(Box::new(BindablePropertyBoolean {
+                                                    property_value: 0,
+                                                }));
+                                                objects.push(Box::new(DataBindContext::new(
+                                                    property_keys::BINDABLE_PROPERTY_BOOLEAN_VALUE
+                                                        as u64,
+                                                    0,
+                                                    encode_id_path(&[
+                                                        view_model_id,
+                                                        property_id,
+                                                    ]),
+                                                )));
+                                                objects.push(Box::new(
+                                                    TransitionPropertyViewModelComparator,
+                                                ));
+                                                objects.push(Box::new(
+                                                    TransitionValueBooleanComparator { value: *v },
+                                                ));
+                                            } else {
+                                                let bool_op = if condition.op.is_some() {
+                                                    condition
+                                                        .op
+                                                        .as_deref()
+                                                        .map(parse_condition_op)
+                                                        .unwrap_or(0)
+                                                } else if *v {
+                                                    0 // equal: true when input is true
+                                                } else {
+                                                    1 // notEqual: true when input is false
+                                                };
+                                                objects.push(Box::new(
+                                                    TransitionBoolCondition::new(input_id, bool_op),
+                                                ));
+                                            }
+                                        }
+'''
+          assert old in text
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+          cargo fmt --all
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
       - run: node tests/playwright/authoring-behavior-runtime.js --update
@@ -33,6 +190,6 @@ jobs:
           git rm -f .github/workflows/issue-179-baseline.yml scripts/issue179_baseline_trigger
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/playwright/baselines/authoring_behavior_binding-resting.png tests/playwright/baselines/authoring_behavior_binding-engaged.png
-          git commit -m "test(authoring): retain behavior runtime evidence"
+          git add src/builder/state_machines.rs tests/playwright/baselines/authoring_behavior_binding-resting.png tests/playwright/baselines/authoring_behavior_binding-engaged.png
+          git commit -m "fix(authoring): bind state transitions to view models"
           git push
