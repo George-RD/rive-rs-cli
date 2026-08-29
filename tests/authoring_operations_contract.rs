@@ -65,9 +65,9 @@ fn replacement(id: &str) -> VisualNode {
     .expect("valid replacement node")
 }
 
-fn replace_panel(node: VisualNode) -> AuthoringOperation {
+fn replace(target_id: &str, node: VisualNode) -> AuthoringOperation {
     AuthoringOperation::ReplaceVisualNode {
-        target_id: "panel".to_string(),
+        target_id: target_id.to_string(),
         node,
     }
 }
@@ -77,7 +77,7 @@ fn replace_visual_node_validates_through_the_canonical_authoring_path() {
     let document = spec();
     let before = lower_authoring(&document).expect("base document lowers");
 
-    let applied = apply_operation(&document, &replace_panel(replacement("panel")))
+    let applied = apply_operation(&document, &replace("panel", replacement("panel")))
         .expect("valid replacement applies");
 
     assert_ne!(applied.lowered.scene, before.scene);
@@ -89,7 +89,7 @@ fn invalid_replace_rolls_back_without_mutating_the_input_document() {
     let document = spec();
     let before = serde_json::to_value(&document).expect("serialize input before operation");
 
-    let error = apply_operation(&document, &replace_panel(replacement("untouched")))
+    let error = apply_operation(&document, &replace("panel", replacement("untouched")))
         .expect_err("duplicate authored id must be rejected");
 
     assert!(!error.diagnostics.is_empty());
@@ -117,7 +117,7 @@ fn replace_preserves_unaffected_source_map_identity() {
         .cloned()
         .expect("unaffected source-map entry before replace");
 
-    let applied = apply_operation(&document, &replace_panel(replacement("panel")))
+    let applied = apply_operation(&document, &replace("panel", replacement("panel")))
         .expect("valid replacement applies");
     let after_entry = applied
         .lowered
@@ -134,7 +134,7 @@ fn replace_preserves_unaffected_source_map_identity() {
 #[test]
 fn replacing_the_same_target_is_deterministic_from_the_same_input() {
     let document = spec();
-    let operation = replace_panel(replacement("panel"));
+    let operation = replace("panel", replacement("panel"));
 
     let first = apply_operation(&document, &operation).expect("first replacement applies");
     let second = apply_operation(&document, &operation).expect("second replacement applies");
@@ -145,4 +145,28 @@ fn replacing_the_same_target_is_deterministic_from_the_same_input() {
         serde_json::to_value(first.spec).expect("serialize first result"),
         serde_json::to_value(second.spec).expect("serialize second result")
     );
+}
+
+#[test]
+fn unknown_target_reports_an_authored_id_diagnostic() {
+    let error = apply_operation(&spec(), &replace("missing", replacement("replacement")))
+        .expect_err("unknown authored target must fail");
+
+    assert!(error.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "unknown_authored_id" && diagnostic.path == "$.visual.nodes"
+    }));
+}
+
+#[test]
+fn ambiguous_target_reports_an_authored_id_diagnostic() {
+    let duplicate = BASE_DOCUMENT.replace("\"id\": \"badge\"", "\"id\": \"panel\"");
+    let document: AuthoringSpec =
+        serde_json::from_str(&duplicate).expect("duplicate IDs remain syntactically valid");
+
+    let error = apply_operation(&document, &replace("panel", replacement("replacement")))
+        .expect_err("ambiguous authored target must fail");
+
+    assert!(error.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "ambiguous_authored_id" && diagnostic.path == "$.visual.nodes"
+    }));
 }
