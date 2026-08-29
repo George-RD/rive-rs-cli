@@ -14,7 +14,7 @@ without changing the AuthoringSpec compiler dependency graph.
 ## Execution slices
 
 - #199 — frame-lock each Verification Lab pair behind one deterministic logical clock
-  and reusable site playback interface.
+  and reusable site playback interface; completed in PR #216.
 - #200 — reuse that interface for a provenance-aware original-work showcase.
 - #201 — lead the landing page with original/production proof while keeping parity as
   the separate correctness route.
@@ -35,6 +35,6 @@ without changing the AuthoringSpec compiler dependency graph.
 ## Dependencies
 
 - Parent specification: #198.
-- #199 is independently ready and establishes the playback seam used by #200.
+- #199 completes the shared playback seam in PR #216; #200 reuses it.
 - #200 blocks #201.
 - No dependency is introduced on the completed #179-#186 Authoring chain.
