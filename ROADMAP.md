@@ -29,7 +29,7 @@ completed the complex interactive AuthoringSpec showcase gate in PR #206 with an
 exact canonical SceneSpec equivalence contract. [#182](https://github.com/George-RD/rive-rs-cli/issues/182)
 completed deterministic static and animated AuthoringSpec semantic evidence in PR #207.
 [#183](https://github.com/George-RD/rive-rs-cli/issues/183) completes interactive semantic
-evaluation in PR #208, leaving #184 as the next unblocked authoring item.
+evaluation in PR #209, leaving #184 as the next unblocked authoring item.
 
 The ordered execution graph is:
 
@@ -41,7 +41,7 @@ The ordered execution graph is:
        |-> #179 typed statechart tracer bullet (complete in PR #203) -> #180 inputs/events (complete in PR #204) -> #181 interactive showcase (complete in PR #206)
        |-> #182 static + animated semantic evaluations (complete in PR #207)
 
-#181 + #182 -> #183 interactive semantic evaluation (complete in PR #208)
+#181 + #182 -> #183 interactive semantic evaluation (complete in PR #209)
 #181        -> #184 atomic replace -> #185 insert/move/remove
 #183 + #185 -> #186 complex AI generation through AuthoringSpec
 ```
@@ -68,7 +68,7 @@ AuthoringSpec progress.
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
 | P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
-| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #208 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
+| P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | open; #184 next -> #185 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | blocked; #186 requires complete #183 + #185 | frontend slices, complex showcase coverage, runtime eval, semantic eval, incremental operations |
 | P4 | [Repair-engine modularization](meta/todos/todo.repair-engine-modularization.md) | open; defer until Authoring compiler state is stable | characterization-preserving split aligned to authored source maps |
@@ -97,7 +97,7 @@ AuthoringSpec progress.
   evidence in PR #207. The report retains source-map/static assertions and official-
   runtime frame-difference assertions as separate dimensions from structural validity,
   runtime pass/fail, reproducibility, and drift.
-- #183 completes interactive AuthoringSpec semantic evaluation in PR #208. The same
+- #183 completes interactive AuthoringSpec semantic evaluation in PR #209. The same
   evidence model now drives authored inputs and pointer events, retains resolved
   interaction evidence, checks authored state-motion/transition intent, and gates
   visible runtime response separately from structural and runtime validity.
