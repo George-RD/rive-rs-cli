@@ -51,7 +51,7 @@ impl RiveMcpServer {
 
     #[tool(
         name = "generate",
-        description = "Generate a .riv file from a SceneSpec JSON string. Returns hex-encoded bytes or writes to file."
+        description = "Generate a .riv file from expert SceneSpec JSON. Returns hex-encoded bytes or writes to file."
     )]
     async fn generate(
         &self,
@@ -93,6 +93,67 @@ impl RiveMcpServer {
             let encoded: String = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
             Ok(CallToolResult::success(vec![Content::text(encoded)]))
         }
+    }
+
+    #[tool(
+        name = "generate_authoring",
+        description = "Compile high-level AuthoringSpec JSON through the typed Authoring frontend and return source-mapped .riv output."
+    )]
+    async fn generate_authoring(
+        &self,
+        params: Parameters<GenerateAuthoringParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let lowered = crate::authoring::lower_authoring_json(&params.0.authoring_json).map_err(|e| {
+            let diagnostics = serde_json::to_string(&e.diagnostics)
+                .unwrap_or_else(|_| "[]".to_string());
+            McpError::new(
+                ErrorCode::INVALID_PARAMS,
+                format!("AuthoringSpec lowering failed: {diagnostics}"),
+                None,
+            )
+        })?;
+        let spec: crate::builder::SceneSpec = serde_json::from_value(lowered.scene.clone()).map_err(
+            |e| {
+                McpError::new(
+                    ErrorCode::INTERNAL_ERROR,
+                    format!("lowered AuthoringSpec produced invalid SceneSpec: {e}"),
+                    None,
+                )
+            },
+        )?;
+        let file_id = params.0.file_id.unwrap_or(0);
+        let bytes = crate::compile::compile_scene(&spec, None, file_id).map_err(|e| {
+            McpError::new(
+                ErrorCode::INVALID_PARAMS,
+                format!("AuthoringSpec compile failed: {e}"),
+                None,
+            )
+        })?;
+
+        let output = if let Some(path) = &params.0.output {
+            std::fs::write(path, &bytes).map_err(|e| {
+                McpError::new(
+                    ErrorCode::INTERNAL_ERROR,
+                    format!("write error: {}", e),
+                    None,
+                )
+            })?;
+            serde_json::json!({
+                "output_path": path,
+                "bytes_written": bytes.len(),
+                "source_map": lowered.source_map,
+            })
+        } else {
+            let encoded: String = bytes.iter().map(|byte| format!("{byte:02x}")).collect();
+            serde_json::json!({
+                "bytes_hex": encoded,
+                "bytes_written": bytes.len(),
+                "source_map": lowered.source_map,
+            })
+        };
+        let json = serde_json::to_string_pretty(&output)
+            .map_err(|e| McpError::new(ErrorCode::INTERNAL_ERROR, e.to_string(), None))?;
+        Ok(CallToolResult::success(vec![Content::text(json)]))
     }
 
     #[tool(
@@ -174,7 +235,7 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
                 icons: None,
                 website_url: None,
             },
-            instructions: Some("Rive CLI MCP server. Use 'generate' to create .riv files from SceneSpec JSON, 'validate' to check .riv files, 'inspect' to dump object trees, 'decompile' to return inspect-format JSON for a .riv file, and 'list_templates' for animation templates.".into()),
+            instructions: Some("Rive CLI MCP server. Prefer 'generate_authoring' with schema://authoring/v0 for high-level authored intent. Use 'generate' with schema://scene/v1 only for expert SceneSpec escape-hatch work. 'validate' checks .riv files, 'inspect' and 'decompile' read object trees, and 'list_templates' returns built-in SceneSpec templates.".into()),
         }
     }
 
@@ -184,22 +245,40 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
         _context: rmcp::service::RequestContext<RoleServer>,
     ) -> impl Future<Output = Result<ListResourcesResult, McpError>> + Send + '_ {
         std::future::ready(Ok(ListResourcesResult {
-            resources: vec![Resource {
-                raw: RawResource {
-                    uri: "schema://scene/v1".into(),
-                    name: "SceneSpec JSON Schema v1".into(),
-                    title: None,
-                    description: Some(
-                        "Complete JSON Schema for rive-cli scene input format, generated from the Rust SceneSpec types"
-                            .into(),
-                    ),
-                    mime_type: Some("application/json".into()),
-                    size: None,
-                    icons: None,
-                    meta: None,
+            resources: vec![
+                Resource {
+                    raw: RawResource {
+                        uri: "schema://authoring/v0".into(),
+                        name: "AuthoringSpec JSON Schema v0".into(),
+                        title: None,
+                        description: Some(
+                            "High-level typed authoring schema generated from the Rust AuthoringSpec types"
+                                .into(),
+                        ),
+                        mime_type: Some("application/json".into()),
+                        size: None,
+                        icons: None,
+                        meta: None,
+                    },
+                    annotations: None,
                 },
-                annotations: None,
-            }],
+                Resource {
+                    raw: RawResource {
+                        uri: "schema://scene/v1".into(),
+                        name: "SceneSpec JSON Schema v1".into(),
+                        title: None,
+                        description: Some(
+                            "Complete JSON Schema for the lower-level rive-cli SceneSpec format, generated from the Rust SceneSpec types"
+                                .into(),
+                        ),
+                        mime_type: Some("application/json".into()),
+                        size: None,
+                        icons: None,
+                        meta: None,
+                    },
+                    annotations: None,
+                },
+            ],
             next_cursor: None,
             meta: None,
         }))
@@ -210,7 +289,13 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
         request: ReadResourceRequestParams,
         _context: rmcp::service::RequestContext<RoleServer>,
     ) -> impl Future<Output = Result<ReadResourceResult, McpError>> + Send + '_ {
-        if request.uri.as_str() == "schema://scene/v1" {
+        if request.uri.as_str() == "schema://authoring/v0" {
+            let schema = serde_json::to_string_pretty(&crate::authoring::authoring_schema())
+                .unwrap_or_else(|_| "{}".to_string());
+            std::future::ready(Ok(ReadResourceResult {
+                contents: vec![ResourceContents::text(schema, "schema://authoring/v0")],
+            }))
+        } else if request.uri.as_str() == "schema://scene/v1" {
             let schema = crate::builder::scene_schema_json();
             std::future::ready(Ok(ReadResourceResult {
                 contents: vec![ResourceContents::text(schema, "schema://scene/v1")],
@@ -229,6 +314,16 @@ impl rmcp::handler::server::ServerHandler for RiveMcpServer {
 pub struct GenerateParams {
     #[schemars(description = "SceneSpec JSON string")]
     pub scene_json: String,
+    #[schemars(description = "Optional output file path")]
+    pub output: Option<String>,
+    #[schemars(description = "Optional Rive file ID (default: 0)")]
+    pub file_id: Option<u64>,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GenerateAuthoringParams {
+    #[schemars(description = "AuthoringSpec JSON string")]
+    pub authoring_json: String,
     #[schemars(description = "Optional output file path")]
     pub output: Option<String>,
     #[schemars(description = "Optional Rive file ID (default: 0)")]
