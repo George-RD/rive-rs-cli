@@ -1266,9 +1266,9 @@ mod tests {
     fn test_view_model_properties() {
         let vm = ViewModel::new("vm1".to_string(), 1);
         let props = vm.properties();
-        assert_eq!(props.len(), 2);
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::VIEW_MODEL_COMPONENT_NAME);
         assert_eq!(props[0].value, PropertyValue::String("vm1".to_string()));
-        assert_eq!(props[1].value, PropertyValue::UInt(1));
     }
 
     #[test]

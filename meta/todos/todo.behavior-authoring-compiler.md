@@ -26,3 +26,9 @@ behavior implementation until the one-pass Authoring compiler architecture gate 
 compiler-owned scene draft, resolved-symbol model, runtime-name registry, checked
 runtime bindings, and source-map builder; it must not introduce another raw-fragment
 re-entry pass or a second full document lowering.
+
+## Evidence
+
+PR #202 / issue #179 establishes the first typed behavior tracer bullet on the shared Authoring compiler state: boolean view-model properties, authored bindings, named states, named transitions, deterministic source maps, canonical-builder validation, and retained official-runtime evidence that mutating the bound view-model boolean changes state. The slice preserves `raw_state_machines` as an expert escape without introducing a second full-document lowering pass.
+
+This todo remains open. Issue #180 extends the typed surface to inputs, events, and listeners; issue #181 completes the complex interactive showcase and broader behavior exit gate.
