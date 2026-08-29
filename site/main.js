@@ -163,10 +163,9 @@ function buildCard(rung) {
   });
 
   timeline.ready
-    .then(async () => {
+    .then(() => {
       controls.frame.disabled = false;
       controls.toggle.disabled = false;
-      await timeline.play();
     })
     .catch((error) => {
       controls.status.textContent = "playback unavailable";
