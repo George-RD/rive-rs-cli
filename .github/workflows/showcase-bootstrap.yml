@@ -5,22 +5,25 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   authoring-artifact:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: |
-          mkdir -p target/showcase-bootstrap
           cargo run --quiet -- authoring compile \
             examples/authoring/complex-animated-showcase.v0.json \
-            -o target/showcase-bootstrap/complex-animated-showcase.v0.riv
-      - uses: actions/upload-artifact@v4
-        with:
-          name: showcase-authoring-bootstrap
-          path: target/showcase-bootstrap/complex-animated-showcase.v0.riv
-          retention-days: 1
+            -o examples/authoring/complex-animated-showcase.v0.riv
+      - name: Commit deterministic artifact
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add examples/authoring/complex-animated-showcase.v0.riv
+          git commit -m "test(showcase): commit reproducible authoring artifact"
+          git push origin HEAD:${{ github.head_ref }}
