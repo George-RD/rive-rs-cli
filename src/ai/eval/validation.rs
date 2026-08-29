@@ -114,13 +114,7 @@ fn validate_interactive_check(
         } => validate_non_empty_ids(
             case_id,
             "transition",
-            &[
-                statechart_id,
-                transition_id,
-                from_state,
-                to_state,
-                input_id,
-            ],
+            &[statechart_id, transition_id, from_state, to_state, input_id],
         )?,
         InteractiveSemanticCheck::FramesDiffer { from, to } => {
             if from == to {
