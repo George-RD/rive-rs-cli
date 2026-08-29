@@ -7,48 +7,12 @@
   },
   "visual": {
     "nodes": [
-      {
-        "kind": "rectangle",
-        "id": "shadow",
-        "width": { "kind": "literal", "value": 350.0, "unit": "px" },
-        "height": { "kind": "literal", "value": 18.0, "unit": "px" },
-        "fill": "#2A2826"
-      },
-      {
-        "kind": "rectangle",
-        "id": "strip-1",
-        "width": { "kind": "literal", "value": 84.0, "unit": "px" },
-        "height": { "kind": "literal", "value": 92.0, "unit": "px" },
-        "fill": "#F4EBD8"
-      },
-      {
-        "kind": "rectangle",
-        "id": "strip-2",
-        "width": { "kind": "literal", "value": 84.0, "unit": "px" },
-        "height": { "kind": "literal", "value": 92.0, "unit": "px" },
-        "fill": "#F0E5CF"
-      },
-      {
-        "kind": "rectangle",
-        "id": "strip-3",
-        "width": { "kind": "literal", "value": 84.0, "unit": "px" },
-        "height": { "kind": "literal", "value": 92.0, "unit": "px" },
-        "fill": "#F7EFDF"
-      },
-      {
-        "kind": "rectangle",
-        "id": "strip-4",
-        "width": { "kind": "literal", "value": 84.0, "unit": "px" },
-        "height": { "kind": "literal", "value": 92.0, "unit": "px" },
-        "fill": "#EFE2C9"
-      },
-      {
-        "kind": "rectangle",
-        "id": "strip-5",
-        "width": { "kind": "literal", "value": 84.0, "unit": "px" },
-        "height": { "kind": "literal", "value": 92.0, "unit": "px" },
-        "fill": "#F6EDDC"
-      }
+      { "kind": "rectangle", "id": "shadow", "width": { "kind": "literal", "value": 350.0, "unit": "px" }, "height": { "kind": "literal", "value": 18.0, "unit": "px" }, "fill": "#2A2826" },
+      { "kind": "rectangle", "id": "strip-1", "width": { "kind": "literal", "value": 84.0, "unit": "px" }, "height": { "kind": "literal", "value": 92.0, "unit": "px" }, "fill": "#F4EBD8" },
+      { "kind": "rectangle", "id": "strip-2", "width": { "kind": "literal", "value": 84.0, "unit": "px" }, "height": { "kind": "literal", "value": 92.0, "unit": "px" }, "fill": "#F0E5CF" },
+      { "kind": "rectangle", "id": "strip-3", "width": { "kind": "literal", "value": 84.0, "unit": "px" }, "height": { "kind": "literal", "value": 92.0, "unit": "px" }, "fill": "#F7EFDF" },
+      { "kind": "rectangle", "id": "strip-4", "width": { "kind": "literal", "value": 84.0, "unit": "px" }, "height": { "kind": "literal", "value": 92.0, "unit": "px" }, "fill": "#EFE2C9" },
+      { "kind": "rectangle", "id": "strip-5", "width": { "kind": "literal", "value": 84.0, "unit": "px" }, "height": { "kind": "literal", "value": 92.0, "unit": "px" }, "fill": "#F6EDDC" }
     ]
   },
   "motion": {
@@ -56,34 +20,34 @@
       {
         "id": "rest",
         "targets": [
-          { "target": "shadow", "transform": { "x": { "kind": "literal", "value": 105.0, "unit": "px" }, "y": { "kind": "literal", "value": 98.0, "unit": "px" }, "scale_x": { "kind": "literal", "value": 0.9, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 0.45, "unit": "scalar" } } },
-          { "target": "strip-1", "transform": { "x": { "kind": "literal", "value": 42.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" } } },
-          { "target": "strip-2", "transform": { "x": { "kind": "literal", "value": 112.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" } } },
-          { "target": "strip-3", "transform": { "x": { "kind": "literal", "value": 182.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" } } },
-          { "target": "strip-4", "transform": { "x": { "kind": "literal", "value": 252.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" } } },
-          { "target": "strip-5", "transform": { "x": { "kind": "literal", "value": 322.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" } } }
+          { "target": "shadow", "transform": { "x": { "kind": "literal", "value": 105.0, "unit": "px" }, "y": { "kind": "literal", "value": 98.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.9, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 0.45, "unit": "scalar" } } },
+          { "target": "strip-1", "transform": { "x": { "kind": "literal", "value": 42.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-2", "transform": { "x": { "kind": "literal", "value": 112.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-3", "transform": { "x": { "kind": "literal", "value": 182.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-4", "transform": { "x": { "kind": "literal", "value": 252.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-5", "transform": { "x": { "kind": "literal", "value": 322.0, "unit": "px" }, "y": { "kind": "literal", "value": 42.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 0.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } }
         ]
       },
       {
         "id": "curl",
         "targets": [
-          { "target": "shadow", "transform": { "x": { "kind": "literal", "value": 86.0, "unit": "px" }, "y": { "kind": "literal", "value": 105.0, "unit": "px" }, "scale_x": { "kind": "literal", "value": 0.72, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 0.7, "unit": "scalar" }, "rotation": { "kind": "literal", "value": -4.0, "unit": "degrees" } } },
+          { "target": "shadow", "transform": { "x": { "kind": "literal", "value": 86.0, "unit": "px" }, "y": { "kind": "literal", "value": 105.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -4.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.72, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 0.7, "unit": "scalar" } } },
           { "target": "strip-1", "transform": { "x": { "kind": "literal", "value": 20.0, "unit": "px" }, "y": { "kind": "literal", "value": 25.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -22.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.78, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.03, "unit": "scalar" } } },
           { "target": "strip-2", "transform": { "x": { "kind": "literal", "value": 82.0, "unit": "px" }, "y": { "kind": "literal", "value": 20.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -14.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.86, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.02, "unit": "scalar" } } },
           { "target": "strip-3", "transform": { "x": { "kind": "literal", "value": 152.0, "unit": "px" }, "y": { "kind": "literal", "value": 20.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -8.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.92, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.01, "unit": "scalar" } } },
           { "target": "strip-4", "transform": { "x": { "kind": "literal", "value": 228.0, "unit": "px" }, "y": { "kind": "literal", "value": 26.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -3.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.97, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
-          { "target": "strip-5", "transform": { "x": { "kind": "literal", "value": 310.0, "unit": "px" }, "y": { "kind": "literal", "value": 34.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 1.0, "unit": "degrees" } } }
+          { "target": "strip-5", "transform": { "x": { "kind": "literal", "value": 310.0, "unit": "px" }, "y": { "kind": "literal", "value": 34.0, "unit": "px" }, "rotation": { "kind": "literal", "value": 1.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } }
         ]
       },
       {
         "id": "release",
         "targets": [
-          { "target": "shadow", "transform": { "x": { "kind": "literal", "value": -45.0, "unit": "px" }, "y": { "kind": "literal", "value": 118.0, "unit": "px" }, "scale_x": { "kind": "literal", "value": 0.25, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 0.25, "unit": "scalar" }, "rotation": { "kind": "literal", "value": -12.0, "unit": "degrees" } } },
-          { "target": "strip-1", "transform": { "x": { "kind": "literal", "value": -115.0, "unit": "px" }, "y": { "kind": "literal", "value": -10.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -52.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.58, "unit": "scalar" } } },
-          { "target": "strip-2", "transform": { "x": { "kind": "literal", "value": -52.0, "unit": "px" }, "y": { "kind": "literal", "value": -18.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -42.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.66, "unit": "scalar" } } },
-          { "target": "strip-3", "transform": { "x": { "kind": "literal", "value": 10.0, "unit": "px" }, "y": { "kind": "literal", "value": -16.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -30.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.74, "unit": "scalar" } } },
-          { "target": "strip-4", "transform": { "x": { "kind": "literal", "value": 78.0, "unit": "px" }, "y": { "kind": "literal", "value": -8.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -18.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.82, "unit": "scalar" } } },
-          { "target": "strip-5", "transform": { "x": { "kind": "literal", "value": 152.0, "unit": "px" }, "y": { "kind": "literal", "value": 6.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -9.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.9, "unit": "scalar" } } }
+          { "target": "shadow", "transform": { "x": { "kind": "literal", "value": -45.0, "unit": "px" }, "y": { "kind": "literal", "value": 118.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -12.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.25, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 0.25, "unit": "scalar" } } },
+          { "target": "strip-1", "transform": { "x": { "kind": "literal", "value": -115.0, "unit": "px" }, "y": { "kind": "literal", "value": -10.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -52.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.58, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-2", "transform": { "x": { "kind": "literal", "value": -52.0, "unit": "px" }, "y": { "kind": "literal", "value": -18.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -42.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.66, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-3", "transform": { "x": { "kind": "literal", "value": 10.0, "unit": "px" }, "y": { "kind": "literal", "value": -16.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -30.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.74, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-4", "transform": { "x": { "kind": "literal", "value": 78.0, "unit": "px" }, "y": { "kind": "literal", "value": -8.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -18.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.82, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } },
+          { "target": "strip-5", "transform": { "x": { "kind": "literal", "value": 152.0, "unit": "px" }, "y": { "kind": "literal", "value": 6.0, "unit": "px" }, "rotation": { "kind": "literal", "value": -9.0, "unit": "degrees" }, "scale_x": { "kind": "literal", "value": 0.9, "unit": "scalar" }, "scale_y": { "kind": "literal", "value": 1.0, "unit": "scalar" } } }
         ]
       }
     ],
