@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Made with rive-cli — original work</title>
+    <meta
+      name="description"
+      content="Original Rive work authored with rive-cli, with provenance and source kept inspectable."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header shell">
+      <a class="wordmark" href="index.html" aria-label="rive-cli home"><span>rive</span><b>-cli</b></a>
+      <nav aria-label="Main navigation">
+        <a href="index.html#workflow">How it works</a>
+        <a href="index.html#for-agents">For agents</a>
+        <a href="showcase.html" aria-current="page">Made with rive-cli</a>
+        <a href="lab.html">Verification Lab</a>
+        <a class="nav-github" href="https://github.com/George-RD/rive-rs-cli">GitHub ↗</a>
+      </nav>
+    </header>
+
+    <main class="lab-main">
+      <section class="lab-intro shell">
+        <div>
+          <p class="hero-label">Made with rive-cli / original work</p>
+          <h1>Built here. Source included.</h1>
+          <p>
+            These are original examples authored through rive-cli. This catalogue is deliberately separate
+            from the Verification Lab: provenance belongs here; measured upstream parity stays there.
+          </p>
+          <a class="back-link" href="index.html">← Back to the product story</a>
+        </div>
+        <div class="lab-note">
+          <strong>What this proves</strong>
+          High-level AuthoringSpec and explicit SceneSpec can both produce live local <code>.riv</code>
+          files. Open the source under any card to inspect the authoring path.
+        </div>
+      </section>
+
+      <section class="gallery shell" aria-labelledby="showcase-heading">
+        <h2 id="showcase-heading">Original work / live runtime</h2>
+        <p class="section-note">
+          The cards below come from one committed manifest. Adding a normal example requires its source,
+          local artifact, and one manifest entry — not card-specific page code.
+        </p>
+        <div class="grid" id="showcase-grid"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <div>
+        <a class="wordmark" href="index.html" aria-label="rive-cli home"><span>rive</span><b>-cli</b></a>
+        <p>Original work and measured parity stay separate, with both sources inspectable.</p>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="lab.html">Verification Lab</a>
+        <a href="https://github.com/George-RD/rive-rs-cli">GitHub ↗</a>
+      </div>
+    </footer>
+
+    <script src="assets/rive.js"></script>
+    <script src="playback.js"></script>
+    <script src="showcase.js"></script>
+  </body>
+</html>
