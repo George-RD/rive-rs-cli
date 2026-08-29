@@ -164,14 +164,17 @@ impl<'a> AuthoringCompiler<'a> {
         let child_index_base = lowered.scene["artboard"]["children"]
             .as_array()
             .map_or(0, Vec::len);
+        let listener_targets = MotionTargetIndex::from_output(&lowered.scene, &lowered.source_map)
+            .map_err(AuthoringError::one)
+            .map_err(|error| rewrite_error_paths(spec, error))?;
         let behavior::BehaviorLoweringOutput {
-            view_models,
+            artboard_children,
             state_machines,
             source_entries,
-        } = behavior::lower_behavior(spec, child_index_base, 0)
+        } = behavior::lower_behavior(spec, child_index_base, 0, listener_targets)
             .map_err(|error| rewrite_error_paths(spec, error))?;
 
-        if view_models.is_empty() && state_machines.is_empty() {
+        if artboard_children.is_empty() && state_machines.is_empty() {
             debug_assert!(source_entries.is_empty());
             return Ok((lowered, runtime_names));
         }
@@ -202,13 +205,13 @@ impl<'a> AuthoringCompiler<'a> {
         let artboard = lowered.scene["artboard"]
             .as_object_mut()
             .expect("canonical AuthoringSpec lowering always produces an artboard object");
-        if !view_models.is_empty() {
+        if !artboard_children.is_empty() {
             let children = artboard
                 .entry("children")
                 .or_insert_with(|| Value::Array(Vec::new()))
                 .as_array_mut()
                 .expect("canonical children value must remain an array");
-            children.extend(view_models);
+            children.extend(artboard_children);
         }
 
         if !state_machines.is_empty() {

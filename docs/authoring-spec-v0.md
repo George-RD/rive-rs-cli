@@ -25,7 +25,7 @@ A v0 document has four explicit graphs plus a deterministic file-scope asset reg
 - `components`: reusable authored visual definitions with typed parameter defaults.
 - `visual`: the root visual graph.
 - `motion`: typed poses and tracks plus `raw_animations` for canonical expert escapes.
-- `behavior`: typed boolean view models, bindings, named states, and boolean-equality transitions plus `raw_state_machines` for canonical expert escapes.
+- `behavior`: typed boolean view models and bindings, boolean state-machine inputs, named Rive events, typed listeners, named states, and boolean-equality transitions plus `raw_state_machines` for canonical expert escapes.
 
 The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, mirror, distribute, and along-path patterns, group-scoped transform-anchor constraints, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Motion and behavior remain deliberately incremental: v0 exposes only compiler-proven typed subsets and retains raw canonical escapes for unsupported features.
 
@@ -326,13 +326,17 @@ A `group` may declare an optional `constraints` array. Constraints reference dir
 
 Constraints are intentionally group-local and anchor-based. They do not inspect rendered bounds, infer edges, or act as a general CAD solver. Raw `SceneSpec` nodes cannot participate because they have no typed authoring transform. A group may declare at most 100 constraints. Each constraint `id` must be non-empty after trimming, must not contain `/`, and must be unique within its group. Dependency chains are bounded to 100 assignments. Unknown siblings, oversized constraint lists, invalid or duplicate constraint IDs, duplicate spacing entries, conflicting assignments, invalid units, excessive dependency depth, and dependency cycles return authored-path diagnostics such as `unknown_constraint_node`, `invalid_constraint_count`, `invalid_constraint_id`, `duplicate_constraint_id`, `constraint_conflict`, `constraint_resolution_depth_limit`, and `constraint_cycle`. Cycle messages include the stable authored anchor chain.
 
-## Typed behavior tracer bullet
+## Typed behavior interaction
 
-The first typed behavior slice keeps authored interaction free of runtime indices while reusing the same compiler-owned `SceneSpec` draft as visual and motion lowering. A behavior model may currently declare boolean properties. Bindings select a model and property by authored ID. A statechart declares named states that reference authored motion tracks, an authored initial state, and named transitions whose `from` and `to` fields reference state IDs.
+Typed behavior stays on the same compiler-owned `SceneSpec` draft as visual and motion lowering and keeps authored interaction free of runtime indices. A behavior model may currently declare boolean properties, and bindings select a model and property by authored ID. A statechart declares named states that reference authored motion tracks, an authored initial state, and named transitions whose `from` and `to` fields reference state IDs.
 
-A transition condition currently supports one boolean equality check through `when.binding` and `when.equals`. The compiler lowers the model/property to a Rive view model, binds the generated state-machine condition to that property, and preserves source-map entries for the authored model, property, binding, statechart, states, and transitions. The canonical builder validates the lowered graph, and the official Rive web runtime contract verifies that changing the bound view-model boolean produces the expected state transition.
+Statecharts may also declare boolean `inputs`, named Rive `events`, and typed `listeners`. A listener targets either an authored visual ID for pointer interaction or an authored event ID when `listener_type` is `event`; the compiler resolves that semantic target to the generated runtime object name. The supported listener types are `enter`, `exit`, `down`, `up`, `move`, `event`, and `click`. The current typed action subset is `bool_change`, which references an authored statechart input and sets its boolean value.
 
-Events, listeners, richer property types, parallel regions, and broader interaction semantics remain outside this tracer-bullet subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Transition conditions support one boolean equality check through either `when.binding` / `when.equals` for a view-model binding or `when.input` / `when.equals` for an authored state-machine input. The compiler lowers model properties to Rive view models, explicit inputs to named state-machine inputs, events to named artboard event objects, listeners to canonical state-machine listeners, and conditions to runtime input names. Source-map entries preserve the authored model, property, binding, input, event, listener, statechart, states, and transitions. Unknown input, event, listener-target, and listener-action references fail at their authored JSON paths.
+
+The canonical builder validates the merged graph. Runtime contracts prove both interaction paths: changing a bound view-model boolean through the official web runtime changes state, while the compiled typed interaction fixture is also driven through the public `rive-cli render` interface with both `--input` and `--pointer`, and both must converge on the same visible state.
+
+Richer input/property types, listener actions, parallel regions, and broader interaction semantics remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

@@ -363,6 +363,79 @@ pub struct BehaviorBindingSpec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum BehaviorInputSpec {
+    Bool { id: String, value: bool },
+}
+
+impl BehaviorInputSpec {
+    pub(crate) fn id(&self) -> &str {
+        match self {
+            Self::Bool { id, .. } => id,
+        }
+    }
+
+    pub(crate) fn bool_value(&self) -> bool {
+        match self {
+            Self::Bool { value, .. } => *value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorEventSpec {
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum BehaviorListenerType {
+    Enter,
+    Exit,
+    Down,
+    Up,
+    Move,
+    Event,
+    Click,
+}
+
+impl BehaviorListenerType {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Enter => "enter",
+            Self::Exit => "exit",
+            Self::Down => "down",
+            Self::Up => "up",
+            Self::Move => "move",
+            Self::Event => "event",
+            Self::Click => "click",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum BehaviorListenerActionSpec {
+    BoolChange {
+        input: String,
+        #[serde(default = "default_true")]
+        value: bool,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorListenerSpec {
+    pub id: String,
+    pub target: String,
+    pub listener_type: BehaviorListenerType,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub actions: Vec<BehaviorListenerActionSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct BehaviorStateSpec {
     pub id: String,
@@ -371,9 +444,23 @@ pub struct BehaviorStateSpec {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct BehaviorTransitionConditionSpec {
+pub struct BehaviorBindingConditionSpec {
     pub binding: String,
     pub equals: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorInputConditionSpec {
+    pub input: String,
+    pub equals: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum BehaviorTransitionConditionSpec {
+    Binding(BehaviorBindingConditionSpec),
+    Input(BehaviorInputConditionSpec),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -389,6 +476,15 @@ pub struct BehaviorTransitionSpec {
 #[serde(deny_unknown_fields)]
 pub struct BehaviorStatechartSpec {
     pub id: String,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub inputs: Vec<BehaviorInputSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub events: Vec<BehaviorEventSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub listeners: Vec<BehaviorListenerSpec>,
     pub initial: String,
     #[schemars(length(min = 1, max = 1000))]
     pub states: Vec<BehaviorStateSpec>,
@@ -411,6 +507,10 @@ pub struct BehaviorSection {
     pub statecharts: Vec<BehaviorStatechartSpec>,
     #[serde(default)]
     pub raw_state_machines: Vec<RawSceneFragment>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
