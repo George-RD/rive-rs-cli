@@ -7,31 +7,11 @@ function el(tag, className, text) {
   return node;
 }
 
-function mountScene(canvas, file, options = {}) {
-  const params = {
-    canvas,
-    src: file,
-    autoplay: true,
-    fit: rive.Fit.contain,
-    alignment: rive.Alignment.center,
-  };
-  if (options.stateMachine) {
-    params.stateMachines = [options.stateMachine];
-  } else if (options.animation) {
-    params.animations = [options.animation];
-  }
-  const instance = new rive.Rive(params);
-  instance.on(rive.EventType.Load, () => {
-    instance.resizeDrawingSurfaceToCanvas();
-  });
-  return instance;
-}
-
 function formatPercentage(value) {
   return `${value.toFixed(4)}%`;
 }
 
-function buildSide(label, file, ariaLabel, rung) {
+function buildSide(label, ariaLabel) {
   const side = el("div", "side");
   side.appendChild(el("p", "side-label", label));
   const canvas = el("canvas", "scene");
@@ -39,8 +19,34 @@ function buildSide(label, file, ariaLabel, rung) {
   canvas.height = 600;
   canvas.setAttribute("aria-label", ariaLabel);
   side.appendChild(canvas);
-  mountScene(canvas, file, { stateMachine: rung.state_machine });
-  return side;
+  return { side, canvas };
+}
+
+function buildPlaybackControls(rung) {
+  const controls = el("div", "playback-controls");
+  const toggle = el("button", "playback-toggle", "Play");
+  toggle.type = "button";
+  toggle.disabled = true;
+  toggle.setAttribute("aria-label", `Play ${rung.title} comparison`);
+  controls.appendChild(toggle);
+
+  const frameLabel = el("label", "playback-frame-label", "Representative frame");
+  const frame = el("select", "playback-frame");
+  frame.disabled = true;
+  frame.setAttribute("aria-label", `Representative frame for ${rung.title}`);
+  for (const measured of rung.frames) {
+    const option = el("option", null, String(measured.index));
+    option.value = String(measured.index);
+    frame.appendChild(option);
+  }
+  frameLabel.appendChild(frame);
+  controls.appendChild(frameLabel);
+
+  const status = el("span", "playback-status", "loading both files…");
+  status.setAttribute("aria-live", "polite");
+  controls.appendChild(status);
+
+  return { controls, toggle, frame, status };
 }
 
 function buildMetrics(rung) {
@@ -102,20 +108,69 @@ function buildSource(rung) {
 
 function buildCard(rung) {
   const card = el("article", "card");
+  card.dataset.rungId = rung.id;
 
   const stage = el("div", "stage compare");
-  stage.appendChild(
-    buildSide("Official Rive file", rung.official, `${rung.title} official animation`, rung)
-  );
-  stage.appendChild(
-    buildSide(
-      "Compiled from our JSON",
-      rung.reproduction,
-      `${rung.title} compiled animation`,
-      rung
-    )
-  );
+  const official = buildSide("Official Rive file", `${rung.title} official animation`);
+  const reproduction = buildSide("Compiled from our JSON", `${rung.title} compiled animation`);
+  stage.appendChild(official.side);
+  stage.appendChild(reproduction.side);
   card.appendChild(stage);
+
+  const controls = buildPlaybackControls(rung);
+  card.appendChild(controls.controls);
+
+  const timeline = RivePlayback.createPairedTimeline({
+    left: { canvas: official.canvas, src: rung.official },
+    right: { canvas: reproduction.canvas, src: rung.reproduction },
+    stateMachine: rung.state_machine,
+    fps: RivePlayback.CAPTURE_FPS,
+    onFrame(frame) {
+      controls.status.textContent = `frame ${frame} · ${RivePlayback.CAPTURE_FPS} fps`;
+    },
+    onPlayingChange(playing) {
+      controls.toggle.textContent = playing ? "Pause" : "Play";
+      controls.toggle.setAttribute(
+        "aria-label",
+        `${playing ? "Pause" : "Play"} ${rung.title} comparison`
+      );
+    },
+  });
+
+  controls.toggle.addEventListener("click", async () => {
+    controls.toggle.disabled = true;
+    try {
+      if (timeline.isPlaying) {
+        await timeline.pause();
+      } else {
+        await timeline.play();
+      }
+    } finally {
+      controls.toggle.disabled = false;
+    }
+  });
+
+  controls.frame.addEventListener("change", async () => {
+    controls.frame.disabled = true;
+    controls.toggle.disabled = true;
+    try {
+      await timeline.pause();
+      await timeline.seekToFrame(Number(controls.frame.value));
+    } finally {
+      controls.frame.disabled = false;
+      controls.toggle.disabled = false;
+    }
+  });
+
+  timeline.ready
+    .then(() => {
+      controls.frame.disabled = false;
+      controls.toggle.disabled = false;
+    })
+    .catch((error) => {
+      controls.status.textContent = "playback unavailable";
+      console.error(`could not start ${rung.id} playback`, error);
+    });
 
   const body = el("div", "card-body");
   body.appendChild(el("h3", null, rung.title));
@@ -137,23 +192,30 @@ function buildCard(rung) {
   body.appendChild(buildSource(rung));
 
   card.appendChild(body);
-  return card;
+  return { card, timeline };
 }
 
 async function main() {
-  rive.RuntimeLoader.setWasmUrl("assets/rive.wasm");
-
-  const hero = document.querySelector(".hero-art .scene");
-  if (hero) {
-    mountScene(hero, "parity/official/coffee_loader.riv", { stateMachine: "State Machine 1" });
-  }
-
   const grid = document.getElementById("grid");
   const response = await fetch(RESULTS_URL);
   const rungs = await response.json();
+  const timelines = [];
   for (const rung of rungs) {
-    grid.appendChild(buildCard(rung));
+    const built = buildCard(rung);
+    grid.appendChild(built.card);
+    timelines.push(built.timeline);
   }
+
+  window.addEventListener("resize", () => {
+    for (const timeline of timelines) timeline.resize();
+  });
+  window.addEventListener(
+    "pagehide",
+    () => {
+      for (const timeline of timelines) timeline.destroy();
+    },
+    { once: true }
+  );
 
   const transcript = document.getElementById("transcript");
   try {
