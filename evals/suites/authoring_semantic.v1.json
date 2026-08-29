@@ -1,0 +1,87 @@
+{
+  "suite_name": "authoring-semantic-v1",
+  "suite_version": 1,
+  "gates": {
+    "min_validity_rate": 1.0,
+    "min_trait_adherence_rate": 1.0,
+    "min_pipeline_reproducibility_rate": 1.0,
+    "min_runtime_pass_rate": 1.0,
+    "min_semantic_static_pass_rate": 1.0,
+    "min_semantic_animated_pass_rate": 1.0,
+    "max_average_retries": 0.0,
+    "max_drift_count": 0
+  },
+  "cases": [
+    {
+      "id": "complex_static_authoring",
+      "input_kind": "authoring_example",
+      "input": "examples/authoring/complex-static-showcase.v0.json",
+      "semantic": {
+        "static_checks": [
+          {
+            "kind": "authored_id_present",
+            "authored_id": "hero-panel"
+          },
+          {
+            "kind": "authored_id_present",
+            "authored_id": "hero-panel/proof-grid"
+          },
+          {
+            "kind": "authored_id_has_runtime_type",
+            "authored_id": "background",
+            "object_type": "rectangle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "complex_animated_authoring",
+      "input_kind": "authoring_example",
+      "input": "examples/authoring/complex-animated-showcase.v0.json",
+      "expected_traits": ["has_animation"],
+      "runtime": {
+        "frames": [0, 42, 78, 119],
+        "fps": 60.0,
+        "width": 960,
+        "height": 540,
+        "scale": 1,
+        "min_non_blank_frames": 4,
+        "min_distinct_colors": 2
+      },
+      "semantic": {
+        "static_checks": [
+          {
+            "kind": "authored_id_present",
+            "authored_id": "decision-flow"
+          },
+          {
+            "kind": "authored_id_present",
+            "authored_id": "next-action"
+          },
+          {
+            "kind": "authored_id_has_runtime_type",
+            "authored_id": "decision-hub",
+            "object_type": "ellipse"
+          }
+        ],
+        "animated_checks": [
+          {
+            "kind": "frames_differ",
+            "from": 0,
+            "to": 42
+          },
+          {
+            "kind": "frames_differ",
+            "from": 42,
+            "to": 78
+          },
+          {
+            "kind": "frames_differ",
+            "from": 78,
+            "to": 119
+          }
+        ]
+      }
+    }
+  ]
+}

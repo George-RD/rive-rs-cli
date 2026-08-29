@@ -5,7 +5,9 @@ use crate::ai::AiConfig;
 use crate::ai::config::ProviderKind;
 use crate::ai::templates;
 
-use super::model::{EvalBaseline, EvalGates, EvalSuite, InputKind};
+use super::model::{
+    AnimatedSemanticCheck, EvalBaseline, EvalGates, EvalSuite, InputKind, StaticSemanticCheck,
+};
 use super::traits::SUPPORTED_TRAITS;
 
 fn validate_rate(name: &str, value: f64) -> Result<(), String> {
@@ -30,6 +32,17 @@ fn has_parent_component(path: &str) -> bool {
         .any(|component| matches!(component, Component::ParentDir))
 }
 
+fn validate_repo_relative_path(case_id: &str, label: &str, path: &str) -> Result<(), String> {
+    if Path::new(path).is_absolute() || has_parent_component(path) {
+        Err(format!(
+            "case '{}' {} must stay within the repository",
+            case_id, label
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
     if suite.suite_name.trim().is_empty() {
         return Err("suite name must not be empty".to_string());
@@ -51,6 +64,14 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
         suite.gates.min_pipeline_reproducibility_rate,
     )?;
     validate_rate("min_runtime_pass_rate", suite.gates.min_runtime_pass_rate)?;
+    validate_rate(
+        "min_semantic_static_pass_rate",
+        suite.gates.min_semantic_static_pass_rate,
+    )?;
+    validate_rate(
+        "min_semantic_animated_pass_rate",
+        suite.gates.min_semantic_animated_pass_rate,
+    )?;
     if suite
         .gates
         .max_average_retries
@@ -85,15 +106,11 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                 case.id, case.input
             ));
         }
-        if case
-            .image_path
-            .as_deref()
-            .is_some_and(|path| Path::new(path).is_absolute() || has_parent_component(path))
-        {
-            return Err(format!(
-                "case '{}' image_path must stay within the repository",
-                case.id
-            ));
+        if case.input_kind == InputKind::AuthoringExample {
+            validate_repo_relative_path(&case.id, "authoring input path", &case.input)?;
+        }
+        if let Some(image_path) = case.image_path.as_deref() {
+            validate_repo_relative_path(&case.id, "image_path", image_path)?;
         }
         if let Some(runtime) = &case.runtime {
             if runtime.frames.is_empty() {
@@ -137,6 +154,70 @@ pub fn validate_suite(suite: &EvalSuite) -> Result<(), String> {
                     "case '{}' runtime cannot select both an animation and a state machine",
                     case.id
                 ));
+            }
+        }
+
+        if let Some(semantic) = &case.semantic {
+            if case.input_kind != InputKind::AuthoringExample {
+                return Err(format!(
+                    "case '{}' semantic expectations require input_kind 'authoring_example'",
+                    case.id
+                ));
+            }
+            if semantic.static_checks.is_empty() && semantic.animated_checks.is_empty() {
+                return Err(format!(
+                    "case '{}' semantic expectations must contain at least one check",
+                    case.id
+                ));
+            }
+            for check in &semantic.static_checks {
+                match check {
+                    StaticSemanticCheck::AuthoredIdPresent { authored_id } => {
+                        if authored_id.trim().is_empty() {
+                            return Err(format!(
+                                "case '{}' semantic authored_id must not be empty",
+                                case.id
+                            ));
+                        }
+                    }
+                    StaticSemanticCheck::AuthoredIdHasRuntimeType {
+                        authored_id,
+                        object_type,
+                    } => {
+                        if authored_id.trim().is_empty() || object_type.trim().is_empty() {
+                            return Err(format!(
+                                "case '{}' semantic authored_id and object_type must not be empty",
+                                case.id
+                            ));
+                        }
+                    }
+                }
+            }
+            if !semantic.animated_checks.is_empty() && case.runtime.is_none() {
+                return Err(format!(
+                    "case '{}' animated semantic checks require runtime expectations",
+                    case.id
+                ));
+            }
+            if let Some(runtime) = &case.runtime {
+                for check in &semantic.animated_checks {
+                    match check {
+                        AnimatedSemanticCheck::FramesDiffer { from, to } => {
+                            if from == to {
+                                return Err(format!(
+                                    "case '{}' animated semantic frame pair must use different frames",
+                                    case.id
+                                ));
+                            }
+                            if !runtime.frames.contains(from) || !runtime.frames.contains(to) {
+                                return Err(format!(
+                                    "case '{}' animated semantic frames {} and {} must both be rendered",
+                                    case.id, from, to
+                                ));
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -219,12 +300,15 @@ pub fn resolve_eval_config(
     Ok(config)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn evaluate_gates(
     gates: &EvalGates,
     validity_rate: f64,
     trait_adherence_rate: f64,
     pipeline_reproducibility_rate: f64,
     runtime_pass_rate: f64,
+    semantic_static_pass_rate: f64,
+    semantic_animated_pass_rate: f64,
     average_retries: f64,
     drift_count: usize,
 ) -> Vec<String> {
@@ -251,6 +335,18 @@ pub fn evaluate_gates(
         failures.push(format!(
             "runtime pass rate {:.3} is below {:.3}",
             runtime_pass_rate, gates.min_runtime_pass_rate
+        ));
+    }
+    if semantic_static_pass_rate < gates.min_semantic_static_pass_rate {
+        failures.push(format!(
+            "static semantic pass rate {:.3} is below {:.3}",
+            semantic_static_pass_rate, gates.min_semantic_static_pass_rate
+        ));
+    }
+    if semantic_animated_pass_rate < gates.min_semantic_animated_pass_rate {
+        failures.push(format!(
+            "animated semantic pass rate {:.3} is below {:.3}",
+            semantic_animated_pass_rate, gates.min_semantic_animated_pass_rate
         ));
     }
     if gates

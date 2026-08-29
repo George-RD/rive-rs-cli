@@ -1,12 +1,15 @@
 mod model;
 mod runner;
 mod runtime;
+mod semantic;
 mod traits;
 mod validation;
 
 pub use model::{
-    EvalBaseline, EvalCase, EvalCaseReport, EvalGates, EvalReport, EvalSuite, InputKind,
-    RuntimeEvidence, RuntimeExpectations,
+    AnimatedSemanticCheck, EvalBaseline, EvalCase, EvalCaseReport, EvalDiagnosticEvidence,
+    EvalFailureStage, EvalGates, EvalReport, EvalSuite, InputKind, RuntimeEvidence,
+    RuntimeExpectations, SemanticCheckEvidence, SemanticEvidence, SemanticExpectations,
+    StaticSemanticCheck,
 };
 pub use runner::{run_eval_suite, run_eval_suite_configured};
 
@@ -15,14 +18,17 @@ mod tests {
     use std::collections::{BTreeMap, HashSet};
 
     use super::model::{
-        EvalBaseline, EvalCase, EvalGates, EvalSuite, InputKind, RuntimeExpectations,
+        AnimatedSemanticCheck, EvalBaseline, EvalCase, EvalGates, EvalSuite, InputKind,
+        RuntimeExpectations, SemanticExpectations, StaticSemanticCheck,
     };
     use super::runner::{test_hash_bytes, test_run_id};
     use super::runtime::evaluate_runtime_frames;
+    use super::semantic::evaluate_semantics;
     use super::traits::trait_score;
     use super::validation::{
         evaluate_gates, resolve_eval_config, validate_baseline, validate_suite,
     };
+    use crate::authoring::{AuthoringSourceMap, SourceMapEntry};
     use crate::render::RenderedFrame;
 
     fn test_case(id: &str) -> EvalCase {
@@ -34,6 +40,7 @@ mod tests {
             text_hint: None,
             image_path: None,
             runtime: None,
+            semantic: None,
         }
     }
 
@@ -70,6 +77,92 @@ mod tests {
         let (score, matched) = trait_score(&scene, &expected);
         assert!(score > 0.4 && score < 0.6);
         assert_eq!(matched, vec!["has_animation".to_string()]);
+    }
+
+    #[test]
+    fn semantic_static_checks_use_authored_identity_and_runtime_type() {
+        let scene = serde_json::json!({
+            "artboard": {
+                "children": [{"type": "rectangle", "name": "runtime-panel"}]
+            }
+        });
+        let source_map = AuthoringSourceMap {
+            entries: vec![SourceMapEntry {
+                authored_id: "panel".to_string(),
+                authored_path: "$.visual.nodes[0]".to_string(),
+                definition_path: None,
+                runtime_names: vec!["runtime-panel".to_string()],
+                scene_paths: vec!["$.artboard.children[0]".to_string()],
+            }],
+        };
+        let expectations = SemanticExpectations {
+            static_checks: vec![
+                StaticSemanticCheck::AuthoredIdPresent {
+                    authored_id: "panel".to_string(),
+                },
+                StaticSemanticCheck::AuthoredIdHasRuntimeType {
+                    authored_id: "panel".to_string(),
+                    object_type: "rectangle".to_string(),
+                },
+            ],
+            animated_checks: Vec::new(),
+        };
+        let evidence = evaluate_semantics(
+            std::path::Path::new("unused"),
+            &scene,
+            &source_map,
+            &expectations,
+            false,
+        );
+        assert_eq!(evidence.static_passed, Some(true));
+        assert_eq!(evidence.animated_passed, None);
+    }
+
+    #[test]
+    fn semantic_animated_check_compares_retained_frames() {
+        let root = std::env::temp_dir().join(format!(
+            "rive_semantic_frames_{}_{}",
+            std::process::id(),
+            test_run_id().unwrap()
+        ));
+        let render = root.join("render");
+        std::fs::create_dir_all(&render).unwrap();
+        std::fs::write(render.join("frame_00000.png"), b"frame-a").unwrap();
+        std::fs::write(render.join("frame_00030.png"), b"frame-b").unwrap();
+        let source_map = AuthoringSourceMap::default();
+        let expectations = SemanticExpectations {
+            static_checks: Vec::new(),
+            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
+        };
+        let evidence = evaluate_semantics(
+            &root,
+            &serde_json::json!({}),
+            &source_map,
+            &expectations,
+            true,
+        );
+        assert_eq!(evidence.static_passed, None);
+        assert_eq!(evidence.animated_passed, Some(true));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn semantic_animated_checks_skip_without_runtime_evidence() {
+        let source_map = AuthoringSourceMap::default();
+        let expectations = SemanticExpectations {
+            static_checks: Vec::new(),
+            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
+        };
+        let evidence = evaluate_semantics(
+            std::path::Path::new("unused"),
+            &serde_json::json!({}),
+            &source_map,
+            &expectations,
+            false,
+        );
+        assert_eq!(evidence.animated_passed, None);
+        assert!(evidence.animated_checks.is_empty());
+        assert_eq!(evidence.failure_reason, None);
     }
 
     #[test]
@@ -135,6 +228,37 @@ mod tests {
     }
 
     #[test]
+    fn semantic_checks_require_authoring_input() {
+        let mut case = test_case("semantic");
+        case.semantic = Some(SemanticExpectations {
+            static_checks: vec![StaticSemanticCheck::AuthoredIdPresent {
+                authored_id: "panel".to_string(),
+            }],
+            animated_checks: Vec::new(),
+        });
+        let error = validate_suite(&test_suite(vec![case])).unwrap_err();
+        assert!(error.contains("authoring_example"));
+    }
+
+    #[test]
+    fn animated_semantic_checks_must_reference_runtime_frames() {
+        let mut case = test_case("semantic-motion");
+        case.input_kind = InputKind::AuthoringExample;
+        case.input = "examples/authoring/complex-animated-showcase.v0.json".to_string();
+        case.runtime = Some(RuntimeExpectations {
+            frames: vec![0, 30],
+            min_non_blank_frames: 2,
+            ..RuntimeExpectations::default()
+        });
+        case.semantic = Some(SemanticExpectations {
+            static_checks: Vec::new(),
+            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 60 }],
+        });
+        let error = validate_suite(&test_suite(vec![case])).unwrap_err();
+        assert!(error.contains("must both be rendered"));
+    }
+
+    #[test]
     fn validate_baseline_requires_matching_complete_case_set() {
         let suite = test_suite(vec![test_case("bounce"), test_case("spinner")]);
         let baseline = EvalBaseline {
@@ -166,11 +290,16 @@ mod tests {
             min_validity_rate: 1.0,
             min_trait_adherence_rate: 0.9,
             min_pipeline_reproducibility_rate: 1.0,
+            min_runtime_pass_rate: 1.0,
+            min_semantic_static_pass_rate: 1.0,
+            min_semantic_animated_pass_rate: 1.0,
             max_average_retries: Some(1.0),
             max_drift_count: 0,
-            min_runtime_pass_rate: 1.0,
         };
-        assert_eq!(evaluate_gates(&gates, 0.8, 0.7, 0.5, 0.5, 2.0, 1).len(), 6);
+        assert_eq!(
+            evaluate_gates(&gates, 0.8, 0.7, 0.5, 0.5, 0.6, 0.4, 2.0, 1).len(),
+            8
+        );
     }
 
     #[test]
@@ -271,9 +400,10 @@ mod tests {
     }
 
     #[test]
-    fn ci_runs_official_runtime_contract_suite() {
+    fn ci_runs_official_runtime_and_authoring_semantic_suites() {
         let ci = include_str!("../../../.github/workflows/ci.yml");
         assert!(ci.contains("evals/suites/runtime_contract.v1.json"));
+        assert!(ci.contains("evals/suites/authoring_semantic.v1.json"));
         assert!(ci.contains("runtime-eval-evidence"));
     }
 }

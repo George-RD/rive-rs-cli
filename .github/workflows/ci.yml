@@ -84,13 +84,22 @@ jobs:
             --suite evals/suites/runtime_contract.v1.json \
             --provider template \
             --output-dir target/eval-runtime 2>&1 | tee runtime-eval.log
+      - name: Run AuthoringSpec semantic evaluation suite
+        run: |
+          set -o pipefail
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/authoring_semantic.v1.json \
+            --provider template \
+            --output-dir target/eval-authoring-semantic 2>&1 | tee authoring-semantic-eval.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: runtime-eval-evidence
           path: |
             runtime-eval.log
+            authoring-semantic-eval.log
             target/eval-runtime
+            target/eval-authoring-semantic
           retention-days: 7
 
   architecture:
