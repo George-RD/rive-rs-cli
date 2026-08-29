@@ -43,7 +43,10 @@ pub(super) fn lower_behavior(
     let mut property_runtime_by_id = HashMap::new();
     for (model_index, model) in spec.behavior.models.iter().enumerate() {
         let model_name = runtime_name(&[spec.artboard.id.clone(), model.id.clone()], "view_model");
-        let model_scene_path = format!("/artboard/children/{}", child_index_base + artboard_children.len());
+        let model_scene_path = format!(
+            "/artboard/children/{}",
+            child_index_base + artboard_children.len()
+        );
         let mut properties = Vec::with_capacity(model.properties.len());
         for (property_index, property) in model.properties.iter().enumerate() {
             let property_name = runtime_name(
@@ -485,7 +488,8 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                     "duplicate_behavior_input",
                     format!(
                         "behavior input id '{}' is duplicated in statechart '{}'",
-                        input.id(), statechart.id
+                        input.id(),
+                        statechart.id
                     ),
                 ));
             }
@@ -636,10 +640,7 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                     diagnostics.push(AuthoringDiagnostic::new(
                         format!("{transition_path}.when.binding"),
                         "unknown_behavior_binding",
-                        format!(
-                            "behavior binding '{}' is not defined",
-                            condition.binding
-                        ),
+                        format!("behavior binding '{}' is not defined", condition.binding),
                     ));
                 }
                 BehaviorTransitionConditionSpec::Input(condition)
@@ -667,19 +668,23 @@ fn resolve_listener_target(
     target: &str,
     path: &str,
 ) -> Result<String, AuthoringError> {
-    let bindings = listener_targets.resolve(target, path).map_err(|diagnostic| {
-        let code = match diagnostic.code.as_str() {
-            "unknown_motion_target" => "unknown_listener_target",
-            "ambiguous_motion_target" => "ambiguous_listener_target",
-            "unsupported_motion_target" => "unsupported_listener_target",
-            _ => "invalid_listener_target",
-        };
-        AuthoringError::one(AuthoringDiagnostic::new(
-            path,
-            code,
-            diagnostic.message.replace("visual target", "listener target"),
-        ))
-    })?;
+    let bindings = listener_targets
+        .resolve(target, path)
+        .map_err(|diagnostic| {
+            let code = match diagnostic.code.as_str() {
+                "unknown_motion_target" => "unknown_listener_target",
+                "ambiguous_motion_target" => "ambiguous_listener_target",
+                "unsupported_motion_target" => "unsupported_listener_target",
+                _ => "invalid_listener_target",
+            };
+            AuthoringError::one(AuthoringDiagnostic::new(
+                path,
+                code,
+                diagnostic
+                    .message
+                    .replace("visual target", "listener target"),
+            ))
+        })?;
     let binding = bindings
         .iter()
         .find(|binding| binding.is_primary)
