@@ -116,17 +116,22 @@ pub fn evaluate_semantics(
     scene: &Value,
     source_map: &AuthoringSourceMap,
     expectations: &SemanticExpectations,
+    animated_runtime_available: bool,
 ) -> SemanticEvidence {
     let static_checks = expectations
         .static_checks
         .iter()
         .map(|check| static_check(scene, source_map, check))
         .collect::<Vec<_>>();
-    let animated_checks = expectations
-        .animated_checks
-        .iter()
-        .map(|check| animated_check(case_dir, check))
-        .collect::<Vec<_>>();
+    let animated_checks = if animated_runtime_available {
+        expectations
+            .animated_checks
+            .iter()
+            .map(|check| animated_check(case_dir, check))
+            .collect::<Vec<_>>()
+    } else {
+        Vec::new()
+    };
 
     let static_passed =
         (!static_checks.is_empty()).then(|| static_checks.iter().all(|evidence| evidence.passed));

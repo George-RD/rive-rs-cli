@@ -112,6 +112,7 @@ mod tests {
             &scene,
             &source_map,
             &expectations,
+            false,
         );
         assert_eq!(evidence.static_passed, Some(true));
         assert_eq!(evidence.animated_passed, None);
@@ -133,11 +134,35 @@ mod tests {
             static_checks: Vec::new(),
             animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
         };
-        let evidence =
-            evaluate_semantics(&root, &serde_json::json!({}), &source_map, &expectations);
+        let evidence = evaluate_semantics(
+            &root,
+            &serde_json::json!({}),
+            &source_map,
+            &expectations,
+            true,
+        );
         assert_eq!(evidence.static_passed, None);
         assert_eq!(evidence.animated_passed, Some(true));
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn semantic_animated_checks_skip_without_runtime_evidence() {
+        let source_map = AuthoringSourceMap::default();
+        let expectations = SemanticExpectations {
+            static_checks: Vec::new(),
+            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
+        };
+        let evidence = evaluate_semantics(
+            std::path::Path::new("unused"),
+            &serde_json::json!({}),
+            &source_map,
+            &expectations,
+            false,
+        );
+        assert_eq!(evidence.animated_passed, None);
+        assert!(evidence.animated_checks.is_empty());
+        assert_eq!(evidence.failure_reason, None);
     }
 
     #[test]

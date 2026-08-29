@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use serde::Serialize;
 use serde_json::Value;
 
@@ -71,7 +73,16 @@ impl RepairEngine {
         Self { max_retries }
     }
 
-    pub fn repair(&self, mut json: Value, file_id: u64) -> Result<RepairResult, AiError> {
+    pub fn repair(&self, json: Value, file_id: u64) -> Result<RepairResult, AiError> {
+        self.repair_with_base_dir(json, file_id, None)
+    }
+
+    pub fn repair_with_base_dir(
+        &self,
+        mut json: Value,
+        file_id: u64,
+        base_dir: Option<&Path>,
+    ) -> Result<RepairResult, AiError> {
         let mut attempts: Vec<RepairAttempt> = Vec::new();
 
         for attempt_num in 0..=self.max_retries {
@@ -101,7 +112,7 @@ impl RepairEngine {
                 }
             };
 
-            let scene = match build_scene(&spec, None) {
+            let scene = match build_scene(&spec, base_dir) {
                 Ok(s) => s,
                 Err(e) => {
                     diagnostics.push(RepairDiagnostic {
