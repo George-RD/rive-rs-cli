@@ -11,76 +11,170 @@ jobs:
   fix:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           ref: feat/182-authoring-semantic-evals
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Apply reviewed changes
         run: |
           python3 - <<'PY'
+          import json
           from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              if text.count(old) != 1:
+                  raise SystemExit(f"{label}: expected one match, found {text.count(old)}")
+              return text.replace(old, new, 1)
+
+          repair = Path("src/ai/repair.rs")
+          text = repair.read_text()
+          text = replace_once(
+              text,
+              "use serde::Serialize;",
+              "use std::path::Path;\n\nuse serde::Serialize;",
+              "repair Path import",
+          )
+          text = replace_once(
+              text,
+              "    pub fn repair(&self, mut json: Value, file_id: u64) -> Result<RepairResult, AiError> {\n        let mut attempts: Vec<RepairAttempt> = Vec::new();",
+              """    pub fn repair(&self, json: Value, file_id: u64) -> Result<RepairResult, AiError> {
+              self.repair_with_base_dir(json, file_id, None)
+          }
+
+          pub fn repair_with_base_dir(
+              &self,
+              mut json: Value,
+              file_id: u64,
+              base_dir: Option<&Path>,
+          ) -> Result<RepairResult, AiError> {
+              let mut attempts: Vec<RepairAttempt> = Vec::new();""",
+              "repair base-dir entry point",
+          )
+          text = replace_once(
+              text,
+              "let scene = match build_scene(&spec, None) {",
+              "let scene = match build_scene(&spec, base_dir) {",
+              "repair build base dir",
+          )
+          repair.write_text(text)
 
           runner = Path("src/ai/eval/runner.rs")
           text = runner.read_text()
-          text = text.replace(
-              "use super::validation::{evaluate_gates, resolve_eval_config, validate_baseline, validate_suite};",
-              "use super::validation::{\n    EvalMetrics, evaluate_gates, resolve_eval_config, validate_baseline, validate_suite,\n};",
+          text = replace_once(
+              text,
+              "use std::path::Path;",
+              "use std::path::{Path, PathBuf};",
+              "runner PathBuf import",
           )
-          text = text.replace(
-              "#[derive(Debug)]\nstruct CaseRunError {",
-              '#[derive(Debug, thiserror::Error)]\n#[error("{reason}")]\nstruct CaseRunError {',
+          text = replace_once(
+              text,
+              ") -> Result<(Value, Option<AuthoringSourceMap>, bool), CaseRunError> {",
+              ") -> Result<(Value, Option<AuthoringSourceMap>, bool, Option<PathBuf>), CaseRunError> {",
+              "runner resolved scene tuple",
           )
-          start = text.index("        let input = fs::read_to_string(&fixture_path)")
-          end = text.index('        fs::write(case_dir.join("authoring-spec.json")', start)
-          text = text[:start] + '''        let input = fs::read_to_string(&fixture_path).map_err(|error| {
+          old_read = '''        let input = fs::read_to_string(&fixture_path).map_err(|error| CaseRunError {
+              reason: format!(
+                  "failed to read AuthoringSpec fixture {}: {}",
+                  fixture_path.display(),
+                  error
+              ),
+              stage: Some(EvalFailureStage::AuthoringSchema),
+              diagnostics: Vec::new(),
+          })?;'''
+          new_read = '''        let input = fs::read_to_string(&fixture_path).map_err(|error| {
               CaseRunError::structural(format!(
                   "failed to read AuthoringSpec fixture {}: {}",
                   fixture_path.display(),
                   error
               ))
-          })?;
-''' + text[end:]
-          text = text.replace(
-              "evaluate_semantics(case_dir, &repaired.scene_json, source_map, expectations)",
-              """evaluate_semantics(
+          })?;'''
+          text = replace_once(text, old_read, new_read, "fixture read classification")
+          text = replace_once(
+              text,
+              '''        return Ok((
+              lowered.scene,
+              Some(lowered.source_map),
+              lowering_reproducible,
+          ));''',
+              '''        return Ok((
+              lowered.scene,
+              Some(lowered.source_map),
+              lowering_reproducible,
+              fixture_path.parent().map(Path::to_path_buf),
+          ));''',
+              "authoring base dir",
+          )
+          text = replace_once(
+              text,
+              "    Ok((generated_scene, None, true))",
+              "    Ok((generated_scene, None, true, None))",
+              "provider tuple",
+          )
+          text = replace_once(
+              text,
+              '''    let (generated_scene, source_map, lowering_reproducible) =
+              resolve_case_scene(case, case_dir, config)?;''',
+              '''    let (generated_scene, source_map, lowering_reproducible, source_base_dir) =
+              resolve_case_scene(case, case_dir, config)?;''',
+              "runner tuple destructure",
+          )
+          text = replace_once(
+              text,
+              ".repair(generated_scene.clone(), file_id)",
+              ".repair_with_base_dir(generated_scene.clone(), file_id, source_base_dir.as_deref())",
+              "primary repair base dir",
+          )
+          text = replace_once(
+              text,
+              "let repeat = engine.repair(generated_scene, file_id).map_err(|error| {",
+              '''let repeat = engine
+              .repair_with_base_dir(generated_scene, file_id, source_base_dir.as_deref())
+              .map_err(|error| {''',
+              "repeat repair base dir",
+          )
+          text = replace_once(
+              text,
+              '''            evaluate_semantics(case_dir, &repaired.scene_json, source_map, expectations)''',
+              '''            evaluate_semantics(
                   case_dir,
                   &repaired.scene_json,
                   source_map,
                   expectations,
                   runtime.as_ref().is_some_and(|evidence| evidence.passed),
-              )""",
+              )''',
+              "semantic runtime gating",
           )
-          start = text.index("    let gate_failures = evaluate_gates(")
-          end = text.index("\n\n    let report = EvalReport", start)
-          text = text[:start] + '''    let metrics = EvalMetrics {
-              validity_rate,
-              trait_adherence_rate,
-              pipeline_reproducibility_rate,
-              runtime_pass_rate,
-              semantic_static_pass_rate,
-              semantic_animated_pass_rate,
-              average_retries,
-              drift_count,
-          };
-          let gate_failures = evaluate_gates(&suite.gates, &metrics);''' + text[end:]
           runner.write_text(text)
 
           semantic = Path("src/ai/eval/semantic.rs")
           text = semantic.read_text()
-          text = text.replace(
-              "    expectations: &SemanticExpectations,\n) -> SemanticEvidence {",
-              "    expectations: &SemanticExpectations,\n    animated_runtime_available: bool,\n) -> SemanticEvidence {",
-              1,
+          text = replace_once(
+              text,
+              '''    source_map: &AuthoringSourceMap,
+              expectations: &SemanticExpectations,
+          ) -> SemanticEvidence {''',
+              '''    source_map: &AuthoringSourceMap,
+              expectations: &SemanticExpectations,
+              animated_runtime_available: bool,
+          ) -> SemanticEvidence {''',
+              "semantic runtime parameter",
           )
-          old = """    let animated_checks = expectations
+          text = replace_once(
+              text,
+              '''    let animated_checks = expectations
               .animated_checks
               .iter()
               .map(|check| animated_check(case_dir, check))
-              .collect::<Vec<_>>();"""
-          new = """    let animated_checks = if animated_runtime_available {
+              .collect::<Vec<_>>();''',
+              '''    let animated_checks = if animated_runtime_available {
               expectations
                   .animated_checks
                   .iter()
@@ -88,162 +182,105 @@ jobs:
                   .collect::<Vec<_>>()
           } else {
               Vec::new()
-          };"""
-          if old not in text:
-              raise SystemExit("semantic animated block not found")
-          text = text.replace(old, new, 1)
+          };''',
+              "semantic animated gating",
+          )
           semantic.write_text(text)
-
-          validation = Path("src/ai/eval/validation.rs")
-          text = validation.read_text()
-          marker = "#[allow(clippy::too_many_arguments)]\npub fn evaluate_gates("
-          idx = text.index(marker)
-          text = text[:idx] + '''#[derive(Debug, Clone, Copy)]
-pub(super) struct EvalMetrics {
-    pub validity_rate: f64,
-    pub trait_adherence_rate: f64,
-    pub pipeline_reproducibility_rate: f64,
-    pub runtime_pass_rate: f64,
-    pub semantic_static_pass_rate: f64,
-    pub semantic_animated_pass_rate: f64,
-    pub average_retries: f64,
-    pub drift_count: usize,
-}
-
-pub fn evaluate_gates(gates: &EvalGates, metrics: &EvalMetrics) -> Vec<String> {
-    let mut failures = Vec::new();
-    if metrics.validity_rate < gates.min_validity_rate {
-        failures.push(format!(
-            "validity rate {:.3} is below {:.3}",
-            metrics.validity_rate, gates.min_validity_rate
-        ));
-    }
-    if metrics.trait_adherence_rate < gates.min_trait_adherence_rate {
-        failures.push(format!(
-            "trait adherence rate {:.3} is below {:.3}",
-            metrics.trait_adherence_rate, gates.min_trait_adherence_rate
-        ));
-    }
-    if metrics.pipeline_reproducibility_rate < gates.min_pipeline_reproducibility_rate {
-        failures.push(format!(
-            "pipeline reproducibility rate {:.3} is below {:.3}",
-            metrics.pipeline_reproducibility_rate, gates.min_pipeline_reproducibility_rate
-        ));
-    }
-    if metrics.runtime_pass_rate < gates.min_runtime_pass_rate {
-        failures.push(format!(
-            "runtime pass rate {:.3} is below {:.3}",
-            metrics.runtime_pass_rate, gates.min_runtime_pass_rate
-        ));
-    }
-    if metrics.semantic_static_pass_rate < gates.min_semantic_static_pass_rate {
-        failures.push(format!(
-            "static semantic pass rate {:.3} is below {:.3}",
-            metrics.semantic_static_pass_rate, gates.min_semantic_static_pass_rate
-        ));
-    }
-    if metrics.semantic_animated_pass_rate < gates.min_semantic_animated_pass_rate {
-        failures.push(format!(
-            "animated semantic pass rate {:.3} is below {:.3}",
-            metrics.semantic_animated_pass_rate, gates.min_semantic_animated_pass_rate
-        ));
-    }
-    if gates
-        .max_average_retries
-        .is_some_and(|maximum| metrics.average_retries > maximum)
-    {
-        failures.push(format!(
-            "average retries {:.3} exceeds {:.3}",
-            metrics.average_retries,
-            gates.max_average_retries.unwrap_or_default()
-        ));
-    }
-    if metrics.drift_count > gates.max_drift_count {
-        failures.push(format!(
-            "drift count {} exceeds {}",
-            metrics.drift_count, gates.max_drift_count
-        ));
-    }
-    failures
-}
-'''
-          validation.write_text(text)
 
           tests = Path("src/ai/eval/mod.rs")
           text = tests.read_text()
-          text = text.replace(
-              "        evaluate_gates, resolve_eval_config, validate_baseline, validate_suite,",
-              "        EvalMetrics, evaluate_gates, resolve_eval_config, validate_baseline, validate_suite,",
+          text = replace_once(
+              text,
+              '''            &source_map,
+              &expectations,
+          );
+          assert_eq!(evidence.static_passed, Some(true));''',
+              '''            &source_map,
+              &expectations,
+              false,
+          );
+          assert_eq!(evidence.static_passed, Some(true));''',
+              "static semantic test argument",
           )
-          text = text.replace(
-              "            &expectations,\n        );",
-              "            &expectations,\n            false,\n        );",
-              1,
-          )
-          text = text.replace(
-              "        let evidence =\n            evaluate_semantics(&root, &serde_json::json!({}), &source_map, &expectations);",
-              """        let evidence = evaluate_semantics(
+          text = replace_once(
+              text,
+              '''        let evidence =
+              evaluate_semantics(&root, &serde_json::json!({}), &source_map, &expectations);''',
+              '''        let evidence = evaluate_semantics(
               &root,
               &serde_json::json!({}),
               &source_map,
               &expectations,
               true,
-          );""",
-              1,
+          );''',
+              "animated semantic test argument",
           )
-          anchor = """        let _ = std::fs::remove_dir_all(root);
-    }
+          anchor = '''        assert_eq!(evidence.animated_passed, Some(true));
+              let _ = std::fs::remove_dir_all(root);
+          }
 
-    #[test]
-    fn hash_bytes_is_deterministic()"""
-          added = """        let _ = std::fs::remove_dir_all(root);
-    }
+          #[test]
+          fn hash_bytes_is_deterministic()'''
+          added = '''        assert_eq!(evidence.animated_passed, Some(true));
+              let _ = std::fs::remove_dir_all(root);
+          }
 
-    #[test]
-    fn semantic_animated_checks_skip_when_runtime_evidence_failed() {
-        let source_map = AuthoringSourceMap { entries: Vec::new() };
-        let expectations = SemanticExpectations {
-            static_checks: Vec::new(),
-            animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
-        };
-        let evidence = evaluate_semantics(
-            std::path::Path::new("unused"),
-            &serde_json::json!({}),
-            &source_map,
-            &expectations,
-            false,
-        );
-        assert_eq!(evidence.animated_passed, None);
-        assert!(evidence.animated_checks.is_empty());
-    }
+          #[test]
+          fn semantic_animated_checks_skip_without_runtime_evidence() {
+              let source_map = AuthoringSourceMap::default();
+              let expectations = SemanticExpectations {
+                  static_checks: Vec::new(),
+                  animated_checks: vec![AnimatedSemanticCheck::FramesDiffer { from: 0, to: 30 }],
+              };
+              let evidence = evaluate_semantics(
+                  std::path::Path::new("unused"),
+                  &serde_json::json!({}),
+                  &source_map,
+                  &expectations,
+                  false,
+              );
+              assert_eq!(evidence.animated_passed, None);
+              assert!(evidence.animated_checks.is_empty());
+              assert_eq!(evidence.failure_reason, None);
+          }
 
-    #[test]
-    fn hash_bytes_is_deterministic()"""
-          if anchor not in text:
-              raise SystemExit("test insertion anchor not found")
-          text = text.replace(anchor, added, 1)
-          start = text.index("        assert_eq!(\n            evaluate_gates(")
-          end = text.index("\n    }\n\n    #[test]\n    fn prompt_suite_rejects_template_provider", start)
-          text = text[:start] + '''        let metrics = EvalMetrics {
-              validity_rate: 0.8,
-              trait_adherence_rate: 0.7,
-              pipeline_reproducibility_rate: 0.5,
-              runtime_pass_rate: 0.5,
-              semantic_static_pass_rate: 0.6,
-              semantic_animated_pass_rate: 0.4,
-              average_retries: 2.0,
-              drift_count: 1,
-          };
-          assert_eq!(evaluate_gates(&gates, &metrics).len(), 8);''' + text[end:]
+          #[test]
+          fn hash_bytes_is_deterministic()'''
+          text = replace_once(text, anchor, added, "runtime semantic regression test")
           tests.write_text(text)
+
+          suite = Path("evals/suites/authoring_semantic.v1.json")
+          data = json.loads(suite.read_text())
+          static_checks = data["cases"][0]["semantic"]["static_checks"]
+          matches = [check for check in static_checks if check.get("authored_id") == "proof-grid"]
+          if len(matches) != 1:
+              raise SystemExit(f"suite authored id: expected one proof-grid check, found {len(matches)}")
+          matches[0]["authored_id"] = "hero-panel/proof-grid"
+          suite.write_text(json.dumps(data, indent=2) + "\n")
           PY
           cargo fmt
-      - name: Run focused Rust tests
-        run: cargo test --locked ai::eval
-      - name: Commit review fixes
+      - name: Verify Rust quality gates
         run: |
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --locked --all-features
+      - name: Verify semantic evaluation gate
+        run: |
+          npm install --no-save playwright@1.62.0
+          npx playwright install --with-deps chromium
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/runtime_contract.v1.json \
+            --provider template \
+            --output-dir target/eval-runtime
+          cargo run --quiet -- ai lab \
+            --suite evals/suites/authoring_semantic.v1.json \
+            --provider template \
+            --output-dir target/eval-authoring-semantic
+      - name: Commit verified fixes
+        run: |
+          rm .github/workflows/temporary-review-fixes.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/ai/eval
-          git commit -m "fix: address semantic eval review findings"
+          git add -A
+          git commit -m "fix: complete authoring semantic eval evidence"
           git push origin HEAD:feat/182-authoring-semantic-evals
