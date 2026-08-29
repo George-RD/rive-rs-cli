@@ -87,7 +87,7 @@ async function selectFrame(page, card, frame) {
           const toggle = card.querySelector("button.playback-toggle");
           const frame = card.querySelector("select.playback-frame");
           const status = card.querySelector(".playback-status")?.textContent || "";
-          return toggle && frame && !toggle.disabled && !frame.disabled && toggle.textContent === "Pause" && status.startsWith("frame ");
+          return toggle && frame && !toggle.disabled && !frame.disabled && toggle.textContent === "Play" && status.startsWith("frame 0 ");
         });
       },
       null,
@@ -96,26 +96,36 @@ async function selectFrame(page, card, frame) {
 
     const coffeeCard = page.locator('.card[data-rung-id="coffee_loader"]');
     const coffeeToggle = coffeeCard.locator("button.playback-toggle");
+    const initial = await canvasSnapshots(coffeeCard);
 
+    await coffeeToggle.click();
+    await page.waitForFunction(
+      () => {
+        const card = document.querySelector('.card[data-rung-id="coffee_loader"]');
+        const toggle = card?.querySelector("button.playback-toggle");
+        const status = card?.querySelector(".playback-status")?.textContent || "";
+        const match = status.match(/^frame (\d+) /);
+        return toggle?.textContent === "Pause" && Number(match?.[1] || 0) > 0;
+      },
+      null,
+      { timeout: 10000 }
+    );
+    await wait(300);
     await coffeeToggle.click();
     await page.waitForFunction(
       () => document.querySelector('.card[data-rung-id="coffee_loader"] button.playback-toggle')?.textContent === "Play"
     );
+
     const paused = await canvasSnapshots(coffeeCard);
+    for (let index = 0; index < initial.length; index += 1) {
+      if (initial[index] === paused[index]) {
+        errors.push(`shared play did not visibly advance coffee-loader canvas ${index + 1}`);
+      }
+    }
     await wait(300);
     const held = await canvasSnapshots(coffeeCard);
     if (JSON.stringify(paused) !== JSON.stringify(held)) {
       errors.push("shared pause did not hold both coffee-loader canvases stable");
-    }
-
-    await coffeeToggle.click();
-    await wait(300);
-    await coffeeToggle.click();
-    const resumed = await canvasSnapshots(coffeeCard);
-    for (let index = 0; index < held.length; index += 1) {
-      if (held[index] === resumed[index]) {
-        errors.push(`shared play did not visibly advance coffee-loader canvas ${index + 1}`);
-      }
     }
 
     await selectFrame(page, coffeeCard, 30);
