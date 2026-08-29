@@ -60,6 +60,7 @@ async function selectFrame(page, card, frame) {
     stdio: "ignore",
   });
   let browser;
+  let page;
   const shutdown = () => {
     if (browser) browser.close().catch(() => {});
     server.kill("SIGTERM");
@@ -69,7 +70,7 @@ async function selectFrame(page, card, frame) {
   try {
     await waitForServer(PORT);
     browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+    page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
     const errors = [];
     page.on("console", (message) => {
       if (message.type() === "error") errors.push(message.text());
@@ -183,7 +184,23 @@ async function selectFrame(page, card, frame) {
     shutdown();
     process.exit(0);
   } catch (error) {
+    let state = null;
+    if (page) {
+      try {
+        state = await page.evaluate(() =>
+          Array.from(document.querySelectorAll(".card")).map((card) => ({
+            id: card.dataset.rungId,
+            toggle: card.querySelector("button.playback-toggle")?.textContent || null,
+            toggleDisabled: card.querySelector("button.playback-toggle")?.disabled ?? null,
+            frameDisabled: card.querySelector("select.playback-frame")?.disabled ?? null,
+            status: card.querySelector(".playback-status")?.textContent || null,
+            canvases: card.querySelectorAll("canvas.scene").length,
+          }))
+        );
+      } catch {}
+    }
     process.stdout.write(`Site playback validation error: ${error.message}\n`);
+    if (state) process.stdout.write(`Playback DOM state: ${JSON.stringify(state)}\n`);
     shutdown();
     process.exit(1);
   }
