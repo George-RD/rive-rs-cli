@@ -8,6 +8,8 @@ canonical `SceneSpec` object graph.
 | `component-badges.v0.json` | Reusable components, parameters, and instance overrides |
 | `text-label.v0.json` | Typed literal text and semantic text styling |
 | `typed-motion.v0.json` | Typed visual composition, relative image asset, poses, and timeline motion |
+| `behavior-binding.v0.json` | Boolean view-model binding driving a named typed statechart |
+| `pointer-statechart.v0.json` | Boolean state-machine input, named event, pointer listener, and input-driven transition |
 | `raw-pulse.v0.json` | The explicit raw SceneSpec escape hatch for unsupported concepts |
 | `complex-static-showcase.v0.json` | A complex static composition built without raw scene, motion, or behavior escapes |
 | `complex-animated-showcase.v0.json` | A complex animated signal-to-action story built without raw scene, motion, or behavior escapes |
@@ -29,6 +31,14 @@ Compile the high-level typed-motion fixture directly:
 ```bash
 cargo run -- authoring compile examples/authoring/typed-motion.v0.json -o typed-motion.riv
 cargo run -- authoring compile examples/authoring/typed-motion.v0.json -o typed-motion.riv --file-id 42 --json
+```
+
+Compile and drive the typed interaction fixture through the public runtime path:
+
+```bash
+cargo run -- authoring compile examples/authoring/pointer-statechart.v0.json -o pointer-statechart.riv
+cargo run -- render pointer-statechart.riv --state-machine auth__interaction_2dstage__gate__state_machine --input auth__interaction_2dstage__gate__pressed__input=true@1 --frames 0,12
+cargo run -- render pointer-statechart.riv --state-machine auth__interaction_2dstage__gate__state_machine --pointer down:60,100@1 --frames 0,12
 ```
 
 Compile the complex animated showcase through the same public path:
@@ -55,12 +65,17 @@ Run the durable example and CLI contracts with:
 ```bash
 cargo test --test authoring_examples
 cargo test --test authoring_cli
+cargo test --test authoring_interaction_contract
+node tests/playwright/authoring-behavior-runtime.js
 ```
 
 The example contract lowers every fixture twice to prove deterministic
 SceneSpec and source-map output, then builds the canonical object graph. The
 complex animated contract additionally proves its motion vocabulary and
-canonical builder/encoder/validator path. The CLI contract compiles typed visual
-and motion content through the shared SceneSpec compilation seam, validates the
+canonical builder/encoder/validator path. The typed interaction contract proves
+input/event/listener lowering and authored-path diagnostics, while the retained
+runtime contract requires both `render --input` and `render --pointer` to produce
+the same visible state transition. The CLI contract compiles typed visual and
+motion content through the shared SceneSpec compilation seam, validates the
 resulting `.riv`, preserves file IDs and input-relative assets, and checks full
 source-mapped JSON diagnostics.
