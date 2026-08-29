@@ -7,6 +7,13 @@ pub struct OpenAiProvider {
     base_url: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AuthoringTask {
+    Static,
+    Animated,
+    Interactive,
+}
+
 impl OpenAiProvider {
     pub fn new(api_key: String, base_url: String) -> Self {
         Self { api_key, base_url }
@@ -40,13 +47,25 @@ impl OpenAiProvider {
     }
 
     fn build_authoring_system_prompt(&self, input: &str) -> String {
-        let schema = serde_json::to_string_pretty(&crate::authoring::authoring_schema())
-            .unwrap_or_else(|_| "{}".to_string());
-        let example = authoring_example(input);
+        let task = authoring_task(input);
+        let schema = crate::authoring::authoring_schema();
+        let schema_json =
+            serde_json::to_string_pretty(&schema).unwrap_or_else(|_| "{}".to_string());
+        let schema_slice = authoring_schema_slice(&schema, task);
+        let schema_slice_json =
+            serde_json::to_string_pretty(&schema_slice).unwrap_or_else(|_| "{}".to_string());
+        let example = authoring_example(task);
+        let source_map = crate::authoring::lower_authoring_json(example)
+            .ok()
+            .and_then(|lowered| serde_json::to_string_pretty(&lowered.source_map).ok())
+            .unwrap_or_else(|| "{}".to_string());
         format!(
             "You are a Rive animation author. Produce high-level AuthoringSpec JSON for rive-cli. AuthoringSpec expresses visual, motion, and behavior intent through stable authored IDs; rive-cli deterministically lowers it to SceneSpec and .riv.\n\n\
-             ## Current AuthoringSpec schema\n\n{}\n\n\
+             ## Task-specific AuthoringSpec schema focus\n\n{}\n\n\
+             This focus lists the top-level AuthoringSpec sections relevant to this task. Follow referenced definitions from the complete current schema below.\n\n\
+             ## Complete current AuthoringSpec schema\n\n{}\n\n\
              ## Relevant checked-in showcase\n\n{}\n\n\
+             ## Relevant authored-to-runtime source-map example\n\n{}\n\n\
              ## Rules\n\
              - Output ONLY one valid AuthoringSpec JSON object matching the current schema.\n\
              - authoring_format_version must be 0.\n\
@@ -56,7 +75,7 @@ impl OpenAiProvider {
              - Use raw SceneSpec escapes only when the requested Rive concept is not represented by the typed schema: visual raw_scene_object nodes, motion.raw_animations, or behavior.raw_state_machines. Never use a raw escape merely for convenience.\n\
              - Do NOT invent fields or claim unsupported behavior.\n\
              - Do NOT include explanation, markdown, or text outside the JSON object.",
-            schema, example
+            schema_slice_json, schema_json, example, source_map
         )
     }
 
@@ -145,7 +164,7 @@ impl AiProvider for OpenAiProvider {
     }
 }
 
-fn authoring_example(input: &str) -> &'static str {
+fn authoring_task(input: &str) -> AuthoringTask {
     let normalized = input.to_ascii_lowercase();
     if [
         "interactive",
@@ -160,10 +179,7 @@ fn authoring_example(input: &str) -> &'static str {
     .iter()
     .any(|needle| normalized.contains(needle))
     {
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/examples/authoring/complex-interactive-showcase.v0.json"
-        ))
+        AuthoringTask::Interactive
     } else if [
         "animate",
         "animation",
@@ -177,16 +193,59 @@ fn authoring_example(input: &str) -> &'static str {
     .iter()
     .any(|needle| normalized.contains(needle))
     {
-        include_str!(concat!(
+        AuthoringTask::Animated
+    } else {
+        AuthoringTask::Static
+    }
+}
+
+fn authoring_example(task: AuthoringTask) -> &'static str {
+    match task {
+        AuthoringTask::Interactive => include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/examples/authoring/complex-interactive-showcase.v0.json"
+        )),
+        AuthoringTask::Animated => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/examples/authoring/complex-animated-showcase.v0.json"
-        ))
-    } else {
-        include_str!(concat!(
+        )),
+        AuthoringTask::Static => include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/examples/authoring/complex-static-showcase.v0.json"
-        ))
+        )),
     }
+}
+
+fn authoring_schema_slice(
+    schema: &serde_json::Value,
+    task: AuthoringTask,
+) -> serde_json::Value {
+    let mut names = vec![
+        "authoring_format_version",
+        "artboard",
+        "parameters",
+        "components",
+        "visual",
+    ];
+    if matches!(task, AuthoringTask::Animated | AuthoringTask::Interactive) {
+        names.push("motion");
+    }
+    if task == AuthoringTask::Interactive {
+        names.push("behavior");
+    }
+
+    let properties = schema
+        .get("properties")
+        .and_then(serde_json::Value::as_object);
+    let focused = names
+        .into_iter()
+        .filter_map(|name| {
+            properties
+                .and_then(|properties| properties.get(name))
+                .map(|value| (name.to_string(), value.clone()))
+        })
+        .collect::<serde_json::Map<_, _>>();
+    serde_json::json!({ "properties": focused })
 }
 
 fn extract_json(content: &str) -> Result<serde_json::Value, AiError> {
@@ -300,7 +359,7 @@ mod tests {
         assert!(prompt.contains("stable authored IDs"));
         assert!(prompt.contains("Do NOT author runtime indices"));
         assert!(prompt.contains("raw_state_machines"));
-        assert!(prompt.contains("complex"));
+        assert!(prompt.contains("Relevant authored-to-runtime source-map example"));
     }
 
     #[test]
@@ -312,9 +371,44 @@ mod tests {
     }
 
     #[test]
-    fn example_selection_tracks_requested_semantic_dimension() {
-        assert!(authoring_example("static dashboard").contains("authoring_format_version"));
-        assert!(authoring_example("animate the signal").contains("motion"));
-        assert!(authoring_example("interactive toggle").contains("statecharts"));
+    fn task_selection_tracks_requested_semantic_dimension() {
+        assert_eq!(authoring_task("static dashboard"), AuthoringTask::Static);
+        assert_eq!(
+            authoring_task("animate the signal"),
+            AuthoringTask::Animated
+        );
+        assert_eq!(
+            authoring_task("interactive toggle"),
+            AuthoringTask::Interactive
+        );
+    }
+
+    #[test]
+    fn schema_focus_only_adds_motion_and_behavior_when_relevant() {
+        let schema = crate::authoring::authoring_schema();
+        let static_slice = authoring_schema_slice(&schema, AuthoringTask::Static);
+        let animated_slice = authoring_schema_slice(&schema, AuthoringTask::Animated);
+        let interactive_slice = authoring_schema_slice(&schema, AuthoringTask::Interactive);
+
+        assert!(static_slice["properties"].get("visual").is_some());
+        assert!(static_slice["properties"].get("motion").is_none());
+        assert!(static_slice["properties"].get("behavior").is_none());
+        assert!(animated_slice["properties"].get("motion").is_some());
+        assert!(animated_slice["properties"].get("behavior").is_none());
+        assert!(interactive_slice["properties"].get("motion").is_some());
+        assert!(interactive_slice["properties"].get("behavior").is_some());
+    }
+
+    #[test]
+    fn representative_showcases_provide_source_map_context() {
+        for task in [
+            AuthoringTask::Static,
+            AuthoringTask::Animated,
+            AuthoringTask::Interactive,
+        ] {
+            let lowered = crate::authoring::lower_authoring_json(authoring_example(task))
+                .expect("checked-in AuthoringSpec showcase should lower");
+            assert!(!lowered.source_map.entries.is_empty());
+        }
     }
 }
