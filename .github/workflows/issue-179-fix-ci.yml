@@ -1,0 +1,36 @@
+name: Issue 179 compile fix
+
+on:
+  push:
+    branches:
+      - issue-179-typed-behavior
+    paths:
+      - scripts/issue179_compile_fix_trigger
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply focused compile fix
+        run: python scripts/issue179_compile_fix.py
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Check all targets
+        run: cargo check --locked --all-targets --all-features
+      - name: Commit branch changes
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/builder/scene.rs
+          git commit -m "fix(builder): initialize optional view-model bindings"
+          git push
