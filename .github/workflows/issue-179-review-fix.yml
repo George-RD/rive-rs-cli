@@ -1,0 +1,89 @@
+name: Issue 179 review fix
+
+on:
+  push:
+    branches:
+      - issue-179-typed-behavior
+    paths:
+      - scripts/issue179_review_fix_trigger
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply review remediation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one replacement, found {count}")
+              p.write_text(text.replace(old, new, 1))
+
+          behavior = "src/authoring/frontend/compiler/behavior.rs"
+          replace_once(
+              behavior,
+              """pub(super) struct BehaviorLoweringOutput {\n    pub(super) state_machines: Vec<Value>,\n    pub(super) source_entries: Vec<SourceMapEntry>,\n}\n\npub(super) fn lower_behavior(\n    spec: &AuthoringSpec,\n    state_machine_index_base: usize,\n) -> Result<BehaviorLoweringOutput, AuthoringError> {""",
+              """pub(super) struct BehaviorLoweringOutput {\n    pub(super) view_models: Vec<Value>,\n    pub(super) state_machines: Vec<Value>,\n    pub(super) source_entries: Vec<SourceMapEntry>,\n}\n\npub(super) fn lower_behavior(\n    spec: &AuthoringSpec,\n    child_index_base: usize,\n    state_machine_index_base: usize,\n) -> Result<BehaviorLoweringOutput, AuthoringError> {""",
+          )
+          replace_once(
+              behavior,
+              """    let mut state_machines = Vec::with_capacity(spec.behavior.statecharts.len());\n    let mut source_entries = Vec::new();\n    let mut binding_runtime: HashMap<usize, (Vec<String>, Vec<String>)> = HashMap::new();\n""",
+              """    let mut source_entries = Vec::new();\n    let mut view_models = Vec::with_capacity(spec.behavior.models.len());\n    let mut model_runtime_by_id = HashMap::new();\n    let mut property_runtime_by_id = HashMap::new();\n    for (model_index, model) in spec.behavior.models.iter().enumerate() {\n        let model_name = runtime_name(\n            &[spec.artboard.id.clone(), model.id.clone()],\n            \"view_model\",\n        );\n        let model_scene_path = format!(\"/artboard/children/{}\", child_index_base + model_index);\n        let mut properties = Vec::with_capacity(model.properties.len());\n        for (property_index, property) in model.properties.iter().enumerate() {\n            let property_name = runtime_name(\n                &[\n                    spec.artboard.id.clone(),\n                    model.id.clone(),\n                    property.id().to_string(),\n                ],\n                \"view_model_property\",\n            );\n            match property {\n                BehaviorPropertySpec::Bool { .. } => properties.push(json!({\n                    \"type\": \"view_model_property_boolean\",\n                    \"name\": property_name\n                })),\n            }\n            property_runtime_by_id.insert(\n                (model.id.as_str(), property.id()),\n                property_name.clone(),\n            );\n            source_entries.push(SourceMapEntry {\n                authored_id: format!(\"{}/{}\", model.id, property.id()),\n                authored_path: format!(\n                    \"$.behavior.models[{model_index}].properties[{property_index}]\"\n                ),\n                definition_path: None,\n                runtime_names: vec![property_name],\n                scene_paths: vec![format!(\n                    \"{model_scene_path}/children/{property_index}\"\n                )],\n            });\n        }\n        model_runtime_by_id.insert(model.id.as_str(), model_name.clone());\n        source_entries.push(SourceMapEntry {\n            authored_id: model.id.clone(),\n            authored_path: format!(\"$.behavior.models[{model_index}]\"),\n            definition_path: None,\n            runtime_names: vec![model_name.clone()],\n            scene_paths: vec![model_scene_path],\n        });\n        view_models.push(json!({\n            \"type\": \"view_model\",\n            \"name\": model_name,\n            \"children\": properties\n        }));\n    }\n\n    let mut state_machines = Vec::with_capacity(spec.behavior.statecharts.len());\n    let mut binding_runtime: HashMap<usize, (Vec<String>, Vec<String>)> = HashMap::new();\n""",
+          )
+          replace_once(
+              behavior,
+              """            inputs.push(json!({\n                \"type\": \"bool\",\n                \"name\": input_name,\n                \"value\": binding_bool_value(spec, binding)\n            }));\n""",
+              """            let model_name = model_runtime_by_id\n                .get(binding.model.as_str())\n                .expect(\"validated behavior model\");\n            let property_name = property_runtime_by_id\n                .get(&(binding.model.as_str(), binding.property.as_str()))\n                .expect(\"validated behavior property\");\n            inputs.push(json!({\n                \"type\": \"bool\",\n                \"name\": input_name,\n                \"value\": binding_bool_value(spec, binding),\n                \"view_model_binding\": {\n                    \"view_model\": model_name,\n                    \"property\": property_name\n                }\n            }));\n""",
+          )
+          replace_once(
+              behavior,
+              """    Ok(BehaviorLoweringOutput {\n        state_machines,\n        source_entries,\n    })\n""",
+              """    Ok(BehaviorLoweringOutput {\n        view_models,\n        state_machines,\n        source_entries,\n    })\n""",
+          )
+
+          compiler = Path("src/authoring/frontend/compiler.rs")
+          text = compiler.read_text()
+          start = text.index("    fn lower_behavior(\n")
+          end = text.index("    pub(super) fn finish", start)
+          new_function = '''    fn lower_behavior(\n        spec: &AuthoringSpec,\n        mut lowered: LoweredAuthoring,\n        mut runtime_names: RuntimeNameRegistry,\n    ) -> Result<(LoweredAuthoring, RuntimeNameRegistry), AuthoringError> {\n        let child_index_base = lowered.scene["artboard"]["children"]\n            .as_array()\n            .map_or(0, Vec::len);\n        let behavior::BehaviorLoweringOutput {\n            view_models,\n            state_machines,\n            source_entries,\n        } = behavior::lower_behavior(spec, child_index_base, 0)\n            .map_err(|error| rewrite_error_paths(spec, error))?;\n\n        if view_models.is_empty() && state_machines.is_empty() {\n            debug_assert!(source_entries.is_empty());\n            return Ok((lowered, runtime_names));\n        }\n\n        let typed_state_machine_count = state_machines.len();\n        if typed_state_machine_count > 0 {\n            for entry in &mut lowered.source_map.entries {\n                if !entry\n                    .authored_path\n                    .starts_with("$.behavior.raw_state_machines[")\n                {\n                    continue;\n                }\n                for scene_path in &mut entry.scene_paths {\n                    if let Some(index) = scene_path\n                        .strip_prefix("/artboard/state_machines/")\n                        .and_then(|index| index.parse::<usize>().ok())\n                    {\n                        *scene_path = format!(\n                            "/artboard/state_machines/{}",\n                            index + typed_state_machine_count\n                        );\n                    }\n                }\n            }\n        }\n\n        let artboard = lowered.scene["artboard"]\n            .as_object_mut()\n            .expect("canonical AuthoringSpec lowering always produces an artboard object");\n        if !view_models.is_empty() {\n            let children = artboard\n                .entry("children")\n                .or_insert_with(|| Value::Array(Vec::new()))\n                .as_array_mut()\n                .expect("canonical children value must remain an array");\n            children.extend(view_models);\n        }\n\n        if !state_machines.is_empty() {\n            let existing_raw = artboard\n                .remove("state_machines")\n                .and_then(|value| value.as_array().cloned())\n                .unwrap_or_default();\n            let mut ordered = state_machines;\n            ordered.extend(existing_raw);\n            artboard.insert("state_machines".to_string(), Value::Array(ordered));\n        }\n\n        for entry in &source_entries {\n            runtime_names.register(entry);\n        }\n        lowered.source_map.entries.extend(source_entries);\n        behavior::validate_lowered_scene(&lowered.scene)\n            .map_err(|error| rewrite_error_paths(spec, error))?;\n\n        Ok((lowered, runtime_names))\n    }\n\n'''
+          compiler.write_text(text[:start] + new_function + text[end:])
+
+          test = "tests/authoring_behavior_contract.rs"
+          replace_once(
+              test,
+              """    assert_eq!(machine[\"inputs\"][0][\"value\"], true);\n\n    let layer = &machine[\"layers\"][0];\n""",
+              """    assert_eq!(machine[\"inputs\"][0][\"value\"], true);\n\n    let view_model = first.scene[\"artboard\"][\"children\"]\n        .as_array()\n        .expect(\"artboard children\")\n        .iter()\n        .find(|child| child[\"type\"] == \"view_model\")\n        .expect(\"lowered behavior view model\");\n    assert_eq!(\n        view_model[\"name\"],\n        \"auth__behavior_2dstage__gate_2dmodel__view_model\"\n    );\n    assert_eq!(\n        view_model[\"children\"][0][\"type\"],\n        \"view_model_property_boolean\"\n    );\n    assert_eq!(\n        view_model[\"children\"][0][\"name\"],\n        \"auth__behavior_2dstage__gate_2dmodel__enabled__view_model_property\"\n    );\n    assert_eq!(\n        machine[\"inputs\"][0][\"view_model_binding\"][\"view_model\"],\n        view_model[\"name\"]\n    );\n    assert_eq!(\n        machine[\"inputs\"][0][\"view_model_binding\"][\"property\"],\n        view_model[\"children\"][0][\"name\"]\n    );\n\n    let layer = &machine[\"layers\"][0];\n""",
+          )
+          marker = """#[test]\nfn binding_to_unknown_model_property_reports_authored_path() {\n"""
+          raw_test = '''#[test]\nfn typed_behavior_precedes_raw_escape_hatches_and_preserves_source_map_indices() {\n    let mut input = document();\n    input["behavior"]["raw_state_machines"] = json!([\n        {\n            "id": "legacy",\n            "value": {\n                "name": "legacy_machine",\n                "layers": [\n                    {\n                        "states": [\n                            { "type": "entry" },\n                            { "type": "exit" }\n                        ],\n                        "transitions": [\n                            { "from": 0, "to": 1 }\n                        ]\n                    }\n                ]\n            }\n        }\n    ]);\n\n    let lowered = lower(&input);\n    let machines = lowered.scene["artboard"]["state_machines"]\n        .as_array()\n        .expect("state machines");\n    assert_eq!(\n        machines[0]["name"],\n        "auth__behavior_2dstage__gate__state_machine"\n    );\n    assert_eq!(machines[1]["name"], "legacy_machine");\n\n    let raw_source = lowered\n        .source_map\n        .entries\n        .iter()\n        .find(|entry| entry.authored_id == "legacy")\n        .expect("raw behavior source map");\n    assert_eq!(\n        raw_source.scene_paths,\n        vec!["/artboard/state_machines/1"]\n    );\n\n    assert_builds(lowered.scene);\n}\n\n'''
+          replace_once(test, marker, raw_test + marker)
+          PY
+          cargo fmt --all
+      - name: Run focused behavior contract
+        run: cargo test --test authoring_behavior_contract --locked
+      - name: Verify generated schemas
+        run: |
+          cargo test published_authoring_schema_matches_generated_contract --test authoring_contract --locked
+          cargo test scene_schema_file_is_in_sync --lib --locked
+      - name: Commit review remediation
+        shell: bash
+        run: |
+          git rm -f .github/workflows/issue-179-authoring-schema-regen.yml scripts/issue179_authoring_schema_regen_trigger
+          git rm -f .github/workflows/issue-179-review-fix.yml scripts/issue179_review_fix_trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/authoring/frontend/compiler.rs src/authoring/frontend/compiler/behavior.rs tests/authoring_behavior_contract.rs
+          git commit -m "fix(authoring): bind typed behavior to view models"
+          git push
