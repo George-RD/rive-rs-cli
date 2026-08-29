@@ -5,16 +5,75 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
 use serde::Serialize;
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::ai::config::ProviderKind;
 use crate::ai::{AiConfig, AiError, RepairEngine, create_provider};
+use crate::authoring::{AuthoringError, AuthoringSourceMap, lower_authoring_json};
 use crate::validator::{InspectFilter, ValidationReport, parse_riv, validate_riv};
 
-use super::model::{EvalBaseline, EvalCase, EvalCaseReport, EvalReport, EvalSuite, InputKind};
+use super::model::{
+    EvalBaseline, EvalCase, EvalCaseReport, EvalDiagnosticEvidence, EvalFailureStage, EvalReport,
+    EvalSuite, InputKind,
+};
 use super::runtime::{failed_runtime_evidence, render_runtime_evidence};
+use super::semantic::evaluate_semantics;
 use super::traits::trait_score;
 use super::validation::{evaluate_gates, resolve_eval_config, validate_baseline, validate_suite};
+
+#[derive(Debug)]
+struct CaseRunError {
+    reason: String,
+    stage: Option<EvalFailureStage>,
+    diagnostics: Vec<EvalDiagnosticEvidence>,
+}
+
+impl CaseRunError {
+    fn structural(reason: impl Into<String>) -> Self {
+        Self {
+            reason: reason.into(),
+            stage: Some(EvalFailureStage::Structural),
+            diagnostics: Vec::new(),
+        }
+    }
+
+    fn authoring(error: AuthoringError) -> Self {
+        let stage = if error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.path == "$" && diagnostic.code == "invalid_json")
+        {
+            EvalFailureStage::AuthoringSchema
+        } else {
+            EvalFailureStage::Lowering
+        };
+        let diagnostics = error
+            .diagnostics
+            .iter()
+            .map(|diagnostic| EvalDiagnosticEvidence {
+                path: diagnostic.path.clone(),
+                code: diagnostic.code.clone(),
+                message: diagnostic.message.clone(),
+            })
+            .collect::<Vec<_>>();
+        let reason = diagnostics
+            .iter()
+            .map(|diagnostic| {
+                format!(
+                    "{} [{}]: {}",
+                    diagnostic.path, diagnostic.code, diagnostic.message
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+        Self {
+            reason,
+            stage: Some(stage),
+            diagnostics,
+        }
+    }
+}
 
 fn run_id() -> Result<String, String> {
     let now = SystemTime::now()
@@ -55,7 +114,7 @@ fn report_model(config: &AiConfig) -> String {
     }
 }
 
-fn failed_case(case: &EvalCase, case_dir: &Path, error: String) -> EvalCaseReport {
+fn failed_case(case: &EvalCase, case_dir: &Path, error: CaseRunError) -> EvalCaseReport {
     EvalCaseReport {
         id: case.id.clone(),
         input_kind: case.input_kind.as_str().to_string(),
@@ -68,7 +127,9 @@ fn failed_case(case: &EvalCase, case_dir: &Path, error: String) -> EvalCaseRepor
         reproducible: false,
         output_hash: None,
         drifted: false,
-        failure_reason: Some(error),
+        failure_reason: Some(error.reason),
+        failure_stage: error.stage,
+        diagnostics: error.diagnostics,
         artifact_dir: case_dir.display().to_string(),
         text_hint: case.text_hint.clone(),
         image_path: case.image_path.clone(),
@@ -77,7 +138,50 @@ fn failed_case(case: &EvalCase, case_dir: &Path, error: String) -> EvalCaseRepor
                 "runtime render was not attempted because the case pipeline failed",
             )
         }),
+        semantic: None,
     }
+}
+
+fn resolve_case_scene(
+    case: &EvalCase,
+    case_dir: &Path,
+    config: &AiConfig,
+) -> Result<(Value, Option<AuthoringSourceMap>, bool), CaseRunError> {
+    if case.input_kind == InputKind::AuthoringExample {
+        let fixture_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(&case.input);
+        let input = fs::read_to_string(&fixture_path).map_err(|error| CaseRunError {
+            reason: format!(
+                "failed to read AuthoringSpec fixture {}: {}",
+                fixture_path.display(),
+                error
+            ),
+            stage: Some(EvalFailureStage::AuthoringSchema),
+            diagnostics: Vec::new(),
+        })?;
+        fs::write(case_dir.join("authoring-spec.json"), &input)
+            .map_err(|error| CaseRunError::structural(format!("failed to retain AuthoringSpec: {error}")))?;
+        let lowered = lower_authoring_json(&input).map_err(CaseRunError::authoring)?;
+        let repeated = lower_authoring_json(&input).map_err(CaseRunError::authoring)?;
+        let lowering_reproducible = lowered == repeated;
+        write_json(case_dir.join("lowered-scene.json"), &lowered.scene)
+            .map_err(CaseRunError::structural)?;
+        write_json(case_dir.join("source-map.json"), &lowered.source_map)
+            .map_err(CaseRunError::structural)?;
+        return Ok((
+            lowered.scene,
+            Some(lowered.source_map),
+            lowering_reproducible,
+        ));
+    }
+
+    let provider = create_provider(config, case.input_kind == InputKind::Template)
+        .map_err(|error| CaseRunError::structural(format!("AI provider error: {}", error)))?;
+    let generated_scene = provider
+        .generate(&case.input, config)
+        .map_err(|error| CaseRunError::structural(format!("generation failed: {}", error)))?;
+    write_json(case_dir.join("generated-scene.json"), &generated_scene)
+        .map_err(CaseRunError::structural)?;
+    Ok((generated_scene, None, true))
 }
 
 fn run_case(
@@ -87,49 +191,46 @@ fn run_case(
     max_retries: u8,
     baseline_hash: Option<&String>,
     config: &AiConfig,
-) -> Result<EvalCaseReport, String> {
-    fs::create_dir_all(case_dir)
-        .map_err(|error| format!("failed to create {}: {}", case_dir.display(), error))?;
+) -> Result<EvalCaseReport, CaseRunError> {
+    fs::create_dir_all(case_dir).map_err(|error| {
+        CaseRunError::structural(format!("failed to create {}: {}", case_dir.display(), error))
+    })?;
     fs::write(case_dir.join("input.txt"), &case.input)
-        .map_err(|error| format!("failed to write input.txt: {}", error))?;
+        .map_err(|error| CaseRunError::structural(format!("failed to write input.txt: {}", error)))?;
 
-    let provider = create_provider(config, case.input_kind == InputKind::Template)
-        .map_err(|error| format!("AI provider error: {}", error))?;
-    let generated_scene = provider
-        .generate(&case.input, config)
-        .map_err(|error| format!("generation failed: {}", error))?;
-    write_json(case_dir.join("generated-scene.json"), &generated_scene)?;
+    let (generated_scene, source_map, lowering_reproducible) =
+        resolve_case_scene(case, case_dir, config)?;
 
     let engine = RepairEngine::new(max_retries);
-    let repaired =
-        engine
-            .repair(generated_scene.clone(), file_id)
-            .map_err(|error| match error {
-                AiError::RepairFailed {
-                    attempts,
-                    final_error,
-                } => format!(
-                    "repair failed after {} attempts: {}",
-                    attempts.len(),
-                    final_error
-                ),
-                other => format!("repair failed: {}", other),
-            })?;
-    write_json(case_dir.join("scene.json"), &repaired.scene_json)?;
+    let repaired = engine
+        .repair(generated_scene.clone(), file_id)
+        .map_err(|error| match error {
+            AiError::RepairFailed {
+                attempts,
+                final_error,
+            } => CaseRunError::structural(format!(
+                "repair failed after {} attempts: {}",
+                attempts.len(),
+                final_error
+            )),
+            other => CaseRunError::structural(format!("repair failed: {}", other)),
+        })?;
+    write_json(case_dir.join("scene.json"), &repaired.scene_json)
+        .map_err(CaseRunError::structural)?;
     fs::write(case_dir.join("output.riv"), &repaired.riv_bytes)
-        .map_err(|error| format!("failed to write output.riv: {}", error))?;
+        .map_err(|error| CaseRunError::structural(format!("failed to write output.riv: {}", error)))?;
 
-    let validation: ValidationReport =
-        validate_riv(&repaired.riv_bytes).map_err(|error| format!("validate failed: {}", error))?;
-    write_json(case_dir.join("validate.json"), &validation)?;
+    let validation: ValidationReport = validate_riv(&repaired.riv_bytes)
+        .map_err(|error| CaseRunError::structural(format!("validate failed: {}", error)))?;
+    write_json(case_dir.join("validate.json"), &validation).map_err(CaseRunError::structural)?;
     let parsed = parse_riv(&repaired.riv_bytes, &InspectFilter::default())
-        .map_err(|error| format!("inspect parse failed: {}", error))?;
-    write_json(case_dir.join("inspect.json"), &parsed)?;
+        .map_err(|error| CaseRunError::structural(format!("inspect parse failed: {}", error)))?;
+    write_json(case_dir.join("inspect.json"), &parsed).map_err(CaseRunError::structural)?;
 
     let repeat = engine
         .repair(generated_scene, file_id)
-        .map_err(|error| format!("pipeline reproducibility check failed: {}", error))?;
-    let reproducible = repaired.riv_bytes == repeat.riv_bytes;
+        .map_err(|error| CaseRunError::structural(format!("pipeline reproducibility check failed: {}", error)))?;
+    let reproducible = lowering_reproducible && repaired.riv_bytes == repeat.riv_bytes;
     let output_hash = hash_bytes(&repaired.riv_bytes);
     let (style_score, matched_traits) = trait_score(&repaired.scene_json, &case.expected_traits);
     let drifted = baseline_hash.is_some_and(|hash| hash != &output_hash);
@@ -137,6 +238,43 @@ fn run_case(
         .runtime
         .as_ref()
         .map(|expectations| render_runtime_evidence(case_dir, &repaired.riv_bytes, expectations));
+    let semantic = case.semantic.as_ref().and_then(|expectations| {
+        source_map.as_ref().map(|source_map| {
+            evaluate_semantics(
+                case_dir,
+                &repaired.scene_json,
+                source_map,
+                expectations,
+            )
+        })
+    });
+
+    let runtime_failed = runtime.as_ref().is_some_and(|evidence| !evidence.passed);
+    let semantic_failed = semantic.as_ref().is_some_and(|evidence| {
+        evidence.static_passed == Some(false) || evidence.animated_passed == Some(false)
+    });
+    let failure_stage = if !validation.valid {
+        Some(EvalFailureStage::Structural)
+    } else if runtime_failed {
+        Some(EvalFailureStage::Runtime)
+    } else if semantic_failed {
+        Some(EvalFailureStage::SemanticMismatch)
+    } else {
+        None
+    };
+    let failure_reason = if !validation.valid {
+        Some(validation.errors.join("; "))
+    } else if runtime_failed {
+        runtime
+            .as_ref()
+            .and_then(|evidence| evidence.failure_reason.clone())
+    } else if semantic_failed {
+        semantic
+            .as_ref()
+            .and_then(|evidence| evidence.failure_reason.clone())
+    } else {
+        None
+    };
 
     Ok(EvalCaseReport {
         id: case.id.clone(),
@@ -150,11 +288,14 @@ fn run_case(
         reproducible,
         output_hash: Some(output_hash),
         drifted,
-        failure_reason: (!validation.valid).then(|| validation.errors.join("; ")),
+        failure_reason,
+        failure_stage,
+        diagnostics: Vec::new(),
         artifact_dir: case_dir.display().to_string(),
         text_hint: case.text_hint.clone(),
         image_path: case.image_path.clone(),
         runtime,
+        semantic,
     })
 }
 
@@ -265,6 +406,52 @@ pub fn run_eval_suite_configured(
     } else {
         runtime_pass_count as f64 / runtime_case_count as f64
     };
+    let semantic_static_case_count = cases
+        .iter()
+        .filter(|case| {
+            case.semantic
+                .as_ref()
+                .and_then(|semantic| semantic.static_passed)
+                .is_some()
+        })
+        .count();
+    let semantic_static_pass_count = cases
+        .iter()
+        .filter(|case| {
+            case.semantic
+                .as_ref()
+                .and_then(|semantic| semantic.static_passed)
+                == Some(true)
+        })
+        .count();
+    let semantic_static_pass_rate = if semantic_static_case_count == 0 {
+        1.0
+    } else {
+        semantic_static_pass_count as f64 / semantic_static_case_count as f64
+    };
+    let semantic_animated_case_count = cases
+        .iter()
+        .filter(|case| {
+            case.semantic
+                .as_ref()
+                .and_then(|semantic| semantic.animated_passed)
+                .is_some()
+        })
+        .count();
+    let semantic_animated_pass_count = cases
+        .iter()
+        .filter(|case| {
+            case.semantic
+                .as_ref()
+                .and_then(|semantic| semantic.animated_passed)
+                == Some(true)
+        })
+        .count();
+    let semantic_animated_pass_rate = if semantic_animated_case_count == 0 {
+        1.0
+    } else {
+        semantic_animated_pass_count as f64 / semantic_animated_case_count as f64
+    };
     let drift_count = cases.iter().filter(|case| case.drifted).count();
     let gate_failures = evaluate_gates(
         &suite.gates,
@@ -272,6 +459,8 @@ pub fn run_eval_suite_configured(
         trait_adherence_rate,
         pipeline_reproducibility_rate,
         runtime_pass_rate,
+        semantic_static_pass_rate,
+        semantic_animated_pass_rate,
         average_retries,
         drift_count,
     );
@@ -297,6 +486,12 @@ pub fn run_eval_suite_configured(
         runtime_case_count,
         runtime_pass_count,
         runtime_pass_rate,
+        semantic_static_case_count,
+        semantic_static_pass_count,
+        semantic_static_pass_rate,
+        semantic_animated_case_count,
+        semantic_animated_pass_count,
+        semantic_animated_pass_rate,
         drift_count,
         cases,
     };
