@@ -131,10 +131,18 @@ async function selectFrame(page, card, frame) {
 
     await selectFrame(page, coffeeCard, 15);
     const firstFifteen = await canvasSnapshots(coffeeCard);
+    await selectFrame(page, coffeeCard, 30);
     await selectFrame(page, coffeeCard, 15);
     const secondFifteen = await canvasSnapshots(coffeeCard);
     if (JSON.stringify(firstFifteen) !== JSON.stringify(secondFifteen)) {
       errors.push("repeated paused seek to frame 15 was not stable");
+    }
+
+    const buttonCard = page.locator('.card[data-rung-id="button"]');
+    await selectFrame(page, buttonCard, 30);
+    const buttonThirty = await canvasSnapshots(buttonCard);
+    if (buttonThirty.length !== 2 || buttonThirty[0] !== buttonThirty[1]) {
+      errors.push("zero-difference button pair was not visibly frame-locked at representative frame 30");
     }
 
     const expectedById = Object.fromEntries(
@@ -161,7 +169,7 @@ async function selectFrame(page, card, frame) {
       process.exit(1);
     }
 
-    process.stdout.write("Site playback validation passed: shared play/pause, representative seek, and stable backward seek\n");
+    process.stdout.write("Site playback validation passed: shared play/pause, frame lock, representative seek, and stable backward seek\n");
     shutdown();
     process.exit(0);
   } catch (error) {
