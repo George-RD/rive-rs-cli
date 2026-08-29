@@ -1,0 +1,46 @@
+name: Cairn source sync
+
+on:
+  push:
+    branches:
+      - issue-179-typed-behavior
+    paths:
+      - .github/workflows/cairn-source-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refresh verified SceneSpec source hash
+        shell: bash
+        run: |
+          hash="$(sha256sum src/builder/spec.rs | awk '{print $1}')"
+          python - "$hash" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          path = Path("meta/sources/scene-spec.md")
+          text = path.read_text()
+          updated, count = re.subn(r"(?m)^sha256: [0-9a-f]{64}$", f"sha256: {sys.argv[1]}", text, count=1)
+          if count != 1:
+              raise SystemExit("expected one SceneSpec sha256 field")
+          path.write_text(updated)
+          PY
+          echo "SceneSpec sha256: $hash"
+      - name: Commit source verification refresh
+        shell: bash
+        run: |
+          if git diff --quiet -- meta/sources/scene-spec.md; then
+            echo "SceneSpec source hash already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add meta/sources/scene-spec.md
+          git commit -m "docs(cairn): refresh SceneSpec source verification"
+          git push
