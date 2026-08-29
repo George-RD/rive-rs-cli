@@ -4,6 +4,7 @@ mod expression;
 mod frontend;
 mod limits;
 mod lower;
+mod operations;
 mod spec;
 mod validation;
 mod visual;
@@ -11,6 +12,7 @@ mod visual;
 use schemars::schema_for;
 use serde_json::Value;
 
+pub use operations::{AppliedOperation, AuthoringOperation, apply_operation};
 pub use spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSourceMap, AuthoringSpec, BehaviorSection, ComponentSpec, ConstraintAxis,
