@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::objects::core::{RiveObject, property_keys};
-use crate::objects::data_binding::DataBindContext;
+use crate::objects::data_binding::{BindablePropertyBoolean, DataBindContext};
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
     BlendState1DInput, BlendState1DViewModel, BlendStateDirect, EntryState, ExitState,
@@ -112,6 +112,7 @@ pub(crate) fn build_state_machines(
         objects.push(Box::new(StateMachine::new(state_machine.name.clone())));
 
         let mut input_name_to_index: HashMap<String, usize> = HashMap::new();
+        let mut bound_bool_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
         if let Some(inputs) = &state_machine.inputs {
             for (input_index, input) in inputs.iter().enumerate() {
                 match input {
@@ -145,11 +146,8 @@ pub(crate) fn build_state_machines(
                                         name, binding.view_model, binding.property
                                     )
                                 })?;
-                            objects.push(Box::new(DataBindContext::new(
-                                property_keys::STATE_MACHINE_BOOL_VALUE as u64,
-                                0,
-                                encode_id_path(&[view_model_id, property_id]),
-                            )));
+                            bound_bool_input_paths
+                                .insert(name.clone(), (view_model_id, property_id));
                         }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
@@ -460,9 +458,39 @@ pub(crate) fn build_state_machines(
                                             } else {
                                                 1 // notEqual: true when input is false
                                             };
-                                            objects.push(Box::new(TransitionBoolCondition::new(
-                                                input_id, bool_op,
-                                            )));
+                                            if let Some(&(view_model_id, property_id)) =
+                                                bound_bool_input_paths.get(&condition.input)
+                                            {
+                                                let vm_op = condition
+                                                    .op
+                                                    .as_deref()
+                                                    .map(parse_condition_op)
+                                                    .unwrap_or(0);
+                                                objects.push(Box::new(
+                                                    TransitionViewModelCondition {
+                                                        op_value: vm_op,
+                                                    },
+                                                ));
+                                                objects.push(Box::new(BindablePropertyBoolean {
+                                                    property_value: 0,
+                                                }));
+                                                objects.push(Box::new(DataBindContext::new(
+                                                    property_keys::BINDABLE_PROPERTY_BOOLEAN_VALUE
+                                                        as u64,
+                                                    0,
+                                                    encode_id_path(&[view_model_id, property_id]),
+                                                )));
+                                                objects.push(Box::new(
+                                                    TransitionPropertyViewModelComparator,
+                                                ));
+                                                objects.push(Box::new(
+                                                    TransitionValueBooleanComparator { value: *v },
+                                                ));
+                                            } else {
+                                                objects.push(Box::new(
+                                                    TransitionBoolCondition::new(input_id, bool_op),
+                                                ));
+                                            }
                                         }
                                         _ => {
                                             if condition.op.is_some() {
