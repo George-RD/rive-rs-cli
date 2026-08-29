@@ -76,7 +76,7 @@ jobs:
                         }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
-'''
+          '''
           new = '''                    InputSpec::Bool {
                         name,
                         value,
@@ -105,7 +105,7 @@ jobs:
                         }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
-'''
+          '''
           assert old in text
           text = text.replace(old, new, 1)
 
@@ -125,7 +125,7 @@ jobs:
                                                 input_id, bool_op,
                                             )));
                                         }
-'''
+          '''
           new = '''                                        Some(serde_json::Value::Bool(v)) => {
                                             if let Some(&(view_model_id, property_id)) =
                                                 bound_bool_input_paths.get(&condition.input)
@@ -173,7 +173,7 @@ jobs:
                                                 ));
                                             }
                                         }
-'''
+          '''
           assert old in text
           text = text.replace(old, new, 1)
 
