@@ -11,12 +11,14 @@ use super::super::super::spec::{
 };
 
 pub(super) struct BehaviorLoweringOutput {
+    pub(super) view_models: Vec<Value>,
     pub(super) state_machines: Vec<Value>,
     pub(super) source_entries: Vec<SourceMapEntry>,
 }
 
 pub(super) fn lower_behavior(
     spec: &AuthoringSpec,
+    child_index_base: usize,
     state_machine_index_base: usize,
 ) -> Result<BehaviorLoweringOutput, AuthoringError> {
     let diagnostics = validate_behavior(spec);
@@ -24,8 +26,57 @@ pub(super) fn lower_behavior(
         return Err(AuthoringError::many(diagnostics));
     }
 
-    let mut state_machines = Vec::with_capacity(spec.behavior.statecharts.len());
     let mut source_entries = Vec::new();
+    let mut view_models = Vec::with_capacity(spec.behavior.models.len());
+    let mut model_runtime_by_id = HashMap::new();
+    let mut property_runtime_by_id = HashMap::new();
+    for (model_index, model) in spec.behavior.models.iter().enumerate() {
+        let model_name = runtime_name(&[spec.artboard.id.clone(), model.id.clone()], "view_model");
+        let model_scene_path = format!("/artboard/children/{}", child_index_base + model_index);
+        let mut properties = Vec::with_capacity(model.properties.len());
+        for (property_index, property) in model.properties.iter().enumerate() {
+            let property_name = runtime_name(
+                &[
+                    spec.artboard.id.clone(),
+                    model.id.clone(),
+                    property.id().to_string(),
+                ],
+                "view_model_property",
+            );
+            match property {
+                BehaviorPropertySpec::Bool { .. } => properties.push(json!({
+                    "type": "view_model_property_boolean",
+                    "name": property_name
+                })),
+            }
+            property_runtime_by_id
+                .insert((model.id.as_str(), property.id()), property_name.clone());
+            source_entries.push(SourceMapEntry {
+                authored_id: format!("{}/{}", model.id, property.id()),
+                authored_path: format!(
+                    "$.behavior.models[{model_index}].properties[{property_index}]"
+                ),
+                definition_path: None,
+                runtime_names: vec![property_name],
+                scene_paths: vec![format!("{model_scene_path}/children/{property_index}")],
+            });
+        }
+        model_runtime_by_id.insert(model.id.as_str(), model_name.clone());
+        source_entries.push(SourceMapEntry {
+            authored_id: model.id.clone(),
+            authored_path: format!("$.behavior.models[{model_index}]"),
+            definition_path: None,
+            runtime_names: vec![model_name.clone()],
+            scene_paths: vec![model_scene_path],
+        });
+        view_models.push(json!({
+            "type": "view_model",
+            "name": model_name,
+            "children": properties
+        }));
+    }
+
+    let mut state_machines = Vec::with_capacity(spec.behavior.statecharts.len());
     let mut binding_runtime: HashMap<usize, (Vec<String>, Vec<String>)> = HashMap::new();
 
     for (statechart_index, statechart) in spec.behavior.statecharts.iter().enumerate() {
@@ -57,10 +108,20 @@ pub(super) fn lower_behavior(
                 "input",
             );
             input_name_by_binding.insert(binding.id.as_str(), input_name.clone());
+            let model_name = model_runtime_by_id
+                .get(binding.model.as_str())
+                .expect("validated behavior model");
+            let property_name = property_runtime_by_id
+                .get(&(binding.model.as_str(), binding.property.as_str()))
+                .expect("validated behavior property");
             inputs.push(json!({
                 "type": "bool",
                 "name": input_name,
-                "value": binding_bool_value(spec, binding)
+                "value": binding_bool_value(spec, binding),
+                "view_model_binding": {
+                    "view_model": model_name,
+                    "property": property_name
+                }
             }));
 
             let runtime = binding_runtime.entry(binding_index).or_default();
@@ -174,6 +235,7 @@ pub(super) fn lower_behavior(
     source_entries.sort_by(|left, right| left.authored_path.cmp(&right.authored_path));
 
     Ok(BehaviorLoweringOutput {
+        view_models,
         state_machines,
         source_entries,
     })

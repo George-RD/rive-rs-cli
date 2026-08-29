@@ -161,30 +161,65 @@ impl<'a> AuthoringCompiler<'a> {
         mut lowered: LoweredAuthoring,
         mut runtime_names: RuntimeNameRegistry,
     ) -> Result<(LoweredAuthoring, RuntimeNameRegistry), AuthoringError> {
-        let state_machine_index_base = lowered.scene["artboard"]["state_machines"]
+        let child_index_base = lowered.scene["artboard"]["children"]
             .as_array()
             .map_or(0, Vec::len);
         let behavior::BehaviorLoweringOutput {
+            view_models,
             state_machines,
             source_entries,
-        } = behavior::lower_behavior(spec, state_machine_index_base)
+        } = behavior::lower_behavior(spec, child_index_base, 0)
             .map_err(|error| rewrite_error_paths(spec, error))?;
 
-        if state_machines.is_empty() {
+        if view_models.is_empty() && state_machines.is_empty() {
             debug_assert!(source_entries.is_empty());
             return Ok((lowered, runtime_names));
+        }
+
+        let typed_state_machine_count = state_machines.len();
+        if typed_state_machine_count > 0 {
+            for entry in &mut lowered.source_map.entries {
+                if !entry
+                    .authored_path
+                    .starts_with("$.behavior.raw_state_machines[")
+                {
+                    continue;
+                }
+                for scene_path in &mut entry.scene_paths {
+                    if let Some(index) = scene_path
+                        .strip_prefix("/artboard/state_machines/")
+                        .and_then(|index| index.parse::<usize>().ok())
+                    {
+                        *scene_path = format!(
+                            "/artboard/state_machines/{}",
+                            index + typed_state_machine_count
+                        );
+                    }
+                }
+            }
         }
 
         let artboard = lowered.scene["artboard"]
             .as_object_mut()
             .expect("canonical AuthoringSpec lowering always produces an artboard object");
-        let state_machine_value = artboard
-            .entry("state_machines")
-            .or_insert_with(|| Value::Array(Vec::new()));
-        let state_machine_list = state_machine_value
-            .as_array_mut()
-            .expect("canonical state_machines value must remain an array");
-        state_machine_list.extend(state_machines);
+        if !view_models.is_empty() {
+            let children = artboard
+                .entry("children")
+                .or_insert_with(|| Value::Array(Vec::new()))
+                .as_array_mut()
+                .expect("canonical children value must remain an array");
+            children.extend(view_models);
+        }
+
+        if !state_machines.is_empty() {
+            let existing_raw = artboard
+                .remove("state_machines")
+                .and_then(|value| value.as_array().cloned())
+                .unwrap_or_default();
+            let mut ordered = state_machines;
+            ordered.extend(existing_raw);
+            artboard.insert("state_machines".to_string(), Value::Array(ordered));
+        }
 
         for entry in &source_entries {
             runtime_names.register(entry);

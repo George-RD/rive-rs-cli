@@ -151,6 +151,33 @@ fn typed_bool_binding_lowers_named_states_and_transition_without_runtime_indices
     );
     assert_eq!(machine["inputs"][0]["value"], true);
 
+    let view_model = first.scene["artboard"]["children"]
+        .as_array()
+        .expect("artboard children")
+        .iter()
+        .find(|child| child["type"] == "view_model")
+        .expect("lowered behavior view model");
+    assert_eq!(
+        view_model["name"],
+        "auth__behavior_2dstage__gate_2dmodel__view_model"
+    );
+    assert_eq!(
+        view_model["children"][0]["type"],
+        "view_model_property_boolean"
+    );
+    assert_eq!(
+        view_model["children"][0]["name"],
+        "auth__behavior_2dstage__gate_2dmodel__enabled__view_model_property"
+    );
+    assert_eq!(
+        machine["inputs"][0]["view_model_binding"]["view_model"],
+        view_model["name"]
+    );
+    assert_eq!(
+        machine["inputs"][0]["view_model_binding"]["property"],
+        view_model["children"][0]["name"]
+    );
+
     let layer = &machine["layers"][0];
     assert_eq!(layer["states"][0]["type"], "entry");
     assert_eq!(layer["states"][1]["type"], "animation");
@@ -206,6 +233,50 @@ fn typed_bool_binding_lowers_named_states_and_transition_without_runtime_indices
     );
 
     assert_builds(first.scene);
+}
+
+#[test]
+fn typed_behavior_precedes_raw_escape_hatches_and_preserves_source_map_indices() {
+    let mut input = document();
+    input["behavior"]["raw_state_machines"] = json!([
+        {
+            "id": "legacy",
+            "value": {
+                "name": "legacy_machine",
+                "layers": [
+                    {
+                        "states": [
+                            { "type": "entry" },
+                            { "type": "exit" }
+                        ],
+                        "transitions": [
+                            { "from": 0, "to": 1 }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]);
+
+    let lowered = lower(&input);
+    let machines = lowered.scene["artboard"]["state_machines"]
+        .as_array()
+        .expect("state machines");
+    assert_eq!(
+        machines[0]["name"],
+        "auth__behavior_2dstage__gate__state_machine"
+    );
+    assert_eq!(machines[1]["name"], "legacy_machine");
+
+    let raw_source = lowered
+        .source_map
+        .entries
+        .iter()
+        .find(|entry| entry.authored_id == "legacy")
+        .expect("raw behavior source map");
+    assert_eq!(raw_source.scene_paths, vec!["/artboard/state_machines/1"]);
+
+    assert_builds(lowered.scene);
 }
 
 #[test]
