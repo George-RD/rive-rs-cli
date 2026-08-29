@@ -1,0 +1,63 @@
+name: Issue 179 encoder fix
+
+on:
+  push:
+    branches:
+      - issue-179-typed-behavior
+    paths:
+      - scripts/issue179_encoder_fix_trigger
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Register DataBindContext byte property
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          core = Path("src/objects/core.rs")
+          text = core.read_text()
+          old = '''pub fn is_bytes_property(key: u16) -> bool {\n    key == property_keys::FILE_ASSET_CONTENTS_BYTES\n}\n'''
+          new = '''pub fn is_bytes_property(key: u16) -> bool {\n    matches!(\n        key,\n        property_keys::FILE_ASSET_CONTENTS_BYTES\n            | property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS\n    )\n}\n'''
+          if text.count(old) != 1:
+              raise SystemExit("is_bytes_property shape changed")
+          text = text.replace(old, new, 1)
+
+          old = '''        | property_keys::MESH_TRIANGLE_INDEX_BYTES\n        | property_keys::FILE_ASSET_CONTENTS_BYTES => Some(BackingType::String),'''
+          new = '''        | property_keys::MESH_TRIANGLE_INDEX_BYTES\n        | property_keys::FILE_ASSET_CONTENTS_BYTES\n        | property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS => Some(BackingType::String),'''
+          if text.count(old) != 1:
+              raise SystemExit("string backing registry shape changed")
+          core.write_text(text.replace(old, new, 1))
+
+          toc = Path("src/encoder/toc.rs")
+          text = toc.read_text()
+          marker = '''    #[test]\n    fn test_two_properties_color_and_float() {\n'''
+          addition = '''    #[test]\n    fn test_data_bind_context_source_path_has_string_backing() {\n        let key = crate::objects::core::property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS;\n        let result = encode_toc(&[key]);\n        let key_len = if key < 128 { 1 } else { 2 };\n        let backing_offset = key_len + 1;\n        assert_eq!(result[backing_offset] & 0x03, 0b01);\n        assert!(crate::objects::core::is_bytes_property(key));\n    }\n\n'''
+          if text.count(marker) != 1:
+              raise SystemExit("toc test insertion point changed")
+          toc.write_text(text.replace(marker, addition + marker, 1))
+          PY
+          cargo fmt --all
+      - name: Run encoder and behavior contracts
+        run: |
+          cargo test encoder::toc::tests::test_data_bind_context_source_path_has_string_backing --locked
+          cargo test --test authoring_behavior_contract --locked
+          cargo run --quiet -- authoring compile examples/authoring/behavior-binding.v0.json -o target/issue179-behavior.riv
+      - name: Commit fix
+        shell: bash
+        run: |
+          git rm -f .github/workflows/issue-179-encoder-fix.yml scripts/issue179_encoder_fix_trigger
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/objects/core.rs src/encoder/toc.rs
+          git commit -m "fix(encoder): register data bind context byte path"
+          git push
