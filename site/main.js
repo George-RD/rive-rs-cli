@@ -109,7 +109,6 @@ function buildSource(rung) {
 function buildCard(rung) {
   const card = el("article", "card");
   card.dataset.rungId = rung.id;
-  card.dataset.playbackReady = "false";
 
   const stage = el("div", "stage compare");
   const official = buildSide("Official Rive file", `${rung.title} official animation`);
@@ -127,7 +126,6 @@ function buildCard(rung) {
     stateMachine: rung.state_machine,
     fps: RivePlayback.CAPTURE_FPS,
     onFrame(frame) {
-      card.dataset.logicalFrame = String(frame);
       controls.status.textContent = `frame ${frame} · ${RivePlayback.CAPTURE_FPS} fps`;
     },
     onPlayingChange(playing) {
@@ -169,10 +167,8 @@ function buildCard(rung) {
       controls.frame.disabled = false;
       controls.toggle.disabled = false;
       await timeline.play();
-      card.dataset.playbackReady = "true";
     })
     .catch((error) => {
-      card.dataset.playbackReady = "error";
       controls.status.textContent = "playback unavailable";
       console.error(`could not start ${rung.id} playback`, error);
     });
