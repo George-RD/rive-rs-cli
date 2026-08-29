@@ -122,7 +122,6 @@
       } else {
         instance.drawFrame();
       }
-      canvas.dataset.logicalFrame = "0";
       await nextPaint();
       detachScheduledFrame();
     }
@@ -152,20 +151,14 @@
         if (target < stepsAdvanced) {
           await rebuildStateMachine();
         }
-        let advanced = false;
         while (stepsAdvanced < target) {
           stepsAdvanced += 1;
-          stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
-          advanced = true;
-        }
-        if (!advanced) {
           stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
         }
       } else {
         instance.drawFrame();
       }
 
-      canvas.dataset.logicalFrame = String(target);
       await nextPaint();
       detachScheduledFrame();
     }
