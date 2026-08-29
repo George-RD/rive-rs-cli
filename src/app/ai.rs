@@ -34,17 +34,19 @@ pub(super) fn run(command: Command) {
                         eprintln!("AI provider error: {}", e);
                         std::process::exit(1);
                     });
-                let generated_json = provider
-                    .generate(&input, &config, target)
-                    .unwrap_or_else(|e| {
-                        eprintln!("AI generation error: {}", e);
-                        std::process::exit(1);
-                    });
+                let generated_json =
+                    provider
+                        .generate(&input, &config, target)
+                        .unwrap_or_else(|e| {
+                            eprintln!("AI generation error: {}", e);
+                            std::process::exit(1);
+                        });
                 if dry_run {
-                    let pretty = serde_json::to_string_pretty(&generated_json).unwrap_or_else(|e| {
-                        eprintln!("failed to serialize generated JSON: {}", e);
-                        std::process::exit(1);
-                    });
+                    let pretty =
+                        serde_json::to_string_pretty(&generated_json).unwrap_or_else(|e| {
+                            eprintln!("failed to serialize generated JSON: {}", e);
+                            std::process::exit(1);
+                        });
                     println!("{}", pretty);
                     return;
                 }
@@ -183,7 +185,10 @@ fn generate_authoring(
             "AuthoringSpec repair succeeded after {} retry(ies)",
             repaired.total_retries
         );
-        eprint!("{}", ai::format_authoring_repair_summary(&repaired.attempts));
+        eprint!(
+            "{}",
+            ai::format_authoring_repair_summary(&repaired.attempts)
+        );
     }
 
     if json {
