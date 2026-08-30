@@ -1,0 +1,190 @@
+name: Apply authoring stacking implementation
+
+on:
+  push:
+    branches:
+      - agent/authoring-stacking-order
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/authoring-stacking-order
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: rustfmt, clippy
+      - name: Apply implementation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text()
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f"missing source pattern in {path}")
+              target.write_text(text.replace(old, new, 1))
+
+          source = Path(".github/apply-authoring-stacking-source.yml")
+          lines = source.read_text().splitlines()
+          start = next(
+              index for index, line in enumerate(lines)
+              if line.strip() == "python3 - <<'PY'"
+          )
+          end = next(
+              index for index in range(start + 1, len(lines))
+              if lines[index].strip() == "PY"
+          )
+          block = lines[start + 1:end]
+          indent = min(
+              len(line) - len(line.lstrip())
+              for line in block
+              if line.strip()
+          )
+          script = "\n".join(
+              line[indent:] if line.strip() else ""
+              for line in block
+          ) + "\n"
+          exec(compile(script, str(source), "exec"), {"__name__": "__main__"})
+
+          subprocess.run(
+              [
+                  "git",
+                  "checkout",
+                  "HEAD",
+                  "--",
+                  ".github/workflows/ci.yml",
+                  "ROADMAP.md",
+                  "tests/authoring_stacking_contract.rs",
+              ],
+              check=True,
+          )
+          Path("tests/playwright/authoring-stacking-runtime.js").unlink(missing_ok=True)
+          Path("tests/fixtures/authoring/stacking-order.v0.json").unlink(missing_ok=True)
+
+          replace_once(
+              "src/authoring/visual.rs",
+              '''    pub(crate) fn authored_index(self, scene_index: usize, child_count: usize) -> usize {
+                  match self {
+          ''',
+              '''    pub(crate) fn authored_index(self, scene_index: usize, child_count: usize) -> usize {
+                  debug_assert!(scene_index < child_count);
+                  match self {
+          ''',
+          )
+          replace_once(
+              "src/authoring/frontend.rs",
+              '''            visual: VisualSection {
+                          nodes: vec![VisualNode::Instance {
+          ''',
+              '''            visual: VisualSection {
+                          stacking: Default::default(),
+                          nodes: vec![VisualNode::Instance {
+          ''',
+          )
+          replace_once(
+              "tests/authoring_stacking_contract.rs",
+              "authoring::{AuthoringSourceMap, LoweredAuthoring, lower_authoring_json},\n",
+              "authoring::{AuthoringSourceMap, LoweredAuthoring, authoring_schema, lower_authoring_json},\n",
+          )
+          replace_once(
+              "tests/authoring_stacking_contract.rs",
+              '''    let legacy_surface = source_entry(&legacy.source_map, "surface");
+              assert_eq!(legacy_children[0]["name"], legacy_surface.runtime_names[0]);
+
+              input["visual"]["stacking"] = json!("back_to_front");
+          ''',
+              '''    let legacy_surface = source_entry(&legacy.source_map, "surface");
+              assert_eq!(legacy_children[0]["name"], legacy_surface.runtime_names[0]);
+
+              input["visual"]["stacking"] = json!("runtime");
+              let explicit_runtime = lower(&input);
+              assert_eq!(explicit_runtime.scene, legacy.scene);
+              assert_eq!(explicit_runtime.source_map, legacy.source_map);
+
+              input["visual"]["stacking"] = json!("back_to_front");
+          ''',
+          )
+          contract = Path("tests/authoring_stacking_contract.rs")
+          contract_text = contract.read_text()
+          if "fn schema_exposes_runtime_and_back_to_front_stacking_modes()" not in contract_text:
+              contract.write_text(
+                  contract_text.rstrip()
+                  + '''
+
+          #[test]
+          fn schema_exposes_runtime_and_back_to_front_stacking_modes() {
+              let schema = authoring_schema();
+              let schema_text =
+                  serde_json::to_string(&schema).expect("schema should serialize");
+              assert!(schema_text.contains("StackingOrder"));
+              assert!(schema_text.contains("runtime"));
+              assert!(schema_text.contains("back_to_front"));
+          }
+          '''
+              )
+
+          replace_once(
+              ".github/workflows/ci.yml",
+              '''      - name: Run typed behavior runtime contract
+                  run: node tests/playwright/authoring-behavior-runtime.js
+          ''',
+              '''      - name: Run typed behavior runtime contract
+                  run: node tests/playwright/authoring-behavior-runtime.js
+                - name: Run AuthoringSpec stacking runtime contract
+                  run: cargo test --locked --test authoring_stacking_runtime -- --ignored --nocapture
+          ''',
+          )
+
+          source.unlink()
+          PY
+          cargo fmt --all
+      - name: Synchronize AuthoringSpec schema
+        shell: bash
+        run: |
+          cat > examples/__generate_authoring_schema.rs <<'RS'
+          use rive_cli::authoring::authoring_schema;
+
+          fn main() {
+              println!(
+                  "{}",
+                  serde_json::to_string_pretty(&authoring_schema())
+                      .expect("schema should serialize")
+              );
+          }
+          RS
+          cargo run --quiet --example __generate_authoring_schema > docs/authoring.schema.v0.json
+          rm examples/__generate_authoring_schema.rs
+          cargo fmt --all
+      - name: Verify implementation
+        shell: bash
+        run: |
+          git diff --check
+          cargo fmt --all -- --check
+          cargo clippy --locked --all-targets --all-features -- -D warnings
+          cargo test --locked --test authoring_stacking_contract
+          cargo test --locked authoring_schema_file_is_in_sync
+          cargo test --locked --all-targets --all-features
+      - name: Commit exact verified source
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-authoring-stacking-final.yml
+          git diff --check
+          cargo fmt --all -- --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Make authoring stacking order explicit"
+          git push origin HEAD:agent/authoring-stacking-order
