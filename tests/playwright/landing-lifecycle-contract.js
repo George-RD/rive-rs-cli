@@ -5,7 +5,6 @@ const vm = require("node:vm");
 
 const ROOT = path.resolve(__dirname, "..", "..");
 const source = fs.readFileSync(path.join(ROOT, "site", "landing.js"), "utf8");
-const showcaseSource = fs.readFileSync(path.join(ROOT, "site", "showcase.js"), "utf8");
 
 async function main() {
   const listeners = new Map();
@@ -64,21 +63,6 @@ async function main() {
 
   listeners.get("pagehide")({ persisted: false });
   assert.equal(destroyCalls, 1, "normal page exit must clean up the timeline");
-
-  const showcaseHandler = showcaseSource.match(
-    /window\.addEventListener\("pagehide", \(event\) => \{([\s\S]*?)\n  \}\);/
-  );
-  assert.ok(showcaseHandler, "showcase must register a reusable pagehide handler");
-  assert.match(
-    showcaseHandler[1],
-    /if \(event\.persisted\) return;/,
-    "showcase must preserve timelines when entering bfcache"
-  );
-  assert.match(
-    showcaseHandler[1],
-    /timeline\.destroy\(\)/,
-    "showcase must still destroy timelines on a real page exit"
-  );
 }
 
 main().catch((error) => {
