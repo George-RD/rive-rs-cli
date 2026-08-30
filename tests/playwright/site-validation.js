@@ -69,7 +69,16 @@ function collectErrors(page, errors) {
       null,
       { timeout: 20000 }
     );
-    await wait(800);
+    await page.waitForFunction(
+      () => document.querySelector(".proof-parcel")?.dataset.playing === "true",
+      null,
+      { timeout: 5000 }
+    );
+    await page.waitForFunction(
+      () => document.querySelector(".proof-parcel")?.dataset.playing === "false",
+      null,
+      { timeout: 5000 }
+    );
     const landing = await page.evaluate(() => {
       const canvas = document.querySelector(".hero-scene");
       const context = canvas.getContext("2d");
@@ -82,6 +91,7 @@ function collectErrors(page, errors) {
       return {
         painted,
         artifact: parcel?.dataset.artifact || "",
+        playing: parcel?.dataset.playing || "",
         primaryHref: document.querySelector(".hero-actions .button-primary")?.getAttribute("href") || "",
         labHref: document.querySelector(".proof-strip a[href=\"lab.html\"]")?.getAttribute("href") || "",
         pageText: document.body.textContent || "",
@@ -90,6 +100,9 @@ function collectErrors(page, errors) {
     if (landing.painted === 0) errors.push("landing hero canvas rendered nothing");
     if (landing.artifact !== LANDING_ARTIFACT) {
       errors.push(`landing proof uses ${landing.artifact || "no artifact"}, expected ${LANDING_ARTIFACT}`);
+    }
+    if (landing.playing !== "false") {
+      errors.push("landing one-shot did not stop at its terminal frame");
     }
     if (landing.primaryHref !== "showcase.html") {
       errors.push(`landing primary creation path points to ${landing.primaryHref || "nothing"}`);
@@ -193,7 +206,7 @@ function collectErrors(page, errors) {
     }
 
     process.stdout.write(
-      failed ? "Site validation failed\n" : `Site validation passed: original landing proof, responsive/reduced-motion landing, ${painted.length} lab scenes, 0 console errors\n`
+      failed ? "Site validation failed\n" : `Site validation passed: bounded original landing proof, responsive/reduced-motion landing, ${painted.length} lab scenes, 0 console errors\n`
     );
     shutdown();
     process.exit(failed ? 1 : 0);

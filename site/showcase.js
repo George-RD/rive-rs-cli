@@ -111,6 +111,8 @@ function buildCard(entry) {
     src: entry.artifact,
     stateMachine: entry.stateMachine,
     animation: entry.animation,
+    endFrame: entry.endFrame,
+    loop: entry.loop,
     autoplay: true,
     onPlayingChange(playing) {
       card.dataset.playing = String(playing);
@@ -168,7 +170,9 @@ async function main() {
       for (const timeline of timelines) {
         if (!timeline.isPlaying) continue;
         resumeAfterBfcache.add(timeline);
-        void timeline.pause();
+        void timeline
+          .pause()
+          .catch((error) => console.error("could not pause showcase playback", error));
       }
       return;
     }

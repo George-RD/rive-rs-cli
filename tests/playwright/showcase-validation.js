@@ -225,6 +225,14 @@ async function readEvidenceStatuses(page) {
       }
     }
 
+    await wait(1500);
+    const decisionFlowPlaying = await page.evaluate(
+      () => document.querySelector('[data-showcase-id="decision-flow"]')?.dataset.playing
+    );
+    if (decisionFlowPlaying !== "true") {
+      errors.push("decision-flow one-shot did not restart as an intentional showcase loop");
+    }
+
     const evidenceStatuses = await readEvidenceStatuses(page);
     for (const evidence of evidenceStatuses) {
       if (evidence.status !== 200) {
@@ -319,7 +327,7 @@ async function readEvidenceStatuses(page) {
     }
 
     process.stdout.write(
-      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, hashed consumer evidence, live runtime paint, bfcache pause/resume, phone layout, reduced motion\n`
+      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, hashed consumer evidence, bounded one-shot looping, live runtime paint, bfcache pause/resume, phone layout, reduced motion\n`
     );
     shutdown();
     process.exit(0);

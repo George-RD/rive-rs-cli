@@ -8,6 +8,8 @@
     "source": "examples/authoring/complex-animated-showcase.v0.json",
     "sourceLabel": "High-level AuthoringSpec source",
     "capability": "decision flow",
+    "endFrame": 120,
+    "loop": true,
     "alt": "Animated decision flow moving scattered business signals into one connected next action"
   },
   {

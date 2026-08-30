@@ -63,6 +63,11 @@ function main() {
     const consumerEvidenceGitBlob = requiredString(entry, "consumerEvidenceGitBlob");
     const animation = requiredString(entry, "animation");
 
+    assert.match(
+      originRepository,
+      /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/,
+      `${entry.id}.originRepository must be an owner/repository name`
+    );
     assert.match(commit, /^[0-9a-f]{40}$/, `${entry.id}.originCommit must be a full Git SHA`);
     assert.match(consumerCommit, /^[0-9a-f]{40}$/, `${entry.id}.consumerCommit must be a full Git SHA`);
     assert.match(artifactGitBlob, /^[0-9a-f]{40}$/, `${entry.id}.artifactGitBlob must be a Git blob SHA`);
@@ -74,9 +79,17 @@ function main() {
       `${entry.id}.consumerEvidenceGitBlob must be a Git blob SHA`
     );
 
-    if (!fetched.has(commit)) {
-      git(["fetch", "--quiet", "--no-tags", "--depth=1", "origin", commit]);
-      fetched.add(commit);
+    const fetchKey = `${originRepository}@${commit}`;
+    if (!fetched.has(fetchKey)) {
+      git([
+        "fetch",
+        "--quiet",
+        "--no-tags",
+        "--depth=1",
+        `https://github.com/${originRepository}.git`,
+        commit,
+      ]);
+      fetched.add(fetchKey);
     }
 
     const upstreamArtifact = upstreamBlobSha(commit, originArtifact);
