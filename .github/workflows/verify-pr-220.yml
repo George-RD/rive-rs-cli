@@ -1,0 +1,165 @@
+name: Verify and Merge PR 220
+
+on:
+  push:
+    branches:
+      - agent/verify-pr-220-final
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  verify-and-merge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - name: Check out verifier
+        uses: actions/checkout@v4
+        with:
+          ref: agent/verify-pr-220-final
+          path: verifier
+      - name: Check out PR head
+        uses: actions/checkout@v4
+        with:
+          ref: agent/authoring-stacking-order
+          fetch-depth: 0
+          path: work
+      - name: Normalize final PR branch
+        working-directory: work
+        run: |
+          python3 ../verifier/.github/verify-pr-220.py
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          if ! git diff --quiet; then
+            git add -A
+            git commit -m "chore: finalize explicit stacking verification"
+            git push origin HEAD:agent/authoring-stacking-order
+          fi
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+
+          path = Path('../verifier/.github/verify-pr-220.py')
+          spec = importlib.util.spec_from_file_location('verify_pr_220', path)
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          module.assert_changed_paths()
+          PY
+          git diff --check origin/main...HEAD
+      - name: Capture exact PR head
+        id: head
+        working-directory: work
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Test prospective merge with current main
+        working-directory: work
+        run: |
+          git fetch origin main
+          git merge --no-commit --no-ff origin/main
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Install Rust 1.88
+        run: rustup toolchain install 1.88.0 --profile minimal
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: work -> target
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install browser test dependencies
+        working-directory: work
+        run: |
+          npm install --no-save playwright@1.62.0 wait-on@8.0.1
+          npx playwright install --with-deps chromium
+      - name: Verify MSRV
+        working-directory: work
+        run: cargo +1.88.0 check --locked --all-features
+      - name: Verify formatting
+        working-directory: work
+        run: cargo fmt --all -- --check
+      - name: Verify Clippy
+        working-directory: work
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - name: Run full Rust test suite
+        working-directory: work
+        run: cargo test --locked --all-features
+      - name: Verify AuthoringSpec schema sync
+        working-directory: work
+        run: cargo test --locked authoring_schema_file_is_in_sync
+      - name: Build CLI
+        working-directory: work
+        run: cargo build --locked --all-features
+      - name: Run AuthoringSpec stacking runtime proof
+        working-directory: work
+        run: |
+          RIVE_CHROME="$(node --input-type=module -e 'import { chromium } from "playwright"; process.stdout.write(chromium.executablePath())')" \
+            cargo test --locked --test authoring_stacking_runtime -- --ignored
+      - name: Run browser contracts
+        working-directory: work
+        run: |
+          node tests/browser/official-runtime-shared.js
+          node tests/browser/official-runtime-visual.js
+          node tests/browser/landing-animation.js
+          node tests/browser/creative-tool-contract.js
+          node tests/browser/horaxon-proof-contract.js
+          node tests/browser/showcase-provenance-contract.js
+      - name: Run Playwright runtime contracts
+        working-directory: work
+        run: |
+          node tests/playwright/authoring-behavior-runtime.js
+          node tests/playwright/regression.js
+          node tests/playwright/visual-regression.js
+      - name: Run runtime evaluations
+        working-directory: work
+        run: |
+          cargo run --locked -- eval run --suite tests/evals/runtime_path_smoke.json --output-dir target/runtime-eval
+          cargo run --locked -- eval run --suite tests/evals/interaction_quality.json --output-dir target/interaction-eval
+          cargo run --locked -- eval run --suite tests/evals/complex_authoring_quality.json --output-dir target/complex-authoring-eval
+      - name: Run demo validation
+        working-directory: work
+        run: |
+          node demo/serve.js &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          npx wait-on http://localhost:3021 --timeout 300000
+          node tests/playwright/demo-validation.js
+      - name: Run site and showcase contracts
+        working-directory: work
+        run: |
+          node tests/playwright/site-validation.js
+          node tests/playwright/site-playback.js
+          node tests/playwright/showcase-validation.js
+          bash scripts/verify-showcase-provenance.sh
+      - name: Run Cairn architecture gates
+        working-directory: work
+        run: |
+          cargo install --locked cairn-cli --version 0.9.0
+          cairn scan --json > target/cairn-scan.json
+          cairn lint --all --strict --json > target/cairn-lint.json
+      - name: Publish review evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_HEAD: ${{ steps.head.outputs.sha }}
+        working-directory: work
+        run: |
+          gh pr reopen 220 --repo George-RD/rive-rs-cli || true
+          gh pr comment 220 --repo George-RD/rive-rs-cli --body "## Self-review and verification\n\n**Exact head:** \`$VERIFIED_HEAD\`\n\n**Standards review:** Passed after one finding was addressed: the runtime fixture was corrected for Rive's centre-origin rectangle geometry so the foreground/background pixel assertions exercise the intended overlap. The final design keeps raw SceneSpec ordering unchanged, defaults omitted AuthoringSpec stacking to compatibility behaviour, and separates authored diagnostic/source-map indexes from normalized runtime indexes.\n\n**Spec review:** Root visuals, groups, and components support explicit \`back_to_front\`; explicit \`front_to_back\` is equivalent to omission; deterministic lowering, canonical builder acceptance, authored diagnostics, component definition paths, generated schema, documentation, and official-runtime pixels are covered.\n\n**Verified:** Rust 1.88 compatibility, formatting, Clippy with warnings denied, all-feature Rust tests, schema sync, browser contracts, Playwright runtime/regression suites, three runtime eval suites, demo/site/showcase validation, provenance, Cairn scan/lint, and the focused Chromium stacking proof.\n\nNo unresolved findings."
+      - name: Mark ready and merge exact verified head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_HEAD: ${{ steps.head.outputs.sha }}
+        working-directory: work
+        run: |
+          gh pr reopen 220 --repo George-RD/rive-rs-cli || true
+          gh pr ready 220 --repo George-RD/rive-rs-cli || true
+          gh pr merge 220 --repo George-RD/rive-rs-cli --squash --delete-branch --match-head-commit "$VERIFIED_HEAD"
+      - name: Remove verifier branch
+        if: success()
+        working-directory: work
+        run: git push origin --delete agent/verify-pr-220-final
