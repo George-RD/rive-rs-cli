@@ -1,0 +1,37 @@
+name: Apply AuthoringSpec Stacking
+
+on:
+  push:
+    branches:
+      - agent/authoring-stacking-order
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/authoring-stacking-order
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Apply implementation
+        run: python3 .github/apply-authoring-stacking.py
+      - name: Format, refresh schema, and prove the compiler contract
+        run: |
+          cargo fmt --all
+          UPDATE_AUTHORING_SCHEMA=1 cargo test --locked authoring_schema_file_is_in_sync
+          cargo test --locked --test authoring_stacking_contract
+          git diff --check
+      - name: Commit generated implementation
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A -- ':!.github/apply-authoring-stacking.py' ':!.github/workflows/apply-authoring-stacking.yml'
+          git commit -m "feat: add explicit AuthoringSpec stacking"
+          git push origin HEAD:agent/authoring-stacking-order
