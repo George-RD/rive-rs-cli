@@ -212,6 +212,49 @@ async function readEvidenceStatuses(page) {
       }
     }
 
+    const lifecycle = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+    collectErrors(lifecycle, errors);
+    await lifecycle.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
+    await lifecycle.waitForFunction(
+      (expected) => {
+        const cards = Array.from(document.querySelectorAll(".card[data-showcase-id]"));
+        return (
+          cards.length === expected &&
+          cards.every(
+            (card) =>
+              card.dataset.playbackReady === "true" && card.dataset.playing === "true"
+          )
+        );
+      },
+      entries.length,
+      { timeout: 20000, polling: POLLING_MS }
+    );
+    await lifecycle.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
+    });
+    const stoppedAfterPersistedHide = await lifecycle.evaluate(() =>
+      Array.from(document.querySelectorAll(".card[data-showcase-id]"))
+        .filter((card) => card.dataset.playing !== "true")
+        .map((card) => card.dataset.showcaseId)
+    );
+    if (stoppedAfterPersistedHide.length > 0) {
+      errors.push(
+        `bfcache pagehide stopped showcase playback: ${stoppedAfterPersistedHide.join(", ")}`
+      );
+    }
+    await lifecycle.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: false }));
+    });
+    const playingAfterRealExit = await lifecycle.evaluate(() =>
+      Array.from(document.querySelectorAll(".card[data-showcase-id]"))
+        .filter((card) => card.dataset.playing === "true")
+        .map((card) => card.dataset.showcaseId)
+    );
+    if (playingAfterRealExit.length > 0) {
+      errors.push(`normal page exit retained showcase playback: ${playingAfterRealExit.join(", ")}`);
+    }
+    await lifecycle.close();
+
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
     collectErrors(phone, errors);
     await phone.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
@@ -258,7 +301,7 @@ async function readEvidenceStatuses(page) {
     }
 
     process.stdout.write(
-      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, live runtime paint, phone layout, reduced motion\n`
+      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, live runtime paint, bfcache lifecycle, phone layout, reduced motion\n`
     );
     shutdown();
     process.exit(0);
