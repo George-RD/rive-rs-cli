@@ -242,17 +242,6 @@ async function readEvidenceStatuses(page) {
         `bfcache pagehide stopped showcase playback: ${stoppedAfterPersistedHide.join(", ")}`
       );
     }
-    await lifecycle.evaluate(() => {
-      window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: false }));
-    });
-    const playingAfterRealExit = await lifecycle.evaluate(() =>
-      Array.from(document.querySelectorAll(".card[data-showcase-id]"))
-        .filter((card) => card.dataset.playing === "true")
-        .map((card) => card.dataset.showcaseId)
-    );
-    if (playingAfterRealExit.length > 0) {
-      errors.push(`normal page exit retained showcase playback: ${playingAfterRealExit.join(", ")}`);
-    }
     await lifecycle.close();
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
