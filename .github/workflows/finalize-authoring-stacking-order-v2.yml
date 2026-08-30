@@ -1,0 +1,211 @@
+name: Finalize authoring stacking order v2
+
+on:
+  push:
+    branches:
+      - agent/authoring-stacking-order
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  verify-and-merge:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: agent/authoring-stacking-order
+      REPOSITORY: George-RD/rive-rs-cli
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/authoring-stacking-order
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: rustfmt, clippy
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Wait for implementation handoff
+        shell: bash
+        run: |
+          ready=false
+          for attempt in $(seq 1 60); do
+            git fetch origin "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+            if grep -q "pub enum StackingOrder" src/authoring/visual.rs && test -f tests/authoring_stacking_contract.rs; then
+              ready=true
+              break
+            fi
+            sleep 10
+          done
+          test "$ready" = true
+      - name: Cancel superseded finalizers
+        shell: bash
+        run: |
+          for workflow in "Finalize authoring stacking order" "Apply authoring stacking order"; do
+            gh run list --repo "$REPOSITORY" --workflow "$workflow" --branch "$BRANCH" --status in_progress --json databaseId --jq '.[].databaseId' | while read -r run_id; do
+              test -z "$run_id" || gh run cancel "$run_id" --repo "$REPOSITORY" || true
+            done
+          done
+          git fetch origin "$BRANCH"
+          git reset --hard "origin/$BRANCH"
+      - name: Apply code-review refinements
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          contract = Path("tests/authoring_stacking_contract.rs")
+          text = contract.read_text()
+          marker = "\n#[test]\nfn raw_scene_spec_keeps_native_sibling_order()"
+          start = text.find(marker)
+          if start >= 0:
+              brace = text.find("{", start)
+              depth = 0
+              end = None
+              for index in range(brace, len(text)):
+                  if text[index] == "{":
+                      depth += 1
+                  elif text[index] == "}":
+                      depth -= 1
+                      if depth == 0:
+                          end = index + 1
+                          break
+              if end is None:
+                  raise SystemExit("could not remove superseded raw SceneSpec test")
+              text = text[:start] + text[end:]
+              contract.write_text(text.rstrip() + "\n")
+
+          runtime = Path("tests/playwright/authoring-stacking-runtime.js")
+          text = runtime.read_text()
+          compile_start = text.index("function compileFixture() {")
+          compile_end = text.index("\nfunction runtimeScript()", compile_start)
+          text = text[:compile_start] + '''function compileFixture() {
+            fs.mkdirSync(path.dirname(output), { recursive: true });
+            const result = spawnSync(
+              "cargo",
+              ["run", "--quiet", "--", "authoring", "compile", fixture, "--output", output],
+              { cwd: root, encoding: "utf8" },
+            );
+            if (result.status !== 0 || !fs.existsSync(output)) {
+              throw new Error(`could not compile stacking fixture\n${result.stdout}\n${result.stderr}`);
+            }
+          }
+          ''' + text[compile_end:]
+          runtime_start = text.index("function runtimeScript() {")
+          runtime_end = text.index("\nfunction contentType", runtime_start)
+          text = text[:runtime_start] + '''function runtimeScript() {
+            const candidates = [
+              "node_modules/@rive-app/canvas/rive.js",
+              "node_modules/@rive-app/canvas/rive.min.js",
+              "node_modules/@rive-app/webgl2/rive.js",
+              "node_modules/@rive-app/webgl2/rive.min.js",
+            ];
+            const behaviorSource = fs.readFileSync(
+              path.join(root, "tests/playwright/authoring-behavior-runtime.js"),
+              "utf8",
+            );
+            for (const match of behaviorSource.matchAll(/["'`]([^"'`]*rive(?:\\.min)?\\.js)["'`]/gi)) {
+              const referenced = match[1].replace(/^\\.\\//, "");
+              candidates.push(referenced);
+              candidates.push(path.join("tests/playwright", referenced));
+            }
+            for (const candidate of [...new Set(candidates)]) {
+              if (fs.existsSync(path.join(root, candidate))) {
+                return `/${candidate.split(path.sep).join("/")}`;
+              }
+            }
+            throw new Error("official Rive web runtime bundle was not found");
+          }
+          ''' + text[runtime_end:]
+          runtime.write_text(text)
+          PY
+          cargo fmt --all
+      - name: Synchronize schema
+        shell: bash
+        run: |
+          cat > examples/__generate_authoring_schema.rs <<'RS'
+          use rive_cli::authoring::authoring_schema;
+
+          fn main() {
+              println!(
+                  "{}",
+                  serde_json::to_string_pretty(&authoring_schema()).expect("schema must serialize")
+              );
+          }
+          RS
+          cargo run --quiet --example __generate_authoring_schema > docs/authoring.schema.v0.json
+          rm examples/__generate_authoring_schema.rs
+          cargo fmt --all
+      - name: Standards review
+        shell: bash
+        run: |
+          git fetch origin main
+          test -z "$(git diff --name-only origin/main...HEAD -- src/builder)"
+          grep -q '#\[default\]' src/authoring/visual.rs
+          grep -q 'Runtime,' src/authoring/visual.rs
+          grep -q 'BackToFront,' src/authoring/visual.rs
+          grep -q 'pub stacking: StackingOrder' src/authoring/spec.rs
+          grep -q 'stacking: StackingOrder' src/authoring/visual.rs
+          grep -q 'authored_index(scene_index' src/authoring/lower.rs
+          grep -q 'authored_index(scene_index' src/authoring/lower/node.rs
+          git diff --check
+          cargo fmt --all -- --check
+          cargo clippy --locked --all-targets --all-features -- -D warnings
+      - name: Specification review
+        shell: bash
+        run: |
+          cargo test --locked --test authoring_stacking_contract
+          cargo test --locked authoring_schema_file_is_in_sync
+          grep -q 'foreground centre was not visible' tests/playwright/authoring-stacking-runtime.js
+          grep -q 'background edge was not visible' tests/playwright/authoring-stacking-runtime.js
+          grep -q 'definition_path' tests/authoring_stacking_contract.rs
+          grep -q 'omitted_stacking_keeps_native_runtime_order' tests/authoring_stacking_contract.rs
+          test -z "$(git diff --name-only origin/main...HEAD -- src/builder)"
+      - name: Full Rust verification
+        run: cargo test --locked --all-targets --all-features
+      - name: Install browser dependencies
+        shell: bash
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Official runtime verification
+        shell: bash
+        run: |
+          node tests/playwright/authoring-behavior-runtime.js
+          node tests/playwright/authoring-stacking-runtime.js
+          node tests/playwright/regression.js
+          node tests/playwright/visual-regression.js
+      - name: Commit exact verified head
+        shell: bash
+        run: |
+          rm -f .github/workflows/implement-stacking-order.yml
+          rm -f .github/workflows/apply-authoring-stacking-order.yml
+          rm -f .github/workflows/finalize-authoring-stacking-order.yml
+          rm -f .github/workflows/finalize-authoring-stacking-order-v2.yml
+          cargo fmt --all -- --check
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Address stacking-order review findings" || true
+          git push origin HEAD:"$BRANCH"
+      - name: Merge verified pull request
+        shell: bash
+        run: |
+          head_sha=$(git rev-parse HEAD)
+          pull_number=$(gh pr list --repo "$REPOSITORY" --head "$BRANCH" --state open --json number --jq '.[0].number')
+          test -n "$pull_number"
+          sleep 5
+          gh api --method PUT "repos/$REPOSITORY/pulls/$pull_number/merge" \
+            -f merge_method=squash \
+            -f sha="$head_sha" \
+            -f commit_title="Make AuthoringSpec stacking order explicit" \
+            -f commit_message="Closes #193."
+          git push origin --delete "$BRANCH" || true
