@@ -1,7 +1,8 @@
 ---
 node: rive-cli.delivery.site
-status: open
+status: done
 created: 2026-08-29
+completed: 2026-08-30
 ---
 
 # P1 — Separate public verification proof from original-work proof
@@ -15,10 +16,10 @@ without changing the AuthoringSpec compiler dependency graph.
 
 - #199 — frame-lock each Verification Lab pair behind one deterministic logical clock
   and reusable site playback interface; completed in PR #216.
-- #200 — reuse that interface for a provenance-aware original-work showcase; completes
+- #200 — reuse that interface for a provenance-aware original-work showcase; completed
   in PR #218.
 - #201 — lead the landing page with original/production proof while keeping parity as
-  the separate correctness route; next after #200.
+  the separate correctness route; completed in PR #219.
 
 ## Acceptance criteria
 
@@ -35,7 +36,7 @@ without changing the AuthoringSpec compiler dependency graph.
 
 ## Dependencies
 
-- Parent specification: #198.
-- #199 completed the shared playback seam in PR #216; #200 reuses it in PR #218.
-- #200 unblocks #201 when PR #218 merges.
-- No dependency is introduced on the completed #179-#186 Authoring chain.
+- Parent specification: #198; completed by #199-#201.
+- #199 completed the shared playback seam in PR #216; #200 reused it in PR #218;
+  #201 completed the landing/production-proof slice in PR #219.
+- No dependency was introduced on the completed #179-#186 Authoring chain.

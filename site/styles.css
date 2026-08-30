@@ -875,6 +875,10 @@ details.source pre {
     font-size: clamp(40px, 13vw, 60px);
   }
 
+  .proof-parcel .parcel-foot {
+    flex-wrap: wrap;
+  }
+
   .problem-grid {
     grid-template-columns: 1fr;
     gap: 24px;

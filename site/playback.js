@@ -185,6 +185,11 @@
 
   function createLogicalTimeline(controllers, options = {}) {
     const fps = options.fps || CAPTURE_FPS;
+    const endFrame =
+      typeof options.endFrame === "number" && Number.isFinite(options.endFrame)
+        ? Math.max(0, Math.round(options.endFrame))
+        : null;
+    const loops = endFrame !== null && options.loop === true;
     const reducedMotion = Boolean(
       global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches
     );
@@ -219,7 +224,13 @@
     }
 
     function startPlaying() {
-      if (destroyed || playing) return;
+      if (
+        destroyed ||
+        playing ||
+        (endFrame !== null && !loops && logicalFrame >= endFrame)
+      ) {
+        return;
+      }
       playing = true;
       frameOrigin = logicalFrame;
       wallOrigin = global.performance.now();
@@ -236,9 +247,22 @@
 
     async function tick(now) {
       if (!playing || destroyed) return;
-      const target = frameOrigin + Math.max(0, Math.floor(((now - wallOrigin) * fps) / 1000));
+      const elapsedTarget =
+        frameOrigin + Math.max(0, Math.floor(((now - wallOrigin) * fps) / 1000));
+      const target = endFrame === null ? elapsedTarget : Math.min(elapsedTarget, endFrame);
       if (target > logicalFrame) {
         await enqueueSeek(target);
+      }
+      if (endFrame !== null && elapsedTarget >= endFrame) {
+        if (loops) {
+          await enqueueSeek(0);
+          if (playing && !destroyed) {
+            frameOrigin = 0;
+            wallOrigin = global.performance.now();
+          }
+        } else {
+          await pause();
+        }
       }
       if (playing && !destroyed) {
         frameRequestId = global.requestAnimationFrame(tick);
@@ -264,7 +288,8 @@
 
     async function seekToFrame(frame) {
       await ready;
-      await enqueueSeek(frame);
+      const target = endFrame === null ? frame : Math.min(frame, endFrame);
+      await enqueueSeek(target);
       if (playing) {
         frameOrigin = logicalFrame;
         wallOrigin = global.performance.now();

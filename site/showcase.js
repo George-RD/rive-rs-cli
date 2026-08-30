@@ -7,8 +7,9 @@ function el(tag, className, text) {
   return node;
 }
 
-function provenanceLabel(provenance) {
-  return provenance === "authoring" ? "AuthoringSpec" : "SceneSpec";
+function provenanceLabel(entry) {
+  if (entry.provenance === "production") return "Production consumer";
+  return entry.provenance === "authoring" ? "AuthoringSpec" : "SceneSpec";
 }
 
 function buildSource(entry) {
@@ -18,9 +19,31 @@ function buildSource(entry) {
   const links = el("div", "hero-actions");
   const sourceLink = el("a", "text-link", "Open retained source ↗");
   sourceLink.href = entry.source;
+  sourceLink.dataset.sourceLink = "true";
   links.appendChild(sourceLink);
 
-  if (entry.provenance === "authoring") {
+  if (entry.evidence) {
+    const evidenceLink = el("a", "text-link", `${entry.evidenceLabel || "Provenance"} ↗`);
+    evidenceLink.href = entry.evidence;
+    evidenceLink.dataset.evidenceLink = "true";
+    links.appendChild(evidenceLink);
+  }
+
+  if (entry.consumerEvidence) {
+    const consumerEvidenceLink = el("a", "text-link", "Consumer evidence ↗");
+    consumerEvidenceLink.href = entry.consumerEvidence;
+    consumerEvidenceLink.dataset.consumerEvidenceLink = "true";
+    links.appendChild(consumerEvidenceLink);
+  }
+
+  if (entry.consumerAttestation) {
+    const consumerLink = el("a", "text-link", "Consumer attestation ↗");
+    consumerLink.href = entry.consumerAttestation;
+    consumerLink.dataset.consumerAttestationLink = "true";
+    links.appendChild(consumerLink);
+  }
+
+  if (entry.provenance === "authoring" || entry.sourceType === "authoring") {
     const guideLink = el("a", "text-link", "Authoring CLI ↗");
     guideLink.href = "docs/authoring-cli.md";
     links.appendChild(guideLink);
@@ -46,6 +69,7 @@ function buildSource(entry) {
 function buildCard(entry) {
   const card = el("article", "card");
   card.dataset.showcaseId = entry.id;
+  card.dataset.provenance = entry.provenance;
   card.dataset.playbackReady = "false";
   card.dataset.playing = "false";
 
@@ -66,7 +90,7 @@ function buildCard(entry) {
     el(
       "span",
       entry.provenance === "authoring" ? "tag basics" : "tag",
-      provenanceLabel(entry.provenance)
+      provenanceLabel(entry)
     )
   );
   tags.appendChild(el("span", "tag", entry.capability));
@@ -87,6 +111,8 @@ function buildCard(entry) {
     src: entry.artifact,
     stateMachine: entry.stateMachine,
     animation: entry.animation,
+    endFrame: entry.endFrame,
+    loop: entry.loop,
     autoplay: true,
     onPlayingChange(playing) {
       card.dataset.playing = String(playing);
@@ -133,16 +159,36 @@ async function main() {
     timelines.push(built.timeline);
   }
 
+  const resumeAfterBfcache = new Set();
+
   window.addEventListener("resize", () => {
     for (const timeline of timelines) timeline.resize();
   });
-  window.addEventListener(
-    "pagehide",
-    () => {
-      for (const timeline of timelines) timeline.destroy();
-    },
-    { once: true }
-  );
+  window.addEventListener("pagehide", (event) => {
+    if (event.persisted) {
+      resumeAfterBfcache.clear();
+      for (const timeline of timelines) {
+        if (!timeline.isPlaying) continue;
+        resumeAfterBfcache.add(timeline);
+        void timeline
+          .pause()
+          .catch((error) => console.error("could not pause showcase playback", error));
+      }
+      return;
+    }
+    resumeAfterBfcache.clear();
+    for (const timeline of timelines) timeline.destroy();
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+    const pending = [...resumeAfterBfcache];
+    resumeAfterBfcache.clear();
+    for (const timeline of pending) {
+      void timeline
+        .play()
+        .catch((error) => console.error("could not resume showcase playback", error));
+    }
+  });
 }
 
 main().catch((error) => console.error("could not build showcase", error));

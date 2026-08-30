@@ -1,0 +1,16 @@
+{
+  "repository": "George-RD/horaxon-web",
+  "commit": "feb944c3ec0e4004d57d41215c8a1110d2c8a3d1",
+  "path": "src/scripts/rive-signal.ts",
+  "git_blob": "7566c6494d99db242ec142e3cb20a85d56a5d9a0",
+  "retained_evidence": {
+    "path": "showcase/production/horaxon_consumer.evidence.ts",
+    "git_blob": "3eb1944ab0571ad4a719a0a7d1ac7edc2d3041f6"
+  },
+  "observed": {
+    "rive_file_url": "https://raw.githubusercontent.com/George-RD/rive-rs-cli/b5b5823b994aa175e4a24983d913f40386c0ef9b/scratch/horaxon-signal-to-action.riv",
+    "rive_animation": "auth__horaxon_2dsignal_2dstage__signal_2dto_2daction__animation"
+  },
+  "observed_at": "2026-08-30",
+  "note": "A minimal consumer excerpt containing only the public Rive pin and animation is retained and hashed; the complete private consumer source is not copied into this repository."
+}
