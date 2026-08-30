@@ -43,13 +43,13 @@ fn back_to_front_stacking_keeps_foreground_visible_in_the_official_runtime() {
     let _ = fs::remove_dir_all(&work_dir);
     fs::create_dir_all(&work_dir).expect("runtime work directory should be created");
     let riv_path = work_dir.join("stacking-card.riv");
-    fs::write(&riv_path, bytes).expect("compiled Rive file should be written");
+    fs::write(&riv_path, &bytes).expect("compiled Rive file should be written");
     let output_dir = work_dir.join("render");
     let browser = std::env::var_os("RIVE_CHROME").map(PathBuf::from);
 
     let manifest = render(&RenderOptions {
-        source_path: riv_path.clone(),
-        riv: riv_path,
+        source_path: riv_path,
+        riv: bytes,
         output_dir: output_dir.clone(),
         browser,
         width: 128,
