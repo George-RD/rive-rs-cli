@@ -42,7 +42,13 @@ async function waitForServer(port, timeoutMs = 20000) {
 function assertStagingContract(entries) {
   const staged = new Set(plan().map(([, to]) => to));
   for (const entry of entries) {
-    for (const field of ["artifact", "source", "evidence", "consumerAttestation"]) {
+    for (const field of [
+      "artifact",
+      "source",
+      "evidence",
+      "consumerAttestation",
+      "consumerEvidence",
+    ]) {
       if (entry[field] && !staged.has(entry[field])) {
         throw new Error(`staging plan omitted ${entry.id} ${field} ${entry[field]}`);
       }
@@ -53,7 +59,13 @@ function assertStagingContract(entries) {
   if (!production || production.provenance !== "production") {
     throw new Error("Horaxon production proof is missing its production provenance type");
   }
-  for (const field of ["artifact", "source", "evidence", "consumerAttestation"]) {
+  for (const field of [
+    "artifact",
+    "source",
+    "evidence",
+    "consumerAttestation",
+    "consumerEvidence",
+  ]) {
     if (!production[field] || /^https?:\/\//.test(production[field])) {
       throw new Error(`Horaxon ${field} is not a retained local path: ${production[field] || "missing"}`);
     }
@@ -80,6 +92,9 @@ function assertStagingContract(entries) {
   }
   if (!namedFailure.includes("missing-contract.consumerAttestation is missing")) {
     throw new Error(`missing production consumer attestation error was not named: ${namedFailure}`);
+  }
+  if (!namedFailure.includes("missing-contract.consumerEvidence is missing")) {
+    throw new Error(`missing production consumer evidence error was not named: ${namedFailure}`);
   }
 }
 
@@ -116,6 +131,8 @@ async function readCards(page) {
         evidence: card.querySelector("[data-evidence-link=\"true\"]")?.getAttribute("href") || "",
         consumerAttestation:
           card.querySelector("[data-consumer-attestation-link=\"true\"]")?.getAttribute("href") || "",
+        consumerEvidence:
+          card.querySelector("[data-consumer-evidence-link=\"true\"]")?.getAttribute("href") || "",
         text: card.textContent || "",
       };
     })
@@ -127,7 +144,7 @@ async function readEvidenceStatuses(page) {
     Promise.all(
       Array.from(
         document.querySelectorAll(
-          "[data-source-link=\"true\"], [data-evidence-link=\"true\"], [data-consumer-attestation-link=\"true\"]"
+          "[data-source-link=\"true\"], [data-evidence-link=\"true\"], [data-consumer-attestation-link=\"true\"], [data-consumer-evidence-link=\"true\"]"
         )
       ).map(async (link) => {
         const response = await fetch(link.href);
@@ -197,6 +214,9 @@ async function readEvidenceStatuses(page) {
       if (!productionCard.consumerAttestation) {
         errors.push("Horaxon card is missing its consumer attestation link");
       }
+      if (!productionCard.consumerEvidence) {
+        errors.push("Horaxon card is missing its retained consumer evidence link");
+      }
       if (!productionCard.text.includes("Production consumer")) {
         errors.push("Horaxon card is not visibly labelled as production consumer proof");
       }
@@ -232,16 +252,25 @@ async function readEvidenceStatuses(page) {
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
     });
-    const stoppedAfterPersistedHide = await lifecycle.evaluate(() =>
-      Array.from(document.querySelectorAll(".card[data-showcase-id]"))
-        .filter((card) => card.dataset.playing !== "true")
-        .map((card) => card.dataset.showcaseId)
+    await lifecycle.waitForFunction(
+      () =>
+        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
+          (card) => card.dataset.playing === "false"
+        ),
+      undefined,
+      { timeout: 5000, polling: POLLING_MS }
     );
-    if (stoppedAfterPersistedHide.length > 0) {
-      errors.push(
-        `bfcache pagehide stopped showcase playback: ${stoppedAfterPersistedHide.join(", ")}`
-      );
-    }
+    await lifecycle.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+    });
+    await lifecycle.waitForFunction(
+      () =>
+        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
+          (card) => card.dataset.playing === "true"
+        ),
+      undefined,
+      { timeout: 5000, polling: POLLING_MS }
+    );
     await lifecycle.close();
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -290,7 +319,7 @@ async function readEvidenceStatuses(page) {
     }
 
     process.stdout.write(
-      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, live runtime paint, bfcache lifecycle, phone layout, reduced motion\n`
+      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, hashed consumer evidence, live runtime paint, bfcache pause/resume, phone layout, reduced motion\n`
     );
     shutdown();
     process.exit(0);

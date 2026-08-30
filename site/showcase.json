@@ -24,6 +24,8 @@
     "evidence": "showcase/production/horaxon_signal.provenance.md",
     "evidenceLabel": "Production provenance",
     "consumerAttestation": "showcase/production/horaxon_consumer.attestation.json",
+    "consumerEvidence": "showcase/production/horaxon_consumer.evidence.ts",
+    "consumerEvidenceGitBlob": "3eb1944ab0571ad4a719a0a7d1ac7edc2d3041f6",
     "originRepository": "George-RD/rive-rs-cli",
     "originCommit": "b5b5823b994aa175e4a24983d913f40386c0ef9b",
     "originArtifact": "scratch/horaxon-signal-to-action.riv",

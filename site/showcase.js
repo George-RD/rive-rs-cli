@@ -29,6 +29,13 @@ function buildSource(entry) {
     links.appendChild(evidenceLink);
   }
 
+  if (entry.consumerEvidence) {
+    const consumerEvidenceLink = el("a", "text-link", "Consumer evidence ↗");
+    consumerEvidenceLink.href = entry.consumerEvidence;
+    consumerEvidenceLink.dataset.consumerEvidenceLink = "true";
+    links.appendChild(consumerEvidenceLink);
+  }
+
   if (entry.consumerAttestation) {
     const consumerLink = el("a", "text-link", "Consumer attestation ↗");
     consumerLink.href = entry.consumerAttestation;
@@ -150,12 +157,33 @@ async function main() {
     timelines.push(built.timeline);
   }
 
+  const resumeAfterBfcache = new Set();
+
   window.addEventListener("resize", () => {
     for (const timeline of timelines) timeline.resize();
   });
   window.addEventListener("pagehide", (event) => {
-    if (event.persisted) return;
+    if (event.persisted) {
+      resumeAfterBfcache.clear();
+      for (const timeline of timelines) {
+        if (!timeline.isPlaying) continue;
+        resumeAfterBfcache.add(timeline);
+        void timeline.pause();
+      }
+      return;
+    }
+    resumeAfterBfcache.clear();
     for (const timeline of timelines) timeline.destroy();
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+    const pending = [...resumeAfterBfcache];
+    resumeAfterBfcache.clear();
+    for (const timeline of pending) {
+      void timeline
+        .play()
+        .catch((error) => console.error("could not resume showcase playback", error));
+    }
   });
 }
 

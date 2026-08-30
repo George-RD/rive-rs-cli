@@ -78,7 +78,13 @@ function showcaseEntries() {
 function showcaseFiles(entries = showcaseEntries()) {
   const files = new Map(SHOWCASE_GUIDES);
   for (const entry of entries) {
-    for (const field of ["artifact", "source", "evidence", "consumerAttestation"]) {
+    for (const field of [
+      "artifact",
+      "source",
+      "evidence",
+      "consumerAttestation",
+      "consumerEvidence",
+    ]) {
       const value = entry[field];
       if (typeof value === "string" && value.length > 0) files.set(value, value);
     }
@@ -122,7 +128,7 @@ function assertShowcaseEntriesExist(entries = showcaseEntries()) {
     }
 
     if (entry.provenance === "production") {
-      for (const field of ["evidence", "consumerAttestation"]) {
+      for (const field of ["evidence", "consumerAttestation", "consumerEvidence"]) {
         const value = entry[field];
         if (typeof value !== "string" || value.length === 0) {
           missing.push(`${entry.id || "<unnamed>"}.${field} is missing`);
@@ -132,6 +138,12 @@ function assertShowcaseEntriesExist(entries = showcaseEntries()) {
       }
       assertPinnedProductionBlob(entry, "artifact", "artifactGitBlob", missing);
       assertPinnedProductionBlob(entry, "source", "sourceGitBlob", missing);
+      assertPinnedProductionBlob(
+        entry,
+        "consumerEvidence",
+        "consumerEvidenceGitBlob",
+        missing
+      );
     } else if (
       typeof entry.evidence === "string" &&
       entry.evidence.length > 0 &&
