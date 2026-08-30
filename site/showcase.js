@@ -153,13 +153,10 @@ async function main() {
   window.addEventListener("resize", () => {
     for (const timeline of timelines) timeline.resize();
   });
-  window.addEventListener(
-    "pagehide",
-    () => {
-      for (const timeline of timelines) timeline.destroy();
-    },
-    { once: true }
-  );
+  window.addEventListener("pagehide", (event) => {
+    if (event.persisted) return;
+    for (const timeline of timelines) timeline.destroy();
+  });
 }
 
 main().catch((error) => console.error("could not build showcase", error));
