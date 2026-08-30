@@ -1,0 +1,689 @@
+name: Apply authoring stacking order
+
+on:
+  push:
+    branches:
+      - agent/authoring-stacking-order
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/authoring-stacking-order
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: rustfmt, clippy
+      - name: Apply implementation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              target = Path(path)
+              text = target.read_text()
+              if new in text:
+                  return
+              if old not in text:
+                  raise SystemExit(f"missing source pattern in {path}")
+              target.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              "src/authoring/visual.rs",
+              '''#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+          #[serde(rename_all = "snake_case")]
+          pub enum MirrorAxis {
+              Horizontal,
+              Vertical,
+          }
+          ''',
+              '''#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+          #[serde(rename_all = "snake_case")]
+          pub enum MirrorAxis {
+              Horizontal,
+              Vertical,
+          }
+
+          #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+          #[serde(rename_all = "snake_case")]
+          pub enum StackingOrder {
+              #[default]
+              Runtime,
+              BackToFront,
+          }
+
+          impl StackingOrder {
+              pub(crate) fn authored_index(self, scene_index: usize, child_count: usize) -> usize {
+                  match self {
+                      Self::Runtime => scene_index,
+                      Self::BackToFront => child_count - scene_index - 1,
+                  }
+              }
+          }
+          ''',
+          )
+          replace_once(
+              "src/authoring/visual.rs",
+              '''    Group {
+                  id: String,
+                  #[serde(default)]
+                  transform: TransformSpec,
+                  #[serde(default)]
+                  #[schemars(length(max = 100))]
+                  constraints: Vec<ConstraintSpec>,
+                  #[serde(default)]
+                  children: Vec<VisualNode>,
+              },
+          ''',
+              '''    Group {
+                  id: String,
+                  #[serde(default)]
+                  transform: TransformSpec,
+                  #[serde(default)]
+                  stacking: StackingOrder,
+                  #[serde(default)]
+                  #[schemars(length(max = 100))]
+                  constraints: Vec<ConstraintSpec>,
+                  #[serde(default)]
+                  children: Vec<VisualNode>,
+              },
+          ''',
+          )
+
+          spec = Path("src/authoring/spec.rs")
+          text = spec.read_text()
+          text = text.replace(
+              "use super::visual::VisualNode;",
+              "use super::visual::{StackingOrder, VisualNode};",
+          )
+          if "pub stacking: StackingOrder," not in text.split("pub struct ComponentSpec", 1)[1].split("}", 1)[0]:
+              text = text.replace(
+                  '''pub struct ComponentSpec {
+              pub id: String,
+              #[serde(default)]
+              pub parameters: BTreeMap<String, Quantity>,
+              pub visual: Vec<VisualNode>,
+          }
+          ''',
+                  '''pub struct ComponentSpec {
+              pub id: String,
+              #[serde(default)]
+              pub parameters: BTreeMap<String, Quantity>,
+              #[serde(default)]
+              pub stacking: StackingOrder,
+              pub visual: Vec<VisualNode>,
+          }
+          ''',
+                  1,
+              )
+          visual_section = text.split("pub struct VisualSection", 1)[1].split("}", 1)[0]
+          if "pub stacking: StackingOrder," not in visual_section:
+              text = text.replace(
+                  '''pub struct VisualSection {
+              #[serde(default)]
+              pub nodes: Vec<VisualNode>,
+          }
+          ''',
+                  '''pub struct VisualSection {
+              #[serde(default)]
+              pub stacking: StackingOrder,
+              #[serde(default)]
+              pub nodes: Vec<VisualNode>,
+          }
+          ''',
+                  1,
+              )
+          spec.write_text(text)
+
+          exports = Path("src/authoring/mod.rs")
+          text = exports.read_text()
+          text = text.replace(
+              "pub use visual::{MirrorAxis, PathPointSpec, VisualNode};",
+              "pub use visual::{MirrorAxis, PathPointSpec, StackingOrder, VisualNode};",
+          )
+          exports.write_text(text)
+
+          replace_once(
+              "src/authoring/lower.rs",
+              '''        let visual_offset = children.len();
+                  let mut component_stack = Vec::new();
+                  for (index, node) in self.spec.visual.nodes.iter().enumerate() {
+                      let authored_path = format!("$.visual.nodes[{index}]");
+                      let authored_id = node.id().to_string();
+                      let runtime_segments = vec![self.spec.artboard.id.clone(), authored_id.clone()];
+                      let scene_path = format!("/artboard/children/{}", visual_offset + index);
+          ''',
+              '''        let visual_offset = children.len();
+                  let mut component_stack = Vec::new();
+                  let nodes = &self.spec.visual.nodes;
+                  for scene_index in 0..nodes.len() {
+                      let authored_index = self
+                          .spec
+                          .visual
+                          .stacking
+                          .authored_index(scene_index, nodes.len());
+                      let node = &nodes[authored_index];
+                      let authored_path = format!("$.visual.nodes[{authored_index}]");
+                      let authored_id = node.id().to_string();
+                      let runtime_segments = vec![self.spec.artboard.id.clone(), authored_id.clone()];
+                      let scene_path = format!("/artboard/children/{}", visual_offset + scene_index);
+          ''',
+          )
+
+          replace_once(
+              "src/authoring/lower/node.rs",
+              '''            VisualNode::Group {
+                          transform,
+                          constraints,
+                          children,
+                          ..
+                      } => {
+          ''',
+              '''            VisualNode::Group {
+                          transform,
+                          stacking,
+                          constraints,
+                          children,
+                          ..
+                      } => {
+          ''',
+          )
+          replace_once(
+              "src/authoring/lower/node.rs",
+              '''                let mut lowered_children = Vec::with_capacity(children.len());
+                          for (index, child) in children.iter().enumerate() {
+                              let child_authored_path = format!("{authored_path}.children[{index}]");
+                              let child_definition_path = definition_path
+                                  .as_ref()
+                                  .map(|path| format!("{path}.children[{index}]"));
+                              let child_authored_id = format!("{authored_id}/{}", child.id());
+                              let mut child_runtime_segments = runtime_segments.clone();
+                              child_runtime_segments.push(child.id().to_string());
+                              let child_scene_path = format!("{scene_path}/children/{index}");
+          ''',
+              '''                let mut lowered_children = Vec::with_capacity(children.len());
+                          for scene_index in 0..children.len() {
+                              let authored_index = stacking.authored_index(scene_index, children.len());
+                              let child = &children[authored_index];
+                              let child_authored_path =
+                                  format!("{authored_path}.children[{authored_index}]");
+                              let child_definition_path = definition_path
+                                  .as_ref()
+                                  .map(|path| format!("{path}.children[{authored_index}]"));
+                              let child_authored_id = format!("{authored_id}/{}", child.id());
+                              let mut child_runtime_segments = runtime_segments.clone();
+                              child_runtime_segments.push(child.id().to_string());
+                              let child_scene_path = format!("{scene_path}/children/{scene_index}");
+          ''',
+          )
+          replace_once(
+              "src/authoring/lower/node.rs",
+              '''                component_stack.push(component.clone());
+                          let mut lowered_children = Vec::with_capacity(component_ref.spec.visual.len());
+                          for (index, child) in component_ref.spec.visual.iter().enumerate() {
+                              let child_authored_path = format!("{authored_path}.expanded[{index}]");
+                              let child_definition_path = Some(format!(
+                                  "$.components[{}].visual[{index}]",
+                                  component_ref.index
+                              ));
+                              let child_authored_id = format!("{authored_id}/{}", child.id());
+                              let mut child_runtime_segments = runtime_segments.clone();
+                              child_runtime_segments.push(child.id().to_string());
+                              let child_scene_path = format!("{scene_path}/children/{index}");
+          ''',
+              '''                component_stack.push(component.clone());
+                          let component_children = &component_ref.spec.visual;
+                          let mut lowered_children = Vec::with_capacity(component_children.len());
+                          for scene_index in 0..component_children.len() {
+                              let authored_index = component_ref
+                                  .spec
+                                  .stacking
+                                  .authored_index(scene_index, component_children.len());
+                              let child = &component_children[authored_index];
+                              let child_authored_path =
+                                  format!("{authored_path}.expanded[{authored_index}]");
+                              let child_definition_path = Some(format!(
+                                  "$.components[{}].visual[{authored_index}]",
+                                  component_ref.index
+                              ));
+                              let child_authored_id = format!("{authored_id}/{}", child.id());
+                              let mut child_runtime_segments = runtime_segments.clone();
+                              child_runtime_segments.push(child.id().to_string());
+                              let child_scene_path = format!("{scene_path}/children/{scene_index}");
+          ''',
+          )
+
+          Path("tests/authoring_stacking_contract.rs").write_text(r'''use rive_cli::authoring::{authoring_schema, lower_authoring_json};
+          use rive_cli::builder::{SceneSpec, build_scene};
+          use serde_json::{Value, json};
+
+          fn rectangle(id: &str, width: f64, height: f64, fill: &str) -> Value {
+              json!({
+                  "kind": "rectangle",
+                  "id": id,
+                  "width": { "kind": "literal", "value": width, "unit": "px" },
+                  "height": { "kind": "literal", "value": height, "unit": "px" },
+                  "fill": fill,
+                  "transform": {
+                      "x": { "kind": "literal", "value": 64.0, "unit": "px" },
+                      "y": { "kind": "literal", "value": 64.0, "unit": "px" }
+                  }
+              })
+          }
+
+          fn document() -> Value {
+              json!({
+                  "authoring_format_version": 0,
+                  "artboard": {
+                      "id": "stage",
+                      "width": { "value": 128.0, "unit": "px" },
+                      "height": { "value": 128.0, "unit": "px" }
+                  },
+                  "visual": { "nodes": [] },
+                  "motion": {},
+                  "behavior": {}
+              })
+          }
+
+          fn lower(document: &Value) -> Value {
+              let lowered = lower_authoring_json(&document.to_string()).expect("AuthoringSpec must lower");
+              serde_json::to_value(lowered).expect("lowered authoring must serialize")
+          }
+
+          fn assert_builds(scene: Value) {
+              let scene: SceneSpec = serde_json::from_value(scene).expect("SceneSpec must deserialize");
+              build_scene(&scene, None).expect("SceneSpec must pass the canonical builder");
+          }
+
+          fn entry<'a>(lowered: &'a Value, authored_id: &str) -> &'a Value {
+              lowered["source_map"]["entries"]
+                  .as_array()
+                  .expect("source-map entries")
+                  .iter()
+                  .find(|entry| entry["authored_id"] == authored_id)
+                  .expect("authored source-map entry")
+          }
+
+          fn contains_path(entry: &Value, expected: &str) -> bool {
+              entry["scene_paths"]
+                  .as_array()
+                  .expect("scene paths")
+                  .iter()
+                  .any(|path| path == expected)
+          }
+
+          #[test]
+          fn root_back_to_front_order_normalizes_scene_positions_without_rewriting_authored_paths() {
+              let mut input = document();
+              input["visual"] = json!({
+                  "stacking": "back_to_front",
+                  "nodes": [
+                      rectangle("background", 96.0, 96.0, "#2563EB"),
+                      rectangle("foreground", 40.0, 40.0, "#EF4444")
+                  ]
+              });
+
+              let first = lower(&input);
+              let second = lower(&input);
+              assert_eq!(first["scene"], second["scene"]);
+              assert_eq!(first["source_map"], second["source_map"]);
+
+              let foreground = entry(&first, "foreground");
+              let background = entry(&first, "background");
+              assert_eq!(foreground["authored_path"], "$.visual.nodes[1]");
+              assert_eq!(background["authored_path"], "$.visual.nodes[0]");
+              assert!(contains_path(foreground, "/artboard/children/0"));
+              assert!(contains_path(background, "/artboard/children/1"));
+              assert_eq!(
+                  first["scene"]["artboard"]["children"][0]["name"],
+                  foreground["runtime_names"][0]
+              );
+              assert_eq!(
+                  first["scene"]["artboard"]["children"][1]["name"],
+                  background["runtime_names"][0]
+              );
+              assert_builds(first["scene"].clone());
+          }
+
+          #[test]
+          fn omitted_stacking_keeps_native_runtime_order_for_backward_compatibility() {
+              let mut input = document();
+              input["visual"]["nodes"] = json!([
+                  rectangle("background", 96.0, 96.0, "#2563EB"),
+                  rectangle("foreground", 40.0, 40.0, "#EF4444")
+              ]);
+
+              let lowered = lower(&input);
+              let background = entry(&lowered, "background");
+              let foreground = entry(&lowered, "foreground");
+              assert!(contains_path(background, "/artboard/children/0"));
+              assert!(contains_path(foreground, "/artboard/children/1"));
+              assert_builds(lowered["scene"].clone());
+          }
+
+          #[test]
+          fn group_back_to_front_order_preserves_nested_authored_identity() {
+              let mut input = document();
+              input["visual"]["nodes"] = json!([{
+                  "kind": "group",
+                  "id": "card",
+                  "stacking": "back_to_front",
+                  "children": [
+                      rectangle("background", 96.0, 96.0, "#2563EB"),
+                      rectangle("foreground", 40.0, 40.0, "#EF4444")
+                  ]
+              }]);
+
+              let lowered = lower(&input);
+              let foreground = entry(&lowered, "card/foreground");
+              let background = entry(&lowered, "card/background");
+              assert_eq!(foreground["authored_path"], "$.visual.nodes[0].children[1]");
+              assert_eq!(background["authored_path"], "$.visual.nodes[0].children[0]");
+              assert!(contains_path(
+                  foreground,
+                  "/artboard/children/0/children/0"
+              ));
+              assert!(contains_path(
+                  background,
+                  "/artboard/children/0/children/1"
+              ));
+              assert_builds(lowered["scene"].clone());
+          }
+
+          #[test]
+          fn component_back_to_front_order_preserves_definition_paths() {
+              let mut input = document();
+              input["components"] = json!([{
+                  "id": "badge",
+                  "stacking": "back_to_front",
+                  "visual": [
+                      rectangle("background", 96.0, 96.0, "#2563EB"),
+                      rectangle("foreground", 40.0, 40.0, "#EF4444")
+                  ]
+              }]);
+              input["visual"]["nodes"] = json!([{
+                  "kind": "instance",
+                  "id": "badge-instance",
+                  "component": "badge"
+              }]);
+
+              let lowered = lower(&input);
+              let foreground = entry(&lowered, "badge-instance/foreground");
+              let background = entry(&lowered, "badge-instance/background");
+              assert_eq!(foreground["authored_path"], "$.visual.nodes[0].expanded[1]");
+              assert_eq!(
+                  foreground["definition_path"],
+                  "$.components[0].visual[1]"
+              );
+              assert_eq!(background["authored_path"], "$.visual.nodes[0].expanded[0]");
+              assert_eq!(
+                  background["definition_path"],
+                  "$.components[0].visual[0]"
+              );
+              assert!(contains_path(
+                  foreground,
+                  "/artboard/children/0/children/0"
+              ));
+              assert!(contains_path(
+                  background,
+                  "/artboard/children/0/children/1"
+              ));
+              assert_builds(lowered["scene"].clone());
+          }
+
+          #[test]
+          fn schema_exposes_runtime_and_back_to_front_stacking_modes() {
+              let schema = authoring_schema();
+              let schema_text = serde_json::to_string(&schema).expect("schema must serialize");
+              assert!(schema_text.contains("StackingOrder"));
+              assert!(schema_text.contains("runtime"));
+              assert!(schema_text.contains("back_to_front"));
+          }
+          ''')
+
+          fixture = Path("tests/fixtures/authoring/stacking-order.v0.json")
+          fixture.parent.mkdir(parents=True, exist_ok=True)
+          fixture.write_text('''{
+            "authoring_format_version": 0,
+            "artboard": {
+              "id": "stacking-order",
+              "width": { "value": 128, "unit": "px" },
+              "height": { "value": 128, "unit": "px" }
+            },
+            "visual": {
+              "stacking": "back_to_front",
+              "nodes": [
+                {
+                  "kind": "rectangle",
+                  "id": "background",
+                  "width": { "kind": "literal", "value": 96, "unit": "px" },
+                  "height": { "kind": "literal", "value": 96, "unit": "px" },
+                  "fill": "#2563EB",
+                  "transform": {
+                    "x": { "kind": "literal", "value": 64, "unit": "px" },
+                    "y": { "kind": "literal", "value": 64, "unit": "px" }
+                  }
+                },
+                {
+                  "kind": "rectangle",
+                  "id": "foreground",
+                  "width": { "kind": "literal", "value": 40, "unit": "px" },
+                  "height": { "kind": "literal", "value": 40, "unit": "px" },
+                  "fill": "#EF4444",
+                  "transform": {
+                    "x": { "kind": "literal", "value": 64, "unit": "px" },
+                    "y": { "kind": "literal", "value": 64, "unit": "px" }
+                  }
+                }
+              ]
+            },
+            "motion": {},
+            "behavior": {}
+          }
+          ''')
+
+          runtime = Path("tests/playwright/authoring-stacking-runtime.js")
+          runtime.write_text(r'''const assert = require("node:assert/strict");
+          const fs = require("node:fs");
+          const http = require("node:http");
+          const path = require("node:path");
+          const { spawnSync } = require("node:child_process");
+          const { chromium } = require("playwright");
+
+          const root = path.resolve(__dirname, "../..");
+          const fixture = path.join(root, "tests/fixtures/authoring/stacking-order.v0.json");
+          const output = path.join(root, "target/authoring-stacking-order.riv");
+
+          function compileFixture() {
+            fs.mkdirSync(path.dirname(output), { recursive: true });
+            const candidates = [
+              ["run", "--quiet", "--", "authoring", "compile", fixture, "--output", output],
+              ["run", "--quiet", "--", "authoring", "compile", fixture, "-o", output],
+              ["run", "--quiet", "--", "authoring", "compile", fixture, output],
+            ];
+            const failures = [];
+            for (const args of candidates) {
+              const result = spawnSync("cargo", args, { cwd: root, encoding: "utf8" });
+              if (result.status === 0 && fs.existsSync(output)) return;
+              failures.push(`${args.join(" ")}\n${result.stdout}\n${result.stderr}`);
+            }
+            throw new Error(`could not compile stacking fixture\n${failures.join("\n---\n")}`);
+          }
+
+          function runtimeScript() {
+            const candidates = [
+              "node_modules/@rive-app/canvas/rive.js",
+              "node_modules/@rive-app/canvas/rive.min.js",
+              "node_modules/@rive-app/webgl2/rive.js",
+              "node_modules/@rive-app/webgl2/rive.min.js",
+            ];
+            for (const candidate of candidates) {
+              if (fs.existsSync(path.join(root, candidate))) return `/${candidate}`;
+            }
+            throw new Error("official Rive web runtime bundle was not found");
+          }
+
+          function contentType(filePath) {
+            if (filePath.endsWith(".js")) return "text/javascript; charset=utf-8";
+            if (filePath.endsWith(".wasm")) return "application/wasm";
+            if (filePath.endsWith(".riv")) return "application/octet-stream";
+            return "application/octet-stream";
+          }
+
+          function startServer(scriptPath) {
+            const html = `<!doctype html><html><body style="margin:0"><canvas id="rive" width="128" height="128"></canvas><script src="${scriptPath}"></script><script>
+          const canvas = document.getElementById("rive");
+          window.runtimeResult = new Promise((resolve, reject) => {
+            const animation = new rive.Rive({
+              src: "/target/authoring-stacking-order.riv",
+              canvas,
+              autoplay: true,
+              onLoad: () => {
+                animation.resizeDrawingSurfaceToCanvas();
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                  try {
+                    const copy = document.createElement("canvas");
+                    copy.width = 128;
+                    copy.height = 128;
+                    const context = copy.getContext("2d", { willReadFrequently: true });
+                    context.drawImage(canvas, 0, 0);
+                    resolve({
+                      centre: Array.from(context.getImageData(64, 64, 1, 1).data),
+                      edge: Array.from(context.getImageData(64, 24, 1, 1).data),
+                    });
+                  } catch (error) { reject(error); }
+                }));
+              },
+              onLoadError: reject,
+            });
+          });
+          </script></body></html>`;
+            const server = http.createServer((request, response) => {
+              const pathname = new URL(request.url, "http://127.0.0.1").pathname;
+              if (pathname === "/") {
+                response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+                response.end(html);
+                return;
+              }
+              const filePath = path.resolve(root, `.${pathname}`);
+              if (!filePath.startsWith(`${root}${path.sep}`) || !fs.existsSync(filePath)) {
+                response.writeHead(404);
+                response.end();
+                return;
+              }
+              response.writeHead(200, { "content-type": contentType(filePath) });
+              fs.createReadStream(filePath).pipe(response);
+            });
+            return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
+          }
+
+          function closeTo(actual, expected, tolerance = 12) {
+            return actual.every((value, index) => Math.abs(value - expected[index]) <= tolerance);
+          }
+
+          async function main() {
+            compileFixture();
+            const server = await startServer(runtimeScript());
+            const address = server.address();
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const page = await browser.newPage({ viewport: { width: 128, height: 128 } });
+              await page.goto(`http://127.0.0.1:${address.port}/`);
+              const pixels = await page.evaluate(() => window.runtimeResult);
+              assert.ok(closeTo(pixels.centre, [239, 68, 68, 255]), `foreground centre was not visible: ${pixels.centre.join(",")}`);
+              assert.ok(closeTo(pixels.edge, [37, 99, 235, 255]), `background edge was not visible: ${pixels.edge.join(",")}`);
+            } finally {
+              await browser.close();
+              await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+            }
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          ''')
+
+          ci = Path(".github/workflows/ci.yml")
+          ci_text = ci.read_text()
+          if "authoring-stacking-runtime.js" not in ci_text:
+              lines = ci_text.splitlines()
+              for index, line in enumerate(lines):
+                  if "node tests/playwright/authoring-behavior-runtime.js" in line:
+                      indent = line[: len(line) - len(line.lstrip())]
+                      lines[index + 1:index + 1] = [
+                          f"{indent[:-2]}- name: Run AuthoringSpec stacking runtime test",
+                          f"{indent}run: node tests/playwright/authoring-stacking-runtime.js",
+                      ]
+                      break
+              else:
+                  raise SystemExit("authoring behavior runtime CI step not found")
+              ci.write_text("\n".join(lines) + "\n")
+
+          changelog = Path("CHANGELOG.md")
+          if changelog.exists():
+              text = changelog.read_text()
+              entry = '- Add explicit `runtime` and `back_to_front` AuthoringSpec stacking modes at root, group, and component scope while preserving native SceneSpec ordering.\n'
+              if entry not in text:
+                  marker = "## [Unreleased]\n"
+                  text = text.replace(marker, marker + "\n" + entry, 1) if marker in text else entry + "\n" + text
+                  changelog.write_text(text)
+
+          readme = Path("examples/authoring/README.md")
+          if readme.exists() and "## Stacking order" not in readme.read_text():
+              readme.write_text(readme.read_text().rstrip() + '''
+
+          ## Stacking order
+
+          Ordered AuthoringSpec containers accept `stacking: "back_to_front"` when nodes are written in visual reading order: background first, foreground last. Lowering converts that order to the runtime's native first-sibling-on-top order without changing authored source-map indices. Omitting `stacking` retains native `runtime` ordering for backward compatibility. Direct SceneSpec input remains the expert escape hatch and is never normalized.
+
+          See `tests/fixtures/authoring/stacking-order.v0.json` for the smallest executable example.
+          ''')
+
+          todo = Path("meta/todos/todo.visual-authoring-compiler.md")
+          if todo.exists() and "Issue #193 hardens the public authoring contract" not in todo.read_text():
+              todo.write_text(todo.read_text().rstrip() + "\n\n- Issue #193 hardens the public authoring contract with explicit container stacking, source-map-preserving lowering, and an official-runtime pixel regression.\n")
+
+          roadmap = Path("ROADMAP.md")
+          if roadmap.exists() and "Authoring hardening issue #193" not in roadmap.read_text():
+              text = roadmap.read_text()
+              line = "- Authoring hardening issue #193: explicit compatibility-preserving stacking order across root, group, and component containers, verified through the official runtime.\n"
+              marker = "## Current frontier\n"
+              text = text.replace(marker, marker + "\n" + line, 1) if marker in text else text.rstrip() + "\n\n" + line
+              roadmap.write_text(text)
+          PY
+          cargo fmt --all
+          cat > examples/__generate_authoring_schema.rs <<'RS'
+          use rive_cli::authoring::authoring_schema;
+
+          fn main() {
+              println!(
+                  "{}",
+                  serde_json::to_string_pretty(&authoring_schema()).expect("schema must serialize")
+              );
+          }
+          RS
+          cargo run --quiet --example __generate_authoring_schema > docs/authoring.schema.v0.json
+          rm examples/__generate_authoring_schema.rs
+          rm -f .github/workflows/implement-stacking-order.yml
+          rm -f .github/workflows/apply-authoring-stacking-order.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Make authoring stacking order explicit" || true
+          git push origin HEAD:agent/authoring-stacking-order
+      - name: Verify contract
+        run: cargo test --locked --test authoring_stacking_contract
+      - name: Verify schema
+        run: cargo test --locked authoring_schema_file_is_in_sync
+      - name: Verify formatting
+        run: cargo fmt --all -- --check
+      - name: Verify lint
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
