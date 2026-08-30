@@ -1,3 +1,4 @@
+const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -77,12 +78,35 @@ function showcaseEntries() {
 function showcaseFiles(entries = showcaseEntries()) {
   const files = new Map(SHOWCASE_GUIDES);
   for (const entry of entries) {
-    for (const field of ["artifact", "source"]) {
+    for (const field of ["artifact", "source", "evidence", "consumerAttestation"]) {
       const value = entry[field];
       if (typeof value === "string" && value.length > 0) files.set(value, value);
     }
   }
   return [...files.entries()];
+}
+
+function gitBlobSha(file) {
+  const bytes = fs.readFileSync(path.join(ROOT, file));
+  return crypto
+    .createHash("sha1")
+    .update(`blob ${bytes.length}\0`)
+    .update(bytes)
+    .digest("hex");
+}
+
+function assertPinnedProductionBlob(entry, field, shaField, problems) {
+  const file = entry[field];
+  const expected = entry[shaField];
+  if (typeof expected !== "string" || expected.length === 0) {
+    problems.push(`${entry.id || "<unnamed>"}.${shaField} is missing`);
+    return;
+  }
+  if (typeof file !== "string" || file.length === 0 || !fs.existsSync(path.join(ROOT, file))) return;
+  const actual = gitBlobSha(file);
+  if (actual !== expected) {
+    problems.push(`${entry.id || "<unnamed>"}.${field} Git blob ${actual} != ${expected}`);
+  }
 }
 
 function assertShowcaseEntriesExist(entries = showcaseEntries()) {
@@ -95,6 +119,25 @@ function assertShowcaseEntriesExist(entries = showcaseEntries()) {
       } else if (!fs.existsSync(path.join(ROOT, value))) {
         missing.push(`${entry.id || "<unnamed>"}.${field}: ${value}`);
       }
+    }
+
+    if (entry.provenance === "production") {
+      for (const field of ["evidence", "consumerAttestation"]) {
+        const value = entry[field];
+        if (typeof value !== "string" || value.length === 0) {
+          missing.push(`${entry.id || "<unnamed>"}.${field} is missing`);
+        } else if (!fs.existsSync(path.join(ROOT, value))) {
+          missing.push(`${entry.id || "<unnamed>"}.${field}: ${value}`);
+        }
+      }
+      assertPinnedProductionBlob(entry, "artifact", "artifactGitBlob", missing);
+      assertPinnedProductionBlob(entry, "source", "sourceGitBlob", missing);
+    } else if (
+      typeof entry.evidence === "string" &&
+      entry.evidence.length > 0 &&
+      !fs.existsSync(path.join(ROOT, entry.evidence))
+    ) {
+      missing.push(`${entry.id || "<unnamed>"}.evidence: ${entry.evidence}`);
     }
   }
   for (const [from] of SHOWCASE_GUIDES) {

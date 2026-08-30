@@ -7,6 +7,7 @@ const path = require("node:path");
 const ROOT = path.resolve(__dirname, "..", "..");
 const PORT = Number(process.env.SITE_PORT || 8771);
 const EXPECTED_SCENES = 4;
+const LANDING_ARTIFACT = "examples/authoring/complex-animated-showcase.v0.riv";
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,6 +33,16 @@ async function waitForServer(port, timeoutMs = 20000) {
   throw new Error(`site server did not start on port ${port}`);
 }
 
+function collectErrors(page, errors) {
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(String(error.message)));
+  page.on("requestfailed", (request) =>
+    errors.push(`request failed: ${request.url()} ${request.failure()?.errorText || ""}`)
+  );
+}
+
 (async () => {
   const server = spawn("node", ["site/serve.js"], {
     cwd: ROOT,
@@ -48,23 +59,17 @@ async function waitForServer(port, timeoutMs = 20000) {
   try {
     await waitForServer(PORT);
     browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
     const errors = [];
-    page.on("console", (message) => {
-      if (message.type() === "error") errors.push(message.text());
-    });
-    page.on("pageerror", (error) => errors.push(String(error.message)));
-    page.on("requestfailed", (request) =>
-      errors.push(`request failed: ${request.url()} ${request.failure()?.errorText || ""}`)
-    );
+    const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+    collectErrors(page, errors);
 
     await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "load" });
     await page.waitForFunction(
-      () => Boolean(document.querySelector(".hero-scene")),
+      () => document.querySelector(".proof-parcel")?.dataset.playbackReady === "true",
       null,
       { timeout: 20000 }
     );
-    await wait(2500);
+    await wait(800);
     const landing = await page.evaluate(() => {
       const canvas = document.querySelector(".hero-scene");
       const context = canvas.getContext("2d");
@@ -73,17 +78,56 @@ async function waitForServer(port, timeoutMs = 20000) {
       for (let i = 3; i < data.length; i += 4) {
         if (data[i] !== 0) painted += 1;
       }
+      const parcel = document.querySelector(".proof-parcel");
       return {
         painted,
-        labLink: document.querySelector('a[href="lab.html"]')?.getAttribute("href"),
+        artifact: parcel?.dataset.artifact || "",
+        primaryHref: document.querySelector(".hero-actions .button-primary")?.getAttribute("href") || "",
+        labHref: document.querySelector(".proof-strip a[href=\"lab.html\"]")?.getAttribute("href") || "",
+        pageText: document.body.textContent || "",
       };
     });
-    if (landing.painted === 0) {
-      errors.push("landing hero canvas rendered nothing");
+    if (landing.painted === 0) errors.push("landing hero canvas rendered nothing");
+    if (landing.artifact !== LANDING_ARTIFACT) {
+      errors.push(`landing proof uses ${landing.artifact || "no artifact"}, expected ${LANDING_ARTIFACT}`);
     }
-    if (landing.labLink !== "lab.html") {
-      errors.push("landing page does not link to lab.html");
+    if (landing.primaryHref !== "showcase.html") {
+      errors.push(`landing primary creation path points to ${landing.primaryHref || "nothing"}`);
     }
+    if (landing.labHref !== "lab.html") {
+      errors.push("landing page does not preserve a separate Verification Lab path");
+    }
+    if (landing.pageText.includes("coffee_loader.riv")) {
+      errors.push("landing page still presents the coffee-loader reproduction as creation proof");
+    }
+
+    const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    collectErrors(phone, errors);
+    await phone.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "load" });
+    await phone.waitForFunction(
+      () => document.querySelector(".proof-parcel")?.dataset.playbackReady === "true",
+      null,
+      { timeout: 20000 }
+    );
+    const phoneOverflow = await phone.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth
+    );
+    if (phoneOverflow > 1) errors.push(`landing overflows phone viewport by ${phoneOverflow}px`);
+
+    const reduced = await browser.newPage({ viewport: { width: 900, height: 800 } });
+    await reduced.emulateMedia({ reducedMotion: "reduce" });
+    collectErrors(reduced, errors);
+    await reduced.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "load" });
+    await reduced.waitForFunction(
+      () => document.querySelector(".proof-parcel")?.dataset.playbackReady === "true",
+      null,
+      { timeout: 20000 }
+    );
+    const reducedPlaying = await reduced.evaluate(
+      () => document.querySelector(".proof-parcel")?.dataset.playing
+    );
+    if (reducedPlaying === "true") errors.push("reduced-motion landing autoplayed");
+
     await page.goto(`http://127.0.0.1:${PORT}/lab.html`, { waitUntil: "load" });
     await page.waitForFunction(
       (expected) => document.querySelectorAll("canvas.scene").length >= expected,
@@ -144,12 +188,12 @@ async function waitForServer(port, timeoutMs = 20000) {
       failed = true;
     }
     if (errors.length > 0) {
-      process.stdout.write(`console errors:\n${errors.map((e) => `  ${e}`).join("\n")}\n`);
+      process.stdout.write(`validation errors:\n${errors.map((e) => `  ${e}`).join("\n")}\n`);
       failed = true;
     }
 
     process.stdout.write(
-      failed ? "Site validation failed\n" : `Site validation passed: ${painted.length} scenes, 0 console errors\n`
+      failed ? "Site validation failed\n" : `Site validation passed: original landing proof, responsive/reduced-motion landing, ${painted.length} lab scenes, 0 console errors\n`
     );
     shutdown();
     process.exit(failed ? 1 : 0);

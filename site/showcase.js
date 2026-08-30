@@ -7,8 +7,9 @@ function el(tag, className, text) {
   return node;
 }
 
-function provenanceLabel(provenance) {
-  return provenance === "authoring" ? "AuthoringSpec" : "SceneSpec";
+function provenanceLabel(entry) {
+  if (entry.provenance === "production") return "Production consumer";
+  return entry.provenance === "authoring" ? "AuthoringSpec" : "SceneSpec";
 }
 
 function buildSource(entry) {
@@ -18,9 +19,24 @@ function buildSource(entry) {
   const links = el("div", "hero-actions");
   const sourceLink = el("a", "text-link", "Open retained source ↗");
   sourceLink.href = entry.source;
+  sourceLink.dataset.sourceLink = "true";
   links.appendChild(sourceLink);
 
-  if (entry.provenance === "authoring") {
+  if (entry.evidence) {
+    const evidenceLink = el("a", "text-link", `${entry.evidenceLabel || "Provenance"} ↗`);
+    evidenceLink.href = entry.evidence;
+    evidenceLink.dataset.evidenceLink = "true";
+    links.appendChild(evidenceLink);
+  }
+
+  if (entry.consumerAttestation) {
+    const consumerLink = el("a", "text-link", "Consumer attestation ↗");
+    consumerLink.href = entry.consumerAttestation;
+    consumerLink.dataset.consumerAttestationLink = "true";
+    links.appendChild(consumerLink);
+  }
+
+  if (entry.provenance === "authoring" || entry.sourceType === "authoring") {
     const guideLink = el("a", "text-link", "Authoring CLI ↗");
     guideLink.href = "docs/authoring-cli.md";
     links.appendChild(guideLink);
@@ -46,6 +62,7 @@ function buildSource(entry) {
 function buildCard(entry) {
   const card = el("article", "card");
   card.dataset.showcaseId = entry.id;
+  card.dataset.provenance = entry.provenance;
   card.dataset.playbackReady = "false";
   card.dataset.playing = "false";
 
@@ -66,7 +83,7 @@ function buildCard(entry) {
     el(
       "span",
       entry.provenance === "authoring" ? "tag basics" : "tag",
-      provenanceLabel(entry.provenance)
+      provenanceLabel(entry)
     )
   );
   tags.appendChild(el("span", "tag", entry.capability));

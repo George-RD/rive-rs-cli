@@ -2,22 +2,23 @@
 
 [![CI](https://github.com/George-RD/rive-rs-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/George-RD/rive-rs-cli/actions/workflows/ci.yml)
 [![Pages](https://github.com/George-RD/rive-rs-cli/actions/workflows/pages.yml/badge.svg)](https://github.com/George-RD/rive-rs-cli/actions/workflows/pages.yml)
-[![Live demo](https://img.shields.io/badge/live-verification%20lab-2f6df6)](https://george-rd.github.io/rive-rs-cli/)
+[![Live demo](https://img.shields.io/badge/live-showcase-2f6df6)](https://george-rd.github.io/rive-rs-cli/)
 [![Rust](https://img.shields.io/badge/rust-edition%202024-b7410e?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 
 **Write Rive animations as JSON. Compile them to real `.riv` files. Prove they work before you ship.**
 
-[Live demo and verification lab](https://george-rd.github.io/rive-rs-cli/) · [Skill file for agents](skills/rive-animation/SKILL.md) · [Scene schema](docs/scene.schema.v1.json)
+[Live showcase and verification lab](https://george-rd.github.io/rive-rs-cli/) · [Skill file for agents](skills/rive-animation/SKILL.md) · [Scene schema](docs/scene.schema.v1.json)
 
 An AI agent can write an animation scene in seconds. It cannot tell you whether a state is missing,
 a property sits on the wrong object, or the file quietly breaks in the real Rive player. `rive-cli`
 turns those unknowns into checks you can run again, in a terminal or in CI.
 
-The coffee loader on the [demo page](https://george-rd.github.io/rive-rs-cli/) is not a recording.
-It is a `.riv` file this tool built from JSON, playing in the official Rive runtime. Against the
-file Rive's own designers made, it holds a 0.2833% maximum pixel difference across the checked
-frames.
+The landing page now leads with an original AuthoringSpec animation built by rive-cli. The separate
+[Made with rive-cli showcase](https://george-rd.github.io/rive-rs-cli/showcase.html) keeps original
+source and artifacts inspectable and includes a clearly labelled Horaxon production-consumer proof.
+The [Verification Lab](https://george-rd.github.io/rive-rs-cli/lab.html) keeps upstream reproduction
+fidelity separate, including the coffee-loader comparison and its committed measured evidence.
 
 ## What you get
 
@@ -145,20 +146,23 @@ rive-cli ai lab --suite evals/suites/prompt_lab.v1.json
 
 Read [`skills/rive-animation/SKILL.md`](skills/rive-animation/SKILL.md) before authoring a scene. It describes the scaffold → discover → generate → validate → render loop and the runtime constraints that structural validation alone cannot catch.
 
-The ten scenes in [`showcase/`](showcase/) are a gallery of working examples: six basics authored end to end by a fresh-context agent, and four advanced scenes covering embedded fonts, path morphing, embedded imagery and pointer-driven state machines. Use `rive-cli describe <type>` rather than guessing fields or animation properties.
+The SceneSpec examples in [`showcase/`](showcase/) cover basics and advanced scenes including embedded fonts, path morphing, embedded imagery, and pointer-driven state machines. The public showcase also promotes a high-level AuthoringSpec example and retains the exact Horaxon artifact consumed in production plus its generating AuthoringSpec source with separate provenance. Use `rive-cli describe <type>` rather than guessing fields or animation properties.
 
 ## Site and parity lab
 
 [`site/`](site/) is a dependency-free page published at
 [george-rd.github.io/rive-rs-cli](https://george-rd.github.io/rive-rs-cli/). Everything on it plays
-live in the vendored Rive runtime, so nothing is a recording. The landing hero is this tool's own
-`parity/reproductions/coffee_loader.riv`, and the
-[verification lab](https://george-rd.github.io/rive-rs-cli/lab.html) puts each
-official Rive file beside the copy `rive-cli` generated, with the measured gap underneath.
+live in the vendored Rive runtime, so nothing is a recording. The landing hero uses the original
+`examples/authoring/complex-animated-showcase.v0.riv` through the same browser playback seam as the
+showcase and Verification Lab. The [showcase](https://george-rd.github.io/rive-rs-cli/showcase.html)
+answers “what can it create?” with original work and explicitly labelled production-consumer evidence.
+The [Verification Lab](https://george-rd.github.io/rive-rs-cli/lab.html) separately answers “how do we
+know it is correct?” by putting official Rive files beside the copies `rive-cli` generated, with the
+committed measured gap underneath.
 
-Preview it with `node site/serve.js`. `.github/workflows/pages.yml` publishes it, and
-`node tests/playwright/site-validation.js` asserts every canvas paints, the reported figures match
-`parity/results.json`, and the console stays clean.
+Preview it with `node site/serve.js`. `.github/workflows/pages.yml` publishes it. Browser CI covers
+landing/showcase/lab runtime paint, manifest staging, shared playback behavior, responsive layout,
+reduced motion, provenance links, and parity figures sourced from `parity/results.json`.
 
 [`parity/`](parity/) holds the official files, the JSON that reproduces them, and
 `results.json`, the numbers the lab displays. `parity/fetch-official.sh` re-fetches the upstream

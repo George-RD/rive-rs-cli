@@ -10,6 +10,7 @@ const {
 
 const PORT = Number(process.env.SHOWCASE_PORT || 8773);
 const POLLING_MS = 50;
+const PRODUCTION_ID = "horaxon-signal-to-action";
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,11 +42,20 @@ async function waitForServer(port, timeoutMs = 20000) {
 function assertStagingContract(entries) {
   const staged = new Set(plan().map(([, to]) => to));
   for (const entry of entries) {
-    if (!staged.has(entry.artifact)) {
-      throw new Error(`staging plan omitted ${entry.id} artifact ${entry.artifact}`);
+    for (const field of ["artifact", "source", "evidence", "consumerAttestation"]) {
+      if (entry[field] && !staged.has(entry[field])) {
+        throw new Error(`staging plan omitted ${entry.id} ${field} ${entry[field]}`);
+      }
     }
-    if (!staged.has(entry.source)) {
-      throw new Error(`staging plan omitted ${entry.id} source ${entry.source}`);
+  }
+
+  const production = entries.find((entry) => entry.id === PRODUCTION_ID);
+  if (!production || production.provenance !== "production") {
+    throw new Error("Horaxon production proof is missing its production provenance type");
+  }
+  for (const field of ["artifact", "source", "evidence", "consumerAttestation"]) {
+    if (!production[field] || /^https?:\/\//.test(production[field])) {
+      throw new Error(`Horaxon ${field} is not a retained local path: ${production[field] || "missing"}`);
     }
   }
 
@@ -54,6 +64,7 @@ function assertStagingContract(entries) {
     assertShowcaseEntriesExist([
       {
         id: "missing-contract",
+        provenance: "production",
         artifact: "missing/showcase.riv",
         source: "missing/showcase.json",
       },
@@ -63,6 +74,12 @@ function assertStagingContract(entries) {
   }
   if (!namedFailure.includes("missing-contract.artifact: missing/showcase.riv")) {
     throw new Error(`missing showcase artifact error was not named: ${namedFailure}`);
+  }
+  if (!namedFailure.includes("missing-contract.evidence is missing")) {
+    throw new Error(`missing production evidence error was not named: ${namedFailure}`);
+  }
+  if (!namedFailure.includes("missing-contract.consumerAttestation is missing")) {
+    throw new Error(`missing production consumer attestation error was not named: ${namedFailure}`);
   }
 }
 
@@ -90,20 +107,29 @@ async function readCards(page) {
       }
       return {
         id: card.dataset.showcaseId,
+        provenance: card.dataset.provenance,
         ready: card.dataset.playbackReady,
         playing: card.dataset.playing,
         painted,
         aria: canvas?.getAttribute("aria-label") || "",
-        source: card.querySelector("details.source a")?.getAttribute("href") || "",
+        source: card.querySelector("[data-source-link=\"true\"]")?.getAttribute("href") || "",
+        evidence: card.querySelector("[data-evidence-link=\"true\"]")?.getAttribute("href") || "",
+        consumerAttestation:
+          card.querySelector("[data-consumer-attestation-link=\"true\"]")?.getAttribute("href") || "",
+        text: card.textContent || "",
       };
     })
   );
 }
 
-async function readSourceStatuses(page) {
+async function readEvidenceStatuses(page) {
   return page.evaluate(async () =>
     Promise.all(
-      Array.from(document.querySelectorAll("details.source a")).map(async (link) => {
+      Array.from(
+        document.querySelectorAll(
+          "[data-source-link=\"true\"], [data-evidence-link=\"true\"], [data-consumer-attestation-link=\"true\"]"
+        )
+      ).map(async (link) => {
         const response = await fetch(link.href);
         return { href: link.getAttribute("href"), status: response.status };
       })
@@ -160,10 +186,29 @@ async function readSourceStatuses(page) {
       if (!card.source) errors.push(`${card.id} is missing a retained source link`);
     }
 
-    const sourceStatuses = await readSourceStatuses(page);
-    for (const source of sourceStatuses) {
-      if (source.status !== 200) {
-        errors.push(`source/provenance link ${source.href} returned HTTP ${source.status}`);
+    const productionCard = cards.find((card) => card.id === PRODUCTION_ID);
+    if (!productionCard) {
+      errors.push("Horaxon production card was not rendered");
+    } else {
+      if (productionCard.provenance !== "production") {
+        errors.push(`Horaxon card provenance is ${productionCard.provenance || "missing"}`);
+      }
+      if (!productionCard.evidence) errors.push("Horaxon card is missing its provenance link");
+      if (!productionCard.consumerAttestation) {
+        errors.push("Horaxon card is missing its consumer attestation link");
+      }
+      if (!productionCard.text.includes("Production consumer")) {
+        errors.push("Horaxon card is not visibly labelled as production consumer proof");
+      }
+      if (!productionCard.text.includes("not a customer endorsement")) {
+        errors.push("Horaxon card does not preserve the endorsement claim boundary");
+      }
+    }
+
+    const evidenceStatuses = await readEvidenceStatuses(page);
+    for (const evidence of evidenceStatuses) {
+      if (evidence.status !== 200) {
+        errors.push(`source/provenance link ${evidence.href} returned HTTP ${evidence.status}`);
       }
     }
 
@@ -213,7 +258,7 @@ async function readSourceStatuses(page) {
     }
 
     process.stdout.write(
-      `Showcase validation passed: ${entries.length} manifest-driven cards, live runtime paint, staged source links, phone layout, reduced motion\n`
+      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, live runtime paint, phone layout, reduced motion\n`
     );
     shutdown();
     process.exit(0);

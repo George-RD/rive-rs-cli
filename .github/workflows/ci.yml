@@ -63,6 +63,8 @@ jobs:
           node-version: 20
       - run: node tests/playwright/shared-contract.js
       - run: node tests/playwright/visual-contract.js
+      - run: node tests/playwright/landing-lifecycle-contract.js
+      - run: node tests/provenance/production-showcase.js
 
   runtime-eval-evidence:
     needs: [check, browser-contracts]
