@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 use crate::builder::{SceneSpec, build_scene};
 
 use super::super::super::expression::evaluate_expression;
-use super::super::super::lower::runtime_name;
+use super::super::super::lower::{runtime_name, without_asset_sources};
 use super::super::super::spec::{
     AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec, BehaviorInputKind,
     BehaviorInputSpec, BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec,
@@ -540,7 +540,7 @@ fn region_scoped_id(statechart_id: &str, region_id: Option<&str>, id: &str) -> S
 }
 
 pub(super) fn validate_lowered_scene(scene: &Value) -> Result<(), AuthoringError> {
-    let scene: SceneSpec = serde_json::from_value(scene.clone()).map_err(|error| {
+    let scene: SceneSpec = serde_json::from_value(without_asset_sources(scene)).map_err(|error| {
         AuthoringError::one(AuthoringDiagnostic::new(
             "$.behavior",
             "invalid_lowered_behavior",

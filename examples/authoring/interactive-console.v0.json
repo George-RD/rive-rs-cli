@@ -1,0 +1,1358 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "throughput-console",
+    "width": {
+      "value": 960.0,
+      "unit": "px"
+    },
+    "height": {
+      "value": 540.0,
+      "unit": "px"
+    }
+  },
+  "font_assets": {
+    "inter": "../../assets/fonts/Inter-Bold-Subset.ttf"
+  },
+  "visual": {
+    "stacking": "back_to_front",
+    "nodes": [
+      {
+        "kind": "rectangle",
+        "id": "backdrop",
+        "width": {
+          "kind": "literal",
+          "value": 960.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 540.0,
+          "unit": "px"
+        },
+        "fill": {
+          "kind": "linear_gradient",
+          "start_x": {
+            "kind": "literal",
+            "value": -480.0,
+            "unit": "px"
+          },
+          "start_y": {
+            "kind": "literal",
+            "value": -270.0,
+            "unit": "px"
+          },
+          "end_x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "end_y": {
+            "kind": "literal",
+            "value": 270.0,
+            "unit": "px"
+          },
+          "stops": [
+            {
+              "color": "#020617",
+              "position": {
+                "kind": "literal",
+                "value": 0.0,
+                "unit": "scalar"
+              }
+            },
+            {
+              "color": "#0F172A",
+              "position": {
+                "kind": "literal",
+                "value": 0.55,
+                "unit": "scalar"
+              }
+            },
+            {
+              "color": "#172554",
+              "position": {
+                "kind": "literal",
+                "value": 1.0,
+                "unit": "scalar"
+              }
+            }
+          ]
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 270.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "console-surface",
+        "width": {
+          "kind": "literal",
+          "value": 864.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 360.0,
+          "unit": "px"
+        },
+        "fill": "#0B1220",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 28.0,
+          "unit": "px"
+        },
+        "stroke": {
+          "paint": "#1E293B",
+          "width": {
+            "kind": "literal",
+            "value": 1.5,
+            "unit": "px"
+          }
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 300.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "console-rule",
+        "width": {
+          "kind": "literal",
+          "value": 800.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 2.0,
+          "unit": "px"
+        },
+        "fill": "#1E293B",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 186.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "lane-caption",
+        "text": "STREAM",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 11.0,
+          "unit": "px"
+        },
+        "fill": "#64748B",
+        "width": {
+          "kind": "literal",
+          "value": 200.0,
+          "unit": "px"
+        },
+        "letter_spacing": {
+          "kind": "literal",
+          "value": 1.6,
+          "unit": "px"
+        },
+        "align": "left",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.0,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 130.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 222.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "lane-rail",
+        "width": {
+          "kind": "literal",
+          "value": 700.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 6.0,
+          "unit": "px"
+        },
+        "fill": "#13203A",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 3.0,
+          "unit": "px"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 250.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "lane-token",
+        "width": {
+          "kind": "literal",
+          "value": 22.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 22.0,
+          "unit": "px"
+        },
+        "fill": "#22D3EE",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 6.0,
+          "unit": "px"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 130.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 250.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "gauge-caption",
+        "text": "LOAD",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 11.0,
+          "unit": "px"
+        },
+        "fill": "#64748B",
+        "width": {
+          "kind": "literal",
+          "value": 200.0,
+          "unit": "px"
+        },
+        "letter_spacing": {
+          "kind": "literal",
+          "value": 1.6,
+          "unit": "px"
+        },
+        "align": "left",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.0,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 130.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 312.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "gauge-track",
+        "width": {
+          "kind": "literal",
+          "value": 700.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 16.0,
+          "unit": "px"
+        },
+        "fill": "#13203A",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 8.0,
+          "unit": "px"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 340.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "distribute",
+        "id": "gauge-ticks",
+        "copies": 9,
+        "start_x": {
+          "kind": "literal",
+          "value": 130.0,
+          "unit": "px"
+        },
+        "start_y": {
+          "kind": "literal",
+          "value": 366.0,
+          "unit": "px"
+        },
+        "end_x": {
+          "kind": "literal",
+          "value": 830.0,
+          "unit": "px"
+        },
+        "end_y": {
+          "kind": "literal",
+          "value": 366.0,
+          "unit": "px"
+        },
+        "item": {
+          "kind": "rectangle",
+          "id": "gauge-tick",
+          "width": {
+            "kind": "literal",
+            "value": 2.0,
+            "unit": "px"
+          },
+          "height": {
+            "kind": "literal",
+            "value": 8.0,
+            "unit": "px"
+          },
+          "fill": "#334155",
+          "transform": {
+            "x": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "px"
+            },
+            "y": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "px"
+            }
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "gauge-needle",
+        "width": {
+          "kind": "literal",
+          "value": 10.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 34.0,
+          "unit": "px"
+        },
+        "fill": "#F8FAFC",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 5.0,
+          "unit": "px"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 130.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 340.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "status-caption",
+        "text": "STATUS",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 11.0,
+          "unit": "px"
+        },
+        "fill": "#64748B",
+        "width": {
+          "kind": "literal",
+          "value": 200.0,
+          "unit": "px"
+        },
+        "letter_spacing": {
+          "kind": "literal",
+          "value": 1.6,
+          "unit": "px"
+        },
+        "align": "right",
+        "origin_x": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 828.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 146.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "ellipse",
+        "id": "alert-ring",
+        "width": {
+          "kind": "literal",
+          "value": 40.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 40.0,
+          "unit": "px"
+        },
+        "fill": "#0B1220",
+        "stroke": {
+          "paint": "#3F2D12",
+          "width": {
+            "kind": "literal",
+            "value": 1.5,
+            "unit": "px"
+          }
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 856.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 152.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "ellipse",
+        "id": "alert-lamp",
+        "width": {
+          "kind": "literal",
+          "value": 26.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 26.0,
+          "unit": "px"
+        },
+        "fill": "#F59E0B",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 856.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 152.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "arm-surface",
+        "width": {
+          "kind": "literal",
+          "value": 180.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 48.0,
+          "unit": "px"
+        },
+        "fill": "#172554",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "px"
+        },
+        "stroke": {
+          "paint": "#22D3EE",
+          "width": {
+            "kind": "literal",
+            "value": 1.5,
+            "unit": "px"
+          }
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 330.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 432.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "arm-label",
+        "text": "ARM",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 15.0,
+          "unit": "px"
+        },
+        "fill": "#22D3EE",
+        "width": {
+          "kind": "literal",
+          "value": 180.0,
+          "unit": "px"
+        },
+        "letter_spacing": {
+          "kind": "literal",
+          "value": 1.4,
+          "unit": "px"
+        },
+        "align": "center",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.5,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 330.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 425.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "reset-surface",
+        "width": {
+          "kind": "literal",
+          "value": 180.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 48.0,
+          "unit": "px"
+        },
+        "fill": "#1F2937",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "px"
+        },
+        "stroke": {
+          "paint": "#475569",
+          "width": {
+            "kind": "literal",
+            "value": 1.5,
+            "unit": "px"
+          }
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 630.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 432.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "reset-label",
+        "text": "RESET",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 15.0,
+          "unit": "px"
+        },
+        "fill": "#94A3B8",
+        "width": {
+          "kind": "literal",
+          "value": 180.0,
+          "unit": "px"
+        },
+        "letter_spacing": {
+          "kind": "literal",
+          "value": 1.4,
+          "unit": "px"
+        },
+        "align": "center",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.5,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 630.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 425.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "title",
+        "text": "THROUGHPUT CONSOLE",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "px"
+        },
+        "fill": "#F8FAFC",
+        "width": {
+          "kind": "literal",
+          "value": 520.0,
+          "unit": "px"
+        },
+        "letter_spacing": {
+          "kind": "literal",
+          "value": 1.6,
+          "unit": "px"
+        },
+        "align": "left",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.0,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 60.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 108.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "subtitle",
+        "text": "One number input drives a blend. Three regions run at once.",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 13.0,
+          "unit": "px"
+        },
+        "fill": "#94A3B8",
+        "width": {
+          "kind": "literal",
+          "value": 620.0,
+          "unit": "px"
+        },
+        "align": "left",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.0,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 60.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 142.0,
+            "unit": "px"
+          }
+        }
+      }
+    ]
+  },
+  "motion": {
+    "easings": [
+      {
+        "kind": "cubic",
+        "id": "settle",
+        "x1": {
+          "kind": "literal",
+          "value": 0.16,
+          "unit": "scalar"
+        },
+        "y1": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        },
+        "x2": {
+          "kind": "literal",
+          "value": 0.3,
+          "unit": "scalar"
+        },
+        "y2": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        }
+      }
+    ],
+    "poses": [
+      {
+        "id": "token-left",
+        "targets": [
+          {
+            "target": "lane-token",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 130.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 250.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "token-mid",
+        "targets": [
+          {
+            "target": "lane-token",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 480.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 250.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "token-right",
+        "targets": [
+          {
+            "target": "lane-token",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 830.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 250.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "gauge-low",
+        "targets": [
+          {
+            "target": "gauge-needle",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 130.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 340.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "gauge-high",
+        "targets": [
+          {
+            "target": "gauge-needle",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 830.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 340.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "gauge-idle-near",
+        "targets": [
+          {
+            "target": "gauge-needle",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 122.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 340.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "gauge-idle-far",
+        "targets": [
+          {
+            "target": "gauge-needle",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 146.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 340.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "lamp-dim",
+        "targets": [
+          {
+            "target": "alert-lamp",
+            "transform": {
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.8,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.8,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.3,
+              "unit": "scalar"
+            }
+          }
+        ]
+      },
+      {
+        "id": "lamp-soft",
+        "targets": [
+          {
+            "target": "alert-lamp",
+            "transform": {
+              "scale_x": {
+                "kind": "literal",
+                "value": 1.0,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1.0,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 0.7,
+              "unit": "scalar"
+            }
+          }
+        ]
+      },
+      {
+        "id": "lamp-hot",
+        "targets": [
+          {
+            "target": "alert-lamp",
+            "transform": {
+              "scale_x": {
+                "kind": "literal",
+                "value": 1.3,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1.3,
+                "unit": "scalar"
+              }
+            },
+            "opacity": {
+              "kind": "literal",
+              "value": 1.0,
+              "unit": "scalar"
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "token-transit",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 150.0,
+          "unit": "scalar"
+        },
+        "loop_type": "pingpong",
+        "continuity": "through",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "token-left",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 75.0,
+              "unit": "scalar"
+            },
+            "pose": "token-mid",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 150.0,
+              "unit": "scalar"
+            },
+            "pose": "token-right",
+            "easing": "settle"
+          }
+        ]
+      },
+      {
+        "id": "gauge-low-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        },
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "gauge-low"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 1.0,
+              "unit": "scalar"
+            },
+            "pose": "gauge-low"
+          }
+        ]
+      },
+      {
+        "id": "gauge-high-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        },
+        "loop_type": "oneshot",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "gauge-high"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 1.0,
+              "unit": "scalar"
+            },
+            "pose": "gauge-high"
+          }
+        ]
+      },
+      {
+        "id": "gauge-standby-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 90.0,
+          "unit": "scalar"
+        },
+        "loop_type": "pingpong",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "gauge-idle-near",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 90.0,
+              "unit": "scalar"
+            },
+            "pose": "gauge-idle-far",
+            "easing": "settle"
+          }
+        ]
+      },
+      {
+        "id": "lamp-calm-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 90.0,
+          "unit": "scalar"
+        },
+        "loop_type": "pingpong",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "lamp-dim",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 90.0,
+              "unit": "scalar"
+            },
+            "pose": "lamp-soft",
+            "easing": "settle"
+          }
+        ]
+      },
+      {
+        "id": "lamp-busy-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "scalar"
+        },
+        "loop_type": "pingpong",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "lamp-soft",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 24.0,
+              "unit": "scalar"
+            },
+            "pose": "lamp-hot",
+            "easing": "settle"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "statecharts": [
+      {
+        "id": "console",
+        "inputs": [
+          {
+            "kind": "number",
+            "id": "load",
+            "value": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "kind": "bool",
+            "id": "armed",
+            "value": false
+          },
+          {
+            "kind": "trigger",
+            "id": "reset"
+          }
+        ],
+        "listeners": [
+          {
+            "id": "arm-press",
+            "target": "arm-surface",
+            "listener_type": "click",
+            "actions": [
+              {
+                "kind": "bool_change",
+                "input": "armed",
+                "value": true
+              }
+            ]
+          },
+          {
+            "id": "reset-press",
+            "target": "reset-surface",
+            "listener_type": "click",
+            "actions": [
+              {
+                "kind": "bool_change",
+                "input": "armed",
+                "value": false
+              },
+              {
+                "kind": "trigger_change",
+                "input": "reset"
+              }
+            ]
+          }
+        ],
+        "initial": "standby",
+        "states": [
+          {
+            "id": "standby",
+            "motion": "gauge-standby-track"
+          },
+          {
+            "id": "running",
+            "blend": {
+              "input": "load",
+              "stops": [
+                {
+                  "motion": "gauge-low-track",
+                  "value": {
+                    "kind": "literal",
+                    "value": 0.0,
+                    "unit": "scalar"
+                  }
+                },
+                {
+                  "motion": "gauge-high-track",
+                  "value": {
+                    "kind": "literal",
+                    "value": 100.0,
+                    "unit": "scalar"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "transitions": [
+          {
+            "id": "engage",
+            "from": "standby",
+            "to": "running",
+            "when": {
+              "input": "armed",
+              "equals": true
+            }
+          },
+          {
+            "id": "release",
+            "from": "running",
+            "to": "standby",
+            "when": {
+              "trigger": "reset"
+            }
+          }
+        ],
+        "regions": [
+          {
+            "id": "stream",
+            "initial": "flowing",
+            "states": [
+              {
+                "id": "flowing",
+                "motion": "token-transit"
+              }
+            ],
+            "transitions": []
+          },
+          {
+            "id": "alert",
+            "initial": "calm",
+            "states": [
+              {
+                "id": "calm",
+                "motion": "lamp-calm-track"
+              },
+              {
+                "id": "busy",
+                "motion": "lamp-busy-track"
+              }
+            ],
+            "transitions": [
+              {
+                "id": "escalate",
+                "from": "calm",
+                "to": "busy",
+                "when": {
+                  "input": "load",
+                  "compare": "greater_or_equal",
+                  "value": {
+                    "kind": "literal",
+                    "value": 60.0,
+                    "unit": "scalar"
+                  }
+                }
+              },
+              {
+                "id": "settle",
+                "from": "busy",
+                "to": "calm",
+                "when": {
+                  "input": "load",
+                  "compare": "less",
+                  "value": {
+                    "kind": "literal",
+                    "value": 60.0,
+                    "unit": "scalar"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -154,6 +154,21 @@ fn source_entry<'a>(
 }
 
 #[test]
+fn file_assets_compose_with_typed_behavior() {
+    let mut input = document();
+    input["font_assets"] = json!({ "inter": "../../assets/fonts/Inter-Bold-Subset.ttf" });
+
+    let lowered = lower(&input);
+    let assets = lowered.scene["artboard"]["children"]
+        .as_array()
+        .expect("artboard children")
+        .iter()
+        .filter(|child| child["type"] == "font_asset")
+        .count();
+    assert_eq!(assets, 1);
+}
+
+#[test]
 fn typed_inputs_lower_to_number_trigger_and_bool_state_machine_inputs() {
     let first = lower(&document());
     let second = lower(&document());

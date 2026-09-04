@@ -566,7 +566,7 @@ fn validate_scene(scene: &Value) -> Result<(), AuthoringError> {
     Ok(())
 }
 
-fn without_asset_sources(scene: &Value) -> Value {
+pub(super) fn without_asset_sources(scene: &Value) -> Value {
     let mut validation_scene = scene.clone();
     let Some(children) = validation_scene
         .pointer_mut("/artboard/children")
