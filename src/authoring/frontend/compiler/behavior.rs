@@ -1015,6 +1015,7 @@ fn validate_state_motion(
                             continue;
                         }
                     };
+                let value = value as f32;
                 if let Some(previous_value) = previous
                     && value <= previous_value
                 {
@@ -1022,7 +1023,7 @@ fn validate_state_motion(
                         stop_path,
                         "invalid_blend_stop_order",
                         format!(
-                            "blend stop values must increase, but {value} does not follow {previous_value}"
+                            "blend stop values must increase once narrowed to the emitted 32-bit float, but {value} does not follow {previous_value}"
                         ),
                     ));
                 }

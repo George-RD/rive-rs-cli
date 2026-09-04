@@ -381,6 +381,20 @@ fn region_ids_must_not_alias_any_statechart_scoped_sibling() {
 }
 
 #[test]
+fn blend_stop_values_must_stay_distinct_once_narrowed_to_the_emitted_f32() {
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([
+        { "motion": "low-track", "value": literal(1.0, "scalar") },
+        { "motion": "high-track", "value": literal(1.000_000_01, "scalar") }
+    ]);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stop_order",
+        "$.behavior.statecharts[0].states[1].blend.stops[1].value",
+    );
+}
+
+#[test]
 fn a_blend_stop_expression_failure_is_reported_beside_the_order_check() {
     let mut input = document();
     input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([

@@ -180,7 +180,10 @@ a count outside it returns `invalid_blend_stops` at `$....states[i].blend.stops`
 values must strictly increase, because `BlendState1DInstance::animationIndex` binary-
 searches its children as ascending thresholds; a value that does not exceed its
 predecessor returns `invalid_blend_stop_order` at
-`$....states[i].blend.stops[j].value`. A `blend.input` that is not a number input
+`$....states[i].blend.stops[j].value`. The comparison narrows each value to `f32`
+first, the width `BlendState1DChildSpec::BlendAnimation1D` carries and the encoder
+writes, so two thresholds that differ only below `f32` precision are rejected rather
+than reaching the runtime as duplicates. A `blend.input` that is not a number input
 returns `invalid_blend_input` and one that does not exist returns
 `unknown_behavior_input`, both at `$....states[i].blend.input`; an unknown stop track
 returns `unknown_behavior_motion` at `$....states[i].blend.stops[j].motion`. Rive
