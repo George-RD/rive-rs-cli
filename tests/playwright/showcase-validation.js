@@ -126,6 +126,38 @@ async function needleFraction(page, id) {
   );
 }
 
+async function waitForNeedle(page, compare, bound) {
+  try {
+    await page.waitForFunction(
+      ({ id, rowFraction, compare, bound }) => {
+        const card = document.querySelector(`[data-showcase-id="${id}"]`);
+        const canvas = card?.querySelector("canvas.scene");
+        const context = canvas?.getContext("2d");
+        if (!canvas || !context) return false;
+        const row = Math.round(canvas.height * rowFraction);
+        const { data } = context.getImageData(0, row, canvas.width, 1);
+        let total = 0;
+        let count = 0;
+        for (let column = 0; column < canvas.width; column += 1) {
+          const offset = column * 4;
+          if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
+            total += column;
+            count += 1;
+          }
+        }
+        if (count === 0) return false;
+        const fraction = total / count / canvas.width;
+        return compare === "above" ? fraction >= bound : fraction <= bound;
+      },
+      { id: INTERACTIVE_ID, rowFraction: NEEDLE_ROW_FRACTION, compare, bound },
+      { timeout: 15000, polling: POLLING_MS }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function driveInteractiveControls(page, errors) {
   const card = page.locator(`[data-showcase-id="${INTERACTIVE_ID}"]`);
   if ((await card.count()) === 0) {
@@ -137,9 +169,10 @@ async function driveInteractiveControls(page, errors) {
     return;
   }
 
-  const standby = await needleFraction(page, INTERACTIVE_ID);
-  if (standby === null || standby > STANDBY_NEEDLE_LIMIT) {
-    errors.push(`${INTERACTIVE_ID} standby needle sat at ${standby}`);
+  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
+    errors.push(
+      `${INTERACTIVE_ID} standby needle sat at ${await needleFraction(page, INTERACTIVE_ID)}`
+    );
   }
 
   const slider = card.locator('[data-control-kind="range"] input[type="range"]');
@@ -148,19 +181,19 @@ async function driveInteractiveControls(page, errors) {
     node.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await card.locator('[data-control-kind="toggle"] input[type="checkbox"]').check();
-  await wait(900);
 
-  const engaged = await needleFraction(page, INTERACTIVE_ID);
-  if (engaged === null || engaged < ENGAGED_NEEDLE_FLOOR) {
-    errors.push(`${INTERACTIVE_ID} armed needle sat at ${engaged}, expected the blended load`);
+  if (!(await waitForNeedle(page, "above", ENGAGED_NEEDLE_FLOOR))) {
+    errors.push(
+      `${INTERACTIVE_ID} armed needle sat at ${await needleFraction(page, INTERACTIVE_ID)}, expected the blended load`
+    );
   }
 
   await card.locator('[data-control-kind="trigger"] button').click();
-  await wait(900);
 
-  const released = await needleFraction(page, INTERACTIVE_ID);
-  if (released === null || released > STANDBY_NEEDLE_LIMIT) {
-    errors.push(`${INTERACTIVE_ID} reset trigger left the needle at ${released}`);
+  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
+    errors.push(
+      `${INTERACTIVE_ID} reset trigger left the needle at ${await needleFraction(page, INTERACTIVE_ID)}`
+    );
   }
 }
 
@@ -255,7 +288,21 @@ async function readEvidenceStatuses(page) {
       entries.length,
       { timeout: 20000, polling: POLLING_MS }
     );
-    await wait(800);
+    await page.waitForFunction(
+      () =>
+        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every((card) => {
+          const canvas = card.querySelector("canvas.scene");
+          const context = canvas?.getContext("2d");
+          if (!canvas || !context) return false;
+          const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+          for (let index = 3; index < data.length; index += 4) {
+            if (data[index] !== 0) return true;
+          }
+          return false;
+        }),
+      undefined,
+      { timeout: 30000, polling: POLLING_MS }
+    );
 
     const cards = await readCards(page);
     const expectedIds = entries.map((entry) => entry.id);
