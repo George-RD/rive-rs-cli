@@ -980,3 +980,54 @@ details.source pre {
     animation-iteration-count: 1 !important;
   }
 }
+
+.scene-controls {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 4px;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-bright);
+}
+
+.scene-control {
+  display: grid;
+  grid-template-columns: 96px 1fr 48px;
+  align-items: center;
+  gap: 12px;
+}
+
+.scene-control[data-control-kind="toggle"] {
+  grid-template-columns: 96px auto;
+  justify-content: start;
+}
+
+.scene-control[data-control-kind="trigger"] {
+  grid-template-columns: auto;
+  justify-content: start;
+}
+
+.scene-control-label {
+  color: var(--ink-soft);
+  font: 600 11px/1.2 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scene-control-value {
+  color: var(--blue-dark);
+  font: 600 13px/1.2 var(--mono);
+  text-align: right;
+}
+
+.scene-control input[type="range"] {
+  width: 100%;
+  accent-color: var(--vermilion);
+}
+
+.scene-control input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--vermilion);
+}

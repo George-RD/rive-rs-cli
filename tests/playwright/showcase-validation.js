@@ -11,6 +11,10 @@ const {
 const PORT = Number(process.env.SHOWCASE_PORT || 8773);
 const POLLING_MS = 50;
 const PRODUCTION_ID = "horaxon-signal-to-action";
+const INTERACTIVE_ID = "throughput-console";
+const NEEDLE_ROW_FRACTION = 0.607;
+const STANDBY_NEEDLE_LIMIT = 0.3;
+const ENGAGED_NEEDLE_FLOOR = 0.6;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -95,6 +99,68 @@ function assertStagingContract(entries) {
   }
   if (!namedFailure.includes("missing-contract.consumerEvidence is missing")) {
     throw new Error(`missing production consumer evidence error was not named: ${namedFailure}`);
+  }
+}
+
+async function needleFraction(page, id) {
+  return page.evaluate(
+    ({ id, rowFraction }) => {
+      const card = document.querySelector(`[data-showcase-id="${id}"]`);
+      const canvas = card?.querySelector("canvas.scene");
+      const context = canvas?.getContext("2d");
+      if (!canvas || !context) return null;
+      const row = Math.round(canvas.height * rowFraction);
+      const { data } = context.getImageData(0, row, canvas.width, 1);
+      let total = 0;
+      let count = 0;
+      for (let column = 0; column < canvas.width; column += 1) {
+        const offset = column * 4;
+        if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
+          total += column;
+          count += 1;
+        }
+      }
+      return count === 0 ? null : total / count / canvas.width;
+    },
+    { id, rowFraction: NEEDLE_ROW_FRACTION }
+  );
+}
+
+async function driveInteractiveControls(page, errors) {
+  const card = page.locator(`[data-showcase-id="${INTERACTIVE_ID}"]`);
+  if ((await card.count()) === 0) {
+    errors.push(`${INTERACTIVE_ID} card was not rendered`);
+    return;
+  }
+  if ((await card.locator("[data-scene-controls]").count()) === 0) {
+    errors.push(`${INTERACTIVE_ID} card has no state-machine controls`);
+    return;
+  }
+
+  const standby = await needleFraction(page, INTERACTIVE_ID);
+  if (standby === null || standby > STANDBY_NEEDLE_LIMIT) {
+    errors.push(`${INTERACTIVE_ID} standby needle sat at ${standby}`);
+  }
+
+  const slider = card.locator('[data-control-kind="range"] input[type="range"]');
+  await slider.evaluate((node) => {
+    node.value = "100";
+    node.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await card.locator('[data-control-kind="toggle"] input[type="checkbox"]').check();
+  await wait(900);
+
+  const engaged = await needleFraction(page, INTERACTIVE_ID);
+  if (engaged === null || engaged < ENGAGED_NEEDLE_FLOOR) {
+    errors.push(`${INTERACTIVE_ID} armed needle sat at ${engaged}, expected the blended load`);
+  }
+
+  await card.locator('[data-control-kind="trigger"] button').click();
+  await wait(900);
+
+  const released = await needleFraction(page, INTERACTIVE_ID);
+  if (released === null || released > STANDBY_NEEDLE_LIMIT) {
+    errors.push(`${INTERACTIVE_ID} reset trigger left the needle at ${released}`);
   }
 }
 
@@ -233,6 +299,8 @@ async function readEvidenceStatuses(page) {
       errors.push("decision-flow one-shot did not restart as an intentional showcase loop");
     }
 
+    await driveInteractiveControls(page, errors);
+
     const evidenceStatuses = await readEvidenceStatuses(page);
     for (const evidence of evidenceStatuses) {
       if (evidence.status !== 200) {
@@ -327,7 +395,7 @@ async function readEvidenceStatuses(page) {
     }
 
     process.stdout.write(
-      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, hashed consumer evidence, bounded one-shot looping, live runtime paint, bfcache pause/resume, phone layout, reduced motion\n`
+      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, hashed consumer evidence, bounded one-shot looping, live runtime paint, state-machine input controls, bfcache pause/resume, phone layout, reduced motion\n`
     );
     shutdown();
     process.exit(0);

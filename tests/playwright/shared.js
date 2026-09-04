@@ -86,6 +86,7 @@ const AUTHORING_FIXTURES = {
     AUTHORING_DIR,
     "complex-animated-showcase.v0.json",
   ),
+  authoring_interactive_console: path.join(AUTHORING_DIR, "interactive-console.v0.json"),
 };
 
 const FIXTURES = [
@@ -112,6 +113,7 @@ const RUNTIME_ONLY_FIXTURES = new Set([
   "nslicer",
   "scripting",
   "transition_comparators",
+  "authoring_interactive_console",
 ]);
 
 const VISUAL_FIXTURES = ALL_FIXTURES.filter((fixture) => !RUNTIME_ONLY_FIXTURES.has(fixture));

@@ -13,6 +13,43 @@
     "alt": "Animated decision flow moving scattered business signals into one connected next action"
   },
   {
+    "id": "throughput-console",
+    "title": "Interactive throughput console",
+    "summary": "One AuthoringSpec document stacks the panel back to front, carries a token through waypoints without stopping, blends the gauge from a number input, and runs three state-machine regions at the same time.",
+    "provenance": "authoring",
+    "artifact": "examples/authoring/interactive-console.v0.riv",
+    "source": "examples/authoring/interactive-console.v0.json",
+    "sourceLabel": "High-level AuthoringSpec source",
+    "capability": "typed state machine",
+    "stateMachine": "auth__throughput_2dconsole__console__state_machine",
+    "controls": [
+      {
+        "kind": "range",
+        "input": "auth__throughput_2dconsole__console__load__input",
+        "label": "Load",
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "value": 0
+      },
+      {
+        "kind": "toggle",
+        "input": "auth__throughput_2dconsole__console__armed__input",
+        "label": "Armed",
+        "value": false
+      },
+      {
+        "kind": "trigger",
+        "input": "auth__throughput_2dconsole__console__reset__input",
+        "label": "Reset",
+        "clears": [
+          "auth__throughput_2dconsole__console__armed__input"
+        ]
+      }
+    ],
+    "alt": "Console panel with a status lamp, a streaming token, a load gauge driven by a slider, and arm and reset buttons"
+  },
+  {
     "id": "horaxon-signal-to-action",
     "title": "Horaxon signal-to-action",
     "summary": "The exact Rive animation consumed by Horaxon turns scattered operational signals into one next action. This is production consumer evidence, not a customer endorsement.",
