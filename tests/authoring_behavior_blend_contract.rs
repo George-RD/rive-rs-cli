@@ -359,21 +359,55 @@ fn blend_stop_values_must_increase() {
 }
 
 #[test]
-fn region_ids_must_not_alias_a_layer_zero_state_or_transition() {
+fn region_ids_must_not_alias_any_statechart_scoped_sibling() {
+    for alias in ["resting", "engage", "level", "armed"] {
+        let mut input = document();
+        input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!(alias);
+        assert_diagnostic(
+            &input,
+            "behavior_region_id_collision",
+            "$.behavior.statecharts[0].regions[0].id",
+        );
+    }
+
     let mut input = document();
-    input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!("resting");
+    input["behavior"]["statecharts"][0]["events"] = json!([{ "id": "chime" }]);
+    input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!("chime");
     assert_diagnostic(
         &input,
         "behavior_region_id_collision",
         "$.behavior.statecharts[0].regions[0].id",
     );
+}
 
+#[test]
+fn a_blend_stop_expression_failure_is_reported_beside_the_order_check() {
     let mut input = document();
-    input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!("engage");
-    assert_diagnostic(
-        &input,
-        "behavior_region_id_collision",
-        "$.behavior.statecharts[0].regions[0].id",
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([
+        { "motion": "low-track", "value": literal(0.0, "scalar") },
+        { "motion": "rest-track", "value": { "kind": "parameter", "name": "undeclared" } },
+        { "motion": "high-track", "value": literal(-1.0, "scalar") }
+    ]);
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("an undefined parameter must fail at the authored boundary");
+    let codes = error
+        .diagnostics
+        .iter()
+        .map(|diagnostic| diagnostic.code.as_str())
+        .collect::<Vec<_>>();
+    assert!(
+        codes.contains(&"invalid_blend_stop_order"),
+        "expected the order diagnostic; got {codes:?}"
+    );
+    assert!(
+        error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "unknown_parameter"
+                && diagnostic
+                    .path
+                    .starts_with("$.behavior.statecharts[0].states[1].blend.stops[1].value")
+        }),
+        "the failing stop expression was dropped; got {:#?}",
+        error.diagnostics
     );
 }
 

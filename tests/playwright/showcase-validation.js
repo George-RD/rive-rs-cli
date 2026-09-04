@@ -12,12 +12,14 @@ const PORT = Number(process.env.SHOWCASE_PORT || 8773);
 const POLLING_MS = 50;
 const PRODUCTION_ID = "horaxon-signal-to-action";
 const INTERACTIVE_ID = "throughput-console";
-// The console artboard is 960x540. Its gauge needle spans y 324..357 and the gauge
-// track starts at y 332, so row 328 (0.607 of the height) crosses the needle alone.
-// Standby holds the needle near x 122 (0.127) and load 100 drives it past x 700 (0.73).
-const NEEDLE_ROW_FRACTION = 0.607;
-const STANDBY_NEEDLE_LIMIT = 0.3;
-const ENGAGED_NEEDLE_FLOOR = 0.6;
+const CONSOLE_ARTBOARD_WIDTH = 960;
+const CONSOLE_ARTBOARD_HEIGHT = 540;
+const NEEDLE_ONLY_SCAN_ROW = 328;
+const STANDBY_NEEDLE_MAX_X = 288;
+const ENGAGED_NEEDLE_MIN_X = 576;
+const NEEDLE_ROW_FRACTION = NEEDLE_ONLY_SCAN_ROW / CONSOLE_ARTBOARD_HEIGHT;
+const STANDBY_NEEDLE_LIMIT = STANDBY_NEEDLE_MAX_X / CONSOLE_ARTBOARD_WIDTH;
+const ENGAGED_NEEDLE_FLOOR = ENGAGED_NEEDLE_MIN_X / CONSOLE_ARTBOARD_WIDTH;
 const SETTLE_FRAMES = 120;
 
 function wait(ms) {

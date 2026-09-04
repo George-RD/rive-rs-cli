@@ -192,9 +192,11 @@ than 120px. The mapping stays monotonic.
 "transitions"}`. The statechart's own states remain layer 0, and each region becomes one
 further state-machine layer with its own entry state, exit state, and entry transition.
 Region ids are unique within a statechart; a repeat returns `duplicate_behavior_region`
-at `$....regions[i].id`. A region id may not alias one of the statechart's own layer-0
-state or transition ids either, because both mangle to the same runtime name; a
-collision returns `behavior_region_id_collision` at the same path. Source-map authored
+at `$....regions[i].id`. A region id may not alias any other id the statechart scopes
+either. States, transitions, inputs, events, listeners and regions all take the
+source-map identity `{statechart}/{id}`, and consumers resolve an entry by first
+match, so a collision would make the lookup ambiguous; it returns
+`behavior_region_id_collision` at the same path. Source-map authored
 ids inside a region are
 `statechart/region/state` and their scene paths are
 `/artboard/state_machines/{m}/layers/{n}/states/{i}`.

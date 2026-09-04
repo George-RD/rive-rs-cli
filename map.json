@@ -14910,7 +14910,7 @@
     {
       "code": "CAIRN_MODULE_OVERSIZED",
       "severity": "warning",
-      "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/compiler/behavior.rs` at 1141 lines, over the 500-line guideline with no allow-list marker",
+      "message": "module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/compiler/behavior.rs` at 1152 lines, over the 500-line guideline with no allow-list marker",
       "node": "rive-cli.intelligence.authoring",
       "path": "src/authoring/frontend/compiler/behavior.rs"
     },
@@ -14969,6 +14969,13 @@
       "message": "module `rive-cli.interfaces.scaffold` claims `src/scaffold/mod.rs` at 717 lines, over the 500-line guideline with no allow-list marker",
       "node": "rive-cli.interfaces.scaffold",
       "path": "src/scaffold/mod.rs"
+    },
+    {
+      "code": "CAIRN_MODULE_OVERSIZED",
+      "severity": "warning",
+      "message": "module `rive-cli.verification.rust` claims `tests/authoring_behavior_blend_contract.rs` at 501 lines, over the 500-line guideline with no allow-list marker",
+      "node": "rive-cli.verification.rust",
+      "path": "tests/authoring_behavior_blend_contract.rs"
     },
     {
       "code": "CAIRN_MODULE_OVERSIZED",

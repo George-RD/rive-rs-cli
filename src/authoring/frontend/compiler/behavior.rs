@@ -769,7 +769,7 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
             &mut diagnostics,
         );
 
-        let layer_zero_ids = statechart
+        let statechart_scoped_ids = statechart
             .states
             .iter()
             .map(|state| state.id.as_str())
@@ -778,6 +778,14 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                     .transitions
                     .iter()
                     .map(|transition| transition.id.as_str()),
+            )
+            .chain(statechart.inputs.iter().map(|input| input.id()))
+            .chain(statechart.events.iter().map(|event| event.id.as_str()))
+            .chain(
+                statechart
+                    .listeners
+                    .iter()
+                    .map(|listener| listener.id.as_str()),
             )
             .collect::<HashSet<_>>();
         let mut regions = HashSet::new();
@@ -794,12 +802,12 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                     ),
                 ));
             }
-            if layer_zero_ids.contains(region.id.as_str()) {
+            if statechart_scoped_ids.contains(region.id.as_str()) {
                 diagnostics.push(AuthoringDiagnostic::new(
                     format!("{region_path}.id"),
                     "behavior_region_id_collision",
                     format!(
-                        "behavior region id '{}' is also a state or transition id in statechart '{}', so both would claim the source-map identity '{}/{}'",
+                        "behavior region id '{}' is also a state, transition, input, event or listener id in statechart '{}', so both would claim the source-map identity '{}/{}'",
                         region.id, statechart.id, statechart.id, region.id
                     ),
                 ));
@@ -999,11 +1007,14 @@ fn validate_state_motion(
                     ));
                 }
                 let stop_path = format!("{state_path}.blend.stops[{stop_index}].value");
-                let Ok(value) =
-                    evaluate_expression(&stop.value, &stop_path, parameters, Unit::Scalar)
-                else {
-                    continue;
-                };
+                let value =
+                    match evaluate_expression(&stop.value, &stop_path, parameters, Unit::Scalar) {
+                        Ok(value) => value,
+                        Err(diagnostic) => {
+                            diagnostics.push(diagnostic);
+                            continue;
+                        }
+                    };
                 if let Some(previous_value) = previous
                     && value <= previous_value
                 {

@@ -255,6 +255,7 @@
     let wallOrigin = 0;
     let frameOrigin = 0;
     let seekChain = Promise.resolve();
+    let settleQueued = false;
 
     function reportFrame() {
       if (typeof options.onFrame === "function") options.onFrame(logicalFrame);
@@ -367,10 +368,13 @@
     }
 
     function settleControlChange() {
-      if (playing || destroyed) return;
-      for (const controller of controllers) controller.advanceOneStep();
-      logicalFrame += 1;
-      reportFrame();
+      if (playing || destroyed || settleQueued) return;
+      settleQueued = true;
+      seekChain = seekChain.then(async () => {
+        settleQueued = false;
+        if (playing || destroyed) return;
+        for (const controller of controllers) controller.advanceOneStep();
+      });
     }
 
     function readInputs() {

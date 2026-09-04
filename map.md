@@ -89,7 +89,7 @@ None in Phase 1.
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.ai` claims `src/ai/eval/validation.rs` at 508 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.ai` claims `src/ai/repair.rs` at 813 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/constraint.rs` at 554 lines, over the 500-line guideline with no allow-list marker
-- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/compiler/behavior.rs` at 1141 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/compiler/behavior.rs` at 1152 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/motion.rs` at 503 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 653 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/operations.rs` at 731 lines, over the 500-line guideline with no allow-list marker
@@ -98,6 +98,7 @@ None in Phase 1.
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.discovery` claims `src/discovery/mod.rs` at 896 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.render` claims `src/render/mod.rs` at 782 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.scaffold` claims `src/scaffold/mod.rs` at 717 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/authoring_behavior_blend_contract.rs` at 501 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/authoring_radial_contract.rs` at 566 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/e2e.rs` at 5255 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_PROVENANCE_NO_DECISION node `rive-cli.core.compile` has no decision artefact explaining why it exists
