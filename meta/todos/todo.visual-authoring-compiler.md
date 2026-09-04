@@ -136,6 +136,38 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 - Source maps identify every expanded SceneSpec object produced by an authored concept.
 - A complex static showcase is reproduced without raw escapes for supported concepts.
 
+## Stacking hardening inside the completed slice
+
+Issue #193 adds explicit sibling stacking order on branch
+`claude/workflows-roadmap-demos-9wlqz4`; it is not merged and no CI run is recorded for
+it here. It hardens the slice PR #156 completed rather than reopening it: the progress
+and acceptance criteria above are unchanged, and the status stays `done`.
+
+- `StackingSpec` in `src/authoring/spec.rs` accepts `runtime` (default) or
+  `back_to_front`. The optional `stacking` field sits on the `visual` section, on each
+  entry of `components`, and on the `group` visual node.
+- Rive paints the first sibling on top. `runtime` leaves the emitted child order
+  unchanged; `back_to_front` reverses the emitted SceneSpec children, so the last
+  authored sibling paints on top.
+- Authored paths, component definition paths, diagnostic paths, and source-map entry
+  order stay in authored order. Only `scene_paths` and the emitted child order change.
+- Raw SceneSpec input is not reordered and keeps native runtime ordering.
+- `tests/authoring_stacking_contract.rs` holds four contracts: `back_to_front` on the
+  `visual` section lowered twice to the same scene and source map, on a group, on a
+  component definition, and diagnostics under authored child indexes. Under
+  `back_to_front` on a group, the second authored child keeps authored path
+  `$.visual.nodes[0].children[1]` and receives scene path
+  `/artboard/children/0/children/0`; a scalar-unit width on that child still reports
+  `unit_mismatch` at `$.visual.nodes[0].children[1].width`.
+- `tests/authoring_stacking_runtime.rs` holds two official-runtime contracts. Both
+  compile `examples/authoring/stacking-card.v0.json` and render frame 0 at 128x128
+  through the browser runtime. Under `back_to_front` the centre pixel is the cue
+  `#22C55E` while the corner at (8, 8) is the surface `#C2410C`; under `runtime` the
+  centre pixel is the surface, because the first authored sibling covers the cue.
+- `stacking` is optional and `runtime` reproduces the previous output. The committed
+  `examples/authoring/complex-animated-showcase.v0.riv` is byte-identical after the
+  change, and `authoring_format_version` stays 0.
+
 ## Dependency
 
 Depends on `todo.authoring-spec-v0.md`.

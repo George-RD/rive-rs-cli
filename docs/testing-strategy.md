@@ -90,7 +90,7 @@ The previous claim that frame capture was deterministic was false: `scrub(undefi
 **Updating baselines**:
 
 ```bash
-UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js
+npx -y -p playwright node tests/playwright/visual-regression.js --update
 ```
 
 **Resolution**: 512×512 logical viewport with `deviceScaleFactor: 2`, producing 1024×1024 PNGs.
@@ -167,6 +167,20 @@ When adding a new Rive object type to the codebase:
 - [ ] Regenerate the scene schema: `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync` (it is derived from `src/builder/spec.rs`, never hand-edited)
 - [ ] Update `AGENTS.md` with the new type's location and conventions
 
+## Adding an AuthoringSpec Field (Testing Checklist)
+
+The object-type checklist above covers `SceneSpec`. A field on the high-level
+`AuthoringSpec` frontend takes a different path, because it is validated by
+lowering rather than by encoding:
+
+- [ ] Write the contract test first in `tests/authoring_{feature}_contract.rs` — assert the lowered SceneSpec, the `authored_path`/`scene_path` pair in the source map, and the diagnostic code and authored path for every rejection. `tests/authoring_stacking_contract.rs` is the shortest example at four tests
+- [ ] Give the field a `#[serde(default)]` in `src/authoring/spec.rs` whose default reproduces the previous output, so `authoring_format_version` stays 0 and the committed showcase artifacts do not drift
+- [ ] Regenerate the published schema: `cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored`. It is derived from `authoring_schema()` and never hand-edited; `published_authoring_schema_matches_generated_contract` fails until `docs/authoring.schema.v0.json` matches
+- [ ] Add official-runtime evidence when the field changes rendered output — a `tests/authoring_{feature}_runtime.rs` that lowers a fixture from `examples/authoring/`, renders through `render()`, and measures pixels rather than object counts. `tests/authoring_stacking_runtime.rs` renders frame 0 at 128×128 and asserts which rectangle owns the centre pixel
+- [ ] Add the fixture to `examples/authoring/` with a row and a paragraph in `examples/authoring/README.md`, naming the tests that gate it
+- [ ] Register a new showcase in `FIXTURES` in `tests/playwright/shared.js`, and add it to `RUNTIME_ONLY_FIXTURES` when its visible state comes from state-machine inputs rather than a fixed timeline, since `visual-regression.js` cannot pixel-compare a frame that depends on an input
+- [ ] Add the showcase name to `SHOWCASES` in `tests/showcase_artifact.rs` when a compiled `.riv` is committed beside the document, and regenerate that artifact with `authoring compile` whenever the document or the compiler changes
+
 ## Fuzz and Property Testing
 
 Implemented in PR #39:
@@ -206,5 +220,5 @@ npx -y -p playwright node tests/playwright/regression.js
 npx -y -p playwright node tests/playwright/visual-regression.js
 
 # Update golden-frame baselines (after visual review)
-UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js
+npx -y -p playwright node tests/playwright/visual-regression.js --update
 ```

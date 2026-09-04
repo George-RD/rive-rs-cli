@@ -12,6 +12,7 @@ It must provide:
 - a source map from authored concepts to expanded SceneSpec objects;
 - typed units and safe expression trees, not arbitrary executable strings;
 - reusable components, instances, bounded deterministic grid, radial, mirror, distribute, and along-path patterns, and group-scoped transform-anchor constraints;
+- explicit sibling stacking order on the `visual` section, a component, or a group;
 - constraints that reference direct typed siblings by stable authored ID, preserve component parameter and instance override semantics, bound each group to 100 declarations, and report invalid IDs, conflicts, bounded dependency depth, or cycles at authored paths;
 - semantic font asset IDs that text can reference without runtime indices;
 - semantic image asset IDs that static image nodes can reference without runtime indices;
@@ -19,9 +20,24 @@ It must provide:
 - preservation of asset sources in lowered `SceneSpec`, with actual file embedding
   performed only when the canonical builder receives an explicit base directory;
 - poses with transform, opacity, and parametric shape-dimension properties, compact motion tracks, shared easing definitions, and named statecharts;
+- motion tracks whose interior waypoints keep velocity instead of settling at every keyframe;
 - view-model-first data bindings and events;
+- typed bool, number, and trigger statechart inputs, comparison and trigger transition
+  conditions, one-dimensional blend states, and parallel regions;
+- a non-fatal warning channel beside the fatal authored diagnostics;
 - a raw SceneSpec escape hatch for unsupported advanced Rive objects;
 - validation at each lowering stage and no direct binary encoding path.
+
+Rive paints the first sibling on top. `stacking` sets that order and takes `runtime`
+(default) or `back_to_front`. `runtime` emits children in authored order;
+`back_to_front` reverses the emitted SceneSpec children, so the last authored sibling
+paints on top. Authored paths, component definition paths, diagnostic paths, and
+source-map entry order stay in authored order; only `scene_paths` and the emitted
+child order change. Under `back_to_front` on a group, the second authored child keeps
+authored path `$.visual.nodes[0].children[1]`, receives scene path
+`/artboard/children/0/children/0`, and a scalar-unit width on it still reports
+`unit_mismatch` at `$.visual.nodes[0].children[1].width`. Raw SceneSpec input is not
+reordered and keeps native runtime ordering.
 
 Incremental authoring operations target stable authored IDs and never runtime names,
 SceneSpec paths, generated array indices, or binary indices. The shared operation
@@ -96,6 +112,30 @@ Cartesian expansion. The validator reports this aggregate limit once, at the fir
 track that causes the document to cross the budget, while continuing to validate
 later tracks for unrelated authored errors.
 
+A track declares `continuity`, either `per_keyframe` (default) or `through`. Rive
+attaches an interpolator to the keyframe that starts a segment, so an easing that
+flattens at its end stops the target at every keyframe it governs. Under `through`,
+every segment arriving at an interior keyframe is emitted as `linear` with no
+interpolator and the target keeps its speed across that keyframe, while the segment
+arriving at the last keyframe keeps its authored easing so the motion still settles at
+the destination. A `hold` segment is never rewritten. One keyframe overrides its track
+through `waypoint`: `transit` forces the rewrite inside a `per_keyframe` track, `settle`
+suppresses it inside a `through` track, and `auto` (default) follows the track. Neither
+`transit` nor `settle` is valid on the first or last keyframe once the track's keyframes
+are sorted by frame; that returns `waypoint_not_interior` at
+`$.motion.tracks[i].keyframes[j].waypoint`. An interpolator that governs no remaining
+segment after the rewrite is not emitted.
+
+`LoweredAuthoring.warnings` carries non-fatal `AuthoringDiagnostic` values and lowering
+still succeeds. `waypoint_stop_start` is reported at `$.motion.tracks[i].keyframes[j]`
+when an interior keyframe with `waypoint: auto` is entered and left on the same easing
+whose end tangent is flat, meaning `y2` equals 1 while `x2` stays below 1, and at least
+one animated property continues in the same direction through that keyframe. Without
+`--json`, `rive-cli authoring compile` prints each warning to stderr as
+`warning: {path} [{code}]: {message}` before the byte count; with `--json` it instead
+carries them in a `warnings` array beside `bytes_written`, `output_path`, and
+`source_map` in the success envelope.
+
 Tracks lower through the canonical builder, retain deterministic runtime names, and
 map errors and runtime objects back to `$.motion.tracks` and `$.motion.poses`. Visual
 motion targets are indexed once from the authored source map as ordered runtime
@@ -110,8 +150,54 @@ drop malformed bindings.
 Raw state-machine escapes may reference generated track runtime names in the same
 document because final canonical validation occurs only after typed animations are
 present. Failed invariants return structured authored diagnostics rather than
-panicking. Semantic motion helpers, color and further non-transform property tracks,
-and typed statecharts remain separate roadmap slices.
+panicking. Semantic motion helpers and color or other property tracks beyond transform,
+opacity, width, and height remain separate roadmap slices.
+
+A statechart declares typed inputs as `{"kind": "bool", "id": ..., "value": ...}`,
+`{"kind": "number", "id": ..., "value": <scalar expression>}`, or
+`{"kind": "trigger", "id": ...}`. Transition conditions are an untagged union of four
+forms: `{"binding": ..., "equals": ...}`, `{"input": ..., "equals": ...}`,
+`{"input": ..., "compare": ..., "value": <scalar expression>}` where `compare` is
+one of `equal`, `not_equal`, `greater`, `greater_or_equal`, `less`, or
+`less_or_equal`, and `{"trigger": ...}`. The three input forms require a `bool`,
+`number`, and `trigger` input respectively: a mismatch returns
+`invalid_condition_input` and an undeclared id returns `unknown_behavior_input`, both
+at `$....transitions[i].when.input` or `$....transitions[i].when.trigger`. The
+`binding` form instead resolves against `bindings` and returns
+`unknown_behavior_binding` at `$....transitions[i].when.binding`. Listener actions are
+`bool_change`, `number_change` with a scalar `value`, and `trigger_change`; an action
+whose kind does not match the declared input kind returns `invalid_listener_input` at
+that action's `input` path.
+
+A behavior state declares exactly one of `motion` and `blend`. Neither returns
+`missing_state_motion` and both return `ambiguous_state_motion`, each at the state
+path. `blend` is `{"input": <number input id>, "stops": [{"motion": <track id>,
+"value": <scalar expression>}, ...]}` and lowers to a `blend_state_1d` whose children
+are `blend_animation_1d` entries naming the lowered animations.
+`docs/authoring.schema.v0.json` records `minItems` 2 and `maxItems` 1000 on `stops`;
+the compiler does not re-check that count. A `blend.input` that is not a number input
+returns `invalid_blend_input` and one that does not exist returns
+`unknown_behavior_input`, both at `$....states[i].blend.input`; an unknown stop track
+returns `unknown_behavior_motion` at `$....states[i].blend.stops[j].motion`. Rive
+mixes the two neighbouring stop animations sequentially rather than averaging them, so
+stops at 0 and 100 driving positions 40px and 200px place input 50 near 146px rather
+than 120px. The mapping stays monotonic.
+
+`regions` adds parallel layers to a statechart, each `{"id", "initial", "states",
+"transitions"}`. The statechart's own states remain layer 0, and each region becomes one
+further state-machine layer with its own entry state, exit state, and entry transition.
+Region ids are unique within a statechart; a repeat returns `duplicate_behavior_region`
+at `$....regions[i].id`. Source-map authored ids inside a region are
+`statechart/region/state` and their scene paths are
+`/artboard/state_machines/{m}/layers/{n}/states/{i}`.
+
+Typed behavior validates its lowered scene with file-asset `source` fields removed, the
+same way the visual path does, so a document may declare `font_assets` or `image_assets`
+alongside a statechart. Additive blend states, direct blend states, transition duration
+and exit time, and view-model properties other than `bool` are not exposed by this
+frontend. `stacking`, `continuity`, `waypoint`, `blend`, and `regions` are optional and
+their defaults reproduce the previous lowered output, so `authoring_format_version`
+remains 0.
 
 The first version stays JSON. Its constraints align or derive direct-child `x` and
 `y` transform anchors; they are not a rendered-bounds or general CAD solver. A

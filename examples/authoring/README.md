@@ -14,6 +14,10 @@ canonical `SceneSpec` object graph.
 | `complex-static-showcase.v0.json` | A complex static composition built without raw scene, motion, or behavior escapes |
 | `complex-animated-showcase.v0.json` | A complex animated signal-to-action story built without raw scene, motion, or behavior escapes |
 | `complex-interactive-showcase.v0.json` | Three-state typed interaction gate with two boolean inputs, a reset event, pointer listeners, and bidirectional transitions |
+| `stacking-card.v0.json` | Explicit `back_to_front` stacking on the visual root and on a group |
+| `waypoint-transit.v0.json` | A `through` motion track crossing an interior waypoint without losing speed |
+| `blend-meter.v0.json` | A number input driving a 1D blend state across two motion tracks |
+| `interactive-console.v0.json` | Stacking, waypoint continuity, a blend gauge, and three concurrent state-machine layers in one document |
 
 The complex static showcase combines reusable components, expression-backed
 parameters, linear and radial gradients, trimmed strokes, text, grid, radial,
@@ -32,8 +36,61 @@ typed subset. One authored statechart selects three short pose tracks through tw
 boolean inputs, four named transitions, pointer listeners, and a named reset
 event. Its contract compares the complete lowering with an explicitly authored
 canonical state machine and then sends that SceneSpec through the shared builder.
-The broader behavior-compiler roadmap remains open for capabilities such as blend
-states and parallel layers.
+Blend states and parallel layers are now typed, in `blend-meter.v0.json` and
+`interactive-console.v0.json`. Additive blend states, direct blend states,
+transition duration and exit time, and view-model number or trigger properties
+are not exposed by the AuthoringSpec frontend.
+
+`stacking-card.v0.json` sets `"stacking": "back_to_front"` on the `visual`
+section and on the `card` group, so the 32px `cue` rectangle authored second
+paints over the 128px `surface` rectangle authored first. Authored order is
+retained in diagnostics and source maps while only the emitted child order
+changes: the second child keeps the authored path
+`$.visual.nodes[0].children[1]` and takes the scene path
+`/artboard/children/0/children/0`. `tests/authoring_stacking_contract.rs` covers
+the four lowering cases, and `tests/authoring_stacking_runtime.rs` renders
+frame 0 at 128x128 through Chromium and asserts the cue owns the centre pixel
+under `back_to_front` and the surface owns it under `runtime`.
+
+`waypoint-transit.v0.json` carries a token across 40px, 160px and 280px at frames
+0, 30 and 60 of a 320x160 artboard, with the same cubic easing `settle`
+(0.23, 1, 0.32, 1) on all three keyframes. The track declares
+`"continuity": "through"`, so the segment arriving at frame 30 is emitted as
+`linear` without an interpolator and the token holds its speed through the
+waypoint, while the segment arriving at frame 60 keeps the authored easing.
+`tests/authoring_motion_continuity_runtime.rs` measures the token's horizontal
+centre between frame 26 and frame 30: `through` travels at least 12px into the
+waypoint, and the same document with `continuity` removed travels at most 2px.
+`tests/authoring_motion_continuity_contract.rs` covers the nine lowering cases,
+including the `waypoint_not_interior` failure and the `waypoint_stop_start`
+warning.
+
+`blend-meter.v0.json` declares one `load` number input and a single `reading`
+state whose `blend` interpolates `calm-track` at 0 against `surge-track` at 100.
+`tests/authoring_behavior_blend_runtime.rs` drives `load` at 0, 50 and 100
+through the state machine and finds the needle on the calm stop, on the surge
+stop, and strictly between them. Rive mixes the two neighbouring animations
+sequentially rather than as a weighted average, so input 50 renders at about
+146px between stops driving 40px and 200px, not at the arithmetic midpoint; the
+mapping stays monotonic. `tests/authoring_behavior_blend_contract.rs` covers the
+ten lowering cases for typed inputs, blend states, typed conditions, regions,
+listener actions, and a statechart declared beside file assets.
+
+`interactive-console.v0.json` combines stacking, waypoint continuity, a blend
+gauge, and parallel regions in one 960x540 document, with a committed `.riv`
+beside it. It declares the backdrop first under `back_to_front` stacking, moves
+the stream token on a `through` track,
+drives the gauge from a `blend_state_1d` over the `load` number input, and runs
+three state-machine layers: the statechart's own `standby` and `running` states,
+a `stream` region carrying the token, and an `alert` region that escalates on
+`load >= 60` and settles on `load < 60`. A `click` listener on the `arm-surface`
+rectangle sets `armed`; one on `reset-surface` clears it and fires the `reset`
+trigger. `tests/authoring_console_runtime.rs` renders the committed artifact and
+checks that a pointer press on `arm-surface` moves the needle onto the blended
+load, that the alert lamp covers more pixels at load 90 than at load 10, and
+that the stream token advances while layer 0 stays in `standby`.
+`tests/showcase_artifact.rs` recompiles the committed showcases and fails on
+byte drift.
 
 Compile the high-level typed-motion fixture directly:
 
@@ -57,6 +114,21 @@ cargo run -- authoring compile examples/authoring/complex-animated-showcase.v0.j
 cargo run -- authoring compile examples/authoring/complex-interactive-showcase.v0.json -o complex-interactive-showcase.riv
 ```
 
+Compile the stacking, waypoint, and blend fixtures the same way:
+
+```bash
+cargo run -- authoring compile examples/authoring/stacking-card.v0.json -o stacking-card.riv
+cargo run -- authoring compile examples/authoring/waypoint-transit.v0.json -o waypoint-transit.riv
+cargo run -- authoring compile examples/authoring/blend-meter.v0.json -o blend-meter.riv
+```
+
+Regenerate the console's committed artifact in place when the document or the
+compiler changes:
+
+```bash
+cargo run --quiet -- authoring compile examples/authoring/interactive-console.v0.json -o examples/authoring/interactive-console.v0.riv
+```
+
 Print the high-level AuthoringSpec schema with:
 
 ```bash
@@ -77,7 +149,23 @@ cargo test --test authoring_examples
 cargo test --test authoring_cli
 cargo test --test authoring_interaction_contract
 cargo test --test authoring_behavior_exit_gate
+cargo test --test authoring_stacking_contract
+cargo test --test authoring_motion_continuity_contract
+cargo test --test authoring_behavior_blend_contract
+cargo test --test showcase_artifact
 node tests/playwright/authoring-behavior-runtime.js
+```
+
+The stacking, waypoint, blend, and console fixtures also carry official-runtime
+evidence. These four tests drive headless Chromium and measure pixels, so they
+need a Chrome or Chromium executable; set `$RIVE_CHROME` for a non-standard
+location:
+
+```bash
+cargo test --test authoring_stacking_runtime
+cargo test --test authoring_motion_continuity_runtime
+cargo test --test authoring_behavior_blend_runtime
+cargo test --test authoring_console_runtime
 ```
 
 The example contract lowers every fixture twice to prove deterministic
