@@ -6,6 +6,8 @@ use super::super::super::spec::{
     AuthoringDiagnostic, AuthoringSpec, MotionEasingSpec, ScalarExpr, SourceMapEntry, Unit,
 };
 
+const FLAT_TANGENT_TOLERANCE: f64 = 1.0e-6;
+
 pub(super) struct ResolvedEasing {
     authored_index: usize,
     pub(super) id: String,
@@ -14,6 +16,12 @@ pub(super) struct ResolvedEasing {
     y1: f64,
     x2: f64,
     y2: f64,
+}
+
+impl ResolvedEasing {
+    pub(super) fn settles(&self) -> bool {
+        (1.0 - self.y2).abs() <= FLAT_TANGENT_TOLERANCE && self.x2 < 1.0 - FLAT_TANGENT_TOLERANCE
+    }
 }
 
 pub(super) struct EasingEmission {

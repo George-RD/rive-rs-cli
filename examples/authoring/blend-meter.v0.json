@@ -1,0 +1,178 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "blend-meter",
+    "width": {
+      "value": 240.0,
+      "unit": "px"
+    },
+    "height": {
+      "value": 160.0,
+      "unit": "px"
+    }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "rectangle",
+        "id": "needle",
+        "width": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "px"
+        },
+        "fill": "#22C55E"
+      }
+    ]
+  },
+  "motion": {
+    "poses": [
+      {
+        "id": "calm",
+        "targets": [
+          {
+            "target": "needle",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 40.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 80.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "surge",
+        "targets": [
+          {
+            "target": "needle",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 200.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 80.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "calm-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "calm"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 1.0,
+              "unit": "scalar"
+            },
+            "pose": "calm"
+          }
+        ]
+      },
+      {
+        "id": "surge-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "surge"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 1.0,
+              "unit": "scalar"
+            },
+            "pose": "surge"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "statecharts": [
+      {
+        "id": "meter",
+        "inputs": [
+          {
+            "kind": "number",
+            "id": "load",
+            "value": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            }
+          }
+        ],
+        "initial": "reading",
+        "states": [
+          {
+            "id": "reading",
+            "blend": {
+              "input": "load",
+              "stops": [
+                {
+                  "motion": "calm-track",
+                  "value": {
+                    "kind": "literal",
+                    "value": 0.0,
+                    "unit": "scalar"
+                  }
+                },
+                {
+                  "motion": "surge-track",
+                  "value": {
+                    "kind": "literal",
+                    "value": 100.0,
+                    "unit": "scalar"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -216,18 +216,39 @@ pub enum TextOverflow {
     FitFontSize,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum StackingSpec {
+    #[default]
+    Runtime,
+    BackToFront,
+}
+
+impl StackingSpec {
+    pub(crate) fn scene_index(self, authored_index: usize, count: usize) -> usize {
+        match self {
+            Self::Runtime => authored_index,
+            Self::BackToFront => count.saturating_sub(1).saturating_sub(authored_index),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ComponentSpec {
     pub id: String,
     #[serde(default)]
     pub parameters: BTreeMap<String, Quantity>,
+    #[serde(default)]
+    pub stacking: StackingSpec,
     pub visual: Vec<VisualNode>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct VisualSection {
+    #[serde(default)]
+    pub stacking: StackingSpec,
     #[serde(default)]
     pub nodes: Vec<VisualNode>,
 }
@@ -238,6 +259,23 @@ pub enum MotionInterpolation {
     Hold,
     #[default]
     Linear,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MotionContinuity {
+    #[default]
+    PerKeyframe,
+    Through,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum MotionWaypoint {
+    #[default]
+    Auto,
+    Transit,
+    Settle,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -299,6 +337,8 @@ pub struct PoseKeyframeSpec {
     #[serde(default)]
     pub interpolation: MotionInterpolation,
     #[serde(default)]
+    pub waypoint: MotionWaypoint,
+    #[serde(default)]
     pub easing: Option<String>,
 }
 
@@ -311,6 +351,8 @@ pub struct MotionTrackSpec {
     pub duration_frames: ScalarExpr,
     #[serde(default)]
     pub loop_type: MotionLoop,
+    #[serde(default)]
+    pub continuity: MotionContinuity,
     #[schemars(length(min = 2, max = 1000))]
     pub keyframes: Vec<PoseKeyframeSpec>,
 }
@@ -366,18 +408,39 @@ pub struct BehaviorBindingSpec {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum BehaviorInputSpec {
     Bool { id: String, value: bool },
+    Number { id: String, value: ScalarExpr },
+    Trigger { id: String },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BehaviorInputKind {
+    Bool,
+    Number,
+    Trigger,
+}
+
+impl BehaviorInputKind {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Bool => "bool",
+            Self::Number => "number",
+            Self::Trigger => "trigger",
+        }
+    }
 }
 
 impl BehaviorInputSpec {
     pub(crate) fn id(&self) -> &str {
         match self {
-            Self::Bool { id, .. } => id,
+            Self::Bool { id, .. } | Self::Number { id, .. } | Self::Trigger { id } => id,
         }
     }
 
-    pub(crate) fn bool_value(&self) -> bool {
+    pub(crate) fn kind(&self) -> BehaviorInputKind {
         match self {
-            Self::Bool { value, .. } => *value,
+            Self::Bool { .. } => BehaviorInputKind::Bool,
+            Self::Number { .. } => BehaviorInputKind::Number,
+            Self::Trigger { .. } => BehaviorInputKind::Trigger,
         }
     }
 }
@@ -416,12 +479,38 @@ impl BehaviorListenerType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+#[allow(clippy::enum_variant_names)]
 pub enum BehaviorListenerActionSpec {
     BoolChange {
         input: String,
         #[serde(default = "default_true")]
         value: bool,
     },
+    NumberChange {
+        input: String,
+        value: ScalarExpr,
+    },
+    TriggerChange {
+        input: String,
+    },
+}
+
+impl BehaviorListenerActionSpec {
+    pub(crate) fn input(&self) -> &str {
+        match self {
+            Self::BoolChange { input, .. }
+            | Self::NumberChange { input, .. }
+            | Self::TriggerChange { input } => input,
+        }
+    }
+
+    pub(crate) fn input_kind(&self) -> BehaviorInputKind {
+        match self {
+            Self::BoolChange { .. } => BehaviorInputKind::Bool,
+            Self::NumberChange { .. } => BehaviorInputKind::Number,
+            Self::TriggerChange { .. } => BehaviorInputKind::Trigger,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -437,9 +526,27 @@ pub struct BehaviorListenerSpec {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct BehaviorBlendStopSpec {
+    pub motion: String,
+    pub value: ScalarExpr,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorBlendSpec {
+    pub input: String,
+    #[schemars(length(min = 2, max = 1000))]
+    pub stops: Vec<BehaviorBlendStopSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct BehaviorStateSpec {
     pub id: String,
-    pub motion: String,
+    #[serde(default)]
+    pub motion: Option<String>,
+    #[serde(default)]
+    pub blend: Option<BehaviorBlendSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -456,11 +563,51 @@ pub struct BehaviorInputConditionSpec {
     pub equals: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum BehaviorCompare {
+    Equal,
+    NotEqual,
+    Greater,
+    GreaterOrEqual,
+    Less,
+    LessOrEqual,
+}
+
+impl BehaviorCompare {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Equal => "==",
+            Self::NotEqual => "!=",
+            Self::Greater => ">",
+            Self::GreaterOrEqual => ">=",
+            Self::Less => "<",
+            Self::LessOrEqual => "<=",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorNumberConditionSpec {
+    pub input: String,
+    pub compare: BehaviorCompare,
+    pub value: ScalarExpr,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorTriggerConditionSpec {
+    pub trigger: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub enum BehaviorTransitionConditionSpec {
     Binding(BehaviorBindingConditionSpec),
     Input(BehaviorInputConditionSpec),
+    Number(BehaviorNumberConditionSpec),
+    Trigger(BehaviorTriggerConditionSpec),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -470,6 +617,18 @@ pub struct BehaviorTransitionSpec {
     pub from: String,
     pub to: String,
     pub when: BehaviorTransitionConditionSpec,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorRegionSpec {
+    pub id: String,
+    pub initial: String,
+    #[schemars(length(min = 1, max = 1000))]
+    pub states: Vec<BehaviorStateSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub transitions: Vec<BehaviorTransitionSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
@@ -491,6 +650,9 @@ pub struct BehaviorStatechartSpec {
     #[serde(default)]
     #[schemars(length(max = 1000))]
     pub transitions: Vec<BehaviorTransitionSpec>,
+    #[serde(default)]
+    #[schemars(length(max = 1000))]
+    pub regions: Vec<BehaviorRegionSpec>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
@@ -524,6 +686,7 @@ pub struct RawSceneFragment {
 pub struct LoweredAuthoring {
     pub scene: Value,
     pub source_map: AuthoringSourceMap,
+    pub warnings: Vec<AuthoringDiagnostic>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]

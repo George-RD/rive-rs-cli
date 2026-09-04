@@ -3,6 +3,7 @@
 !parity/official/*.riv
 !parity/reproductions/*.riv
 !showcase/*.riv
+!examples/authoring/*.riv
 .DS_Store
 __pycache__/
 evals/runs/
@@ -14,6 +15,7 @@ evals/runs/
 # promo render artefacts (regenerate with promo/render-sequences.sh)
 promo/public/seq/
 promo/out/
+node_modules/
 promo/node_modules/
 target/site/
 

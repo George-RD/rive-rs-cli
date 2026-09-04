@@ -53,6 +53,20 @@
     let instance = null;
     let stepsAdvanced = 0;
     let destroyed = false;
+    const retainedInputs = new Map(Object.entries(options.inputs || {}));
+
+    function inputByName(name) {
+      if (!instance || !stateMachine) return null;
+      const inputs = instance.stateMachineInputs(stateMachine) || [];
+      return inputs.find((input) => input.name === name) || null;
+    }
+
+    function applyRetainedInputs() {
+      for (const [name, value] of retainedInputs) {
+        const input = inputByName(name);
+        if (input) input.value = value;
+      }
+    }
 
     function detachScheduledFrame() {
       if (instance && instance.frameRequestId) {
@@ -103,6 +117,7 @@
 
     function startStateMachine() {
       instance.play([stateMachine]);
+      applyRetainedInputs();
       detachScheduledFrame();
       instance.lastRenderTime = 0;
       stepsAdvanced = 0;
@@ -172,6 +187,30 @@
       if (instance && !destroyed) instance.resizeDrawingSurfaceToCanvas();
     }
 
+    async function setInput(name, value) {
+      await ready;
+      if (destroyed) return;
+      retainedInputs.set(name, value);
+      const input = inputByName(name);
+      if (input) input.value = value;
+    }
+
+    async function fireTrigger(name) {
+      await ready;
+      if (destroyed) return;
+      const input = inputByName(name);
+      if (input && typeof input.fire === "function") input.fire();
+    }
+
+    function readInputs() {
+      if (!instance || !stateMachine) return {};
+      const values = {};
+      for (const input of instance.stateMachineInputs(stateMachine) || []) {
+        values[input.name] = input.value;
+      }
+      return values;
+    }
+
     function destroy() {
       if (destroyed) return;
       destroyed = true;
@@ -180,7 +219,7 @@
       instance = null;
     }
 
-    return { ready, seekToFrame, resize, destroy };
+    return { ready, seekToFrame, resize, setInput, fireTrigger, readInputs, destroy };
   }
 
   function createLogicalTimeline(controllers, options = {}) {
@@ -300,6 +339,20 @@
       for (const controller of controllers) controller.resize();
     }
 
+    async function setInput(name, value) {
+      await ready;
+      await Promise.all(controllers.map((controller) => controller.setInput(name, value)));
+    }
+
+    async function fireTrigger(name) {
+      await ready;
+      await Promise.all(controllers.map((controller) => controller.fireTrigger(name)));
+    }
+
+    function readInputs() {
+      return controllers[0] ? controllers[0].readInputs() : {};
+    }
+
     function destroy() {
       if (destroyed) return;
       destroyed = true;
@@ -316,6 +369,9 @@
       pause,
       seekToFrame,
       resize,
+      setInput,
+      fireTrigger,
+      readInputs,
       destroy,
       get currentFrame() {
         return logicalFrame;
@@ -335,6 +391,7 @@
       fps,
       stateMachine: options.stateMachine,
       animation: options.animation,
+      inputs: options.inputs,
     });
     return createLogicalTimeline([scene], {
       ...options,

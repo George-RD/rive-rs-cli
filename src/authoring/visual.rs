@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::spec::{
-    ConstraintSpec, PaintSpec, Quantity, ScalarExpr, StrokeSpec, TextAlign, TextOverflow,
-    TransformSpec,
+    ConstraintSpec, PaintSpec, Quantity, ScalarExpr, StackingSpec, StrokeSpec, TextAlign,
+    TextOverflow, TransformSpec,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -181,6 +181,8 @@ pub enum VisualNode {
         id: String,
         #[serde(default)]
         transform: TransformSpec,
+        #[serde(default)]
+        stacking: StackingSpec,
         #[serde(default)]
         #[schemars(length(max = 100))]
         constraints: Vec<ConstraintSpec>,

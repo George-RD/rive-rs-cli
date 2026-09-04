@@ -40,9 +40,28 @@ represented as explicitly bounded production-consumer proof with retained local
 artifact/generating-source provenance, and the Verification Lab remains the separate
 correctness route.
 
-No further execution slice is currently designated after #201. Select new work from
-an explicit unblocked issue or create a bounded roadmap gap only when current evidence
-justifies it; do not promote the independent lower-level coverage issues by default.
+[#193](https://github.com/George-RD/rive-rs-cli/issues/193) and
+[#194](https://github.com/George-RD/rive-rs-cli/issues/194) are implemented on branch
+`claude/workflows-roadmap-demos-9wlqz4` and are not merged. #193 adds explicit
+`stacking` to the `visual` section, each component, and the `group` node, where
+`back_to_front` reverses the emitted child order so the last authored sibling paints on
+top. #194 adds track `continuity` and keyframe `waypoint` so an interior waypoint keeps
+its velocity, and adds the non-fatal `waypoint_stop_start` warning. Both harden the
+completed visual and motion slices without reopening them.
+
+The same branch extends the open behavior slice with number and trigger statechart
+inputs, comparison and trigger transition conditions, one-dimensional blend states,
+parallel regions, and typed listener actions, and adds
+`examples/authoring/interactive-console.v0.json` and its committed
+`examples/authoring/interactive-console.v0.riv` as end-to-end evidence, with the
+animation-only `examples/authoring/signal-weave.v0.json` proving parallel regions
+without any input. Additive and direct blend states, transition duration and exit time,
+and view-model properties other than `bool` are still not exposed, so
+`todo.behavior-authoring-compiler.md` stays open.
+
+Select further work from an explicit unblocked issue or create a bounded roadmap gap
+only when current evidence justifies it; do not promote the independent lower-level
+coverage issues by default.
 
 [#179](https://github.com/George-RD/rive-rs-cli/issues/179) completed the first typed
 behavior tracer bullet in PR #203. [#180](https://github.com/George-RD/rive-rs-cli/issues/180)
@@ -98,7 +117,7 @@ AuthoringSpec or Verification Lab progress.
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
 | P1 | [Public verification and original-work proof](meta/todos/todo.verification-lab-public-proof.md) | complete in PR #219 | frame-locked parity proof, manifest-driven original showcase, original landing proof, and separately bounded production-consumer provenance |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
-| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206 | supported typed behavior reproduces a complex interactive showcase exactly; broader power-user constructs remain open |
+| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206; number and trigger inputs, blend states, parallel regions, and typed listener actions implemented on unmerged branch `claude/workflows-roadmap-demos-9wlqz4` | supported typed behavior reproduces a complex interactive showcase exactly; additive and direct blend states, transition duration and exit time, and view-model properties beyond `bool` remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | complete in PR #212 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | complete in PR #215 | complex prompts target AuthoringSpec; task-focused schema/source-map context and stable-ID repair are integrated with eval evidence |
@@ -144,6 +163,22 @@ AuthoringSpec or Verification Lab progress.
   context, apply one stable-ID repair operation at a time through #185, retain the
   existing semantic/runtime evidence in prompt evals, and expose AuthoringSpec through
   skills and MCP without displacing SceneSpec as the expert lower IR.
+- #193 keeps authored paths, component definition paths, diagnostic paths, and
+  source-map entry order in authored order under `back_to_front`; only `scene_paths` and
+  the emitted child order change, and raw SceneSpec input is not reordered.
+- #194 adds `LoweredAuthoring.warnings` as a non-fatal channel beside the fatal
+  diagnostics. Without `--json`, `authoring compile` prints each warning to stderr as
+  `warning: {path} [{code}]: {message}`; with `--json` it carries them in a `warnings`
+  array beside `bytes_written`, `output_path`, and `source_map`.
+- The behavior slice lowers `blend_state_1d` states over named motion tracks and
+  parallel regions as additional state-machine layers, and adds `number_change` and
+  `trigger_change` listener actions. `tests/showcase_artifact.rs` recompiles
+  `examples/authoring/interactive-console.v0.json` and
+  `examples/authoring/signal-weave.v0.json` through the public CLI and fails on byte
+  drift against their committed artifacts.
+- Every field added by #193, #194, and the behavior slice is optional and its default
+  reproduces the previous output, so `authoring_format_version` stays 0 and the committed
+  `examples/authoring/complex-animated-showcase.v0.riv` is byte-identical.
 - #198 is the independent public-proof delivery spec. #199 completed its first slice
   in PR #216 by replacing per-canvas autoplay with one deterministic paired playback
   seam while keeping `parity/results.json` authoritative for measured evidence.

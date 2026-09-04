@@ -7,7 +7,7 @@ use super::lower;
 use super::spec::{
     AUTHORING_FORMAT_VERSION, AuthoringArtboard, AuthoringDiagnostic, AuthoringError,
     AuthoringSpec, BehaviorSection, LoweredAuthoring, MotionSection, Quantity, RawSceneFragment,
-    TransformSpec, Unit, VisualSection,
+    StackingSpec, TransformSpec, Unit, VisualSection,
 };
 use super::validation::validate_numeric_values;
 use super::visual::VisualNode;
@@ -259,6 +259,7 @@ fn validate_component_definitions(spec: &AuthoringSpec) -> Result<(), AuthoringE
             parameters: BTreeMap::new(),
             components: spec.components.clone(),
             visual: VisualSection {
+                stacking: StackingSpec::default(),
                 nodes: vec![VisualNode::Instance {
                     id: "__component_root".to_string(),
                     component: component.id.clone(),

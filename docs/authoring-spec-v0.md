@@ -10,6 +10,8 @@
 - Additive compiler capability may be introduced within v0 only when existing v0 documents lower to the same canonical `SceneSpec` and source map.
 - `scene_format_version` remains independently versioned. v0 currently lowers to `SceneSpec` version `1`.
 
+`stacking`, motion `continuity` and `waypoint`, state `blend`, and statechart `regions` are optional fields whose defaults (`runtime`, `per_keyframe`, `auto`, and absent `blend` and `regions`) leave the canonical `SceneSpec` and source map unchanged. The `number` and `trigger` input kinds, the comparison and trigger transition conditions, and the `number_change` and `trigger_change` listener actions are new variants of the input, condition, and listener-action unions. A document that uses none of them lowers as it did before, so `authoring_format_version` stays `0`; `tests/showcase_artifact.rs` recompiles each committed showcase and compares the bytes against the checked-in `.riv`.
+
 The generated JSON Schema is available through `authoring::authoring_schema()` and uses this stable identifier:
 
 ```text
@@ -22,10 +24,10 @@ A v0 document has four explicit graphs plus a deterministic file-scope asset reg
 
 - `font_assets`: semantic font IDs mapped to file sources.
 - `image_assets`: semantic image IDs mapped to file sources.
-- `components`: reusable authored visual definitions with typed parameter defaults.
-- `visual`: the root visual graph.
-- `motion`: typed poses and tracks plus `raw_animations` for canonical expert escapes.
-- `behavior`: typed boolean view models and bindings, boolean state-machine inputs, named Rive events, typed listeners, named states, and boolean-equality transitions plus `raw_state_machines` for canonical expert escapes.
+- `components`: reusable authored visual definitions with typed parameter defaults and an optional `stacking` order.
+- `visual`: the root visual graph, with an optional `stacking` order.
+- `motion`: typed poses and tracks, per-track `continuity` and per-keyframe `waypoint`, plus `raw_animations` for canonical expert escapes.
+- `behavior`: typed boolean view models and bindings, `bool`, `number`, and `trigger` state-machine inputs, named Rive events, typed listeners, named states that play one motion track or blend at least two, parallel regions, and binding, boolean, comparison, and trigger transitions plus `raw_state_machines` for canonical expert escapes.
 
 The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, mirror, distribute, and along-path patterns, group-scoped transform-anchor constraints, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Motion and behavior remain deliberately incremental: v0 exposes only compiler-proven typed subsets and retains raw canonical escapes for unsupported features.
 
@@ -326,17 +328,165 @@ A `group` may declare an optional `constraints` array. Constraints reference dir
 
 Constraints are intentionally group-local and anchor-based. They do not inspect rendered bounds, infer edges, or act as a general CAD solver. Raw `SceneSpec` nodes cannot participate because they have no typed authoring transform. A group may declare at most 100 constraints. Each constraint `id` must be non-empty after trimming, must not contain `/`, and must be unique within its group. Dependency chains are bounded to 100 assignments. Unknown siblings, oversized constraint lists, invalid or duplicate constraint IDs, duplicate spacing entries, conflicting assignments, invalid units, excessive dependency depth, and dependency cycles return authored-path diagnostics such as `unknown_constraint_node`, `invalid_constraint_count`, `invalid_constraint_id`, `duplicate_constraint_id`, `constraint_conflict`, `constraint_resolution_depth_limit`, and `constraint_cycle`. Cycle messages include the stable authored anchor chain.
 
+## Stacking order
+
+Rive paints the first child of a list on top of the children that follow it. The optional `stacking` field states which reading of the authored array is intended. `runtime` is the default and leaves the order untouched; `back_to_front` reverses the emitted children, so the last authored sibling paints on top.
+
+`stacking` is accepted on the `visual` section, on each entry of `components`, and on a `group` node. Each list is reversed on its own: a `back_to_front` group inside a `runtime` root reverses only that group's children.
+
+```json
+"visual": {
+  "stacking": "back_to_front",
+  "nodes": [
+    {
+      "kind": "group",
+      "id": "card",
+      "stacking": "back_to_front",
+      "transform": {
+        "x": { "kind": "literal", "value": 64, "unit": "px" },
+        "y": { "kind": "literal", "value": 64, "unit": "px" }
+      },
+      "children": [
+        {
+          "kind": "rectangle",
+          "id": "surface",
+          "width": { "kind": "literal", "value": 128, "unit": "px" },
+          "height": { "kind": "literal", "value": 128, "unit": "px" },
+          "fill": "#C2410C"
+        },
+        {
+          "kind": "rectangle",
+          "id": "cue",
+          "width": { "kind": "literal", "value": 32, "unit": "px" },
+          "height": { "kind": "literal", "value": 32, "unit": "px" },
+          "fill": "#22C55E"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Only the emitted child order and the source-map `scene_paths` change. Authored paths, component definition paths, diagnostic paths, and source-map entry order stay in authored order. The graph above is the `visual` section of `examples/authoring/stacking-card.v0.json`: `cue` keeps authored path `$.visual.nodes[0].children[1]` and receives scene path `/artboard/children/0/children/0`, so the 32px cue covers the centre of the 128px surface. A bad unit on that same child is still reported at `$.visual.nodes[0].children[1].width`. `tests/authoring_stacking_runtime.rs` renders that fixture at 128x128 and reads the cue colour `#22C55E` at the artboard centre; with both `stacking` fields set to `runtime` the surface colour `#C2410C` is there instead.
+
+Raw `SceneSpec` input through `generate` is unaffected and keeps native runtime ordering.
+
+## Motion continuity and waypoints
+
+Rive attaches an interpolator to the keyframe that starts a segment, so an easing that settles at its end brings the target to a stop at every keyframe it governs, including keyframes the author intended as pass-through points. `continuity` sets the track's reading of its keyframes; `waypoint` overrides that reading for one keyframe.
+
+`continuity` is `per_keyframe`, the default, or `through`. Under `through`, each segment that arrives at an interior waypoint is emitted as `linear` with no interpolator, so the target keeps its speed across that waypoint. The segment arriving at the last keyframe keeps its authored easing, so the motion still settles at the destination. A `hold` segment is never rewritten, and an interpolator that governs no remaining segment after the rewrite is not emitted.
+
+`waypoint` is `auto`, the default, `transit`, or `settle`. `transit` forces the rewrite for one keyframe inside a `per_keyframe` track; `settle` suppresses it for one keyframe inside a `through` track. Both are valid only on a keyframe that is neither first nor last once the track's keyframes are sorted by frame; otherwise lowering fails with `waypoint_not_interior` at `$.motion.tracks[i].keyframes[j].waypoint`.
+
+```json
+{
+  "id": "transit",
+  "fps": 60,
+  "duration_frames": { "kind": "literal", "value": 60, "unit": "scalar" },
+  "continuity": "through",
+  "keyframes": [
+    { "frame": { "kind": "literal", "value": 0, "unit": "scalar" }, "pose": "start", "easing": "settle" },
+    { "frame": { "kind": "literal", "value": 30, "unit": "scalar" }, "pose": "mid", "easing": "settle" },
+    { "frame": { "kind": "literal", "value": 60, "unit": "scalar" }, "pose": "arrive", "easing": "settle" }
+  ]
+}
+```
+
+The track above is from `examples/authoring/waypoint-transit.v0.json`, which moves a 24px token to x 40, 160, and 280 at frames 0, 30, and 60 with the same ease-out cubic `(0.23, 1, 0.32, 1)` on every keyframe. `tests/authoring_motion_continuity_runtime.rs` renders it through the official runtime and measures the token's horizontal centre at frames 26 and 30: under `through` the token travels at least 12px into the waypoint; with `continuity` deleted it travels at most 2px, because it is already stopping into the `mid` pose.
+
+Lowering also returns non-fatal warnings in `LoweredAuthoring.warnings`, a `Vec<AuthoringDiagnostic>` with the same `path`, `code`, and `message` fields as a failure diagnostic. `waypoint_stop_start` is reported at `$.motion.tracks[i].keyframes[j]` when the track leaves an interior keyframe as a stopping point. All of these must hold: the keyframe's `waypoint` is `auto`, the track continuity is `per_keyframe`, the keyframe is entered and left on the same easing, that easing's end tangent is flat (`y2` is 1 and `x2` is below 1), and at least one animated property keeps moving in the same direction through the keyframe. Deleting `"continuity": "through"` from the track above produces:
+
+```text
+warning: $.motion.tracks[0].keyframes[1] [waypoint_stop_start]: waypoint 'mid' at frame 30 enters and leaves on easing 'settle', which stops the motion and starts it again; mark this keyframe as a transit waypoint or set the track continuity to 'through' to move through it
+```
+
 ## Typed behavior interaction
 
-Typed behavior stays on the same compiler-owned `SceneSpec` draft as visual and motion lowering and keeps authored interaction free of runtime indices. A behavior model may currently declare boolean properties, and bindings select a model and property by authored ID. A statechart declares named states that reference authored motion tracks, an authored initial state, and named transitions whose `from` and `to` fields reference state IDs.
+Typed behavior stays on the same compiler-owned `SceneSpec` draft as visual and motion lowering and keeps authored interaction free of runtime indices. A behavior model may currently declare boolean properties, and bindings select a model and property by authored ID. A statechart declares named states, an authored initial state, and named transitions whose `from` and `to` fields reference state IDs.
 
-Statecharts may also declare boolean `inputs`, named Rive `events`, and typed `listeners`. A listener targets either an authored visual ID for pointer interaction or an authored event ID when `listener_type` is `event`; the compiler resolves that semantic target to the generated runtime object name. The supported listener types are `enter`, `exit`, `down`, `up`, `move`, `event`, and `click`. The current typed action subset is `bool_change`, which references an authored statechart input and sets its boolean value.
+Statechart `inputs` are typed by `kind`. A `bool` input carries a boolean `value`, a `number` input carries a scalar expression, and a `trigger` input carries no value:
 
-Transition conditions support one boolean equality check through either `when.binding` / `when.equals` for a view-model binding or `when.input` / `when.equals` for an authored state-machine input. The compiler lowers model properties to Rive view models, explicit inputs to named state-machine inputs, events to named artboard event objects, listeners to canonical state-machine listeners, and conditions to runtime input names. Source-map entries preserve the authored model, property, binding, input, event, listener, statechart, states, and transitions. Unknown input, event, listener-target, and listener-action references fail at their authored JSON paths.
+```json
+"inputs": [
+  { "kind": "number", "id": "load", "value": { "kind": "literal", "value": 0, "unit": "scalar" } },
+  { "kind": "bool", "id": "armed", "value": false },
+  { "kind": "trigger", "id": "reset" }
+]
+```
 
-The canonical builder validates the merged graph. Runtime contracts prove both interaction paths: changing a bound view-model boolean through the official web runtime changes state, while the compiled typed interaction fixture is also driven through the public `rive-cli render` interface with both `--input` and `--pointer`, and both must converge on the same visible state.
+Statecharts also declare named Rive `events` and typed `listeners`. A listener targets either an authored visual ID for pointer interaction or an authored event ID when `listener_type` is `event`; the compiler resolves that semantic target to the generated runtime object name. The supported listener types are `enter`, `exit`, `down`, `up`, `move`, `event`, and `click`. The typed actions are `bool_change`, whose `value` defaults to `true`, `number_change`, which sets a number input from a scalar expression, and `trigger_change`, which fires a trigger. An action kind that does not match the declared kind of the input it names fails with `invalid_listener_input` at `$.behavior.statecharts[i].listeners[j].actions[k].input`.
 
-Richer input/property types, listener actions, parallel regions, and broader interaction semantics remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Transition conditions are an untagged union of four forms:
+
+- `{"binding": ..., "equals": <bool>}` checks a view-model binding.
+- `{"input": ..., "equals": <bool>}` checks a boolean input.
+- `{"input": ..., "compare": ..., "value": <scalar expression>}` checks a number input, where `compare` is `equal`, `not_equal`, `greater`, `greater_or_equal`, `less`, or `less_or_equal`.
+- `{"trigger": ...}` fires on a trigger input.
+
+The condition form and the input kind must agree. `unknown_behavior_input` fires when the named input is not declared and `invalid_condition_input` when the kinds differ, both at `$.behavior.statecharts[i].transitions[j].when.input`, or `.when.trigger` for the trigger form.
+
+The compiler lowers model properties to Rive view models, explicit inputs to named state-machine inputs, events to named artboard event objects, listeners to canonical state-machine listeners, and conditions to runtime input names. Source-map entries preserve the authored model, property, binding, input, event, listener, statechart, states, and transitions. Unknown input, event, listener-target, and listener-action references fail at their authored JSON paths.
+
+The canonical builder validates the merged graph. Behavior validation drops asset `source` fields from its copy of the lowered scene the same way the visual path does, so a document may declare `font_assets` or `image_assets` and a statechart together. Runtime contracts prove both interaction paths: changing a bound view-model boolean through the official web runtime changes state, while the compiled typed interaction fixture is also driven through the public `rive-cli render` interface with both `--input` and `--pointer`, and both must converge on the same visible state.
+
+## Blend states
+
+A behavior state declares exactly one of `motion` and `blend`. `motion` names an authored motion track. `blend` maps a number input onto at least two motion tracks, each with the input value at which that track is fully applied:
+
+```json
+{
+  "id": "reading",
+  "blend": {
+    "input": "load",
+    "stops": [
+      { "motion": "calm-track", "value": { "kind": "literal", "value": 0, "unit": "scalar" } },
+      { "motion": "surge-track", "value": { "kind": "literal", "value": 100, "unit": "scalar" } }
+    ]
+  }
+}
+```
+
+The state lowers to a `blend_state_1d` whose `input` is the lowered input name and whose children are `blend_animation_1d` entries naming the lowered animations. A state with neither field fails with `missing_state_motion` and a state with both fails with `ambiguous_state_motion`, both at the state path. `unknown_behavior_input` and `invalid_blend_input` fire at `$.behavior.statecharts[i].states[j].blend.input` when the named input is absent or is not a number input, and `unknown_behavior_motion` at `$.behavior.statecharts[i].states[j].blend.stops[k].motion` for a track that is not defined.
+
+Rive mixes the two neighbouring stop animations in sequence rather than as a weighted average, so an input between two stops does not render at the arithmetic midpoint. `tests/authoring_behavior_blend_runtime.rs` drives `examples/authoring/blend-meter.v0.json` at `load` 0, 50, and 100: the stops hold the needle within 3px of x 40 and x 200, and 50 renders it near x 146 rather than at x 120. The mapping stays monotonic; the test asserts that ordering rather than the exact middle position.
+
+## Parallel regions
+
+A statechart may declare `regions` so that independent behavior runs at the same time. The statechart's own `states` and `transitions` remain layer 0 of the lowered state machine, and each region becomes an additional layer with its own `initial`, `states`, and `transitions`. Regions share the statechart's inputs, events, and listeners; they do not declare their own.
+
+```json
+"regions": [
+  {
+    "id": "alert",
+    "initial": "calm",
+    "states": [
+      { "id": "calm", "motion": "lamp-calm-track" },
+      { "id": "busy", "motion": "lamp-busy-track" }
+    ],
+    "transitions": [
+      {
+        "id": "escalate",
+        "from": "calm",
+        "to": "busy",
+        "when": { "input": "load", "compare": "greater_or_equal", "value": { "kind": "literal", "value": 60, "unit": "scalar" } }
+      },
+      {
+        "id": "settle",
+        "from": "busy",
+        "to": "calm",
+        "when": { "input": "load", "compare": "less", "value": { "kind": "literal", "value": 60, "unit": "scalar" } }
+      }
+    ]
+  }
+]
+```
+
+Every layer is emitted with an entry state at index 0, the authored states from index 1 in authored order, an exit state last, and a transition from the entry state to the authored `initial` state. Scene paths are `/artboard/state_machines/{m}/layers/{n}/states/{i}`. Source-map authored ids inside a region are `statechart/region/state`, while ids on layer 0 stay `statechart/state`.
+
+Region ids are unique within a statechart; a repeat fails with `duplicate_behavior_region` at `$.behavior.statecharts[i].regions[j].id`. Every state and transition diagnostic listed above applies inside a region under the same `.regions[j]` prefix. The region above is from `examples/authoring/interactive-console.v0.json`, whose other region, `stream`, carries a token across the artboard while layer 0 is still in `standby`. Regions do not require inputs: `examples/authoring/signal-weave.v0.json` declares three layers with no inputs and no transitions between authored states, so each layer plays its own track.
+
+Additive blend states, direct blend states, transition duration and exit time, and view-model number and trigger properties remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

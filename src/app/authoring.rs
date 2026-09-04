@@ -29,7 +29,11 @@ pub(super) fn run(command: Command, global_json: bool) {
             });
             let lowered = authoring::lower_authoring_json(&input_text)
                 .unwrap_or_else(|error| exit_lowering_error(error, json));
-            let authoring::LoweredAuthoring { scene, source_map } = lowered;
+            let authoring::LoweredAuthoring {
+                scene,
+                source_map,
+                warnings,
+            } = lowered;
             let scene =
                 serde_json::from_value::<builder::SceneSpec>(scene).unwrap_or_else(|error| {
                     if json {
@@ -66,6 +70,7 @@ pub(super) fn run(command: Command, global_json: bool) {
                     bytes_written: usize,
                     output_path: String,
                     source_map: authoring::AuthoringSourceMap,
+                    warnings: Vec<AuthoringDiagnostic>,
                 }
 
                 json_success(
@@ -74,9 +79,16 @@ pub(super) fn run(command: Command, global_json: bool) {
                         bytes_written: bytes.len(),
                         output_path: output.display().to_string(),
                         source_map,
+                        warnings,
                     },
                 );
             } else {
+                for warning in &warnings {
+                    eprintln!(
+                        "warning: {} [{}]: {}",
+                        warning.path, warning.code, warning.message
+                    );
+                }
                 eprintln!("wrote {} bytes to {:?}", bytes.len(), output);
             }
         }

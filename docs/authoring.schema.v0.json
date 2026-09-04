@@ -56,6 +56,54 @@
       ],
       "type": "object"
     },
+    "BehaviorBlendSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "input": {
+          "type": "string"
+        },
+        "stops": {
+          "items": {
+            "$ref": "#/$defs/BehaviorBlendStopSpec"
+          },
+          "maxItems": 1000,
+          "minItems": 2,
+          "type": "array"
+        }
+      },
+      "required": [
+        "input",
+        "stops"
+      ],
+      "type": "object"
+    },
+    "BehaviorBlendStopSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "motion": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ScalarExpr"
+        }
+      },
+      "required": [
+        "motion",
+        "value"
+      ],
+      "type": "object"
+    },
+    "BehaviorCompare": {
+      "enum": [
+        "equal",
+        "not_equal",
+        "greater",
+        "greater_or_equal",
+        "less",
+        "less_or_equal"
+      ],
+      "type": "string"
+    },
     "BehaviorEventSpec": {
       "additionalProperties": false,
       "properties": {
@@ -106,6 +154,44 @@
             "value"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "number",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/ScalarExpr"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "trigger",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
         }
       ]
     },
@@ -124,6 +210,44 @@
             "value": {
               "default": true,
               "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "input"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "number_change",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/ScalarExpr"
+            }
+          },
+          "required": [
+            "kind",
+            "input",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "trigger_change",
+              "type": "string"
             }
           },
           "required": [
@@ -194,6 +318,26 @@
       ],
       "type": "object"
     },
+    "BehaviorNumberConditionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "compare": {
+          "$ref": "#/$defs/BehaviorCompare"
+        },
+        "input": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ScalarExpr"
+        }
+      },
+      "required": [
+        "input",
+        "compare",
+        "value"
+      ],
+      "type": "object"
+    },
     "BehaviorPropertySpec": {
       "oneOf": [
         {
@@ -218,6 +362,39 @@
           "type": "object"
         }
       ]
+    },
+    "BehaviorRegionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "initial": {
+          "type": "string"
+        },
+        "states": {
+          "items": {
+            "$ref": "#/$defs/BehaviorStateSpec"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array"
+        },
+        "transitions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorTransitionSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "initial",
+        "states"
+      ],
+      "type": "object"
     },
     "BehaviorSection": {
       "additionalProperties": false,
@@ -259,16 +436,30 @@
     "BehaviorStateSpec": {
       "additionalProperties": false,
       "properties": {
+        "blend": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BehaviorBlendSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "id": {
           "type": "string"
         },
         "motion": {
-          "type": "string"
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
-        "id",
-        "motion"
+        "id"
       ],
       "type": "object"
     },
@@ -305,6 +496,14 @@
           "maxItems": 1000,
           "type": "array"
         },
+        "regions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/BehaviorRegionSpec"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
         "states": {
           "items": {
             "$ref": "#/$defs/BehaviorStateSpec"
@@ -336,6 +535,12 @@
         },
         {
           "$ref": "#/$defs/BehaviorInputConditionSpec"
+        },
+        {
+          "$ref": "#/$defs/BehaviorNumberConditionSpec"
+        },
+        {
+          "$ref": "#/$defs/BehaviorTriggerConditionSpec"
         }
       ]
     },
@@ -363,6 +568,18 @@
       ],
       "type": "object"
     },
+    "BehaviorTriggerConditionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "trigger": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "trigger"
+      ],
+      "type": "object"
+    },
     "ComponentSpec": {
       "additionalProperties": false,
       "properties": {
@@ -375,6 +592,10 @@
           },
           "default": {},
           "type": "object"
+        },
+        "stacking": {
+          "$ref": "#/$defs/StackingSpec",
+          "default": "runtime"
         },
         "visual": {
           "items": {
@@ -594,6 +815,13 @@
       ],
       "type": "string"
     },
+    "MotionContinuity": {
+      "enum": [
+        "per_keyframe",
+        "through"
+      ],
+      "type": "string"
+    },
     "MotionEasingSpec": {
       "oneOf": [
         {
@@ -686,6 +914,10 @@
     "MotionTrackSpec": {
       "additionalProperties": false,
       "properties": {
+        "continuity": {
+          "$ref": "#/$defs/MotionContinuity",
+          "default": "per_keyframe"
+        },
         "duration_frames": {
           "$ref": "#/$defs/ScalarExpr"
         },
@@ -718,6 +950,14 @@
         "keyframes"
       ],
       "type": "object"
+    },
+    "MotionWaypoint": {
+      "enum": [
+        "auto",
+        "transit",
+        "settle"
+      ],
+      "type": "string"
     },
     "PaintSpec": {
       "anyOf": [
@@ -764,6 +1004,10 @@
         },
         "pose": {
           "type": "string"
+        },
+        "waypoint": {
+          "$ref": "#/$defs/MotionWaypoint",
+          "default": "auto"
         }
       },
       "required": [
@@ -1007,6 +1251,13 @@
           "type": "object"
         }
       ]
+    },
+    "StackingSpec": {
+      "enum": [
+        "runtime",
+        "back_to_front"
+      ],
+      "type": "string"
     },
     "StrokeSpec": {
       "additionalProperties": false,
@@ -1897,6 +2148,10 @@
               "const": "group",
               "type": "string"
             },
+            "stacking": {
+              "$ref": "#/$defs/StackingSpec",
+              "default": "runtime"
+            },
             "transform": {
               "$ref": "#/$defs/TransformSpec",
               "default": {
@@ -1982,6 +2237,10 @@
             "$ref": "#/$defs/VisualNode"
           },
           "type": "array"
+        },
+        "stacking": {
+          "$ref": "#/$defs/StackingSpec",
+          "default": "runtime"
         }
       },
       "type": "object"

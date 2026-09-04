@@ -1,0 +1,70 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "stacking-stage",
+    "width": {
+      "value": 128.0,
+      "unit": "px"
+    },
+    "height": {
+      "value": 128.0,
+      "unit": "px"
+    }
+  },
+  "visual": {
+    "stacking": "back_to_front",
+    "nodes": [
+      {
+        "kind": "group",
+        "id": "card",
+        "stacking": "back_to_front",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 64.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 64.0,
+            "unit": "px"
+          }
+        },
+        "children": [
+          {
+            "kind": "rectangle",
+            "id": "surface",
+            "width": {
+              "kind": "literal",
+              "value": 128.0,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 128.0,
+              "unit": "px"
+            },
+            "fill": "#C2410C"
+          },
+          {
+            "kind": "rectangle",
+            "id": "cue",
+            "width": {
+              "kind": "literal",
+              "value": 32.0,
+              "unit": "px"
+            },
+            "height": {
+              "kind": "literal",
+              "value": 32.0,
+              "unit": "px"
+            },
+            "fill": "#22C55E"
+          }
+        ]
+      }
+    ]
+  },
+  "motion": {},
+  "behavior": {}
+}

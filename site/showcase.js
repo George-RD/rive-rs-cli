@@ -66,6 +66,82 @@ function buildSource(entry) {
   return details;
 }
 
+function initialInputs(entry) {
+  const inputs = {};
+  for (const control of entry.controls || []) {
+    if (control.kind === "range") inputs[control.input] = Number(control.value ?? control.min ?? 0);
+    if (control.kind === "toggle") inputs[control.input] = control.value === true;
+  }
+  return inputs;
+}
+
+function buildControls(entry, timeline) {
+  const controls = entry.controls || [];
+  if (controls.length === 0) return null;
+
+  const panel = el("div", "scene-controls");
+  panel.dataset.sceneControls = "true";
+  const toggles = new Map();
+  for (const control of controls) {
+    const row = el("label", "scene-control");
+    row.dataset.controlKind = control.kind;
+    row.dataset.controlInput = control.input;
+
+    if (control.kind === "trigger") {
+      const button = el("button", "button button-quiet", control.label);
+      button.type = "button";
+      button.addEventListener("click", () => {
+        const cleared = (control.clears || []).map((name) => {
+          const box = toggles.get(name);
+          if (box) box.checked = false;
+          return timeline.setInput(name, false);
+        });
+        void Promise.all(cleared)
+          .then(() => timeline.fireTrigger(control.input))
+          .catch((error) => console.error(`could not fire ${control.input}`, error));
+      });
+      row.appendChild(button);
+      panel.appendChild(row);
+      continue;
+    }
+
+    row.appendChild(el("span", "scene-control-label", control.label));
+
+    if (control.kind === "toggle") {
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = control.value === true;
+      box.addEventListener("change", () => {
+        void timeline
+          .setInput(control.input, box.checked)
+          .catch((error) => console.error(`could not set ${control.input}`, error));
+      });
+      toggles.set(control.input, box);
+      row.appendChild(box);
+      panel.appendChild(row);
+      continue;
+    }
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = String(control.min ?? 0);
+    slider.max = String(control.max ?? 100);
+    slider.step = String(control.step ?? 1);
+    slider.value = String(control.value ?? control.min ?? 0);
+    const readout = el("output", "scene-control-value", slider.value);
+    slider.addEventListener("input", () => {
+      readout.textContent = slider.value;
+      void timeline
+        .setInput(control.input, Number(slider.value))
+        .catch((error) => console.error(`could not set ${control.input}`, error));
+    });
+    row.appendChild(slider);
+    row.appendChild(readout);
+    panel.appendChild(row);
+  }
+  return panel;
+}
+
 function buildCard(entry) {
   const card = el("article", "card");
   card.dataset.showcaseId = entry.id;
@@ -96,14 +172,13 @@ function buildCard(entry) {
   tags.appendChild(el("span", "tag", entry.capability));
   body.appendChild(tags);
 
-  const controls = el("div", "hero-actions");
+  const actions = el("div", "hero-actions");
   const toggle = el("button", "button button-quiet", "Pause");
   toggle.type = "button";
   toggle.disabled = true;
   toggle.setAttribute("aria-label", `Pause ${entry.title}`);
-  controls.appendChild(toggle);
-  body.appendChild(controls);
-  body.appendChild(buildSource(entry));
+  actions.appendChild(toggle);
+  body.appendChild(actions);
   card.appendChild(body);
 
   const timeline = RivePlayback.createTimeline({
@@ -111,6 +186,7 @@ function buildCard(entry) {
     src: entry.artifact,
     stateMachine: entry.stateMachine,
     animation: entry.animation,
+    inputs: initialInputs(entry),
     endFrame: entry.endFrame,
     loop: entry.loop,
     autoplay: true,
@@ -130,6 +206,10 @@ function buildCard(entry) {
       toggle.disabled = false;
     }
   });
+
+  const controls = buildControls(entry, timeline);
+  if (controls) body.appendChild(controls);
+  body.appendChild(buildSource(entry));
 
   timeline.ready
     .then(() => {
@@ -153,11 +233,14 @@ async function main() {
 
   const grid = document.getElementById("showcase-grid");
   const timelines = [];
+  const byId = new Map();
   for (const entry of entries) {
     const built = buildCard(entry);
     grid.appendChild(built.card);
     timelines.push(built.timeline);
+    byId.set(entry.id, built.timeline);
   }
+  window.__RIVE_SHOWCASE_TIMELINES = byId;
 
   const resumeAfterBfcache = new Set();
 

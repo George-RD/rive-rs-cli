@@ -35,6 +35,7 @@ const SHOT_FRAMES = {
   mascot: [0, 30, 60],
   vertex_morph: [0, 15, 30],
   authoring_complex_animated_showcase: [0, 36, 78, 120],
+  authoring_signal_weave: [0, 60, 120],
 };
 
 const SHOWCASE_SHOT_FRAMES = new Set(SHOWCASE_FIXTURES);

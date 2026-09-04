@@ -21,7 +21,16 @@ Successful JSON output includes:
 - `ok`;
 - `bytes_written`;
 - `output_path`;
-- the authored `source_map` connecting AuthoringSpec paths and IDs to lowered SceneSpec paths and runtime names.
+- the authored `source_map` connecting AuthoringSpec paths and IDs to lowered SceneSpec paths and runtime names;
+- `warnings`, the ordered non-fatal lowering diagnostics, each with the same `path`, `code`, and `message` fields as a failure diagnostic. The array is present and empty when lowering reports none.
+
+Without `--json`, each warning is printed to stderr in authored order, before the `wrote N bytes` line:
+
+```text
+warning: $.motion.tracks[0].keyframes[1] [waypoint_stop_start]: waypoint 'mid' at frame 30 enters and leaves on easing 'settle', which stops the motion and starts it again; mark this keyframe as a transit waypoint or set the track continuity to 'through' to move through it
+```
+
+A warning does not change the exit code; the `.riv` file is written either way.
 
 Lowering failures return one JSON envelope with `code: "lowering-failed"` and the complete ordered `diagnostics` array. Final canonical compilation failures, including asset-loading errors, preserve the same diagnostics shape at `$.lowered_scene` and retain the stable compilation error code. Each diagnostic contains `path`, `code`, and `message`.
 

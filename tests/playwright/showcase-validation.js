@@ -11,6 +11,11 @@ const {
 const PORT = Number(process.env.SHOWCASE_PORT || 8773);
 const POLLING_MS = 50;
 const PRODUCTION_ID = "horaxon-signal-to-action";
+const INTERACTIVE_ID = "throughput-console";
+const NEEDLE_ROW_FRACTION = 0.607;
+const STANDBY_NEEDLE_LIMIT = 0.3;
+const ENGAGED_NEEDLE_FLOOR = 0.6;
+const SETTLE_FRAMES = 120;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -95,6 +100,167 @@ function assertStagingContract(entries) {
   }
   if (!namedFailure.includes("missing-contract.consumerEvidence is missing")) {
     throw new Error(`missing production consumer evidence error was not named: ${namedFailure}`);
+  }
+}
+
+async function needleFraction(page, id) {
+  return page.evaluate(
+    ({ id, rowFraction }) => {
+      const card = document.querySelector(`[data-showcase-id="${id}"]`);
+      const canvas = card?.querySelector("canvas.scene");
+      const context = canvas?.getContext("2d");
+      if (!canvas || !context) return null;
+      const row = Math.round(canvas.height * rowFraction);
+      const { data } = context.getImageData(0, row, canvas.width, 1);
+      let total = 0;
+      let count = 0;
+      for (let column = 0; column < canvas.width; column += 1) {
+        const offset = column * 4;
+        if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
+          total += column;
+          count += 1;
+        }
+      }
+      return count === 0 ? null : total / count / canvas.width;
+    },
+    { id, rowFraction: NEEDLE_ROW_FRACTION }
+  );
+}
+
+async function waitForNeedle(page, compare, bound) {
+  try {
+    await page.waitForFunction(
+      ({ id, rowFraction, compare, bound }) => {
+        const card = document.querySelector(`[data-showcase-id="${id}"]`);
+        const canvas = card?.querySelector("canvas.scene");
+        const context = canvas?.getContext("2d");
+        if (!canvas || !context) return false;
+        const row = Math.round(canvas.height * rowFraction);
+        const { data } = context.getImageData(0, row, canvas.width, 1);
+        let total = 0;
+        let count = 0;
+        for (let column = 0; column < canvas.width; column += 1) {
+          const offset = column * 4;
+          if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
+            total += column;
+            count += 1;
+          }
+        }
+        if (count === 0) return false;
+        const fraction = total / count / canvas.width;
+        return compare === "above" ? fraction >= bound : fraction <= bound;
+      },
+      { id: INTERACTIVE_ID, rowFraction: NEEDLE_ROW_FRACTION, compare, bound },
+      { timeout: 15000, polling: POLLING_MS }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function advanceTimeline(page, id, frames) {
+  await page.evaluate(
+    async ({ id, frames }) => {
+      const timeline = window.__RIVE_SHOWCASE_TIMELINES?.get(id);
+      if (!timeline) return;
+      await timeline.seekToFrame(timeline.currentFrame + frames);
+    },
+    { id, frames }
+  );
+}
+
+async function readRuntimeInputs(page, id) {
+  return page.evaluate(
+    (id) => window.__RIVE_SHOWCASE_TIMELINES?.get(id)?.readInputs() || null,
+    id
+  );
+}
+
+async function waitForRuntimeInput(page, id, name, expected) {
+  try {
+    await page.waitForFunction(
+      ({ id, name, expected }) => {
+        const values = window.__RIVE_SHOWCASE_TIMELINES?.get(id)?.readInputs();
+        return Boolean(values) && values[name] === expected;
+      },
+      { id, name, expected },
+      { timeout: 15000, polling: POLLING_MS }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function driveInteractiveControls(page, errors) {
+  const card = page.locator(`[data-showcase-id="${INTERACTIVE_ID}"]`);
+  if ((await card.count()) === 0) {
+    errors.push(`${INTERACTIVE_ID} card was not rendered`);
+    return;
+  }
+  if ((await card.locator("[data-scene-controls]").count()) === 0) {
+    errors.push(`${INTERACTIVE_ID} card has no state-machine controls`);
+    return;
+  }
+
+  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
+    errors.push(
+      `${INTERACTIVE_ID} standby needle sat at ${await needleFraction(page, INTERACTIVE_ID)}`
+    );
+  }
+
+  const loadInput = await card
+    .locator('[data-control-kind="range"]')
+    .getAttribute("data-control-input");
+  const armedInput = await card
+    .locator('[data-control-kind="toggle"]')
+    .getAttribute("data-control-input");
+
+  const slider = card.locator('[data-control-kind="range"] input[type="range"]');
+  await slider.evaluate((node) => {
+    node.value = "100";
+    node.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await card.locator('[data-control-kind="toggle"] input[type="checkbox"]').check();
+
+  if (!(await waitForRuntimeInput(page, INTERACTIVE_ID, loadInput, 100))) {
+    errors.push(
+      `${INTERACTIVE_ID} slider did not reach the runtime; inputs were ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
+    );
+  }
+  if (!(await waitForRuntimeInput(page, INTERACTIVE_ID, armedInput, true))) {
+    errors.push(
+      `${INTERACTIVE_ID} toggle did not reach the runtime; inputs were ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
+    );
+  }
+
+  await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
+
+  if (!(await waitForNeedle(page, "above", ENGAGED_NEEDLE_FLOOR))) {
+    errors.push(
+      `${INTERACTIVE_ID} armed needle sat at ${await needleFraction(
+        page,
+        INTERACTIVE_ID
+      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
+    );
+  }
+
+  await card.locator('[data-control-kind="trigger"] button').click();
+  await waitForRuntimeInput(page, INTERACTIVE_ID, armedInput, false);
+  await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
+
+  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
+    errors.push(
+      `${INTERACTIVE_ID} reset trigger left the needle at ${await needleFraction(
+        page,
+        INTERACTIVE_ID
+      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
+    );
   }
 }
 
@@ -189,7 +355,21 @@ async function readEvidenceStatuses(page) {
       entries.length,
       { timeout: 20000, polling: POLLING_MS }
     );
-    await wait(800);
+    await page.waitForFunction(
+      () =>
+        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every((card) => {
+          const canvas = card.querySelector("canvas.scene");
+          const context = canvas?.getContext("2d");
+          if (!canvas || !context) return false;
+          const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
+          for (let index = 3; index < data.length; index += 4) {
+            if (data[index] !== 0) return true;
+          }
+          return false;
+        }),
+      undefined,
+      { timeout: 30000, polling: POLLING_MS }
+    );
 
     const cards = await readCards(page);
     const expectedIds = entries.map((entry) => entry.id);
@@ -232,6 +412,8 @@ async function readEvidenceStatuses(page) {
     if (decisionFlowPlaying !== "true") {
       errors.push("decision-flow one-shot did not restart as an intentional showcase loop");
     }
+
+    await driveInteractiveControls(page, errors);
 
     const evidenceStatuses = await readEvidenceStatuses(page);
     for (const evidence of evidenceStatuses) {
@@ -327,7 +509,7 @@ async function readEvidenceStatuses(page) {
     }
 
     process.stdout.write(
-      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, hashed consumer evidence, bounded one-shot looping, live runtime paint, bfcache pause/resume, phone layout, reduced motion\n`
+      `Showcase validation passed: ${entries.length} manifest-driven cards including local Horaxon production provenance, hashed consumer evidence, bounded one-shot looping, live runtime paint, state-machine input controls, bfcache pause/resume, phone layout, reduced motion\n`
     );
     shutdown();
     process.exit(0);

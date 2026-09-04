@@ -229,10 +229,54 @@ Issue #178 / PR #197 closes the v0 motion product gate:
 - the public `authoring compile` path produces the `.riv`, which passes the canonical builder, encoder, validator, and official-runtime load path;
 - representative frames at 0, 36, 78, and 120 are retained as visual-regression evidence so motion failures are inspectable.
 
-Semantic entrance/exit/stagger/spring/bounce helpers, broader color/property tracks,
-and the easing/stacking hardening tracked in #193 and #194 are follow-up
-convenience or correctness work. They are not blockers to the completed v0 motion
+Semantic entrance/exit/stagger/spring/bounce helpers and broader color/property tracks
+are follow-up convenience work. They are not blockers to the completed v0 motion
 milestone.
+
+## Waypoint continuity hardening inside the completed slice
+
+Issue #194 makes an interior waypoint keep its velocity, on branch
+`claude/workflows-roadmap-demos-9wlqz4`; it is not merged and no CI run is recorded for
+it here. It hardens the milestone issue #178 and PR #197 completed rather than
+reopening it: the acceptance criteria and completion evidence above are unchanged, and
+the status stays `done`.
+
+- `MotionContinuity` on a track, JSON field `continuity`, is `per_keyframe` (default)
+  or `through`. `MotionWaypoint` on a pose keyframe, JSON field `waypoint`, is `auto`
+  (default), `transit`, or `settle`.
+- Rive attaches an interpolator to the keyframe that starts a segment, so an easing
+  that flattens at its end stops the target at every keyframe it governs. Under
+  `through`, every segment arriving at an interior waypoint is emitted as `linear` with
+  no interpolator; the segment arriving at the last keyframe keeps its authored easing,
+  so the motion still settles at the destination. A `hold` segment is never rewritten.
+- `transit` forces that rewrite for one keyframe inside a `per_keyframe` track and
+  `settle` suppresses it for one keyframe inside a `through` track. Both are valid only
+  on a keyframe that is neither first nor last after the track's keyframes are sorted by
+  frame; otherwise lowering fails with `waypoint_not_interior` at
+  `$.motion.tracks[i].keyframes[j].waypoint`.
+- An interpolator that governs no remaining segment after the rewrite is not emitted.
+- `LoweredAuthoring.warnings` is a new non-fatal `Vec<AuthoringDiagnostic>` beside the
+  fatal error path. `waypoint_stop_start` is reported at
+  `$.motion.tracks[i].keyframes[j]` when an interior keyframe with `waypoint: auto`
+  enters and leaves on the same easing whose end tangent is flat, meaning `y2` equals 1
+  while `x2` stays below 1, and at least one animated property keeps moving in the same
+  direction through that waypoint.
+- Without `--json`, `rive-cli authoring compile` prints each warning to stderr as
+  `warning: {path} [{code}]: {message}` before the byte count; with `--json` it carries
+  them in a `warnings` array beside `bytes_written`, `output_path`, and `source_map`.
+- `tests/authoring_motion_continuity_contract.rs` holds nine contracts covering the
+  `through` rewrite, `settle` and `transit` overrides, the stop/start warning and the
+  two ways to clear it, untouched `hold` segments, dropped interpolators, and the
+  non-interior waypoint diagnostic path.
+- `tests/authoring_motion_continuity_runtime.rs` holds two official-runtime contracts
+  over `examples/authoring/waypoint-transit.v0.json`: a token crossing 40px, 160px, and
+  280px at frames 0, 30, and 60 with the same ease-out cubic `(0.23, 1, 0.32, 1)` on
+  every keyframe. Both render at 320x160 and 60 fps and measure the token's horizontal
+  centre between frame 26 and frame 30. `through` travels at least 12px into the
+  waypoint; the `per_keyframe` default travels at most 2px.
+- `continuity` and `waypoint` are optional and their defaults reproduce the previous
+  output. The committed `examples/authoring/complex-animated-showcase.v0.riv` is
+  byte-identical after the change, and `authoring_format_version` stays 0.
 
 ## Dependency
 

@@ -39,6 +39,7 @@ pub(super) struct PartialLowering<'a> {
     artboard_name: String,
     width: f64,
     height: f64,
+    warnings: Vec<AuthoringDiagnostic>,
 }
 
 struct NodeContext<'a> {
@@ -215,12 +216,16 @@ impl<'a> Lowerer<'a> {
             }
         }
         let visual_offset = children.len();
+        let node_count = self.spec.visual.nodes.len();
+        let stacking = self.spec.visual.stacking;
+        let mut stacked = vec![Value::Null; node_count];
         let mut component_stack = Vec::new();
         for (index, node) in self.spec.visual.nodes.iter().enumerate() {
             let authored_path = format!("$.visual.nodes[{index}]");
             let authored_id = node.id().to_string();
             let runtime_segments = vec![self.spec.artboard.id.clone(), authored_id.clone()];
-            let scene_path = format!("/artboard/children/{}", visual_offset + index);
+            let stacked_index = stacking.scene_index(index, node_count);
+            let scene_path = format!("/artboard/children/{}", visual_offset + stacked_index);
             let child = self
                 .lower_node(
                     node,
@@ -235,8 +240,9 @@ impl<'a> Lowerer<'a> {
                     &mut component_stack,
                 )
                 .map_err(AuthoringError::one)?;
-            children.push(child);
+            stacked[stacked_index] = child;
         }
+        children.extend(stacked);
 
         Ok(PartialLowering {
             spec: self.spec,
@@ -245,6 +251,7 @@ impl<'a> Lowerer<'a> {
             artboard_name,
             width,
             height,
+            warnings: Vec::new(),
         })
     }
 
@@ -285,6 +292,10 @@ impl<'a> PartialLowering<'a> {
 
     pub(super) fn source_map(&self) -> &AuthoringSourceMap {
         &self.source_map
+    }
+
+    pub(super) fn record_warnings(&mut self, warnings: Vec<AuthoringDiagnostic>) {
+        self.warnings.extend(warnings);
     }
 
     pub(super) fn finish(
@@ -357,6 +368,7 @@ impl<'a> PartialLowering<'a> {
         Ok(LoweredAuthoring {
             scene,
             source_map: self.source_map,
+            warnings: self.warnings,
         })
     }
 
@@ -554,7 +566,7 @@ fn validate_scene(scene: &Value) -> Result<(), AuthoringError> {
     Ok(())
 }
 
-fn without_asset_sources(scene: &Value) -> Value {
+pub(super) fn without_asset_sources(scene: &Value) -> Value {
     let mut validation_scene = scene.clone();
     let Some(children) = validation_scene
         .pointer_mut("/artboard/children")

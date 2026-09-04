@@ -9,8 +9,8 @@ use serde_json::{Value, json};
 
 use super::super::lower;
 use super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, MotionInterpolation, MotionLoop,
-    SourceMapEntry,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, MotionContinuity, MotionInterpolation,
+    MotionLoop, MotionWaypoint, SourceMapEntry,
 };
 use super::compiler::MotionTargetIndex;
 
@@ -25,6 +25,12 @@ struct ResolvedFrame {
     frame: u64,
     pose_index: usize,
     interpolation: MotionInterpolation,
+    waypoint: MotionWaypoint,
+    easing_index: Option<usize>,
+}
+
+struct ResolvedSegment {
+    interpolation: MotionInterpolation,
     easing_index: Option<usize>,
 }
 
@@ -32,12 +38,14 @@ struct LoweredTracks {
     animations: Vec<Value>,
     source_entries: Vec<SourceMapEntry>,
     easing_emissions: Vec<EasingEmission>,
+    warnings: Vec<AuthoringDiagnostic>,
 }
 
 pub(super) struct MotionLoweringOutput {
     pub(super) animations: Vec<Value>,
     pub(super) source_entries: Vec<SourceMapEntry>,
     pub(super) easing_source_entries: Vec<SourceMapEntry>,
+    pub(super) warnings: Vec<AuthoringDiagnostic>,
 }
 
 pub(super) fn lower_motion(
@@ -52,6 +60,7 @@ pub(super) fn lower_motion(
             animations: Vec::new(),
             source_entries: Vec::new(),
             easing_source_entries: Vec::new(),
+            warnings: Vec::new(),
         });
     }
 
@@ -59,11 +68,13 @@ pub(super) fn lower_motion(
         animations,
         source_entries,
         easing_emissions,
+        warnings,
     } = lower_tracks(spec, &poses, &easings).map_err(AuthoringError::one)?;
     Ok(MotionLoweringOutput {
         animations,
         source_entries,
         easing_source_entries: easing::source_entries(easing_emissions),
+        warnings,
     })
 }
 
@@ -122,6 +133,7 @@ fn lower_tracks(
     let mut animations = Vec::with_capacity(spec.motion.tracks.len());
     let mut source_entries = Vec::with_capacity(spec.motion.tracks.len());
     let mut easing_emissions = easings.iter().map(EasingEmission::new).collect::<Vec<_>>();
+    let mut warnings = Vec::new();
 
     for (track_index, track) in spec.motion.tracks.iter().enumerate() {
         let track_path = format!("$.motion.tracks[{track_index}]");
@@ -192,6 +204,7 @@ fn lower_tracks(
                 frame,
                 pose_index,
                 interpolation: keyframe.interpolation,
+                waypoint: keyframe.waypoint,
                 easing_index,
             });
         }
@@ -225,9 +238,19 @@ fn lower_tracks(
             }
         }
 
-        let referenced_easings = frames
+        let transit = resolve_transit_points(&frames, track.continuity, &track_path)?;
+        let segments = resolve_segments(&frames, &transit);
+        warnings.extend(stop_start_warnings(
+            &track_path,
+            spec,
+            &frames,
+            &transit,
+            poses,
+            easings,
+        ));
+        let referenced_easings = segments
             .iter()
-            .filter_map(|frame| frame.easing_index)
+            .filter_map(|segment| segment.easing_index)
             .collect::<HashSet<_>>();
         let mut interpolators = Vec::new();
         for (easing_index, easing) in easings.iter().enumerate() {
@@ -242,7 +265,10 @@ fn lower_tracks(
         for key in expected_pose.keys() {
             let (object, property) = key;
             let mut property_frames = Vec::with_capacity(frames.len());
-            for frame in &frames {
+            for (position, frame) in frames.iter().enumerate() {
+                let segment = segments
+                    .get(position)
+                    .ok_or_else(|| pose_shape_mismatch(&track_path, frame.authored_index))?;
                 let value = poses
                     .get(frame.pose_index)
                     .and_then(|pose| pose.get(key))
@@ -251,13 +277,13 @@ fn lower_tracks(
                 let mut property_frame = json!({
                     "frame": frame.frame,
                     "value": value,
-                    "interpolation": if frame.easing_index.is_some() {
+                    "interpolation": if segment.easing_index.is_some() {
                         "cubic"
                     } else {
-                        interpolation_name(frame.interpolation)
+                        interpolation_name(segment.interpolation)
                     }
                 });
-                if let Some(easing_index) = frame.easing_index {
+                if let Some(easing_index) = segment.easing_index {
                     let easing = easings.get(easing_index).ok_or_else(|| {
                         AuthoringDiagnostic::new(
                             format!("{track_path}.keyframes[{}].easing", frame.authored_index),
@@ -306,6 +332,137 @@ fn lower_tracks(
         animations,
         source_entries,
         easing_emissions,
+        warnings,
+    })
+}
+
+fn resolve_transit_points(
+    frames: &[ResolvedFrame],
+    continuity: MotionContinuity,
+    track_path: &str,
+) -> Result<Vec<bool>, AuthoringDiagnostic> {
+    let last = frames.len().saturating_sub(1);
+    let mut transit = Vec::with_capacity(frames.len());
+    for (position, frame) in frames.iter().enumerate() {
+        let interior = position > 0 && position < last;
+        if !interior && frame.waypoint != MotionWaypoint::Auto {
+            return Err(AuthoringDiagnostic::new(
+                format!("{track_path}.keyframes[{}].waypoint", frame.authored_index),
+                "waypoint_not_interior",
+                "only keyframes between the first and last keyframe can be marked as a transit or settle waypoint",
+            ));
+        }
+        transit.push(
+            interior
+                && match frame.waypoint {
+                    MotionWaypoint::Transit => true,
+                    MotionWaypoint::Settle => false,
+                    MotionWaypoint::Auto => continuity == MotionContinuity::Through,
+                },
+        );
+    }
+    Ok(transit)
+}
+
+fn resolve_segments(frames: &[ResolvedFrame], transit: &[bool]) -> Vec<ResolvedSegment> {
+    frames
+        .iter()
+        .enumerate()
+        .map(|(position, frame)| {
+            let arrives_in_transit = transit.get(position + 1).copied().unwrap_or(false);
+            if arrives_in_transit && frame.interpolation != MotionInterpolation::Hold {
+                ResolvedSegment {
+                    interpolation: MotionInterpolation::Linear,
+                    easing_index: None,
+                }
+            } else {
+                ResolvedSegment {
+                    interpolation: frame.interpolation,
+                    easing_index: frame.easing_index,
+                }
+            }
+        })
+        .collect()
+}
+
+fn stop_start_warnings(
+    track_path: &str,
+    spec: &AuthoringSpec,
+    frames: &[ResolvedFrame],
+    transit: &[bool],
+    poses: &[PoseValues],
+    easings: &[ResolvedEasing],
+) -> Vec<AuthoringDiagnostic> {
+    let mut warnings = Vec::new();
+    for (position, frame) in frames.iter().enumerate() {
+        if transit.get(position).copied().unwrap_or(false)
+            || frame.waypoint != MotionWaypoint::Auto
+            || position == 0
+            || position + 1 >= frames.len()
+        {
+            continue;
+        }
+        let Some(previous) = frames.get(position.saturating_sub(1)) else {
+            continue;
+        };
+        let Some(easing_index) = frame.easing_index else {
+            continue;
+        };
+        if previous.easing_index != Some(easing_index) {
+            continue;
+        }
+        let Some(easing) = easings.get(easing_index) else {
+            continue;
+        };
+        if !easing.settles() {
+            continue;
+        }
+        let Some(next) = frames.get(position + 1) else {
+            continue;
+        };
+        if !continues_in_one_direction(poses, previous, frame, next) {
+            continue;
+        }
+        let pose_id = spec
+            .motion
+            .poses
+            .get(frame.pose_index)
+            .map(|pose| pose.id.as_str())
+            .unwrap_or_default();
+        warnings.push(AuthoringDiagnostic::new(
+            format!("{track_path}.keyframes[{}]", frame.authored_index),
+            "waypoint_stop_start",
+            format!(
+                "waypoint '{pose_id}' at frame {} enters and leaves on easing '{}', which stops the motion and starts it again; mark this keyframe as a transit waypoint or set the track continuity to 'through' to move through it",
+                frame.frame, easing.id
+            ),
+        ));
+    }
+    warnings
+}
+
+fn continues_in_one_direction(
+    poses: &[PoseValues],
+    previous: &ResolvedFrame,
+    current: &ResolvedFrame,
+    next: &ResolvedFrame,
+) -> bool {
+    let (Some(before), Some(at), Some(after)) = (
+        poses.get(previous.pose_index),
+        poses.get(current.pose_index),
+        poses.get(next.pose_index),
+    ) else {
+        return false;
+    };
+    at.iter().any(|(key, value)| {
+        let (Some(before), Some(after)) = (before.get(key), after.get(key)) else {
+            return false;
+        };
+        let arriving = value - before;
+        let leaving = after - value;
+        arriving != 0.0
+            && leaving != 0.0
+            && arriving.is_sign_positive() == leaving.is_sign_positive()
     })
 }
 
