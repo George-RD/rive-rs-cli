@@ -479,6 +479,7 @@ impl BehaviorListenerType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+#[allow(clippy::enum_variant_names)]
 pub enum BehaviorListenerActionSpec {
     BoolChange {
         input: String,

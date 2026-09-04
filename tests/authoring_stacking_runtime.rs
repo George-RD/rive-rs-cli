@@ -68,8 +68,7 @@ fn render_first_frame(case: &str, document: &str) -> (Vec<u8>, u32) {
     .expect("official runtime should render the stacking document");
     assert_eq!(manifest.frames.len(), 1);
 
-    let image =
-        analyze(&output_dir.join("frame_00000.png")).expect("rendered frame should decode");
+    let image = analyze(&output_dir.join("frame_00000.png")).expect("rendered frame should decode");
     assert_eq!((image.width, image.height), (ARTBOARD_EDGE, ARTBOARD_EDGE));
     fs::remove_dir_all(work_dir).expect("runtime work directory should be removed");
     (image.rgba, image.width)
@@ -87,7 +86,10 @@ fn back_to_front_stacking_keeps_foreground_visible_in_the_official_runtime() {
 #[test]
 fn runtime_stacking_still_paints_the_first_sibling_on_top() {
     let document = fs::read_to_string(fixture_path()).expect("fixture should be readable");
-    let runtime_order = document.replace("\"stacking\": \"back_to_front\"", "\"stacking\": \"runtime\"");
+    let runtime_order = document.replace(
+        "\"stacking\": \"back_to_front\"",
+        "\"stacking\": \"runtime\"",
+    );
     assert!(!runtime_order.contains("back_to_front"));
     let (rgba, width) = render_first_frame("runtime", &runtime_order);
 

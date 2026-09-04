@@ -135,7 +135,12 @@ pub(super) fn lower_behavior(
         let used_bindings = statechart
             .transitions
             .iter()
-            .chain(statechart.regions.iter().flat_map(|region| &region.transitions))
+            .chain(
+                statechart
+                    .regions
+                    .iter()
+                    .flat_map(|region| &region.transitions),
+            )
             .filter_map(|transition| match &transition.when {
                 BehaviorTransitionConditionSpec::Binding(condition) => {
                     Some(condition.binding.as_str())
@@ -540,13 +545,14 @@ fn region_scoped_id(statechart_id: &str, region_id: Option<&str>, id: &str) -> S
 }
 
 pub(super) fn validate_lowered_scene(scene: &Value) -> Result<(), AuthoringError> {
-    let scene: SceneSpec = serde_json::from_value(without_asset_sources(scene)).map_err(|error| {
-        AuthoringError::one(AuthoringDiagnostic::new(
-            "$.behavior",
-            "invalid_lowered_behavior",
-            format!("typed behavior produced invalid canonical SceneSpec: {error}"),
-        ))
-    })?;
+    let scene: SceneSpec =
+        serde_json::from_value(without_asset_sources(scene)).map_err(|error| {
+            AuthoringError::one(AuthoringDiagnostic::new(
+                "$.behavior",
+                "invalid_lowered_behavior",
+                format!("typed behavior produced invalid canonical SceneSpec: {error}"),
+            ))
+        })?;
     build_scene(&scene, None).map_err(|error| {
         AuthoringError::one(AuthoringDiagnostic::new(
             "$.behavior",
@@ -826,7 +832,14 @@ fn validate_region(
                 ),
             ));
         }
-        validate_state_motion(state, &state_path, statechart_id, motion_tracks, inputs, diagnostics);
+        validate_state_motion(
+            state,
+            &state_path,
+            statechart_id,
+            motion_tracks,
+            inputs,
+            diagnostics,
+        );
     }
     if !states.contains(initial) {
         diagnostics.push(AuthoringDiagnostic::new(
@@ -839,7 +852,11 @@ fn validate_region(
     let mut transitions = HashSet::new();
     for (transition_index, transition) in authored_transitions.iter().enumerate() {
         let transition_path = format!("{region_path}.transitions[{transition_index}]");
-        validate_id(&transition.id, &format!("{transition_path}.id"), diagnostics);
+        validate_id(
+            &transition.id,
+            &format!("{transition_path}.id"),
+            diagnostics,
+        );
         if !transitions.insert(transition.id.as_str()) {
             diagnostics.push(AuthoringDiagnostic::new(
                 format!("{transition_path}.id"),

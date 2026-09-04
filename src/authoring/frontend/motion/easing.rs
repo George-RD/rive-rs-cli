@@ -20,8 +20,7 @@ pub(super) struct ResolvedEasing {
 
 impl ResolvedEasing {
     pub(super) fn settles(&self) -> bool {
-        (1.0 - self.y2).abs() <= FLAT_TANGENT_TOLERANCE
-            && self.x2 < 1.0 - FLAT_TANGENT_TOLERANCE
+        (1.0 - self.y2).abs() <= FLAT_TANGENT_TOLERANCE && self.x2 < 1.0 - FLAT_TANGENT_TOLERANCE
     }
 }
 

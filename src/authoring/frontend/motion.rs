@@ -460,7 +460,9 @@ fn continues_in_one_direction(
         };
         let arriving = value - before;
         let leaving = after - value;
-        arriving != 0.0 && leaving != 0.0 && arriving.is_sign_positive() == leaving.is_sign_positive()
+        arriving != 0.0
+            && leaving != 0.0
+            && arriving.is_sign_positive() == leaving.is_sign_positive()
     })
 }
 

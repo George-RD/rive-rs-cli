@@ -77,11 +77,11 @@ JSON SceneSpec
 | `src/ai/` | AI-assisted AuthoringSpec generation, repair, and evaluation |
 | `src/mcp/` | Optional MCP server (`mcp` feature) |
 | `assets/` | Embedded Rive JavaScript/WASM runtime and render harness |
-| `showcase/` | Six authored SceneSpec gallery examples |
+| `showcase/` | Ten authored SceneSpec gallery examples |
 | `examples/authoring/` | Typed static, animated, interactive, and raw-escape AuthoringSpec examples |
 | `skills/rive-animation/` | Bounded SceneSpec expert skill; complex AI generation routes through AuthoringSpec guidance |
 | `tests/` | E2E CLI tests, JSON fixtures, Playwright runtime regression |
-| `tests/fixtures/` | 63 JSON scene specs, including 3 intentionally invalid fixtures |
+| `tests/fixtures/` | 66 JSON scene specs, including 3 intentionally invalid fixtures |
 | `tests/playwright/` | Browser-based runtime and visual regression harness |
 | `docs/` | Format spec, schema, install/release docs, testing strategy, cookbook |
 | `fuzz/` | `cargo-fuzz` target for adversarial parser testing |
@@ -97,8 +97,8 @@ cargo build --release
 cargo build --features mcp          # enable MCP server
 
 # Test
-cargo test --lib                    # 557 library tests
-cargo test --test e2e               # 172 CLI end-to-end tests
+cargo test --lib                    # 634 library tests
+cargo test --test e2e               # 191 CLI end-to-end tests
 
 # Lint / Format
 cargo clippy --all-targets --all-features -- -D warnings
@@ -130,7 +130,7 @@ cargo run -- render /tmp/out.riv --preview
 # Playwright regression (requires Node.js)
 npx -y -p playwright node tests/playwright/regression.js
 npx -y -p playwright node tests/playwright/visual-regression.js
-UPDATE_BASELINES=1 npx -y -p playwright node tests/playwright/visual-regression.js
+npx -y -p playwright node tests/playwright/visual-regression.js --update
 
 # Fuzzing (requires nightly)
 cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
@@ -182,10 +182,11 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 | `src/ai/provider.rs` | `AiProvider` trait + factory |
 | `src/ai/authoring.rs` | AuthoringSpec generation target and incremental AI repair transport |
 | `src/ai/repair.rs` | Legacy SceneSpec repair engine for lower-level template/escape-hatch inputs |
-| `tests/e2e.rs` | Integration test suite (174 tests) |
-| `tests/fixtures/` | 63 JSON scene fixtures |
+| `tests/e2e.rs` | Integration test suite (191 tests) |
+| `tests/fixtures/` | 66 JSON scene fixtures |
 | `Cargo.toml` | Root manifest: single crate, edition 2024, optional `mcp` feature |
 | `docs/scene.schema.v1.json` | Complete JSON Schema for SceneSpec input, generated from `src/builder/spec.rs`; regenerate with `UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync` |
+| `docs/authoring.schema.v0.json` | Complete JSON Schema for AuthoringSpec input, generated from `src/authoring/spec.rs`; regenerate with `cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored` |
 | `docs/ai/scene-prompt-schema.json` | Curated schema subset embedded only in the SceneSpec expert/template generation prompt |
 | `docs/format-spec.md` | Binary encoding reference for the `.riv` format |
 
@@ -204,9 +205,9 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 ## Testing & QA
 
 ### Layers
-1. **Unit tests**: 32 inline `#[cfg(test)]` blocks across `src/`, holding 557 tests. Cover object type keys, property emission, encoder primitives, ToC packing against the official reference file, validator parsing, builder deserialization, render image analysis, and scene-schema sync.
+1. **Unit tests**: 49 inline `#[cfg(test)]` blocks across `src/`, holding 634 tests. Cover object type keys, property emission, encoder primitives, ToC packing against the official reference file, validator parsing, builder deserialization, render image analysis, and scene-schema sync.
 2. **Property tests**: `proptest` roundtrips in `src/encoder/binary_writer.rs` (varuint, float, string, color, bool).
-3. **E2E CLI tests**: `tests/e2e.rs` (174 tests). Spawns the compiled binary for `generate`, `validate`, `inspect`, and `decompile` against all 63 fixtures.
+3. **E2E CLI tests**: `tests/e2e.rs` (191 tests). Spawns the compiled binary for `generate`, `validate`, `inspect`, and `decompile` against all 66 fixtures.
 4. **Runtime regression**: Playwright loads generated `.riv` files in `@rive-app/canvas` WASM via headless Chromium.
 5. **Visual regression**: Pixel-level diff against 64 committed PNG baselines in `tests/playwright/baselines/`.
 6. **CLI render verification**: `render` drives headless Chromium directly over CDP, captures deterministic PNG frames, writes a manifest, and `--preview` reports coverage, dominant colour, and bounds.
@@ -224,8 +225,7 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 - `cargo fmt --check`
 - `cargo clippy --all-targets --all-features -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
 - `cargo test --locked --all-features`
-- Playwright runtime regression (depends on `check` job)
-- Demo console error validation (depends on `check` job)
+- Browser contract, runtime-evaluation, architecture, Playwright, demo and site jobs. See CI Pipeline Overview below for what each one runs.
 
 ## Development Workflow
 
@@ -330,20 +330,24 @@ Additional validation:
 
 ### 6. CI Pipeline Overview
 
-The CI pipeline consists of three jobs:
+The CI pipeline consists of seven jobs. `check` and `browser-contracts` start immediately; the other five wait on `check`, and `runtime-eval-evidence` and `playwright` also wait on `browser-contracts`.
 
-- **check** job:
+- **check**:
   - `cargo fmt --check`
   - `cargo clippy --all-targets --all-features -- -D warnings` (with `RUSTFLAGS="-D warnings"`)
   - `cargo test --locked --all-features`
 
-- **playwright** job (depends on `check`):
-  - Runs `tests/playwright/regression.js`
-  - Validates that all fixtures render correctly in the Rive WASM runtime.
+- **browser-contracts**: `tests/playwright/shared-contract.js`, `visual-contract.js`, `landing-lifecycle-contract.js`, and `tests/provenance/production-showcase.js`.
 
-- **demo** job (depends on `check`):
-  - Runs `tests/playwright/demo-validation.js` against `demo/serve.js`
-  - Validates that the demo web UI loads with 0 console errors.
+- **runtime-eval-evidence**: the official-runtime, AuthoringSpec semantic, and interactive AuthoringSpec semantic evaluation suites, retaining their evidence as an artifact.
+
+- **architecture**: installs Cairn 0.9.0 and validates the architecture graph.
+
+- **playwright**: `tests/playwright/authoring-behavior-runtime.js`, `regression.js`, and `visual-regression.js`.
+
+- **demo**: `tests/playwright/demo-validation.js` against `demo/serve.js`, which must load with 0 console errors.
+
+- **site**: `tests/playwright/site-validation.js`, `site-playback.js`, and `showcase-validation.js`.
 
 ## Binary Format Quick Reference
 

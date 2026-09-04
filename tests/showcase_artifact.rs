@@ -48,8 +48,7 @@ fn committed_authoring_showcases_match_public_authoring_compile() {
         let actual =
             std::fs::read(&output).expect("authoring compile must produce a showcase artifact");
         assert_eq!(
-            actual,
-            expected,
+            actual, expected,
             "committed AuthoringSpec showcase '{name}' drifted; regenerate with `cargo run --quiet -- authoring compile examples/authoring/{name}.v0.json -o examples/authoring/{name}.v0.riv` and intentionally replace the committed artifact"
         );
     }
