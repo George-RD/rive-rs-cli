@@ -146,7 +146,7 @@ async function waitForNeedle(page, compare, bound) {
   return false;
 }
 
-async function waitForPlayingState(page, expected, label) {
+async function waitForPlayingState(page, expected, label, pageErrors = []) {
   try {
     await page.waitForFunction(
       (expected) =>
@@ -164,8 +164,9 @@ async function waitForPlayingState(page, expected, label) {
         ready: card.dataset.playbackReady,
       }))
     );
+    const reported = pageErrors.length ? ` page errors: ${JSON.stringify(pageErrors)}` : "";
     throw new Error(
-      `${label} did not reach data-playing="${expected}" within ${LIFECYCLE_TIMEOUT_MS}ms: ${JSON.stringify(observed)}`
+      `${label} did not reach data-playing="${expected}" within ${LIFECYCLE_TIMEOUT_MS}ms: ${JSON.stringify(observed)}.${reported}`
     );
   }
 }
@@ -462,11 +463,11 @@ async function readEvidenceStatuses(page) {
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "false", "bfcache pause");
+    await waitForPlayingState(lifecycle, "false", "bfcache pause", errors);
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "true", "bfcache resume");
+    await waitForPlayingState(lifecycle, "true", "bfcache resume", errors);
     await lifecycle.close();
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });

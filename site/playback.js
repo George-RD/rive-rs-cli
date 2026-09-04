@@ -279,11 +279,9 @@
     }
 
     function startPlaying() {
-      if (
-        destroyed ||
-        playing ||
-        (endFrame !== null && !loops && logicalFrame >= endFrame)
-      ) {
+      if (destroyed) return;
+      if (playing || (endFrame !== null && !loops && logicalFrame >= endFrame)) {
+        reportPlaying();
         return;
       }
       playing = true;
@@ -331,7 +329,10 @@
     }
 
     async function pause() {
-      if (!playing) return seekChain;
+      if (!playing) {
+        reportPlaying();
+        return seekChain;
+      }
       playing = false;
       if (frameRequestId !== null) {
         global.cancelAnimationFrame(frameRequestId);
