@@ -449,7 +449,9 @@ async function readEvidenceStatuses(page) {
     }
 
     const lifecycle = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+    const lifecycleErrors = [];
     collectErrors(lifecycle, errors);
+    collectErrors(lifecycle, lifecycleErrors);
     await lifecycle.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
     await lifecycle.waitForFunction(
       (expected) => {
@@ -468,11 +470,11 @@ async function readEvidenceStatuses(page) {
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "false", "bfcache pause", errors);
+    await waitForPlayingState(lifecycle, "false", "bfcache pause", lifecycleErrors);
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "true", "bfcache resume", errors);
+    await waitForPlayingState(lifecycle, "true", "bfcache resume", lifecycleErrors);
     await lifecycle.close();
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
