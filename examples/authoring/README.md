@@ -18,6 +18,7 @@ canonical `SceneSpec` object graph.
 | `waypoint-transit.v0.json` | A `through` motion track crossing an interior waypoint without losing speed |
 | `blend-meter.v0.json` | A number input driving a 1D blend state across two motion tracks |
 | `interactive-console.v0.json` | Stacking, waypoint continuity, a blend gauge, and three concurrent state-machine layers in one document |
+| `signal-weave.v0.json` | Three statechart regions animating one artboard without any input |
 
 The complex static showcase combines reusable components, expression-backed
 parameters, linear and radial gradients, trimmed strokes, text, grid, radial,
@@ -79,18 +80,30 @@ listener actions, and a statechart declared beside file assets.
 `interactive-console.v0.json` combines stacking, waypoint continuity, a blend
 gauge, and parallel regions in one 960x540 document, with a committed `.riv`
 beside it. It declares the backdrop first under `back_to_front` stacking, moves
-the stream token on a `through` track,
-drives the gauge from a `blend_state_1d` over the `load` number input, and runs
-three state-machine layers: the statechart's own `standby` and `running` states,
-a `stream` region carrying the token, and an `alert` region that escalates on
-`load >= 60` and settles on `load < 60`. A `click` listener on the `arm-surface`
-rectangle sets `armed`; one on `reset-surface` clears it and fires the `reset`
-trigger. `tests/authoring_console_runtime.rs` renders the committed artifact and
+the stream token on a `through` track, drives the gauge from a `blend_state_1d`
+over the `load` number input, and runs three state-machine layers: the
+statechart's own `standby` and `running` states, a `stream` region carrying the
+token, and an `alert` region that escalates on `load >= 60` and settles on
+`load < 60`. A `click` listener on the `arm-surface` rectangle sets `armed`; one
+on `reset-surface` clears it and fires the `reset` trigger.
+`tests/authoring_console_runtime.rs` renders the committed artifact and
 checks that a pointer press on `arm-surface` moves the needle onto the blended
 load, that the alert lamp covers more pixels at load 90 than at load 10, and
 that the stream token advances while layer 0 stays in `standby`.
 `tests/showcase_artifact.rs` recompiles the committed showcases and fails on
 byte drift.
+
+`signal-weave.v0.json` is the animation-only counterpart and also commits its
+`.riv`. Its statechart declares no inputs and no transitions between authored
+states: layer 0 turns the `halo` group through 360 degrees over 720 frames, a
+`core` region breathes the centre ellipse on a 120-frame pingpong, and a
+`courier` region shuttles a token across the lane on a `through` track so it
+passes the middle waypoint at speed. `tests/authoring_weave_runtime.rs` renders
+the committed artifact at frames 0 and 60 and measures each region separately:
+the courier travels at least 20px, the spoke centroid inside a left-hand window
+moves, and the core highlight changes area. Frame 45 is not usable for that
+comparison because a 720-frame turn puts the 22.5-degree spoke spacing exactly
+back on itself there.
 
 Compile the high-level typed-motion fixture directly:
 
@@ -122,11 +135,12 @@ cargo run -- authoring compile examples/authoring/waypoint-transit.v0.json -o wa
 cargo run -- authoring compile examples/authoring/blend-meter.v0.json -o blend-meter.riv
 ```
 
-Regenerate the console's committed artifact in place when the document or the
-compiler changes:
+Regenerate the committed artifacts in place when a document or the compiler
+changes:
 
 ```bash
 cargo run --quiet -- authoring compile examples/authoring/interactive-console.v0.json -o examples/authoring/interactive-console.v0.riv
+cargo run --quiet -- authoring compile examples/authoring/signal-weave.v0.json -o examples/authoring/signal-weave.v0.riv
 ```
 
 Print the high-level AuthoringSpec schema with:
@@ -156,16 +170,17 @@ cargo test --test showcase_artifact
 node tests/playwright/authoring-behavior-runtime.js
 ```
 
-The stacking, waypoint, blend, and console fixtures also carry official-runtime
-evidence. These four tests drive headless Chromium and measure pixels, so they
-need a Chrome or Chromium executable; set `$RIVE_CHROME` for a non-standard
-location:
+The stacking, waypoint, blend, console, and weave fixtures also carry
+official-runtime evidence. These five tests drive headless Chromium and measure
+pixels, so they need a Chrome or Chromium executable; set `$RIVE_CHROME` for a
+non-standard location:
 
 ```bash
 cargo test --test authoring_stacking_runtime
 cargo test --test authoring_motion_continuity_runtime
 cargo test --test authoring_behavior_blend_runtime
 cargo test --test authoring_console_runtime
+cargo test --test authoring_weave_runtime
 ```
 
 The example contract lowers every fixture twice to prove deterministic

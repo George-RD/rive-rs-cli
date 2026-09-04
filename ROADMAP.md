@@ -53,9 +53,11 @@ The same branch extends the open behavior slice with number and trigger statecha
 inputs, comparison and trigger transition conditions, one-dimensional blend states,
 parallel regions, and typed listener actions, and adds
 `examples/authoring/interactive-console.v0.json` and its committed
-`examples/authoring/interactive-console.v0.riv` as end-to-end evidence. Additive and
-direct blend states, transition duration and exit time, and view-model properties other
-than `bool` are still not exposed, so `todo.behavior-authoring-compiler.md` stays open.
+`examples/authoring/interactive-console.v0.riv` as end-to-end evidence, with the
+animation-only `examples/authoring/signal-weave.v0.json` proving parallel regions
+without any input. Additive and direct blend states, transition duration and exit time,
+and view-model properties other than `bool` are still not exposed, so
+`todo.behavior-authoring-compiler.md` stays open.
 
 Select further work from an explicit unblocked issue or create a bounded roadmap gap
 only when current evidence justifies it; do not promote the independent lower-level
@@ -171,8 +173,9 @@ AuthoringSpec or Verification Lab progress.
 - The behavior slice lowers `blend_state_1d` states over named motion tracks and
   parallel regions as additional state-machine layers, and adds `number_change` and
   `trigger_change` listener actions. `tests/showcase_artifact.rs` recompiles
-  `examples/authoring/interactive-console.v0.json` through the public CLI and fails on
-  byte drift against the committed artifact.
+  `examples/authoring/interactive-console.v0.json` and
+  `examples/authoring/signal-weave.v0.json` through the public CLI and fails on byte
+  drift against their committed artifacts.
 - Every field added by #193, #194, and the behavior slice is optional and its default
   reproduces the previous output, so `authoring_format_version` stays 0 and the committed
   `examples/authoring/complex-animated-showcase.v0.riv` is byte-identical.

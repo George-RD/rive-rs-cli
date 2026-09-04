@@ -27,12 +27,13 @@ rive-cli authoring compile examples/authoring/complex-static-showcase.v0.json -o
 rive-cli authoring compile examples/authoring/complex-animated-showcase.v0.json -o animated.riv
 rive-cli authoring compile examples/authoring/complex-interactive-showcase.v0.json -o interactive.riv
 rive-cli authoring compile examples/authoring/interactive-console.v0.json -o console.riv
+rive-cli authoring compile examples/authoring/signal-weave.v0.json -o weave.riv
 ```
 
-Those showcases prove the supported static, motion, and interaction subsets. The
-console adds explicit `stacking`, motion `continuity`, a 1D blend state driven by
-a number input, and parallel statechart regions. They do not imply that every
-Rive concept is typed; read the current field names and enum values from
+Those showcases prove the supported static, motion, and interaction subsets; the
+console adds `stacking`, motion `continuity`, a 1D blend state driven by a number
+input, and parallel statechart regions. None of them imply that every Rive
+concept is typed, so read the current field names and enum values from
 `rive-cli authoring schema` rather than from this file. Where a requested concept
 is not in the current schema, use an explicit AuthoringSpec raw escape or the
 direct SceneSpec workflow and identify that boundary rather than inventing typed
