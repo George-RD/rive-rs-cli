@@ -371,11 +371,14 @@
     function settleControlChange() {
       if (playing || destroyed || settleQueued) return seekChain;
       settleQueued = true;
-      const settled = seekChain.then(async () => {
-        settleQueued = false;
-        if (playing || destroyed) return;
-        for (const controller of controllers) controller.advanceOneStep();
-      });
+      const settled = seekChain
+        .then(async () => {
+          if (playing || destroyed) return;
+          for (const controller of controllers) controller.advanceOneStep();
+        })
+        .finally(() => {
+          settleQueued = false;
+        });
       seekChain = settled.catch(() => {});
       return settled;
     }

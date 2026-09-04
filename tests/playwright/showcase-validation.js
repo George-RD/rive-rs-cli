@@ -137,7 +137,12 @@ async function needleFraction(page, id) {
 async function waitForNeedle(page, compare, bound) {
   const deadline = Date.now() + NEEDLE_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const fraction = await needleFraction(page, INTERACTIVE_ID);
+    let fraction = null;
+    try {
+      fraction = await needleFraction(page, INTERACTIVE_ID);
+    } catch {
+      fraction = null;
+    }
     if (fraction !== null && (compare === "above" ? fraction >= bound : fraction <= bound)) {
       return true;
     }
