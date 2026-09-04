@@ -1,7 +1,11 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-const SHOWCASES: [&str; 2] = ["complex-animated-showcase", "interactive-console"];
+const SHOWCASES: [&str; 3] = [
+    "complex-animated-showcase",
+    "interactive-console",
+    "signal-weave",
+];
 
 fn temp_output(name: &str) -> PathBuf {
     std::env::temp_dir().join(format!(

@@ -50,6 +50,18 @@
     "alt": "Console panel with a status lamp, a streaming token, a load gauge driven by a slider, and arm and reset buttons"
   },
   {
+    "id": "signal-weave",
+    "title": "Signal weave",
+    "summary": "An animated AuthoringSpec scene whose statechart runs three regions at once: the outer ring turns, the core breathes, and a courier shuttles through a waypoint without stopping at it.",
+    "provenance": "authoring",
+    "artifact": "examples/authoring/signal-weave.v0.riv",
+    "source": "examples/authoring/signal-weave.v0.json",
+    "sourceLabel": "High-level AuthoringSpec source",
+    "capability": "parallel regions",
+    "stateMachine": "auth__signal_2dweave__weave__state_machine",
+    "alt": "Rotating ring of spokes around a breathing core, with a token shuttling along a lane beneath it"
+  },
+  {
     "id": "horaxon-signal-to-action",
     "title": "Horaxon signal-to-action",
     "summary": "The exact Rive animation consumed by Horaxon turns scattered operational signals into one next action. This is production consumer evidence, not a customer endorsement.",

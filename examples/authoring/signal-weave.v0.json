@@ -1,0 +1,882 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "signal-weave",
+    "width": {
+      "value": 960.0,
+      "unit": "px"
+    },
+    "height": {
+      "value": 540.0,
+      "unit": "px"
+    }
+  },
+  "font_assets": {
+    "inter": "../../assets/fonts/Inter-Bold-Subset.ttf"
+  },
+  "visual": {
+    "stacking": "back_to_front",
+    "nodes": [
+      {
+        "kind": "rectangle",
+        "id": "backdrop",
+        "width": {
+          "kind": "literal",
+          "value": 960.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 540.0,
+          "unit": "px"
+        },
+        "fill": {
+          "kind": "radial_gradient",
+          "start_x": {
+            "kind": "literal",
+            "value": 0.0,
+            "unit": "px"
+          },
+          "start_y": {
+            "kind": "literal",
+            "value": -40.0,
+            "unit": "px"
+          },
+          "end_x": {
+            "kind": "literal",
+            "value": 0.0,
+            "unit": "px"
+          },
+          "end_y": {
+            "kind": "literal",
+            "value": 360.0,
+            "unit": "px"
+          },
+          "stops": [
+            {
+              "color": "#131C33",
+              "position": {
+                "kind": "literal",
+                "value": 0.0,
+                "unit": "scalar"
+              }
+            },
+            {
+              "color": "#0A1122",
+              "position": {
+                "kind": "literal",
+                "value": 0.6,
+                "unit": "scalar"
+              }
+            },
+            {
+              "color": "#04070F",
+              "position": {
+                "kind": "literal",
+                "value": 1.0,
+                "unit": "scalar"
+              }
+            }
+          ]
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 270.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "ellipse",
+        "id": "orbit",
+        "width": {
+          "kind": "literal",
+          "value": 380.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 380.0,
+          "unit": "px"
+        },
+        "fill": "#070C18",
+        "stroke": {
+          "paint": "#1E293B",
+          "width": {
+            "kind": "literal",
+            "value": 1.5,
+            "unit": "px"
+          }
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 280.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "group",
+        "id": "halo",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 280.0,
+            "unit": "px"
+          }
+        },
+        "children": [
+          {
+            "kind": "radial",
+            "id": "halo-ring",
+            "copies": 16,
+            "radius": {
+              "kind": "literal",
+              "value": 150.0,
+              "unit": "px"
+            },
+            "start_angle": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "degrees"
+            },
+            "angle_step": {
+              "kind": "literal",
+              "value": 22.5,
+              "unit": "degrees"
+            },
+            "rotate_items": true,
+            "item": {
+              "kind": "rectangle",
+              "id": "halo-spoke",
+              "width": {
+                "kind": "literal",
+                "value": 4.0,
+                "unit": "px"
+              },
+              "height": {
+                "kind": "literal",
+                "value": 26.0,
+                "unit": "px"
+              },
+              "fill": "#1E3A8A",
+              "corner_radius": {
+                "kind": "literal",
+                "value": 2.0,
+                "unit": "px"
+              },
+              "transform": {
+                "x": {
+                  "kind": "literal",
+                  "value": 0.0,
+                  "unit": "px"
+                },
+                "y": {
+                  "kind": "literal",
+                  "value": 0.0,
+                  "unit": "px"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "group",
+        "id": "inner-halo",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 280.0,
+            "unit": "px"
+          }
+        },
+        "children": [
+          {
+            "kind": "radial",
+            "id": "inner-ring",
+            "copies": 8,
+            "radius": {
+              "kind": "literal",
+              "value": 92.0,
+              "unit": "px"
+            },
+            "start_angle": {
+              "kind": "literal",
+              "value": 22.5,
+              "unit": "degrees"
+            },
+            "angle_step": {
+              "kind": "literal",
+              "value": 45.0,
+              "unit": "degrees"
+            },
+            "rotate_items": false,
+            "item": {
+              "kind": "ellipse",
+              "id": "inner-dot",
+              "width": {
+                "kind": "literal",
+                "value": 8.0,
+                "unit": "px"
+              },
+              "height": {
+                "kind": "literal",
+                "value": 8.0,
+                "unit": "px"
+              },
+              "fill": "#A78BFA",
+              "transform": {
+                "x": {
+                  "kind": "literal",
+                  "value": 0.0,
+                  "unit": "px"
+                },
+                "y": {
+                  "kind": "literal",
+                  "value": 0.0,
+                  "unit": "px"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "kind": "ellipse",
+        "id": "core-glow",
+        "width": {
+          "kind": "literal",
+          "value": 124.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 124.0,
+          "unit": "px"
+        },
+        "fill": "#0E1B33",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 280.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "ellipse",
+        "id": "core",
+        "width": {
+          "kind": "literal",
+          "value": 76.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 76.0,
+          "unit": "px"
+        },
+        "fill": {
+          "kind": "radial_gradient",
+          "start_x": {
+            "kind": "literal",
+            "value": -18.0,
+            "unit": "px"
+          },
+          "start_y": {
+            "kind": "literal",
+            "value": -18.0,
+            "unit": "px"
+          },
+          "end_x": {
+            "kind": "literal",
+            "value": 48.0,
+            "unit": "px"
+          },
+          "end_y": {
+            "kind": "literal",
+            "value": 48.0,
+            "unit": "px"
+          },
+          "stops": [
+            {
+              "color": "#F8FAFC",
+              "position": {
+                "kind": "literal",
+                "value": 0.0,
+                "unit": "scalar"
+              }
+            },
+            {
+              "color": "#22D3EE",
+              "position": {
+                "kind": "literal",
+                "value": 0.4,
+                "unit": "scalar"
+              }
+            },
+            {
+              "color": "#4F46E5",
+              "position": {
+                "kind": "literal",
+                "value": 1.0,
+                "unit": "scalar"
+              }
+            }
+          ]
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 280.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "lane",
+        "width": {
+          "kind": "literal",
+          "value": 700.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 4.0,
+          "unit": "px"
+        },
+        "fill": "#152238",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 2.0,
+          "unit": "px"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 480.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 500.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "courier",
+        "width": {
+          "kind": "literal",
+          "value": 20.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 20.0,
+          "unit": "px"
+        },
+        "fill": "#22D3EE",
+        "corner_radius": {
+          "kind": "literal",
+          "value": 6.0,
+          "unit": "px"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 150.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 500.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "weave-title",
+        "text": "SIGNAL WEAVE",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 22.0,
+          "unit": "px"
+        },
+        "fill": "#F8FAFC",
+        "width": {
+          "kind": "literal",
+          "value": 480.0,
+          "unit": "px"
+        },
+        "letter_spacing": {
+          "kind": "literal",
+          "value": 1.6,
+          "unit": "px"
+        },
+        "align": "left",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.0,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 60.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 52.0,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "text",
+        "id": "weave-note",
+        "text": "Three regions, one artboard, no editor",
+        "font": "inter",
+        "font_size": {
+          "kind": "literal",
+          "value": 12.0,
+          "unit": "px"
+        },
+        "fill": "#94A3B8",
+        "width": {
+          "kind": "literal",
+          "value": 480.0,
+          "unit": "px"
+        },
+        "align": "left",
+        "origin_x": {
+          "kind": "literal",
+          "value": 0.0,
+          "unit": "scalar"
+        },
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 60.0,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 78.0,
+            "unit": "px"
+          }
+        }
+      }
+    ]
+  },
+  "motion": {
+    "easings": [
+      {
+        "kind": "cubic",
+        "id": "settle",
+        "x1": {
+          "kind": "literal",
+          "value": 0.33,
+          "unit": "scalar"
+        },
+        "y1": {
+          "kind": "literal",
+          "value": 0.0,
+          "unit": "scalar"
+        },
+        "x2": {
+          "kind": "literal",
+          "value": 0.2,
+          "unit": "scalar"
+        },
+        "y2": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        }
+      }
+    ],
+    "poses": [
+      {
+        "id": "halo-start",
+        "targets": [
+          {
+            "target": "halo",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 480.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 280.0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 0.0,
+                "unit": "degrees"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "halo-half",
+        "targets": [
+          {
+            "target": "halo",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 480.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 280.0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 180.0,
+                "unit": "degrees"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "halo-full",
+        "targets": [
+          {
+            "target": "halo",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 480.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 280.0,
+                "unit": "px"
+              },
+              "rotation": {
+                "kind": "literal",
+                "value": 360.0,
+                "unit": "degrees"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "core-rest",
+        "targets": [
+          {
+            "target": "core",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 480.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 280.0,
+                "unit": "px"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 0.92,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 0.92,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "core-swell",
+        "targets": [
+          {
+            "target": "core",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 480.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 280.0,
+                "unit": "px"
+              },
+              "scale_x": {
+                "kind": "literal",
+                "value": 1.12,
+                "unit": "scalar"
+              },
+              "scale_y": {
+                "kind": "literal",
+                "value": 1.12,
+                "unit": "scalar"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "courier-left",
+        "targets": [
+          {
+            "target": "courier",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 150.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 500.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "courier-mid",
+        "targets": [
+          {
+            "target": "courier",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 480.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 500.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "courier-right",
+        "targets": [
+          {
+            "target": "courier",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 810.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 500.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "halo-turn",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 720.0,
+          "unit": "scalar"
+        },
+        "loop_type": "loop",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "halo-start"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 360.0,
+              "unit": "scalar"
+            },
+            "pose": "halo-half"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 720.0,
+              "unit": "scalar"
+            },
+            "pose": "halo-full"
+          }
+        ]
+      },
+      {
+        "id": "core-breathe",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 120.0,
+          "unit": "scalar"
+        },
+        "loop_type": "pingpong",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "core-rest",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 120.0,
+              "unit": "scalar"
+            },
+            "pose": "core-swell",
+            "easing": "settle"
+          }
+        ]
+      },
+      {
+        "id": "courier-shuttle",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 180.0,
+          "unit": "scalar"
+        },
+        "loop_type": "pingpong",
+        "continuity": "through",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "courier-left",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 90.0,
+              "unit": "scalar"
+            },
+            "pose": "courier-mid",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 180.0,
+              "unit": "scalar"
+            },
+            "pose": "courier-right",
+            "easing": "settle"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "statecharts": [
+      {
+        "id": "weave",
+        "initial": "turning",
+        "states": [
+          {
+            "id": "turning",
+            "motion": "halo-turn"
+          }
+        ],
+        "transitions": [],
+        "regions": [
+          {
+            "id": "core",
+            "initial": "breathing",
+            "states": [
+              {
+                "id": "breathing",
+                "motion": "core-breathe"
+              }
+            ],
+            "transitions": []
+          },
+          {
+            "id": "courier",
+            "initial": "shuttling",
+            "states": [
+              {
+                "id": "shuttling",
+                "motion": "courier-shuttle"
+              }
+            ],
+            "transitions": []
+          }
+        ]
+      }
+    ]
+  }
+}

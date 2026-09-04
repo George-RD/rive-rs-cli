@@ -87,6 +87,7 @@ const AUTHORING_FIXTURES = {
     "complex-animated-showcase.v0.json",
   ),
   authoring_interactive_console: path.join(AUTHORING_DIR, "interactive-console.v0.json"),
+  authoring_signal_weave: path.join(AUTHORING_DIR, "signal-weave.v0.json"),
 };
 
 const FIXTURES = [
