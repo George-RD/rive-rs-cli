@@ -21,6 +21,7 @@ const NEEDLE_ROW_FRACTION = NEEDLE_ONLY_SCAN_ROW / CONSOLE_ARTBOARD_HEIGHT;
 const STANDBY_NEEDLE_LIMIT = STANDBY_NEEDLE_MAX_X / CONSOLE_ARTBOARD_WIDTH;
 const ENGAGED_NEEDLE_FLOOR = ENGAGED_NEEDLE_MIN_X / CONSOLE_ARTBOARD_WIDTH;
 const SETTLE_FRAMES = 120;
+const LIFECYCLE_TIMEOUT_MS = 20000;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -148,6 +149,30 @@ async function waitForNeedle(page, compare, bound) {
     return true;
   } catch {
     return false;
+  }
+}
+
+async function waitForPlayingState(page, expected, label) {
+  try {
+    await page.waitForFunction(
+      (expected) =>
+        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
+          (card) => card.dataset.playing === expected
+        ),
+      expected,
+      { timeout: LIFECYCLE_TIMEOUT_MS, polling: POLLING_MS }
+    );
+  } catch {
+    const observed = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".card[data-showcase-id]")).map((card) => ({
+        id: card.dataset.showcaseId,
+        playing: card.dataset.playing,
+        ready: card.dataset.playbackReady,
+      }))
+    );
+    throw new Error(
+      `${label} did not reach data-playing="${expected}" within ${LIFECYCLE_TIMEOUT_MS}ms: ${JSON.stringify(observed)}`
+    );
   }
 }
 
@@ -443,25 +468,11 @@ async function readEvidenceStatuses(page) {
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
     });
-    await lifecycle.waitForFunction(
-      () =>
-        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
-          (card) => card.dataset.playing === "false"
-        ),
-      undefined,
-      { timeout: 5000, polling: POLLING_MS }
-    );
+    await waitForPlayingState(lifecycle, "false", "bfcache pause");
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
     });
-    await lifecycle.waitForFunction(
-      () =>
-        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
-          (card) => card.dataset.playing === "true"
-        ),
-      undefined,
-      { timeout: 5000, polling: POLLING_MS }
-    );
+    await waitForPlayingState(lifecycle, "true", "bfcache resume");
     await lifecycle.close();
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
