@@ -105,7 +105,7 @@ fn is_courier(pixel: &[u8]) -> bool {
 }
 
 fn is_spoke(pixel: &[u8]) -> bool {
-    pixel[2] > 100 && pixel[0] < 70 && pixel[1] < 100 && pixel[2] > u16::from(pixel[0]) as u8 + 40
+    pixel[2] > 100 && pixel[0] < 70 && pixel[1] < 100 && pixel[2] - pixel[0] > 40
 }
 
 fn is_core_highlight(pixel: &[u8]) -> bool {
