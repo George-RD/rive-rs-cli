@@ -239,7 +239,10 @@ fn lower_tracks(
         }
 
         let transit = resolve_transit_points(&frames, track.continuity, &track_path)?;
-        let segments = resolve_segments(&frames, &transit);
+        let mut segments = resolve_segments(&frames, &transit);
+        if let Some(terminal) = segments.last_mut() {
+            terminal.easing_index = None;
+        }
         warnings.extend(stop_start_warnings(
             &track_path,
             spec,
@@ -394,7 +397,17 @@ fn stop_start_warnings(
     easings: &[ResolvedEasing],
 ) -> Vec<AuthoringDiagnostic> {
     let mut warnings = Vec::new();
-    for (position, frame) in frames.iter().enumerate() {
+    let mut authored_order = (0..frames.len()).collect::<Vec<_>>();
+    authored_order.sort_by_key(|position| {
+        frames
+            .get(*position)
+            .map(|frame| frame.authored_index)
+            .unwrap_or_default()
+    });
+    for position in authored_order {
+        let Some(frame) = frames.get(position) else {
+            continue;
+        };
         if transit.get(position).copied().unwrap_or(false)
             || frame.waypoint != MotionWaypoint::Auto
             || position == 0

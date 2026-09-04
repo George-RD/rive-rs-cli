@@ -1,3 +1,5 @@
+mod support;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -6,6 +8,7 @@ use rive_cli::builder::SceneSpec;
 use rive_cli::compile::compile_scene;
 use rive_cli::render::image::analyze;
 use rive_cli::render::{RenderOptions, render};
+use support::WorkDir;
 
 const ARTBOARD_EDGE: u32 = 128;
 const SURFACE_RGBA: [u8; 4] = [194, 65, 12, 255];
@@ -13,13 +16,6 @@ const CUE_RGBA: [u8; 4] = [34, 197, 94, 255];
 
 fn fixture_path() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("examples/authoring/stacking-card.v0.json")
-}
-
-fn work_dir(case: &str) -> PathBuf {
-    std::env::temp_dir().join(format!(
-        "rive-authoring-stacking-runtime-{}-{case}",
-        std::process::id()
-    ))
 }
 
 fn assert_pixel_near(rgba: &[u8], width: u32, x: u32, y: u32, expected: [u8; 4]) {
@@ -39,9 +35,7 @@ fn render_first_frame(case: &str, document: &str) -> (Vec<u8>, u32) {
         serde_json::from_value(lowered.scene).expect("lowered SceneSpec should deserialize");
     let bytes = compile_scene(&scene, fixture_path().parent(), 0).expect("scene should compile");
 
-    let work_dir = work_dir(case);
-    let _ = fs::remove_dir_all(&work_dir);
-    fs::create_dir_all(&work_dir).expect("runtime work directory should be created");
+    let work_dir = WorkDir::new(&format!("rive-authoring-stacking-runtime-{case}"));
     let riv_path = work_dir.join("stacking-card.riv");
     fs::write(&riv_path, &bytes).expect("compiled Rive file should be written");
     let output_dir = work_dir.join("render");
@@ -70,7 +64,6 @@ fn render_first_frame(case: &str, document: &str) -> (Vec<u8>, u32) {
 
     let image = analyze(&output_dir.join("frame_00000.png")).expect("rendered frame should decode");
     assert_eq!((image.width, image.height), (ARTBOARD_EDGE, ARTBOARD_EDGE));
-    fs::remove_dir_all(work_dir).expect("runtime work directory should be removed");
     (image.rgba, image.width)
 }
 

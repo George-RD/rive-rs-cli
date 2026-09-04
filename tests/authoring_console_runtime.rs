@@ -1,8 +1,11 @@
+mod support;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use rive_cli::render::image::{ImageInfo, analyze};
 use rive_cli::render::{RenderOptions, render};
+use support::WorkDir;
 
 const STAGE_WIDTH: u32 = 960;
 const STAGE_HEIGHT: u32 = 540;
@@ -21,12 +24,7 @@ fn artifact_path() -> PathBuf {
 fn render_console(case: &str, load: u32, pointers: &[&str], frame: u32) -> ImageInfo {
     let riv_path = artifact_path();
     let riv = fs::read(&riv_path).expect("committed console artifact should be readable");
-    let work_dir = std::env::temp_dir().join(format!(
-        "rive-authoring-console-{}-{case}",
-        std::process::id()
-    ));
-    let _ = fs::remove_dir_all(&work_dir);
-    fs::create_dir_all(&work_dir).expect("runtime work directory should be created");
+    let work_dir = WorkDir::new(&format!("rive-authoring-console-{case}"));
     let output_dir = work_dir.join("render");
 
     let manifest = render(&RenderOptions {
@@ -51,10 +49,7 @@ fn render_console(case: &str, load: u32, pointers: &[&str], frame: u32) -> Image
     .expect("official runtime should render the console");
     assert_eq!(manifest.frames.len(), 1);
 
-    let image = analyze(&output_dir.join(format!("frame_{frame:05}.png")))
-        .expect("console frame should decode");
-    fs::remove_dir_all(work_dir).expect("runtime work directory should be removed");
-    image
+    analyze(&output_dir.join(format!("frame_{frame:05}.png"))).expect("console frame should decode")
 }
 
 fn needle_centre_x(image: &ImageInfo) -> f64 {

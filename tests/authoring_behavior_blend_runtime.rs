@@ -1,3 +1,5 @@
+mod support;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -6,6 +8,7 @@ use rive_cli::builder::SceneSpec;
 use rive_cli::compile::compile_scene;
 use rive_cli::render::image::analyze;
 use rive_cli::render::{RenderOptions, render};
+use support::WorkDir;
 
 const STAGE_WIDTH: u32 = 240;
 const STAGE_HEIGHT: u32 = 160;
@@ -39,12 +42,7 @@ fn needle_centre_at(load: u32) -> f64 {
         serde_json::from_value(lowered.scene).expect("lowered SceneSpec should deserialize");
     let bytes = compile_scene(&scene, fixture_path().parent(), 0).expect("scene should compile");
 
-    let work_dir = std::env::temp_dir().join(format!(
-        "rive-authoring-blend-runtime-{}-{load}",
-        std::process::id()
-    ));
-    let _ = fs::remove_dir_all(&work_dir);
-    fs::create_dir_all(&work_dir).expect("runtime work directory should be created");
+    let work_dir = WorkDir::new(&format!("rive-authoring-blend-runtime-{load}"));
     let riv_path = work_dir.join("blend-meter.riv");
     fs::write(&riv_path, &bytes).expect("compiled Rive file should be written");
     let output_dir = work_dir.join("render");
@@ -72,9 +70,7 @@ fn needle_centre_at(load: u32) -> f64 {
     assert_eq!(manifest.frames.len(), 1);
 
     let frame = analyze(&output_dir.join("frame_00005.png")).expect("frame should decode");
-    let centre = needle_centre_x(&frame.rgba, frame.width);
-    fs::remove_dir_all(work_dir).expect("runtime work directory should be removed");
-    centre
+    needle_centre_x(&frame.rgba, frame.width)
 }
 
 #[test]

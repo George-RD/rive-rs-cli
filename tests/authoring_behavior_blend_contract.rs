@@ -314,6 +314,128 @@ fn blend_states_require_a_number_input_and_known_motion() {
 }
 
 #[test]
+fn blend_states_require_between_two_and_a_thousand_stops() {
+    let mut input = document();
+    let stops = input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"]
+        .as_array()
+        .expect("blend stops")
+        .clone();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([stops[0]]);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stops",
+        "$.behavior.statecharts[0].states[1].blend.stops",
+    );
+
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([]);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stops",
+        "$.behavior.statecharts[0].states[1].blend.stops",
+    );
+
+    let too_many = (0..1001)
+        .map(|index| json!({ "motion": "low-track", "value": literal(f64::from(index), "scalar") }))
+        .collect::<Vec<_>>();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!(too_many);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stops",
+        "$.behavior.statecharts[0].states[1].blend.stops",
+    );
+}
+
+#[test]
+fn blend_stop_values_must_increase() {
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"][1]["value"] =
+        literal(0.0, "scalar");
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stop_order",
+        "$.behavior.statecharts[0].states[1].blend.stops[1].value",
+    );
+
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"][0]["value"] =
+        literal(100.0, "scalar");
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"][1]["value"] =
+        literal(0.0, "scalar");
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stop_order",
+        "$.behavior.statecharts[0].states[1].blend.stops[1].value",
+    );
+}
+
+#[test]
+fn region_ids_must_not_alias_any_statechart_scoped_sibling() {
+    for alias in ["resting", "engage", "level", "armed"] {
+        let mut input = document();
+        input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!(alias);
+        assert_diagnostic(
+            &input,
+            "behavior_region_id_collision",
+            "$.behavior.statecharts[0].regions[0].id",
+        );
+    }
+
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["events"] = json!([{ "id": "chime" }]);
+    input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!("chime");
+    assert_diagnostic(
+        &input,
+        "behavior_region_id_collision",
+        "$.behavior.statecharts[0].regions[0].id",
+    );
+}
+
+#[test]
+fn blend_stop_values_must_stay_distinct_once_narrowed_to_the_emitted_f32() {
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([
+        { "motion": "low-track", "value": literal(1.0, "scalar") },
+        { "motion": "high-track", "value": literal(1.000_000_01, "scalar") }
+    ]);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stop_order",
+        "$.behavior.statecharts[0].states[1].blend.stops[1].value",
+    );
+}
+
+#[test]
+fn a_blend_stop_expression_failure_is_reported_beside_the_order_check() {
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([
+        { "motion": "low-track", "value": literal(0.0, "scalar") },
+        { "motion": "rest-track", "value": { "kind": "parameter", "name": "undeclared" } },
+        { "motion": "high-track", "value": literal(-1.0, "scalar") }
+    ]);
+    let error = lower_authoring_json(&input.to_string())
+        .expect_err("an undefined parameter must fail at the authored boundary");
+    let codes = error
+        .diagnostics
+        .iter()
+        .map(|diagnostic| diagnostic.code.as_str())
+        .collect::<Vec<_>>();
+    assert!(
+        codes.contains(&"invalid_blend_stop_order"),
+        "expected the order diagnostic; got {codes:?}"
+    );
+    assert!(
+        error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "unknown_parameter"
+                && diagnostic
+                    .path
+                    .starts_with("$.behavior.statecharts[0].states[1].blend.stops[1].value")
+        }),
+        "the failing stop expression was dropped; got {:#?}",
+        error.diagnostics
+    );
+}
+
+#[test]
 fn typed_conditions_must_match_the_input_kind() {
     let mut input = document();
     input["behavior"]["statecharts"][0]["transitions"][0]["when"] =

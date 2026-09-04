@@ -1,8 +1,11 @@
+mod support;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use rive_cli::render::image::{ImageInfo, analyze};
 use rive_cli::render::{RenderOptions, render};
+use support::WorkDir;
 
 const STAGE_WIDTH: u32 = 960;
 const STAGE_HEIGHT: u32 = 540;
@@ -20,12 +23,7 @@ fn artifact_path() -> PathBuf {
 fn frame(frame_index: u32) -> ImageInfo {
     let riv_path = artifact_path();
     let riv = fs::read(&riv_path).expect("committed weave artifact should be readable");
-    let work_dir = std::env::temp_dir().join(format!(
-        "rive-authoring-weave-{}-{frame_index}",
-        std::process::id()
-    ));
-    let _ = fs::remove_dir_all(&work_dir);
-    fs::create_dir_all(&work_dir).expect("runtime work directory should be created");
+    let work_dir = WorkDir::new(&format!("rive-authoring-weave-{frame_index}"));
     let output_dir = work_dir.join("render");
 
     render(&RenderOptions {
@@ -49,10 +47,8 @@ fn frame(frame_index: u32) -> ImageInfo {
     })
     .expect("official runtime should render the weave");
 
-    let image = analyze(&output_dir.join(format!("frame_{frame_index:05}.png")))
-        .expect("weave frame should decode");
-    fs::remove_dir_all(work_dir).expect("runtime work directory should be removed");
-    image
+    analyze(&output_dir.join(format!("frame_{frame_index:05}.png")))
+        .expect("weave frame should decode")
 }
 
 fn region_centroid(

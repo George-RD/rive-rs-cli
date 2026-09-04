@@ -202,6 +202,12 @@
       if (input && typeof input.fire === "function") input.fire();
     }
 
+    function advanceOneStep() {
+      if (!instance || destroyed || mode !== "stateMachine") return;
+      stepsAdvanced += 1;
+      stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
+    }
+
     function readInputs() {
       if (!instance || !stateMachine) return {};
       const values = {};
@@ -219,7 +225,16 @@
       instance = null;
     }
 
-    return { ready, seekToFrame, resize, setInput, fireTrigger, readInputs, destroy };
+    return {
+      ready,
+      seekToFrame,
+      resize,
+      setInput,
+      fireTrigger,
+      advanceOneStep,
+      readInputs,
+      destroy,
+    };
   }
 
   function createLogicalTimeline(controllers, options = {}) {
@@ -240,6 +255,7 @@
     let wallOrigin = 0;
     let frameOrigin = 0;
     let seekChain = Promise.resolve();
+    let settleQueued = false;
 
     function reportFrame() {
       if (typeof options.onFrame === "function") options.onFrame(logicalFrame);
@@ -263,11 +279,9 @@
     }
 
     function startPlaying() {
-      if (
-        destroyed ||
-        playing ||
-        (endFrame !== null && !loops && logicalFrame >= endFrame)
-      ) {
+      if (destroyed) return;
+      if (playing || (endFrame !== null && !loops && logicalFrame >= endFrame)) {
+        reportPlaying();
         return;
       }
       playing = true;
@@ -315,7 +329,10 @@
     }
 
     async function pause() {
-      if (!playing) return seekChain;
+      if (!playing) {
+        reportPlaying();
+        return seekChain;
+      }
       playing = false;
       if (frameRequestId !== null) {
         global.cancelAnimationFrame(frameRequestId);
@@ -342,11 +359,28 @@
     async function setInput(name, value) {
       await ready;
       await Promise.all(controllers.map((controller) => controller.setInput(name, value)));
+      await settleControlChange();
     }
 
     async function fireTrigger(name) {
       await ready;
       await Promise.all(controllers.map((controller) => controller.fireTrigger(name)));
+      await settleControlChange();
+    }
+
+    function settleControlChange() {
+      if (playing || destroyed || settleQueued) return seekChain;
+      settleQueued = true;
+      const settled = seekChain
+        .then(async () => {
+          if (playing || destroyed) return;
+          for (const controller of controllers) controller.advanceOneStep();
+        })
+        .finally(() => {
+          settleQueued = false;
+        });
+      seekChain = settled.catch(() => {});
+      return settled;
     }
 
     function readInputs() {
@@ -406,11 +440,13 @@
       fps,
       stateMachine: options.left.stateMachine || options.stateMachine,
       animation: options.left.animation || options.animation,
+      inputs: options.left.inputs || options.inputs,
     });
     const right = createControlledRive(options.right.canvas, options.right.src, {
       fps,
       stateMachine: options.right.stateMachine || options.stateMachine,
       animation: options.right.animation || options.animation,
+      inputs: options.right.inputs || options.inputs,
     });
     return createLogicalTimeline([left, right], {
       ...options,

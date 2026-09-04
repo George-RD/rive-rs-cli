@@ -235,9 +235,11 @@ milestone.
 
 ## Waypoint continuity hardening inside the completed slice
 
-Issue #194 makes an interior waypoint keep its velocity, on branch
-`claude/workflows-roadmap-demos-9wlqz4`; it is not merged and no CI run is recorded for
-it here. It hardens the milestone issue #178 and PR #197 completed rather than
+Issue #194 makes an interior waypoint keep its velocity. Exact head
+`02d5621` passed CI run `33836991510` across formatting, Clippy, the Rust 1.88 minimum,
+browser contracts, Cairn architecture validation, official-runtime evidence, demo, site,
+Playwright, and visual regression, and PR #221 merged to `main` as `73598d5` on
+2026-09-04. It hardens the milestone issue #178 and PR #197 completed rather than
 reopening it: the acceptance criteria and completion evidence above are unchanged, and
 the status stays `done`.
 
@@ -264,10 +266,18 @@ the status stays `done`.
 - Without `--json`, `rive-cli authoring compile` prints each warning to stderr as
   `warning: {path} [{code}]: {message}` before the byte count; with `--json` it carries
   them in a `warnings` array beside `bytes_written`, `output_path`, and `source_map`.
-- `tests/authoring_motion_continuity_contract.rs` holds nine contracts covering the
+- `tests/authoring_motion_continuity_contract.rs` holds eleven contracts covering the
   `through` rewrite, `settle` and `transit` overrides, the stop/start warning and the
-  two ways to clear it, untouched `hold` segments, dropped interpolators, and the
-  non-interior waypoint diagnostic path.
+  two ways to clear it, untouched `hold` segments, dropped interpolators, the
+  non-interior waypoint diagnostic path, terminal-keyframe easing, and warning order.
+- A review after the merge found two defects in the rewrite, both now fixed and
+  pinned. The easing on a track's last keyframe governs no segment, because a segment
+  is named by the keyframe that starts it, yet it was still emitted as an
+  interpolator; the terminal segment now carries none, which is why the committed
+  `interactive-console.v0.riv` and `signal-weave.v0.riv` changed size. Separately,
+  `waypoint_stop_start` warnings were emitted in frame-sorted order rather than in the
+  order the keyframes appear in the document, so a diagnostic path pointed at an
+  index the reader had to re-sort to find; warnings now follow authored order.
 - `tests/authoring_motion_continuity_runtime.rs` holds two official-runtime contracts
   over `examples/authoring/waypoint-transit.v0.json`: a token crossing 40px, 160px, and
   280px at frames 0, 30, and 60 with the same ease-out cubic `(0.23, 1, 0.32, 1)` on

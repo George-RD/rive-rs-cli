@@ -12,10 +12,17 @@ const PORT = Number(process.env.SHOWCASE_PORT || 8773);
 const POLLING_MS = 50;
 const PRODUCTION_ID = "horaxon-signal-to-action";
 const INTERACTIVE_ID = "throughput-console";
-const NEEDLE_ROW_FRACTION = 0.607;
-const STANDBY_NEEDLE_LIMIT = 0.3;
-const ENGAGED_NEEDLE_FLOOR = 0.6;
+const CONSOLE_ARTBOARD_WIDTH = 960;
+const CONSOLE_ARTBOARD_HEIGHT = 540;
+const NEEDLE_ONLY_SCAN_ROW = 328;
+const STANDBY_NEEDLE_MAX_X = 288;
+const ENGAGED_NEEDLE_MIN_X = 576;
+const NEEDLE_ROW_FRACTION = NEEDLE_ONLY_SCAN_ROW / CONSOLE_ARTBOARD_HEIGHT;
+const STANDBY_NEEDLE_LIMIT = STANDBY_NEEDLE_MAX_X / CONSOLE_ARTBOARD_WIDTH;
+const ENGAGED_NEEDLE_FLOOR = ENGAGED_NEEDLE_MIN_X / CONSOLE_ARTBOARD_WIDTH;
 const SETTLE_FRAMES = 120;
+const LIFECYCLE_TIMEOUT_MS = 20000;
+const NEEDLE_TIMEOUT_MS = 15000;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -107,8 +114,8 @@ async function needleFraction(page, id) {
   return page.evaluate(
     ({ id, rowFraction }) => {
       const card = document.querySelector(`[data-showcase-id="${id}"]`);
-      const canvas = card?.querySelector("canvas.scene");
-      const context = canvas?.getContext("2d");
+      const canvas = card && card.querySelector("canvas.scene");
+      const context = canvas && canvas.getContext("2d");
       if (!canvas || !context) return null;
       const row = Math.round(canvas.height * rowFraction);
       const { data } = context.getImageData(0, row, canvas.width, 1);
@@ -128,35 +135,56 @@ async function needleFraction(page, id) {
 }
 
 async function waitForNeedle(page, compare, bound) {
+  const deadline = Date.now() + NEEDLE_TIMEOUT_MS;
+  let observed = null;
+  while (Date.now() < deadline) {
+    let fraction = null;
+    try {
+      fraction = await needleFraction(page, INTERACTIVE_ID);
+    } catch {
+      fraction = null;
+    }
+    if (fraction !== null) {
+      observed = fraction;
+      if (compare === "above" ? fraction >= bound : fraction <= bound) {
+        return { reached: true, observed };
+      }
+    }
+    await wait(POLLING_MS);
+  }
+  return { reached: false, observed };
+}
+
+async function waitForPlayingState(page, expected, label, pageErrors = []) {
   try {
     await page.waitForFunction(
-      ({ id, rowFraction, compare, bound }) => {
-        const card = document.querySelector(`[data-showcase-id="${id}"]`);
-        const canvas = card?.querySelector("canvas.scene");
-        const context = canvas?.getContext("2d");
-        if (!canvas || !context) return false;
-        const row = Math.round(canvas.height * rowFraction);
-        const { data } = context.getImageData(0, row, canvas.width, 1);
-        let total = 0;
-        let count = 0;
-        for (let column = 0; column < canvas.width; column += 1) {
-          const offset = column * 4;
-          if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
-            total += column;
-            count += 1;
-          }
-        }
-        if (count === 0) return false;
-        const fraction = total / count / canvas.width;
-        return compare === "above" ? fraction >= bound : fraction <= bound;
-      },
-      { id: INTERACTIVE_ID, rowFraction: NEEDLE_ROW_FRACTION, compare, bound },
-      { timeout: 15000, polling: POLLING_MS }
+      (expected) =>
+        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
+          (card) => card.dataset.playing === expected
+        ),
+      expected,
+      { timeout: LIFECYCLE_TIMEOUT_MS, polling: POLLING_MS }
     );
-    return true;
   } catch {
-    return false;
+    const observed = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".card[data-showcase-id]")).map((card) => ({
+        id: card.dataset.showcaseId,
+        playing: card.dataset.playing,
+        ready: card.dataset.playbackReady,
+      }))
+    );
+    const reported = pageErrors.length ? ` page errors: ${JSON.stringify(pageErrors)}` : "";
+    throw new Error(
+      `${label} did not reach data-playing="${expected}" within ${LIFECYCLE_TIMEOUT_MS}ms: ${JSON.stringify(observed)}.${reported}`
+    );
   }
+}
+
+async function pauseTimeline(page, id) {
+  await page.evaluate(async (id) => {
+    const timeline = window.__RIVE_SHOWCASE_TIMELINES?.get(id);
+    if (timeline) await timeline.pause();
+  }, id);
 }
 
 async function advanceTimeline(page, id, frames) {
@@ -204,10 +232,11 @@ async function driveInteractiveControls(page, errors) {
     return;
   }
 
-  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
-    errors.push(
-      `${INTERACTIVE_ID} standby needle sat at ${await needleFraction(page, INTERACTIVE_ID)}`
-    );
+  await pauseTimeline(page, INTERACTIVE_ID);
+
+  const standby = await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT);
+  if (!standby.reached) {
+    errors.push(`${INTERACTIVE_ID} standby needle sat at ${standby.observed}`);
   }
 
   const loadInput = await card
@@ -241,12 +270,12 @@ async function driveInteractiveControls(page, errors) {
 
   await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
 
-  if (!(await waitForNeedle(page, "above", ENGAGED_NEEDLE_FLOOR))) {
+  const engaged = await waitForNeedle(page, "above", ENGAGED_NEEDLE_FLOOR);
+  if (!engaged.reached) {
     errors.push(
-      `${INTERACTIVE_ID} armed needle sat at ${await needleFraction(
-        page,
-        INTERACTIVE_ID
-      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
+      `${INTERACTIVE_ID} armed needle sat at ${engaged.observed} with inputs ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
     );
   }
 
@@ -254,12 +283,12 @@ async function driveInteractiveControls(page, errors) {
   await waitForRuntimeInput(page, INTERACTIVE_ID, armedInput, false);
   await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
 
-  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
+  const reset = await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT);
+  if (!reset.reached) {
     errors.push(
-      `${INTERACTIVE_ID} reset trigger left the needle at ${await needleFraction(
-        page,
-        INTERACTIVE_ID
-      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
+      `${INTERACTIVE_ID} reset trigger left the needle at ${reset.observed} with inputs ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
     );
   }
 }
@@ -423,7 +452,9 @@ async function readEvidenceStatuses(page) {
     }
 
     const lifecycle = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+    const lifecycleErrors = [];
     collectErrors(lifecycle, errors);
+    collectErrors(lifecycle, lifecycleErrors);
     await lifecycle.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
     await lifecycle.waitForFunction(
       (expected) => {
@@ -442,25 +473,11 @@ async function readEvidenceStatuses(page) {
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
     });
-    await lifecycle.waitForFunction(
-      () =>
-        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
-          (card) => card.dataset.playing === "false"
-        ),
-      undefined,
-      { timeout: 5000, polling: POLLING_MS }
-    );
+    await waitForPlayingState(lifecycle, "false", "bfcache pause", lifecycleErrors);
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
     });
-    await lifecycle.waitForFunction(
-      () =>
-        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
-          (card) => card.dataset.playing === "true"
-        ),
-      undefined,
-      { timeout: 5000, polling: POLLING_MS }
-    );
+    await waitForPlayingState(lifecycle, "true", "bfcache resume", lifecycleErrors);
     await lifecycle.close();
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
