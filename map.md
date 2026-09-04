@@ -98,7 +98,7 @@ None in Phase 1.
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.discovery` claims `src/discovery/mod.rs` at 896 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.render` claims `src/render/mod.rs` at 782 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.interfaces.scaffold` claims `src/scaffold/mod.rs` at 717 lines, over the 500-line guideline with no allow-list marker
-- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/authoring_behavior_blend_contract.rs` at 515 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/authoring_behavior_blend_contract.rs` at 525 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/authoring_radial_contract.rs` at 566 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.verification.rust` claims `tests/e2e.rs` at 5255 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_PROVENANCE_NO_DECISION node `rive-cli.core.compile` has no decision artefact explaining why it exists

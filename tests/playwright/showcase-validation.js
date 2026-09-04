@@ -22,6 +22,7 @@ const STANDBY_NEEDLE_LIMIT = STANDBY_NEEDLE_MAX_X / CONSOLE_ARTBOARD_WIDTH;
 const ENGAGED_NEEDLE_FLOOR = ENGAGED_NEEDLE_MIN_X / CONSOLE_ARTBOARD_WIDTH;
 const SETTLE_FRAMES = 120;
 const LIFECYCLE_TIMEOUT_MS = 20000;
+const NEEDLE_TIMEOUT_MS = 15000;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -109,47 +110,40 @@ function assertStagingContract(entries) {
   }
 }
 
-const NEEDLE_SCAN = `(id, rowFraction) => {
-  const card = document.querySelector(\`[data-showcase-id="\${id}"]\`);
-  const canvas = card && card.querySelector("canvas.scene");
-  const context = canvas && canvas.getContext("2d");
-  if (!canvas || !context) return null;
-  const row = Math.round(canvas.height * rowFraction);
-  const { data } = context.getImageData(0, row, canvas.width, 1);
-  let total = 0;
-  let count = 0;
-  for (let column = 0; column < canvas.width; column += 1) {
-    const offset = column * 4;
-    if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
-      total += column;
-      count += 1;
-    }
-  }
-  return count === 0 ? null : total / count / canvas.width;
-}`;
-
 async function needleFraction(page, id) {
   return page.evaluate(
-    ({ id, rowFraction, scan }) => new Function(`return ${scan}`)()(id, rowFraction),
-    { id, rowFraction: NEEDLE_ROW_FRACTION, scan: NEEDLE_SCAN }
+    ({ id, rowFraction }) => {
+      const card = document.querySelector(`[data-showcase-id="${id}"]`);
+      const canvas = card && card.querySelector("canvas.scene");
+      const context = canvas && canvas.getContext("2d");
+      if (!canvas || !context) return null;
+      const row = Math.round(canvas.height * rowFraction);
+      const { data } = context.getImageData(0, row, canvas.width, 1);
+      let total = 0;
+      let count = 0;
+      for (let column = 0; column < canvas.width; column += 1) {
+        const offset = column * 4;
+        if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
+          total += column;
+          count += 1;
+        }
+      }
+      return count === 0 ? null : total / count / canvas.width;
+    },
+    { id, rowFraction: NEEDLE_ROW_FRACTION }
   );
 }
 
 async function waitForNeedle(page, compare, bound) {
-  try {
-    await page.waitForFunction(
-      ({ id, rowFraction, scan, compare, bound }) => {
-        const fraction = new Function(`return ${scan}`)()(id, rowFraction);
-        if (fraction === null) return false;
-        return compare === "above" ? fraction >= bound : fraction <= bound;
-      },
-      { id: INTERACTIVE_ID, rowFraction: NEEDLE_ROW_FRACTION, scan: NEEDLE_SCAN, compare, bound },
-      { timeout: 15000, polling: POLLING_MS }
-    );
-    return true;
-  } catch {
-    return false;
+  const deadline = Date.now() + NEEDLE_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const fraction = await needleFraction(page, INTERACTIVE_ID);
+    if (fraction !== null && (compare === "above" ? fraction >= bound : fraction <= bound)) {
+      return true;
+    }
+    await wait(POLLING_MS);
   }
+  return false;
 }
 
 async function waitForPlayingState(page, expected, label) {

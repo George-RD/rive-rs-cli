@@ -358,23 +358,25 @@
     async function setInput(name, value) {
       await ready;
       await Promise.all(controllers.map((controller) => controller.setInput(name, value)));
-      settleControlChange();
+      await settleControlChange();
     }
 
     async function fireTrigger(name) {
       await ready;
       await Promise.all(controllers.map((controller) => controller.fireTrigger(name)));
-      settleControlChange();
+      await settleControlChange();
     }
 
     function settleControlChange() {
-      if (playing || destroyed || settleQueued) return;
+      if (playing || destroyed || settleQueued) return seekChain;
       settleQueued = true;
-      seekChain = seekChain.then(async () => {
+      const settled = seekChain.then(async () => {
         settleQueued = false;
         if (playing || destroyed) return;
         for (const controller of controllers) controller.advanceOneStep();
       });
+      seekChain = settled.catch(() => {});
+      return settled;
     }
 
     function readInputs() {

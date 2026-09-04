@@ -333,6 +333,16 @@ fn blend_states_require_between_two_and_a_thousand_stops() {
         "invalid_blend_stops",
         "$.behavior.statecharts[0].states[1].blend.stops",
     );
+
+    let too_many = (0..1001)
+        .map(|index| json!({ "motion": "low-track", "value": literal(f64::from(index), "scalar") }))
+        .collect::<Vec<_>>();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!(too_many);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stops",
+        "$.behavior.statecharts[0].states[1].blend.stops",
+    );
 }
 
 #[test]
