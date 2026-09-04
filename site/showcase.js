@@ -233,11 +233,14 @@ async function main() {
 
   const grid = document.getElementById("showcase-grid");
   const timelines = [];
+  const byId = new Map();
   for (const entry of entries) {
     const built = buildCard(entry);
     grid.appendChild(built.card);
     timelines.push(built.timeline);
+    byId.set(entry.id, built.timeline);
   }
+  window.__RIVE_SHOWCASE_TIMELINES = byId;
 
   const resumeAfterBfcache = new Set();
 

@@ -15,6 +15,7 @@ const INTERACTIVE_ID = "throughput-console";
 const NEEDLE_ROW_FRACTION = 0.607;
 const STANDBY_NEEDLE_LIMIT = 0.3;
 const ENGAGED_NEEDLE_FLOOR = 0.6;
+const SETTLE_FRAMES = 120;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -158,6 +159,40 @@ async function waitForNeedle(page, compare, bound) {
   }
 }
 
+async function advanceTimeline(page, id, frames) {
+  await page.evaluate(
+    async ({ id, frames }) => {
+      const timeline = window.__RIVE_SHOWCASE_TIMELINES?.get(id);
+      if (!timeline) return;
+      await timeline.seekToFrame(timeline.currentFrame + frames);
+    },
+    { id, frames }
+  );
+}
+
+async function readRuntimeInputs(page, id) {
+  return page.evaluate(
+    (id) => window.__RIVE_SHOWCASE_TIMELINES?.get(id)?.readInputs() || null,
+    id
+  );
+}
+
+async function waitForRuntimeInput(page, id, name, expected) {
+  try {
+    await page.waitForFunction(
+      ({ id, name, expected }) => {
+        const values = window.__RIVE_SHOWCASE_TIMELINES?.get(id)?.readInputs();
+        return Boolean(values) && values[name] === expected;
+      },
+      { id, name, expected },
+      { timeout: 15000, polling: POLLING_MS }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function driveInteractiveControls(page, errors) {
   const card = page.locator(`[data-showcase-id="${INTERACTIVE_ID}"]`);
   if ((await card.count()) === 0) {
@@ -175,6 +210,13 @@ async function driveInteractiveControls(page, errors) {
     );
   }
 
+  const loadInput = await card
+    .locator('[data-control-kind="range"]')
+    .getAttribute("data-control-input");
+  const armedInput = await card
+    .locator('[data-control-kind="toggle"]')
+    .getAttribute("data-control-input");
+
   const slider = card.locator('[data-control-kind="range"] input[type="range"]');
   await slider.evaluate((node) => {
     node.value = "100";
@@ -182,17 +224,42 @@ async function driveInteractiveControls(page, errors) {
   });
   await card.locator('[data-control-kind="toggle"] input[type="checkbox"]').check();
 
+  if (!(await waitForRuntimeInput(page, INTERACTIVE_ID, loadInput, 100))) {
+    errors.push(
+      `${INTERACTIVE_ID} slider did not reach the runtime; inputs were ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
+    );
+  }
+  if (!(await waitForRuntimeInput(page, INTERACTIVE_ID, armedInput, true))) {
+    errors.push(
+      `${INTERACTIVE_ID} toggle did not reach the runtime; inputs were ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
+    );
+  }
+
+  await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
+
   if (!(await waitForNeedle(page, "above", ENGAGED_NEEDLE_FLOOR))) {
     errors.push(
-      `${INTERACTIVE_ID} armed needle sat at ${await needleFraction(page, INTERACTIVE_ID)}, expected the blended load`
+      `${INTERACTIVE_ID} armed needle sat at ${await needleFraction(
+        page,
+        INTERACTIVE_ID
+      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
     );
   }
 
   await card.locator('[data-control-kind="trigger"] button').click();
+  await waitForRuntimeInput(page, INTERACTIVE_ID, armedInput, false);
+  await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
 
   if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
     errors.push(
-      `${INTERACTIVE_ID} reset trigger left the needle at ${await needleFraction(page, INTERACTIVE_ID)}`
+      `${INTERACTIVE_ID} reset trigger left the needle at ${await needleFraction(
+        page,
+        INTERACTIVE_ID
+      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
     );
   }
 }

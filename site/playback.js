@@ -202,6 +202,15 @@
       if (input && typeof input.fire === "function") input.fire();
     }
 
+    function readInputs() {
+      if (!instance || !stateMachine) return {};
+      const values = {};
+      for (const input of instance.stateMachineInputs(stateMachine) || []) {
+        values[input.name] = input.value;
+      }
+      return values;
+    }
+
     function destroy() {
       if (destroyed) return;
       destroyed = true;
@@ -210,7 +219,7 @@
       instance = null;
     }
 
-    return { ready, seekToFrame, resize, setInput, fireTrigger, destroy };
+    return { ready, seekToFrame, resize, setInput, fireTrigger, readInputs, destroy };
   }
 
   function createLogicalTimeline(controllers, options = {}) {
@@ -340,6 +349,10 @@
       await Promise.all(controllers.map((controller) => controller.fireTrigger(name)));
     }
 
+    function readInputs() {
+      return controllers[0] ? controllers[0].readInputs() : {};
+    }
+
     function destroy() {
       if (destroyed) return;
       destroyed = true;
@@ -358,6 +371,7 @@
       resize,
       setInput,
       fireTrigger,
+      readInputs,
       destroy,
       get currentFrame() {
         return logicalFrame;
