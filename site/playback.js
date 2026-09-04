@@ -202,6 +202,12 @@
       if (input && typeof input.fire === "function") input.fire();
     }
 
+    function advanceOneStep() {
+      if (!instance || destroyed || mode !== "stateMachine") return;
+      stepsAdvanced += 1;
+      stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
+    }
+
     function readInputs() {
       if (!instance || !stateMachine) return {};
       const values = {};
@@ -219,7 +225,16 @@
       instance = null;
     }
 
-    return { ready, seekToFrame, resize, setInput, fireTrigger, readInputs, destroy };
+    return {
+      ready,
+      seekToFrame,
+      resize,
+      setInput,
+      fireTrigger,
+      advanceOneStep,
+      readInputs,
+      destroy,
+    };
   }
 
   function createLogicalTimeline(controllers, options = {}) {
@@ -342,11 +357,20 @@
     async function setInput(name, value) {
       await ready;
       await Promise.all(controllers.map((controller) => controller.setInput(name, value)));
+      settleControlChange();
     }
 
     async function fireTrigger(name) {
       await ready;
       await Promise.all(controllers.map((controller) => controller.fireTrigger(name)));
+      settleControlChange();
+    }
+
+    function settleControlChange() {
+      if (playing || destroyed) return;
+      for (const controller of controllers) controller.advanceOneStep();
+      logicalFrame += 1;
+      reportFrame();
     }
 
     function readInputs() {
@@ -406,11 +430,13 @@
       fps,
       stateMachine: options.left.stateMachine || options.stateMachine,
       animation: options.left.animation || options.animation,
+      inputs: options.left.inputs || options.inputs,
     });
     const right = createControlledRive(options.right.canvas, options.right.src, {
       fps,
       stateMachine: options.right.stateMachine || options.stateMachine,
       animation: options.right.animation || options.animation,
+      inputs: options.right.inputs || options.inputs,
     });
     return createLogicalTimeline([left, right], {
       ...options,

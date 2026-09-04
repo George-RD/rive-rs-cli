@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use serde_json::{Value, json};
 
@@ -10,7 +10,7 @@ use super::super::super::spec::{
     AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec, BehaviorInputKind,
     BehaviorInputSpec, BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec,
     BehaviorPropertySpec, BehaviorStateSpec, BehaviorTransitionConditionSpec,
-    BehaviorTransitionSpec, SourceMapEntry, Unit,
+    BehaviorTransitionSpec, Quantity, SourceMapEntry, Unit,
 };
 use super::MotionTargetIndex;
 
@@ -760,8 +760,26 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
             states: &statechart.states,
             transitions: &statechart.transitions,
         };
-        validate_region(region, &motion_tracks, &inputs, &bindings, &mut diagnostics);
+        validate_region(
+            region,
+            &spec.parameters,
+            &motion_tracks,
+            &inputs,
+            &bindings,
+            &mut diagnostics,
+        );
 
+        let layer_zero_ids = statechart
+            .states
+            .iter()
+            .map(|state| state.id.as_str())
+            .chain(
+                statechart
+                    .transitions
+                    .iter()
+                    .map(|transition| transition.id.as_str()),
+            )
+            .collect::<HashSet<_>>();
         let mut regions = HashSet::new();
         for (region_index, region) in statechart.regions.iter().enumerate() {
             let region_path = format!("{statechart_path}.regions[{region_index}]");
@@ -776,6 +794,16 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                     ),
                 ));
             }
+            if layer_zero_ids.contains(region.id.as_str()) {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{region_path}.id"),
+                    "behavior_region_id_collision",
+                    format!(
+                        "behavior region id '{}' is also a state or transition id in statechart '{}', so both would claim the source-map identity '{}/{}'",
+                        region.id, statechart.id, statechart.id, region.id
+                    ),
+                ));
+            }
             validate_region(
                 RegionValidation {
                     statechart_id: &statechart.id,
@@ -784,6 +812,7 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                     states: &region.states,
                     transitions: &region.transitions,
                 },
+                &spec.parameters,
                 &motion_tracks,
                 &inputs,
                 &bindings,
@@ -795,6 +824,9 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     diagnostics
 }
 
+const BLEND_STOP_MINIMUM: usize = 2;
+const BLEND_STOP_LIMIT: usize = 1000;
+
 struct RegionValidation<'a> {
     statechart_id: &'a str,
     region_path: &'a str,
@@ -805,6 +837,7 @@ struct RegionValidation<'a> {
 
 fn validate_region(
     region: RegionValidation<'_>,
+    parameters: &BTreeMap<String, Quantity>,
     motion_tracks: &HashSet<&str>,
     inputs: &HashMap<&str, &BehaviorInputSpec>,
     bindings: &HashMap<&str, &BehaviorBindingSpec>,
@@ -836,6 +869,7 @@ fn validate_region(
             state,
             &state_path,
             statechart_id,
+            parameters,
             motion_tracks,
             inputs,
             diagnostics,
@@ -891,6 +925,7 @@ fn validate_state_motion(
     state: &BehaviorStateSpec,
     state_path: &str,
     statechart_id: &str,
+    parameters: &BTreeMap<String, Quantity>,
     motion_tracks: &HashSet<&str>,
     inputs: &HashMap<&str, &BehaviorInputSpec>,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
@@ -944,6 +979,17 @@ fn validate_state_motion(
                 }
                 Some(_) => {}
             }
+            if !(BLEND_STOP_MINIMUM..=BLEND_STOP_LIMIT).contains(&blend.stops.len()) {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{state_path}.blend.stops"),
+                    "invalid_blend_stops",
+                    format!(
+                        "a blend needs between {BLEND_STOP_MINIMUM} and {BLEND_STOP_LIMIT} stops but declares {}",
+                        blend.stops.len()
+                    ),
+                ));
+            }
+            let mut previous = None;
             for (stop_index, stop) in blend.stops.iter().enumerate() {
                 if !motion_tracks.contains(stop.motion.as_str()) {
                     diagnostics.push(AuthoringDiagnostic::new(
@@ -952,6 +998,24 @@ fn validate_state_motion(
                         format!("motion track '{}' is not defined", stop.motion),
                     ));
                 }
+                let stop_path = format!("{state_path}.blend.stops[{stop_index}].value");
+                let Ok(value) =
+                    evaluate_expression(&stop.value, &stop_path, parameters, Unit::Scalar)
+                else {
+                    continue;
+                };
+                if let Some(previous_value) = previous
+                    && value <= previous_value
+                {
+                    diagnostics.push(AuthoringDiagnostic::new(
+                        stop_path,
+                        "invalid_blend_stop_order",
+                        format!(
+                            "blend stop values must increase, but {value} does not follow {previous_value}"
+                        ),
+                    ));
+                }
+                previous = Some(value);
             }
         }
     }

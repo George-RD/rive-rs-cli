@@ -1,6 +1,8 @@
+mod support;
+
 use rive_cli::authoring::{LoweredAuthoring, lower_authoring_json};
-use rive_cli::builder::{SceneSpec, build_scene};
 use serde_json::{Value, json};
+use support::assert_builds;
 
 fn literal(value: f64, unit: &str) -> Value {
     json!({ "kind": "literal", "value": value, "unit": unit })
@@ -78,12 +80,6 @@ fn lower(input: &Value) -> LoweredAuthoring {
     lower_authoring_json(&input.to_string()).expect("waypoint motion should lower")
 }
 
-fn assert_builds(scene: &Value) {
-    let scene: SceneSpec =
-        serde_json::from_value(scene.clone()).expect("lowered SceneSpec should deserialize");
-    build_scene(&scene, None).expect("lowered SceneSpec should pass the canonical builder");
-}
-
 fn animation(scene: &Value) -> &Value {
     &scene["artboard"]["animations"][0]
 }
@@ -123,7 +119,7 @@ fn through_continuity_lowers_interior_waypoints_without_stopping() {
     assert_eq!(frames[1]["interpolation"], "cubic");
     assert!(frames[1].get("interpolator").is_some());
     assert!(first.warnings.is_empty());
-    assert_builds(&first.scene);
+    assert_builds(first.scene.clone());
 }
 
 #[test]
@@ -136,7 +132,7 @@ fn settle_waypoints_keep_authored_easing_inside_a_through_track() {
     let frames = x_frames(&lowered.scene);
     assert_eq!(frames[0]["interpolation"], "cubic");
     assert!(frames[0].get("interpolator").is_some());
-    assert_builds(&lowered.scene);
+    assert_builds(lowered.scene.clone());
 }
 
 #[test]
@@ -164,7 +160,7 @@ fn shared_stop_start_easing_reports_a_waypoint_warning() {
     assert_eq!(warning.path, "$.motion.tracks[0].keyframes[1]");
     assert!(warning.message.contains("settle"));
     assert_eq!(lowered.warnings.len(), 1);
-    assert_builds(&lowered.scene);
+    assert_builds(lowered.scene.clone());
 }
 
 #[test]
@@ -206,7 +202,64 @@ fn continuity_drops_interpolators_that_no_longer_have_a_segment() {
     let lowered = lower(&input);
     assert_eq!(animation(&lowered.scene).get("interpolators"), None);
     assert_eq!(x_frames(&lowered.scene)[0]["interpolation"], "linear");
-    assert_builds(&lowered.scene);
+    assert_builds(lowered.scene.clone());
+}
+
+#[test]
+fn a_terminal_keyframe_easing_governs_no_segment_and_emits_no_interpolator() {
+    let mut input = document();
+    input["motion"]["tracks"][0]["keyframes"][0] = keyframe(0.0, "start", None);
+    input["motion"]["tracks"][0]["keyframes"][1] = keyframe(30.0, "mid", None);
+
+    let lowered = lower(&input);
+    assert_eq!(animation(&lowered.scene).get("interpolators"), None);
+    let frames = x_frames(&lowered.scene);
+    assert_eq!(frames[2]["interpolation"], "linear");
+    assert_eq!(frames[2].get("interpolator"), None);
+    assert!(
+        !lowered
+            .source_map
+            .entries
+            .iter()
+            .any(|entry| entry.authored_id == "settle"),
+        "an easing that governs no segment must not be declared in the source map"
+    );
+    assert_builds(lowered.scene.clone());
+}
+
+#[test]
+fn warnings_follow_authored_keyframe_order() {
+    let mut input = document();
+    input["motion"]["poses"] = json!([
+        pose("start", 40.0),
+        pose("second", 100.0),
+        pose("third", 160.0),
+        pose("fourth", 220.0),
+        pose("arrive", 280.0)
+    ]);
+    input["motion"]["tracks"][0]["duration_frames"] = literal(120.0, "scalar");
+    input["motion"]["tracks"][0]["keyframes"] = json!([
+        keyframe(0.0, "start", Some("settle")),
+        keyframe(60.0, "third", Some("settle")),
+        keyframe(30.0, "second", Some("settle")),
+        keyframe(90.0, "fourth", Some("settle")),
+        keyframe(120.0, "arrive", Some("settle"))
+    ]);
+
+    let lowered = lower(&input);
+    let paths = lowered
+        .warnings
+        .iter()
+        .map(|warning| warning.path.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        paths,
+        vec![
+            "$.motion.tracks[0].keyframes[1]",
+            "$.motion.tracks[0].keyframes[2]",
+            "$.motion.tracks[0].keyframes[3]"
+        ]
+    );
 }
 
 #[test]

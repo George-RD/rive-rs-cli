@@ -12,6 +12,9 @@ const PORT = Number(process.env.SHOWCASE_PORT || 8773);
 const POLLING_MS = 50;
 const PRODUCTION_ID = "horaxon-signal-to-action";
 const INTERACTIVE_ID = "throughput-console";
+// The console artboard is 960x540. Its gauge needle spans y 324..357 and the gauge
+// track starts at y 332, so row 328 (0.607 of the height) crosses the needle alone.
+// Standby holds the needle near x 122 (0.127) and load 100 drives it past x 700 (0.73).
 const NEEDLE_ROW_FRACTION = 0.607;
 const STANDBY_NEEDLE_LIMIT = 0.3;
 const ENGAGED_NEEDLE_FLOOR = 0.6;
@@ -103,60 +106,54 @@ function assertStagingContract(entries) {
   }
 }
 
+const NEEDLE_SCAN = `(id, rowFraction) => {
+  const card = document.querySelector(\`[data-showcase-id="\${id}"]\`);
+  const canvas = card && card.querySelector("canvas.scene");
+  const context = canvas && canvas.getContext("2d");
+  if (!canvas || !context) return null;
+  const row = Math.round(canvas.height * rowFraction);
+  const { data } = context.getImageData(0, row, canvas.width, 1);
+  let total = 0;
+  let count = 0;
+  for (let column = 0; column < canvas.width; column += 1) {
+    const offset = column * 4;
+    if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
+      total += column;
+      count += 1;
+    }
+  }
+  return count === 0 ? null : total / count / canvas.width;
+}`;
+
 async function needleFraction(page, id) {
   return page.evaluate(
-    ({ id, rowFraction }) => {
-      const card = document.querySelector(`[data-showcase-id="${id}"]`);
-      const canvas = card?.querySelector("canvas.scene");
-      const context = canvas?.getContext("2d");
-      if (!canvas || !context) return null;
-      const row = Math.round(canvas.height * rowFraction);
-      const { data } = context.getImageData(0, row, canvas.width, 1);
-      let total = 0;
-      let count = 0;
-      for (let column = 0; column < canvas.width; column += 1) {
-        const offset = column * 4;
-        if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
-          total += column;
-          count += 1;
-        }
-      }
-      return count === 0 ? null : total / count / canvas.width;
-    },
-    { id, rowFraction: NEEDLE_ROW_FRACTION }
+    ({ id, rowFraction, scan }) => new Function(`return ${scan}`)()(id, rowFraction),
+    { id, rowFraction: NEEDLE_ROW_FRACTION, scan: NEEDLE_SCAN }
   );
 }
 
 async function waitForNeedle(page, compare, bound) {
   try {
     await page.waitForFunction(
-      ({ id, rowFraction, compare, bound }) => {
-        const card = document.querySelector(`[data-showcase-id="${id}"]`);
-        const canvas = card?.querySelector("canvas.scene");
-        const context = canvas?.getContext("2d");
-        if (!canvas || !context) return false;
-        const row = Math.round(canvas.height * rowFraction);
-        const { data } = context.getImageData(0, row, canvas.width, 1);
-        let total = 0;
-        let count = 0;
-        for (let column = 0; column < canvas.width; column += 1) {
-          const offset = column * 4;
-          if (data[offset] > 200 && data[offset + 1] > 200 && data[offset + 2] > 200) {
-            total += column;
-            count += 1;
-          }
-        }
-        if (count === 0) return false;
-        const fraction = total / count / canvas.width;
+      ({ id, rowFraction, scan, compare, bound }) => {
+        const fraction = new Function(`return ${scan}`)()(id, rowFraction);
+        if (fraction === null) return false;
         return compare === "above" ? fraction >= bound : fraction <= bound;
       },
-      { id: INTERACTIVE_ID, rowFraction: NEEDLE_ROW_FRACTION, compare, bound },
+      { id: INTERACTIVE_ID, rowFraction: NEEDLE_ROW_FRACTION, scan: NEEDLE_SCAN, compare, bound },
       { timeout: 15000, polling: POLLING_MS }
     );
     return true;
   } catch {
     return false;
   }
+}
+
+async function pauseTimeline(page, id) {
+  await page.evaluate(async (id) => {
+    const timeline = window.__RIVE_SHOWCASE_TIMELINES?.get(id);
+    if (timeline) await timeline.pause();
+  }, id);
 }
 
 async function advanceTimeline(page, id, frames) {
@@ -203,6 +200,8 @@ async function driveInteractiveControls(page, errors) {
     errors.push(`${INTERACTIVE_ID} card has no state-machine controls`);
     return;
   }
+
+  await pauseTimeline(page, INTERACTIVE_ID);
 
   if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
     errors.push(

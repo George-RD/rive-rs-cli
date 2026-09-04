@@ -314,6 +314,70 @@ fn blend_states_require_a_number_input_and_known_motion() {
 }
 
 #[test]
+fn blend_states_require_between_two_and_a_thousand_stops() {
+    let mut input = document();
+    let stops = input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"]
+        .as_array()
+        .expect("blend stops")
+        .clone();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([stops[0]]);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stops",
+        "$.behavior.statecharts[0].states[1].blend.stops",
+    );
+
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"] = json!([]);
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stops",
+        "$.behavior.statecharts[0].states[1].blend.stops",
+    );
+}
+
+#[test]
+fn blend_stop_values_must_increase() {
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"][1]["value"] =
+        literal(0.0, "scalar");
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stop_order",
+        "$.behavior.statecharts[0].states[1].blend.stops[1].value",
+    );
+
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"][0]["value"] =
+        literal(100.0, "scalar");
+    input["behavior"]["statecharts"][0]["states"][1]["blend"]["stops"][1]["value"] =
+        literal(0.0, "scalar");
+    assert_diagnostic(
+        &input,
+        "invalid_blend_stop_order",
+        "$.behavior.statecharts[0].states[1].blend.stops[1].value",
+    );
+}
+
+#[test]
+fn region_ids_must_not_alias_a_layer_zero_state_or_transition() {
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!("resting");
+    assert_diagnostic(
+        &input,
+        "behavior_region_id_collision",
+        "$.behavior.statecharts[0].regions[0].id",
+    );
+
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["regions"][0]["id"] = json!("engage");
+    assert_diagnostic(
+        &input,
+        "behavior_region_id_collision",
+        "$.behavior.statecharts[0].regions[0].id",
+    );
+}
+
+#[test]
 fn typed_conditions_must_match_the_input_kind() {
     let mut input = document();
     input["behavior"]["statecharts"][0]["transitions"][0]["when"] =

@@ -174,8 +174,13 @@ A behavior state declares exactly one of `motion` and `blend`. Neither returns
 path. `blend` is `{"input": <number input id>, "stops": [{"motion": <track id>,
 "value": <scalar expression>}, ...]}` and lowers to a `blend_state_1d` whose children
 are `blend_animation_1d` entries naming the lowered animations.
-`docs/authoring.schema.v0.json` records `minItems` 2 and `maxItems` 1000 on `stops`;
-the compiler does not re-check that count. A `blend.input` that is not a number input
+`docs/authoring.schema.v0.json` records `minItems` 2 and `maxItems` 1000 on `stops`,
+and the compiler enforces the same bound on the typed path, where no JSON schema runs:
+a count outside it returns `invalid_blend_stops` at `$....states[i].blend.stops`. Stop
+values must strictly increase, because `BlendState1DInstance::animationIndex` binary-
+searches its children as ascending thresholds; a value that does not exceed its
+predecessor returns `invalid_blend_stop_order` at
+`$....states[i].blend.stops[j].value`. A `blend.input` that is not a number input
 returns `invalid_blend_input` and one that does not exist returns
 `unknown_behavior_input`, both at `$....states[i].blend.input`; an unknown stop track
 returns `unknown_behavior_motion` at `$....states[i].blend.stops[j].motion`. Rive
@@ -187,7 +192,10 @@ than 120px. The mapping stays monotonic.
 "transitions"}`. The statechart's own states remain layer 0, and each region becomes one
 further state-machine layer with its own entry state, exit state, and entry transition.
 Region ids are unique within a statechart; a repeat returns `duplicate_behavior_region`
-at `$....regions[i].id`. Source-map authored ids inside a region are
+at `$....regions[i].id`. A region id may not alias one of the statechart's own layer-0
+state or transition ids either, because both mangle to the same runtime name; a
+collision returns `behavior_region_id_collision` at the same path. Source-map authored
+ids inside a region are
 `statechart/region/state` and their scene paths are
 `/artboard/state_machines/{m}/layers/{n}/states/{i}`.
 

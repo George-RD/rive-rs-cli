@@ -89,7 +89,8 @@ None in Phase 1.
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.ai` claims `src/ai/eval/validation.rs` at 508 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.ai` claims `src/ai/repair.rs` at 813 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/constraint.rs` at 554 lines, over the 500-line guideline with no allow-list marker
-- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/compiler/behavior.rs` at 1077 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/compiler/behavior.rs` at 1141 lines, over the 500-line guideline with no allow-list marker
+- warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/frontend/motion.rs` at 503 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/lower.rs` at 653 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/operations.rs` at 731 lines, over the 500-line guideline with no allow-list marker
 - warning: CAIRN_MODULE_OVERSIZED module `rive-cli.intelligence.authoring` claims `src/authoring/spec.rs` at 759 lines, over the 500-line guideline with no allow-list marker

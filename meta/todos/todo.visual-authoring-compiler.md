@@ -138,9 +138,11 @@ components, instances, and bounded patterns into explicit SceneSpec objects.
 
 ## Stacking hardening inside the completed slice
 
-Issue #193 adds explicit sibling stacking order on branch
-`claude/workflows-roadmap-demos-9wlqz4`; it is not merged and no CI run is recorded for
-it here. It hardens the slice PR #156 completed rather than reopening it: the progress
+Issue #193 adds explicit sibling stacking order. Exact head
+`02d5621` passed CI run `33836991510` across formatting, Clippy, the Rust 1.88 minimum,
+browser contracts, Cairn architecture validation, official-runtime evidence, demo, site,
+Playwright, and visual regression, and PR #221 merged to `main` as `73598d5` on
+2026-09-04. It hardens the slice PR #156 completed rather than reopening it: the progress
 and acceptance criteria above are unchanged, and the status stays `done`.
 
 - `StackingSpec` in `src/authoring/spec.rs` accepts `runtime` (default) or

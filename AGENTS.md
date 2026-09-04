@@ -97,7 +97,7 @@ cargo build --release
 cargo build --features mcp          # enable MCP server
 
 # Test
-cargo test --lib                    # 634 library tests
+cargo test --lib                    # 635 library tests
 cargo test --test e2e               # 191 CLI end-to-end tests
 
 # Lint / Format
@@ -205,7 +205,7 @@ cd fuzz && cargo +nightly fuzz run fuzz_parse_riv
 ## Testing & QA
 
 ### Layers
-1. **Unit tests**: 49 inline `#[cfg(test)]` blocks across `src/`, holding 634 tests. Cover object type keys, property emission, encoder primitives, ToC packing against the official reference file, validator parsing, builder deserialization, render image analysis, and scene-schema sync.
+1. **Unit tests**: 46 inline `#[cfg(test)] mod` blocks across `src/` (plus 3 `#[cfg(test)]` attributes on non-module items, for 49 attributes in total), holding 635 tests. Cover object type keys, property emission, encoder primitives, ToC packing against the official reference file, validator parsing, builder deserialization, render image analysis, and scene-schema sync.
 2. **Property tests**: `proptest` roundtrips in `src/encoder/binary_writer.rs` (varuint, float, string, color, bool).
 3. **E2E CLI tests**: `tests/e2e.rs` (191 tests). Spawns the compiled binary for `generate`, `validate`, `inspect`, and `decompile` against all 66 fixtures.
 4. **Runtime regression**: Playwright loads generated `.riv` files in `@rive-app/canvas` WASM via headless Chromium.

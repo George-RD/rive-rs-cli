@@ -1,8 +1,8 @@
-use rive_cli::{
-    authoring::{AuthoringSourceMap, LoweredAuthoring, lower_authoring_json},
-    builder::{SceneSpec, build_scene},
-};
+mod support;
+
+use rive_cli::authoring::{AuthoringSourceMap, LoweredAuthoring, lower_authoring_json};
 use serde_json::{Value, json};
+use support::assert_builds;
 
 fn document() -> Value {
     json!({
@@ -45,12 +45,6 @@ fn source_entry<'a>(
         .iter()
         .find(|entry| entry.authored_id == authored_id)
         .expect("source-map entry should exist")
-}
-
-fn assert_builds(scene: Value) {
-    let scene: SceneSpec =
-        serde_json::from_value(scene).expect("lowered SceneSpec should deserialize");
-    build_scene(&scene, None).expect("lowered SceneSpec should pass the canonical builder");
 }
 
 #[test]

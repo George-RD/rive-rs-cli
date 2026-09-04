@@ -41,15 +41,15 @@ artifact/generating-source provenance, and the Verification Lab remains the sepa
 correctness route.
 
 [#193](https://github.com/George-RD/rive-rs-cli/issues/193) and
-[#194](https://github.com/George-RD/rive-rs-cli/issues/194) are implemented on branch
-`claude/workflows-roadmap-demos-9wlqz4` and are not merged. #193 adds explicit
+[#194](https://github.com/George-RD/rive-rs-cli/issues/194) are complete in PR #221,
+merged to `main` as `73598d5`. #193 adds explicit
 `stacking` to the `visual` section, each component, and the `group` node, where
 `back_to_front` reverses the emitted child order so the last authored sibling paints on
 top. #194 adds track `continuity` and keyframe `waypoint` so an interior waypoint keeps
 its velocity, and adds the non-fatal `waypoint_stop_start` warning. Both harden the
 completed visual and motion slices without reopening them.
 
-The same branch extends the open behavior slice with number and trigger statechart
+The same pull request extends the open behavior slice with number and trigger statechart
 inputs, comparison and trigger transition conditions, one-dimensional blend states,
 parallel regions, and typed listener actions, and adds
 `examples/authoring/interactive-console.v0.json` and its committed
@@ -117,7 +117,7 @@ AuthoringSpec or Verification Lab progress.
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
 | P1 | [Public verification and original-work proof](meta/todos/todo.verification-lab-public-proof.md) | complete in PR #219 | frame-locked parity proof, manifest-driven original showcase, original landing proof, and separately bounded production-consumer provenance |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
-| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206; number and trigger inputs, blend states, parallel regions, and typed listener actions implemented on unmerged branch `claude/workflows-roadmap-demos-9wlqz4` | supported typed behavior reproduces a complex interactive showcase exactly; additive and direct blend states, transition duration and exit time, and view-model properties beyond `bool` remain open |
+| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206; number and trigger inputs, blend states, parallel regions, and typed listener actions complete in PR #221 | supported typed behavior reproduces a complex interactive showcase exactly; additive and direct blend states, transition duration and exit time, and view-model properties beyond `bool` remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | complete in PR #212 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | complete in PR #215 | complex prompts target AuthoringSpec; task-focused schema/source-map context and stable-ID repair are integrated with eval evidence |
