@@ -105,8 +105,11 @@ impl<'a> AuthoringCompiler<'a> {
                     animations,
                     source_entries,
                     easing_source_entries,
+                    warnings,
                 } = motion::lower_motion(spec, motion_targets)
                     .map_err(|error| rewrite_error_paths(spec, error))?;
+                let mut draft = draft;
+                draft.record_warnings(warnings);
                 let lowered = draft
                     .finish(animations, source_entries, easing_source_entries)
                     .map_err(|error| rewrite_error_paths(spec, error))?;
@@ -136,11 +139,13 @@ impl<'a> AuthoringCompiler<'a> {
                     animations,
                     source_entries,
                     easing_source_entries,
+                    warnings,
                 } = motion::lower_motion(spec, motion_targets)
                     .map_err(|error| rewrite_error_paths(spec, error))?;
                 debug_assert!(animations.is_empty());
                 debug_assert!(source_entries.is_empty());
                 debug_assert!(easing_source_entries.is_empty());
+                debug_assert!(warnings.is_empty());
                 let (lowered, runtime_names) = Self::lower_behavior(spec, lowered, runtime_names)?;
                 Ok(Self {
                     spec,

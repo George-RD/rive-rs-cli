@@ -4,11 +4,13 @@ use serde_json::{Value, json};
 
 use crate::builder::{SceneSpec, build_scene};
 
+use super::super::super::expression::evaluate_expression;
 use super::super::super::lower::runtime_name;
 use super::super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec,
-    BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec, BehaviorPropertySpec,
-    BehaviorTransitionConditionSpec, SourceMapEntry,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec, BehaviorInputKind,
+    BehaviorInputSpec, BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec,
+    BehaviorPropertySpec, BehaviorStateSpec, BehaviorTransitionConditionSpec,
+    BehaviorTransitionSpec, SourceMapEntry, Unit,
 };
 use super::MotionTargetIndex;
 
@@ -133,11 +135,12 @@ pub(super) fn lower_behavior(
         let used_bindings = statechart
             .transitions
             .iter()
+            .chain(statechart.regions.iter().flat_map(|region| &region.transitions))
             .filter_map(|transition| match &transition.when {
                 BehaviorTransitionConditionSpec::Binding(condition) => {
                     Some(condition.binding.as_str())
                 }
-                BehaviorTransitionConditionSpec::Input(_) => None,
+                _ => None,
             })
             .collect::<HashSet<_>>();
         let mut input_name_by_binding = HashMap::new();
@@ -181,6 +184,7 @@ pub(super) fn lower_behavior(
 
         let mut input_name_by_id = HashMap::new();
         for (input_index, input) in statechart.inputs.iter().enumerate() {
+            let input_path = format!("{statechart_path}.inputs[{input_index}]");
             let scene_input_index = inputs.len();
             let input_name = runtime_name(
                 &[
@@ -190,11 +194,28 @@ pub(super) fn lower_behavior(
                 ],
                 "input",
             );
-            inputs.push(json!({
-                "type": "bool",
-                "name": input_name,
-                "value": input.bool_value()
-            }));
+            inputs.push(match input {
+                BehaviorInputSpec::Bool { value, .. } => json!({
+                    "type": "bool",
+                    "name": input_name,
+                    "value": value
+                }),
+                BehaviorInputSpec::Number { value, .. } => json!({
+                    "type": "number",
+                    "name": input_name,
+                    "value": evaluate_expression(
+                        value,
+                        &format!("{input_path}.value"),
+                        &spec.parameters,
+                        Unit::Scalar,
+                    )
+                    .map_err(AuthoringError::one)?
+                }),
+                BehaviorInputSpec::Trigger { .. } => json!({
+                    "type": "trigger",
+                    "name": input_name
+                }),
+            });
             input_name_by_id.insert(input.id(), input_name.clone());
             source_entries.push(SourceMapEntry {
                 authored_id: format!("{}/{}", statechart.id, input.id()),
@@ -220,19 +241,34 @@ pub(super) fn lower_behavior(
                     &format!("{listener_path}.target"),
                 )?
             };
-            let actions = listener
-                .actions
-                .iter()
-                .map(|action| match action {
-                    BehaviorListenerActionSpec::BoolChange { input, value } => json!({
+            let mut actions = Vec::with_capacity(listener.actions.len());
+            for (action_index, action) in listener.actions.iter().enumerate() {
+                let input = input_name_by_id
+                    .get(action.input())
+                    .expect("validated behavior listener input");
+                actions.push(match action {
+                    BehaviorListenerActionSpec::BoolChange { value, .. } => json!({
                         "type": "bool_change",
-                        "input": input_name_by_id
-                            .get(input.as_str())
-                            .expect("validated behavior listener input"),
+                        "input": input,
                         "value": value
                     }),
-                })
-                .collect::<Vec<_>>();
+                    BehaviorListenerActionSpec::NumberChange { value, .. } => json!({
+                        "type": "number_change",
+                        "input": input,
+                        "value": evaluate_expression(
+                            value,
+                            &format!("{listener_path}.actions[{action_index}].value"),
+                            &spec.parameters,
+                            Unit::Scalar,
+                        )
+                        .map_err(AuthoringError::one)?
+                    }),
+                    BehaviorListenerActionSpec::TriggerChange { .. } => json!({
+                        "type": "trigger_change",
+                        "input": input
+                    }),
+                });
+            }
             listeners.push(json!({
                 "target": target,
                 "listener_type": listener.listener_type.as_str(),
@@ -247,84 +283,54 @@ pub(super) fn lower_behavior(
             });
         }
 
-        let state_index_by_id = statechart
-            .states
-            .iter()
-            .enumerate()
-            .map(|(index, state)| (state.id.as_str(), index + 1))
-            .collect::<HashMap<_, _>>();
-
-        let mut states = vec![json!({ "type": "entry" })];
-        for (state_index, state) in statechart.states.iter().enumerate() {
-            let animation_name = runtime_name(
-                &[spec.artboard.id.clone(), state.motion.clone()],
-                "animation",
+        let mut layers = Vec::with_capacity(1 + statechart.regions.len());
+        layers.push(
+            lower_region(
+                RegionContext {
+                    spec,
+                    statechart_id: &statechart.id,
+                    machine_path: &machine_path,
+                    layer_index: 0,
+                    authored_path: statechart_path.clone(),
+                    region_id: None,
+                    initial: &statechart.initial,
+                    states: &statechart.states,
+                    transitions: &statechart.transitions,
+                },
+                &input_name_by_id,
+                &input_name_by_binding,
+                &mut source_entries,
+            )
+            .map_err(AuthoringError::one)?,
+        );
+        for (region_index, region) in statechart.regions.iter().enumerate() {
+            let region_path = format!("{statechart_path}.regions[{region_index}]");
+            let layer_index = layers.len();
+            layers.push(
+                lower_region(
+                    RegionContext {
+                        spec,
+                        statechart_id: &statechart.id,
+                        machine_path: &machine_path,
+                        layer_index,
+                        authored_path: region_path.clone(),
+                        region_id: Some(&region.id),
+                        initial: &region.initial,
+                        states: &region.states,
+                        transitions: &region.transitions,
+                    },
+                    &input_name_by_id,
+                    &input_name_by_binding,
+                    &mut source_entries,
+                )
+                .map_err(AuthoringError::one)?,
             );
-            states.push(json!({
-                "type": "animation",
-                "animation": animation_name
-            }));
             source_entries.push(SourceMapEntry {
-                authored_id: format!("{}/{}", statechart.id, state.id),
-                authored_path: format!(
-                    "$.behavior.statecharts[{statechart_index}].states[{state_index}]"
-                ),
+                authored_id: format!("{}/{}", statechart.id, region.id),
+                authored_path: region_path,
                 definition_path: None,
                 runtime_names: Vec::new(),
-                scene_paths: vec![format!(
-                    "{machine_path}/layers/0/states/{}",
-                    state_index + 1
-                )],
-            });
-        }
-        states.push(json!({ "type": "exit" }));
-
-        let initial_state = *state_index_by_id
-            .get(statechart.initial.as_str())
-            .expect("validated initial state");
-        let mut transitions = vec![json!({ "from": 0, "to": initial_state })];
-        for (transition_index, transition) in statechart.transitions.iter().enumerate() {
-            let from = *state_index_by_id
-                .get(transition.from.as_str())
-                .expect("validated transition source");
-            let to = *state_index_by_id
-                .get(transition.to.as_str())
-                .expect("validated transition target");
-            let (input, equals) = match &transition.when {
-                BehaviorTransitionConditionSpec::Binding(condition) => (
-                    input_name_by_binding
-                        .get(condition.binding.as_str())
-                        .expect("validated transition binding"),
-                    condition.equals,
-                ),
-                BehaviorTransitionConditionSpec::Input(condition) => (
-                    input_name_by_id
-                        .get(condition.input.as_str())
-                        .expect("validated transition input"),
-                    condition.equals,
-                ),
-            };
-            transitions.push(json!({
-                "from": from,
-                "to": to,
-                "conditions": [
-                    {
-                        "input": input,
-                        "value": equals
-                    }
-                ]
-            }));
-            source_entries.push(SourceMapEntry {
-                authored_id: format!("{}/{}", statechart.id, transition.id),
-                authored_path: format!(
-                    "$.behavior.statecharts[{statechart_index}].transitions[{transition_index}]"
-                ),
-                definition_path: None,
-                runtime_names: Vec::new(),
-                scene_paths: vec![format!(
-                    "{machine_path}/layers/0/transitions/{}",
-                    transition_index + 1
-                )],
+                scene_paths: vec![format!("{machine_path}/layers/{layer_index}")],
             });
         }
 
@@ -339,12 +345,7 @@ pub(super) fn lower_behavior(
         let mut machine = json!({
             "name": machine_name,
             "inputs": inputs,
-            "layers": [
-                {
-                    "states": states,
-                    "transitions": transitions
-                }
-            ]
+            "layers": layers
         });
         if !listeners.is_empty() {
             machine["listeners"] = Value::Array(listeners);
@@ -370,6 +371,172 @@ pub(super) fn lower_behavior(
         state_machines,
         source_entries,
     })
+}
+
+struct RegionContext<'a> {
+    spec: &'a AuthoringSpec,
+    statechart_id: &'a str,
+    machine_path: &'a str,
+    layer_index: usize,
+    authored_path: String,
+    region_id: Option<&'a str>,
+    initial: &'a str,
+    states: &'a [BehaviorStateSpec],
+    transitions: &'a [BehaviorTransitionSpec],
+}
+
+fn lower_region(
+    context: RegionContext<'_>,
+    input_name_by_id: &HashMap<&str, String>,
+    input_name_by_binding: &HashMap<&str, String>,
+    source_entries: &mut Vec<SourceMapEntry>,
+) -> Result<Value, AuthoringDiagnostic> {
+    let RegionContext {
+        spec,
+        statechart_id,
+        machine_path,
+        layer_index,
+        authored_path,
+        region_id,
+        initial,
+        states: authored_states,
+        transitions: authored_transitions,
+    } = context;
+
+    let state_index_by_id = authored_states
+        .iter()
+        .enumerate()
+        .map(|(index, state)| (state.id.as_str(), index + 1))
+        .collect::<HashMap<_, _>>();
+
+    let mut states = vec![json!({ "type": "entry" })];
+    for (state_index, state) in authored_states.iter().enumerate() {
+        let state_path = format!("{authored_path}.states[{state_index}]");
+        let lowered = match (&state.motion, &state.blend) {
+            (Some(motion), None) => json!({
+                "type": "animation",
+                "animation": animation_runtime_name(spec, motion)
+            }),
+            (None, Some(blend)) => {
+                let input = input_name_by_id
+                    .get(blend.input.as_str())
+                    .expect("validated blend input");
+                let mut children = Vec::with_capacity(blend.stops.len());
+                for (stop_index, stop) in blend.stops.iter().enumerate() {
+                    children.push(json!({
+                        "type": "blend_animation_1d",
+                        "animation": animation_runtime_name(spec, &stop.motion),
+                        "value": evaluate_expression(
+                            &stop.value,
+                            &format!("{state_path}.blend.stops[{stop_index}].value"),
+                            &spec.parameters,
+                            Unit::Scalar,
+                        )?
+                    }));
+                }
+                json!({
+                    "type": "blend_state_1d",
+                    "input": input,
+                    "children": children
+                })
+            }
+            _ => {
+                return Err(AuthoringDiagnostic::new(
+                    state_path,
+                    "missing_state_motion",
+                    "a behavior state must declare exactly one of 'motion' or 'blend'",
+                ));
+            }
+        };
+        states.push(lowered);
+        source_entries.push(SourceMapEntry {
+            authored_id: region_scoped_id(statechart_id, region_id, &state.id),
+            authored_path: state_path,
+            definition_path: None,
+            runtime_names: Vec::new(),
+            scene_paths: vec![format!(
+                "{machine_path}/layers/{layer_index}/states/{}",
+                state_index + 1
+            )],
+        });
+    }
+    states.push(json!({ "type": "exit" }));
+
+    let initial_state = *state_index_by_id
+        .get(initial)
+        .expect("validated initial state");
+    let mut transitions = vec![json!({ "from": 0, "to": initial_state })];
+    for (transition_index, transition) in authored_transitions.iter().enumerate() {
+        let transition_path = format!("{authored_path}.transitions[{transition_index}]");
+        let from = *state_index_by_id
+            .get(transition.from.as_str())
+            .expect("validated transition source");
+        let to = *state_index_by_id
+            .get(transition.to.as_str())
+            .expect("validated transition target");
+        let condition = match &transition.when {
+            BehaviorTransitionConditionSpec::Binding(condition) => json!({
+                "input": input_name_by_binding
+                    .get(condition.binding.as_str())
+                    .expect("validated transition binding"),
+                "value": condition.equals
+            }),
+            BehaviorTransitionConditionSpec::Input(condition) => json!({
+                "input": input_name_by_id
+                    .get(condition.input.as_str())
+                    .expect("validated transition input"),
+                "value": condition.equals
+            }),
+            BehaviorTransitionConditionSpec::Number(condition) => json!({
+                "input": input_name_by_id
+                    .get(condition.input.as_str())
+                    .expect("validated transition input"),
+                "op": condition.compare.as_str(),
+                "value": evaluate_expression(
+                    &condition.value,
+                    &format!("{transition_path}.when.value"),
+                    &spec.parameters,
+                    Unit::Scalar,
+                )?
+            }),
+            BehaviorTransitionConditionSpec::Trigger(condition) => json!({
+                "input": input_name_by_id
+                    .get(condition.trigger.as_str())
+                    .expect("validated transition trigger")
+            }),
+        };
+        transitions.push(json!({
+            "from": from,
+            "to": to,
+            "conditions": [condition]
+        }));
+        source_entries.push(SourceMapEntry {
+            authored_id: region_scoped_id(statechart_id, region_id, &transition.id),
+            authored_path: transition_path,
+            definition_path: None,
+            runtime_names: Vec::new(),
+            scene_paths: vec![format!(
+                "{machine_path}/layers/{layer_index}/transitions/{}",
+                transition_index + 1
+            )],
+        });
+    }
+
+    Ok(json!({
+        "states": states,
+        "transitions": transitions
+    }))
+}
+
+fn animation_runtime_name(spec: &AuthoringSpec, motion: &str) -> String {
+    runtime_name(&[spec.artboard.id.clone(), motion.to_string()], "animation")
+}
+
+fn region_scoped_id(statechart_id: &str, region_id: Option<&str>, id: &str) -> String {
+    match region_id {
+        Some(region) => format!("{statechart_id}/{region}/{id}"),
+        None => format!("{statechart_id}/{id}"),
+    }
 }
 
 pub(super) fn validate_lowered_scene(scene: &Value) -> Result<(), AuthoringError> {
@@ -552,115 +719,275 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
                 ));
             }
             for (action_index, action) in listener.actions.iter().enumerate() {
-                match action {
-                    BehaviorListenerActionSpec::BoolChange { input, .. }
-                        if !inputs.contains_key(input.as_str()) =>
-                    {
-                        diagnostics.push(AuthoringDiagnostic::new(
-                            format!("{listener_path}.actions[{action_index}].input"),
-                            "unknown_behavior_input",
-                            format!(
-                                "behavior input '{}' is not defined in statechart '{}'",
-                                input, statechart.id
-                            ),
-                        ));
-                    }
-                    BehaviorListenerActionSpec::BoolChange { .. } => {}
-                }
-            }
-        }
-
-        let mut states = HashSet::new();
-        for (state_index, state) in statechart.states.iter().enumerate() {
-            let state_path = format!("{statechart_path}.states[{state_index}]");
-            validate_id(&state.id, &format!("{state_path}.id"), &mut diagnostics);
-            if !states.insert(state.id.as_str()) {
-                diagnostics.push(AuthoringDiagnostic::new(
-                    format!("{state_path}.id"),
-                    "duplicate_behavior_state",
-                    format!(
-                        "behavior state id '{}' is duplicated in statechart '{}'",
-                        state.id, statechart.id
-                    ),
-                ));
-            }
-            if !motion_tracks.contains(state.motion.as_str()) {
-                diagnostics.push(AuthoringDiagnostic::new(
-                    format!("{state_path}.motion"),
-                    "unknown_behavior_motion",
-                    format!("motion track '{}' is not defined", state.motion),
-                ));
-            }
-        }
-        if !states.contains(statechart.initial.as_str()) {
-            diagnostics.push(AuthoringDiagnostic::new(
-                format!("{statechart_path}.initial"),
-                "unknown_behavior_state",
-                format!(
-                    "initial state '{}' is not defined in statechart '{}'",
-                    statechart.initial, statechart.id
-                ),
-            ));
-        }
-
-        let mut transitions = HashSet::new();
-        for (transition_index, transition) in statechart.transitions.iter().enumerate() {
-            let transition_path = format!("{statechart_path}.transitions[{transition_index}]");
-            validate_id(
-                &transition.id,
-                &format!("{transition_path}.id"),
-                &mut diagnostics,
-            );
-            if !transitions.insert(transition.id.as_str()) {
-                diagnostics.push(AuthoringDiagnostic::new(
-                    format!("{transition_path}.id"),
-                    "duplicate_behavior_transition",
-                    format!(
-                        "behavior transition id '{}' is duplicated in statechart '{}'",
-                        transition.id, statechart.id
-                    ),
-                ));
-            }
-            for (field, state) in [("from", &transition.from), ("to", &transition.to)] {
-                if !states.contains(state.as_str()) {
-                    diagnostics.push(AuthoringDiagnostic::new(
-                        format!("{transition_path}.{field}"),
-                        "unknown_behavior_state",
-                        format!(
-                            "state '{}' is not defined in statechart '{}'",
-                            state, statechart.id
-                        ),
-                    ));
-                }
-            }
-            match &transition.when {
-                BehaviorTransitionConditionSpec::Binding(condition)
-                    if !bindings.contains_key(condition.binding.as_str()) =>
-                {
-                    diagnostics.push(AuthoringDiagnostic::new(
-                        format!("{transition_path}.when.binding"),
-                        "unknown_behavior_binding",
-                        format!("behavior binding '{}' is not defined", condition.binding),
-                    ));
-                }
-                BehaviorTransitionConditionSpec::Input(condition)
-                    if !inputs.contains_key(condition.input.as_str()) =>
-                {
-                    diagnostics.push(AuthoringDiagnostic::new(
-                        format!("{transition_path}.when.input"),
+                let action_path = format!("{listener_path}.actions[{action_index}].input");
+                match inputs.get(action.input()) {
+                    None => diagnostics.push(AuthoringDiagnostic::new(
+                        action_path,
                         "unknown_behavior_input",
                         format!(
                             "behavior input '{}' is not defined in statechart '{}'",
-                            condition.input, statechart.id
+                            action.input(),
+                            statechart.id
                         ),
-                    ));
+                    )),
+                    Some(input) if input.kind() != action.input_kind() => {
+                        diagnostics.push(AuthoringDiagnostic::new(
+                            action_path,
+                            "invalid_listener_input",
+                            format!(
+                                "listener action expects a {} input but '{}' is declared as {}",
+                                action.input_kind().as_str(),
+                                action.input(),
+                                input.kind().as_str()
+                            ),
+                        ));
+                    }
+                    Some(_) => {}
                 }
-                _ => {}
             }
+        }
+
+        let region = RegionValidation {
+            statechart_id: &statechart.id,
+            region_path: &statechart_path,
+            initial: &statechart.initial,
+            states: &statechart.states,
+            transitions: &statechart.transitions,
+        };
+        validate_region(region, &motion_tracks, &inputs, &bindings, &mut diagnostics);
+
+        let mut regions = HashSet::new();
+        for (region_index, region) in statechart.regions.iter().enumerate() {
+            let region_path = format!("{statechart_path}.regions[{region_index}]");
+            validate_id(&region.id, &format!("{region_path}.id"), &mut diagnostics);
+            if !regions.insert(region.id.as_str()) {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{region_path}.id"),
+                    "duplicate_behavior_region",
+                    format!(
+                        "behavior region id '{}' is duplicated in statechart '{}'",
+                        region.id, statechart.id
+                    ),
+                ));
+            }
+            validate_region(
+                RegionValidation {
+                    statechart_id: &statechart.id,
+                    region_path: &region_path,
+                    initial: &region.initial,
+                    states: &region.states,
+                    transitions: &region.transitions,
+                },
+                &motion_tracks,
+                &inputs,
+                &bindings,
+                &mut diagnostics,
+            );
         }
     }
 
     diagnostics
+}
+
+struct RegionValidation<'a> {
+    statechart_id: &'a str,
+    region_path: &'a str,
+    initial: &'a str,
+    states: &'a [BehaviorStateSpec],
+    transitions: &'a [BehaviorTransitionSpec],
+}
+
+fn validate_region(
+    region: RegionValidation<'_>,
+    motion_tracks: &HashSet<&str>,
+    inputs: &HashMap<&str, &BehaviorInputSpec>,
+    bindings: &HashMap<&str, &BehaviorBindingSpec>,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    let RegionValidation {
+        statechart_id,
+        region_path,
+        initial,
+        states: authored_states,
+        transitions: authored_transitions,
+    } = region;
+
+    let mut states = HashSet::new();
+    for (state_index, state) in authored_states.iter().enumerate() {
+        let state_path = format!("{region_path}.states[{state_index}]");
+        validate_id(&state.id, &format!("{state_path}.id"), diagnostics);
+        if !states.insert(state.id.as_str()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("{state_path}.id"),
+                "duplicate_behavior_state",
+                format!(
+                    "behavior state id '{}' is duplicated in statechart '{statechart_id}'",
+                    state.id
+                ),
+            ));
+        }
+        validate_state_motion(state, &state_path, statechart_id, motion_tracks, inputs, diagnostics);
+    }
+    if !states.contains(initial) {
+        diagnostics.push(AuthoringDiagnostic::new(
+            format!("{region_path}.initial"),
+            "unknown_behavior_state",
+            format!("initial state '{initial}' is not defined in statechart '{statechart_id}'"),
+        ));
+    }
+
+    let mut transitions = HashSet::new();
+    for (transition_index, transition) in authored_transitions.iter().enumerate() {
+        let transition_path = format!("{region_path}.transitions[{transition_index}]");
+        validate_id(&transition.id, &format!("{transition_path}.id"), diagnostics);
+        if !transitions.insert(transition.id.as_str()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("{transition_path}.id"),
+                "duplicate_behavior_transition",
+                format!(
+                    "behavior transition id '{}' is duplicated in statechart '{statechart_id}'",
+                    transition.id
+                ),
+            ));
+        }
+        for (field, state) in [("from", &transition.from), ("to", &transition.to)] {
+            if !states.contains(state.as_str()) {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{transition_path}.{field}"),
+                    "unknown_behavior_state",
+                    format!("state '{state}' is not defined in statechart '{statechart_id}'"),
+                ));
+            }
+        }
+        validate_condition(
+            &transition.when,
+            &transition_path,
+            statechart_id,
+            inputs,
+            bindings,
+            diagnostics,
+        );
+    }
+}
+
+fn validate_state_motion(
+    state: &BehaviorStateSpec,
+    state_path: &str,
+    statechart_id: &str,
+    motion_tracks: &HashSet<&str>,
+    inputs: &HashMap<&str, &BehaviorInputSpec>,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    match (&state.motion, &state.blend) {
+        (None, None) => diagnostics.push(AuthoringDiagnostic::new(
+            state_path,
+            "missing_state_motion",
+            format!(
+                "behavior state '{}' must declare either a motion track or a blend",
+                state.id
+            ),
+        )),
+        (Some(_), Some(_)) => diagnostics.push(AuthoringDiagnostic::new(
+            state_path,
+            "ambiguous_state_motion",
+            format!(
+                "behavior state '{}' declares both a motion track and a blend",
+                state.id
+            ),
+        )),
+        (Some(motion), None) => {
+            if !motion_tracks.contains(motion.as_str()) {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{state_path}.motion"),
+                    "unknown_behavior_motion",
+                    format!("motion track '{motion}' is not defined"),
+                ));
+            }
+        }
+        (None, Some(blend)) => {
+            match inputs.get(blend.input.as_str()) {
+                None => diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{state_path}.blend.input"),
+                    "unknown_behavior_input",
+                    format!(
+                        "behavior input '{}' is not defined in statechart '{statechart_id}'",
+                        blend.input
+                    ),
+                )),
+                Some(input) if input.kind() != BehaviorInputKind::Number => {
+                    diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{state_path}.blend.input"),
+                        "invalid_blend_input",
+                        format!(
+                            "blend input '{}' must be a number input but is declared as {}",
+                            blend.input,
+                            input.kind().as_str()
+                        ),
+                    ));
+                }
+                Some(_) => {}
+            }
+            for (stop_index, stop) in blend.stops.iter().enumerate() {
+                if !motion_tracks.contains(stop.motion.as_str()) {
+                    diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{state_path}.blend.stops[{stop_index}].motion"),
+                        "unknown_behavior_motion",
+                        format!("motion track '{}' is not defined", stop.motion),
+                    ));
+                }
+            }
+        }
+    }
+}
+
+fn validate_condition(
+    condition: &BehaviorTransitionConditionSpec,
+    transition_path: &str,
+    statechart_id: &str,
+    inputs: &HashMap<&str, &BehaviorInputSpec>,
+    bindings: &HashMap<&str, &BehaviorBindingSpec>,
+    diagnostics: &mut Vec<AuthoringDiagnostic>,
+) {
+    let (field, id, expected) = match condition {
+        BehaviorTransitionConditionSpec::Binding(condition) => {
+            if !bindings.contains_key(condition.binding.as_str()) {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{transition_path}.when.binding"),
+                    "unknown_behavior_binding",
+                    format!("behavior binding '{}' is not defined", condition.binding),
+                ));
+            }
+            return;
+        }
+        BehaviorTransitionConditionSpec::Input(condition) => {
+            ("input", &condition.input, BehaviorInputKind::Bool)
+        }
+        BehaviorTransitionConditionSpec::Number(condition) => {
+            ("input", &condition.input, BehaviorInputKind::Number)
+        }
+        BehaviorTransitionConditionSpec::Trigger(condition) => {
+            ("trigger", &condition.trigger, BehaviorInputKind::Trigger)
+        }
+    };
+    match inputs.get(id.as_str()) {
+        None => diagnostics.push(AuthoringDiagnostic::new(
+            format!("{transition_path}.when.{field}"),
+            "unknown_behavior_input",
+            format!("behavior input '{id}' is not defined in statechart '{statechart_id}'"),
+        )),
+        Some(input) if input.kind() != expected => {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("{transition_path}.when.{field}"),
+                "invalid_condition_input",
+                format!(
+                    "condition expects a {} input but '{id}' is declared as {}",
+                    expected.as_str(),
+                    input.kind().as_str()
+                ),
+            ));
+        }
+        Some(_) => {}
+    }
 }
 
 fn resolve_listener_target(

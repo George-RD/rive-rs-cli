@@ -38,10 +38,12 @@ impl<'a> Lowerer<'a> {
         match node {
             VisualNode::Group {
                 transform,
+                stacking,
                 constraints,
                 children,
                 ..
             } => {
+                let stacking = *stacking;
                 validate_sibling_ids_result(children, &format!("{authored_path}.children"))?;
                 let children =
                     resolve_group_constraints(children, constraints, &authored_path, scope)?;
@@ -60,7 +62,8 @@ impl<'a> Lowerer<'a> {
                     scene_paths: vec![scene_path.clone()],
                 });
 
-                let mut lowered_children = Vec::with_capacity(children.len());
+                let child_count = children.len();
+                let mut lowered_children = vec![Value::Null; child_count];
                 for (index, child) in children.iter().enumerate() {
                     let child_authored_path = format!("{authored_path}.children[{index}]");
                     let child_definition_path = definition_path
@@ -69,8 +72,9 @@ impl<'a> Lowerer<'a> {
                     let child_authored_id = format!("{authored_id}/{}", child.id());
                     let mut child_runtime_segments = runtime_segments.clone();
                     child_runtime_segments.push(child.id().to_string());
-                    let child_scene_path = format!("{scene_path}/children/{index}");
-                    lowered_children.push(self.lower_node(
+                    let stacked_index = stacking.scene_index(index, child_count);
+                    let child_scene_path = format!("{scene_path}/children/{stacked_index}");
+                    lowered_children[stacked_index] = self.lower_node(
                         child,
                         NodeContext {
                             authored_path: child_authored_path,
@@ -81,7 +85,7 @@ impl<'a> Lowerer<'a> {
                             scope,
                         },
                         component_stack,
-                    )?);
+                    )?;
                 }
 
                 Ok(json!({
@@ -156,7 +160,9 @@ impl<'a> Lowerer<'a> {
                 component_scope.extend(component_ref.spec.parameters.clone());
                 component_scope.extend(overrides.clone());
                 component_stack.push(component.clone());
-                let mut lowered_children = Vec::with_capacity(component_ref.spec.visual.len());
+                let child_count = component_ref.spec.visual.len();
+                let component_stacking = component_ref.spec.stacking;
+                let mut lowered_children = vec![Value::Null; child_count];
                 for (index, child) in component_ref.spec.visual.iter().enumerate() {
                     let child_authored_path = format!("{authored_path}.expanded[{index}]");
                     let child_definition_path = Some(format!(
@@ -166,7 +172,8 @@ impl<'a> Lowerer<'a> {
                     let child_authored_id = format!("{authored_id}/{}", child.id());
                     let mut child_runtime_segments = runtime_segments.clone();
                     child_runtime_segments.push(child.id().to_string());
-                    let child_scene_path = format!("{scene_path}/children/{index}");
+                    let stacked_index = component_stacking.scene_index(index, child_count);
+                    let child_scene_path = format!("{scene_path}/children/{stacked_index}");
                     match self.lower_node(
                         child,
                         NodeContext {
@@ -179,7 +186,7 @@ impl<'a> Lowerer<'a> {
                         },
                         component_stack,
                     ) {
-                        Ok(child) => lowered_children.push(child),
+                        Ok(child) => lowered_children[stacked_index] = child,
                         Err(error) => {
                             component_stack.pop();
                             return Err(error);

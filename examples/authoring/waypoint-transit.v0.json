@@ -1,0 +1,165 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "transit-stage",
+    "width": {
+      "value": 320.0,
+      "unit": "px"
+    },
+    "height": {
+      "value": 160.0,
+      "unit": "px"
+    }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "rectangle",
+        "id": "token",
+        "width": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 24.0,
+          "unit": "px"
+        },
+        "fill": "#22C55E"
+      }
+    ]
+  },
+  "motion": {
+    "easings": [
+      {
+        "kind": "cubic",
+        "id": "settle",
+        "x1": {
+          "kind": "literal",
+          "value": 0.23,
+          "unit": "scalar"
+        },
+        "y1": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        },
+        "x2": {
+          "kind": "literal",
+          "value": 0.32,
+          "unit": "scalar"
+        },
+        "y2": {
+          "kind": "literal",
+          "value": 1.0,
+          "unit": "scalar"
+        }
+      }
+    ],
+    "poses": [
+      {
+        "id": "start",
+        "targets": [
+          {
+            "target": "token",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 40.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 80.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "mid",
+        "targets": [
+          {
+            "target": "token",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 160.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 80.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "arrive",
+        "targets": [
+          {
+            "target": "token",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 280.0,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 80.0,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "transit",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 60.0,
+          "unit": "scalar"
+        },
+        "continuity": "through",
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0.0,
+              "unit": "scalar"
+            },
+            "pose": "start",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 30.0,
+              "unit": "scalar"
+            },
+            "pose": "mid",
+            "easing": "settle"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 60.0,
+              "unit": "scalar"
+            },
+            "pose": "arrive",
+            "easing": "settle"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {}
+}
