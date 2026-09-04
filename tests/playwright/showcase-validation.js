@@ -136,6 +136,7 @@ async function needleFraction(page, id) {
 
 async function waitForNeedle(page, compare, bound) {
   const deadline = Date.now() + NEEDLE_TIMEOUT_MS;
+  let observed = null;
   while (Date.now() < deadline) {
     let fraction = null;
     try {
@@ -143,12 +144,15 @@ async function waitForNeedle(page, compare, bound) {
     } catch {
       fraction = null;
     }
-    if (fraction !== null && (compare === "above" ? fraction >= bound : fraction <= bound)) {
-      return true;
+    if (fraction !== null) {
+      observed = fraction;
+      if (compare === "above" ? fraction >= bound : fraction <= bound) {
+        return { reached: true, observed };
+      }
     }
     await wait(POLLING_MS);
   }
-  return false;
+  return { reached: false, observed };
 }
 
 async function waitForPlayingState(page, expected, label, pageErrors = []) {
@@ -230,10 +234,9 @@ async function driveInteractiveControls(page, errors) {
 
   await pauseTimeline(page, INTERACTIVE_ID);
 
-  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
-    errors.push(
-      `${INTERACTIVE_ID} standby needle sat at ${await needleFraction(page, INTERACTIVE_ID)}`
-    );
+  const standby = await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT);
+  if (!standby.reached) {
+    errors.push(`${INTERACTIVE_ID} standby needle sat at ${standby.observed}`);
   }
 
   const loadInput = await card
@@ -267,12 +270,12 @@ async function driveInteractiveControls(page, errors) {
 
   await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
 
-  if (!(await waitForNeedle(page, "above", ENGAGED_NEEDLE_FLOOR))) {
+  const engaged = await waitForNeedle(page, "above", ENGAGED_NEEDLE_FLOOR);
+  if (!engaged.reached) {
     errors.push(
-      `${INTERACTIVE_ID} armed needle sat at ${await needleFraction(
-        page,
-        INTERACTIVE_ID
-      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
+      `${INTERACTIVE_ID} armed needle sat at ${engaged.observed} with inputs ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
     );
   }
 
@@ -280,12 +283,12 @@ async function driveInteractiveControls(page, errors) {
   await waitForRuntimeInput(page, INTERACTIVE_ID, armedInput, false);
   await advanceTimeline(page, INTERACTIVE_ID, SETTLE_FRAMES);
 
-  if (!(await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT))) {
+  const reset = await waitForNeedle(page, "below", STANDBY_NEEDLE_LIMIT);
+  if (!reset.reached) {
     errors.push(
-      `${INTERACTIVE_ID} reset trigger left the needle at ${await needleFraction(
-        page,
-        INTERACTIVE_ID
-      )} with inputs ${JSON.stringify(await readRuntimeInputs(page, INTERACTIVE_ID))}`
+      `${INTERACTIVE_ID} reset trigger left the needle at ${reset.observed} with inputs ${JSON.stringify(
+        await readRuntimeInputs(page, INTERACTIVE_ID)
+      )}`
     );
   }
 }
