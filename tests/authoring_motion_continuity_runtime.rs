@@ -21,7 +21,7 @@ fn fixture_path() -> PathBuf {
 fn token_centre_x(rgba: &[u8], width: u32) -> f64 {
     let mut total = 0.0;
     let mut count = 0.0;
-    for (index, pixel) in rgba.chunks_exact(4).enumerate() {
+    for (index, pixel) in rgba.as_chunks::<4>().0.iter().enumerate() {
         if pixel[1] > pixel[0].saturating_add(48) && pixel[1] > pixel[2].saturating_add(48) {
             total += f64::from(u32::try_from(index).unwrap_or_default() % width);
             count += 1.0;

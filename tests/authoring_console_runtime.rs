@@ -76,7 +76,9 @@ fn needle_centre_x(image: &ImageInfo) -> f64 {
 fn lamp_coverage(image: &ImageInfo) -> usize {
     image
         .rgba
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .filter(|pixel| pixel[0] > 150 && (100..200).contains(&pixel[1]) && pixel[2] < 80)
         .count()
 }
@@ -84,7 +86,7 @@ fn lamp_coverage(image: &ImageInfo) -> usize {
 fn token_centre_x(image: &ImageInfo) -> f64 {
     let mut total = 0.0;
     let mut count = 0.0;
-    for (index, pixel) in image.rgba.chunks_exact(4).enumerate() {
+    for (index, pixel) in image.rgba.as_chunks::<4>().0.iter().enumerate() {
         if pixel[2] > 180 && pixel[1] > 150 && pixel[0] < 120 {
             total += f64::from(u32::try_from(index).unwrap_or_default() % image.width);
             count += 1.0;
