@@ -19,5 +19,9 @@ fn events_and_inputs_must_not_share_a_behavior_source_identity() {
     assert_eq!(diagnostic.code, "behavior_source_id_collision");
     assert_eq!(diagnostic.path, "$.behavior.statecharts[0].inputs[0].id");
     assert!(diagnostic.message.contains("meter/load"));
-    assert!(diagnostic.message.contains("$.behavior.statecharts[0].events[0]"));
+    assert!(
+        diagnostic
+            .message
+            .contains("$.behavior.statecharts[0].events[0]")
+    );
 }
