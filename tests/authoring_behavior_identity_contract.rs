@@ -224,7 +224,10 @@ fn identity_collision_rolls_back_a_statechart_replacement_batch() {
         error.diagnostics[0].path,
         "$.behavior.statecharts[0].inputs[0].id"
     );
-    assert_eq!(serde_json::to_value(&spec).expect("unchanged spec"), snapshot);
+    assert_eq!(
+        serde_json::to_value(&spec).expect("unchanged spec"),
+        snapshot
+    );
     let after = lower_authoring(&spec).expect("original document remains valid");
     assert_eq!(before.scene, after.scene);
     assert_eq!(before.source_map, after.source_map);
