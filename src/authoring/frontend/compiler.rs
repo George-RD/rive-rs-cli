@@ -178,6 +178,8 @@ impl<'a> AuthoringCompiler<'a> {
             source_entries,
         } = behavior::lower_behavior(spec, child_index_base, 0, listener_targets)
             .map_err(|error| rewrite_error_paths(spec, error))?;
+        validate_behavior_source_identities(&source_entries)
+            .map_err(|error| rewrite_error_paths(spec, error))?;
 
         if artboard_children.is_empty() && state_machines.is_empty() {
             debug_assert!(source_entries.is_empty());
@@ -335,5 +337,29 @@ fn runtime_name_collision_path(entry: &SourceMapEntry) -> String {
         format!("{}.value", entry.authored_path)
     } else {
         entry.authored_path.clone()
+    }
+}
+
+fn validate_behavior_source_identities(entries: &[SourceMapEntry]) -> Result<(), AuthoringError> {
+    let mut first_paths: HashMap<&str, &str> = HashMap::new();
+    let mut diagnostics = Vec::new();
+    for entry in entries {
+        if let Some(first_path) = first_paths.get(entry.authored_id.as_str()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("{}.id", entry.authored_path),
+                "behavior_source_id_collision",
+                format!(
+                    "behavior source identity '{}' is also claimed by '{}'",
+                    entry.authored_id, first_path
+                ),
+            ));
+        } else {
+            first_paths.insert(entry.authored_id.as_str(), entry.authored_path.as_str());
+        }
+    }
+    if diagnostics.is_empty() {
+        Ok(())
+    } else {
+        Err(AuthoringError::many(diagnostics))
     }
 }
