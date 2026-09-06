@@ -39,8 +39,15 @@ event. Its contract compares the complete lowering with an explicitly authored
 canonical state machine and then sends that SceneSpec through the shared builder.
 Blend states and parallel layers are now typed, in `blend-meter.v0.json` and
 `interactive-console.v0.json`. Additive blend states, direct blend states,
-transition duration and exit time, and view-model number or trigger properties
+exit time, and view-model number or trigger properties
 are not exposed by the AuthoringSpec frontend.
+
+Transitions also accept optional `duration_ms` scalar expressions. The retained
+`tests/playwright/authoring-behavior-runtime.js` contract derives a 1000ms variant
+of `pointer-statechart.v0.json`, compiles it through the public CLI, and compares
+intermediate and final frames with the unchanged instantaneous fixture. See
+[transition duration](../../docs/authoring-spec-v0.md#transition-duration) for the
+parameter, unit, and validation contract.
 
 `stacking-card.v0.json` sets `"stacking": "back_to_front"` on the `visual`
 section and on the `card` group, so the 32px `cue` rectangle authored second
@@ -73,8 +80,8 @@ through the state machine and finds the needle on the calm stop, on the surge
 stop, and strictly between them. Rive mixes the two neighbouring animations
 sequentially rather than as a weighted average, so input 50 renders at about
 146px between stops driving 40px and 200px, not at the arithmetic midpoint; the
-mapping stays monotonic. `tests/authoring_behavior_blend_contract.rs` covers the
-ten lowering cases for typed inputs, blend states, typed conditions, regions,
+mapping stays monotonic. `tests/authoring_behavior_blend_contract.rs` covers
+typed inputs, blend states, typed conditions, regions,
 listener actions, and a statechart declared beside file assets.
 
 `interactive-console.v0.json` combines stacking, waypoint continuity, a blend
@@ -166,6 +173,7 @@ cargo test --test authoring_behavior_exit_gate
 cargo test --test authoring_stacking_contract
 cargo test --test authoring_motion_continuity_contract
 cargo test --test authoring_behavior_blend_contract
+cargo test --test authoring_transition_duration_contract
 cargo test --test showcase_artifact
 node tests/playwright/authoring-behavior-runtime.js
 ```
