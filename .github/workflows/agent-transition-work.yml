@@ -20,65 +20,151 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Implement duration at the existing authoring seam
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Complete duration runtime contract and documentation
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          def replace(path, old, new):
+          def replace(path, old, new, count=1):
               p = Path(path)
               text = p.read_text()
-              assert text.count(old) == 1, f"patch anchor mismatch: {path}"
+              assert text.count(old) == count, f"patch anchor mismatch: {path}"
               p.write_text(text.replace(old, new))
 
-          replace('src/authoring/spec.rs', '''pub struct BehaviorTransitionSpec {
-              pub id: String,
-              pub from: String,
-              pub to: String,
-              pub when: BehaviorTransitionConditionSpec,
-          }''', '''pub struct BehaviorTransitionSpec {
-              pub id: String,
-              pub from: String,
-              pub to: String,
-              pub when: BehaviorTransitionConditionSpec,
-              #[serde(default)]
-              pub duration_ms: Option<ScalarExpr>,
-          }''')
-          replace('src/authoring/frontend/compiler/behavior.rs', '''        transitions.push(json!({
-                      "from": from,
-                      "to": to,
-                      "conditions": [condition]
-                  }));''', '''        let mut lowered_transition = json!({
-                      "from": from,
-                      "to": to,
-                      "conditions": [condition]
-                  });
-                  if let Some(expression) = &transition.duration_ms {
-                      let path = format!("{transition_path}.duration_ms");
-                      let duration =
-                          evaluate_expression(expression, &path, &spec.parameters, Unit::Scalar)?;
-                      if duration < 0.0 || duration > f64::from(u32::MAX) || duration.fract() != 0.0 {
-                          return Err(AuthoringDiagnostic::new(
-                              path,
-                              "invalid_transition_duration",
-                              format!("transition duration must be whole milliseconds between 0 and {}", u32::MAX),
-                          ));
-                      }
-                      lowered_transition["duration"] = json!(duration as u64);
-                  }
-                  transitions.push(lowered_transition);''')
+          replace('src/authoring/frontend/compiler/behavior.rs',
+              'duration < 0.0 || duration > f64::from(u32::MAX) || duration.fract() != 0.0',
+              '!(0.0..=f64::from(u32::MAX)).contains(&duration) || duration.fract() != 0.0')
+
+          js = 'tests/playwright/authoring-behavior-runtime.js'
+          replace(js, 'function renderInteraction(riv, label, extraArgs = []) {',
+              'function renderInteraction(riv, label, extraArgs = [], frames = "0,12") {')
+          replace(js, '    "--frames",\n    "0,12",',
+              '    "--frames",\n    frames,\n    "--fps",\n    "60",')
+          replace(js, 'function assertSamePng(actualPath, baselinePath, label) {', '''function verifyCliTransitionDuration(instantaneousRiv) {
+            const durationMs = 1000;
+            const frames = [0, 1, 16, 31, 46, 91];
+            const input = `${INTERACTION_PLAN.input}=true@1`;
+            const document = JSON.parse(fs.readFileSync(INTERACTION_INPUT, "utf8"));
+            document.behavior.statecharts[0].transitions[0].duration_ms = {
+              kind: "literal",
+              value: durationMs,
+              unit: "scalar",
+            };
+            const source = path.join(INTERACTION_DIR, "timed.v0.json");
+            const timedRiv = path.join(INTERACTION_DIR, "timed.riv");
+            fs.writeFileSync(source, `${JSON.stringify(document, null, 2)}\n`);
+            run("cargo", ["run", "--quiet", "--", "authoring", "compile", source, "-o", timedRiv]);
+
+            const control = renderInteraction(instantaneousRiv, "duration/control", [], frames.join(","));
+            const instantaneous = renderInteraction(
+              instantaneousRiv, "duration/instantaneous", ["--input", input], frames.join(","),
+            );
+            const timed = renderInteraction(timedRiv, "duration/timed", ["--input", input], frames.join(","));
+            for (const result of [control, instantaneous, timed]) {
+              if (result.pngs.length !== frames.length) {
+                throw new Error("transition duration evidence has an unexpected frame count");
+              }
+            }
+            if (!control.first.equals(instantaneous.first) || !control.first.equals(timed.first)) {
+              throw new Error("transition duration changed the pose before the scheduled input");
+            }
+            if (control.last.equals(instantaneous.last) || !timed.last.equals(instantaneous.last)) {
+              throw new Error("timed transition did not finish at the instantaneous destination");
+            }
+            const intermediateHashes = new Set();
+            for (const index of [2, 3, 4]) {
+              const frame = fs.readFileSync(timed.pngs[index]);
+              if (frame.equals(control.last) || frame.equals(instantaneous.last)) {
+                throw new Error(`timed transition has no intermediate pose at frame ${frames[index]}`);
+              }
+              intermediateHashes.add(sha256(frame));
+            }
+            if (intermediateHashes.size !== 3) {
+              throw new Error("timed transition did not progress through distinct intermediate poses");
+            }
+            const evidence = { durationMs, fps: 60, input, frames };
+            for (const [label, result] of Object.entries({ control, instantaneous, timed })) {
+              evidence[label] = result.pngs.map((png) => sha256(fs.readFileSync(png)));
+            }
+            fs.writeFileSync(
+              path.join(INTERACTION_DIR, "duration", "evidence.json"),
+              `${JSON.stringify(evidence, null, 2)}\n`,
+            );
+            console.log("typed transition blends across intermediate frames and reaches its destination");
+          }
+
+          function assertSamePng(actualPath, baselinePath, label) {''')
+          replace(js, '  console.log("typed authored statechart responds to render --input and --pointer");',
+              '  console.log("typed authored statechart responds to render --input and --pointer");\n  verifyCliTransitionDuration(riv);')
+
+          doc = 'docs/authoring-spec-v0.md'
+          replace(doc, 'The generated JSON Schema is available',
+              '`duration_ms` is an optional transition field. Omitting it preserves existing canonical scenes, source maps, and compiled artifacts; explicit zero remains instantaneous. This additive capability keeps `authoring_format_version` at `0`.\n\nThe generated JSON Schema is available')
+          replace(doc, '## Blend states\n', '''## Transition duration
+
+          A transition may set `duration_ms` to blend from its source state to its destination over a fixed number of milliseconds:
+
+          ```json
+          {
+            "id": "engage",
+            "from": "resting",
+            "to": "engaged",
+            "when": { "input": "pressed", "equals": true },
+            "duration_ms": { "kind": "literal", "value": 250, "unit": "scalar" }
+          }
+          ```
+
+          The expression uses scalar units and the document's parameter scope. For example, `{"kind": "parameter", "name": "crossfade-ms"}` reads a scalar parameter declared under `parameters`; arithmetic expressions are also supported. The evaluated value must be a finite whole number from 0 through 4294967295, matching the runtime's unsigned 32-bit millisecond field. Negative, fractional, and oversized results report `invalid_transition_duration` at the authored `.duration_ms` path. Expression errors retain their own codes and paths, including `unit_mismatch`, `unknown_parameter`, `division_by_zero`, and `non_finite` for programmatic non-finite values.
+
+          The same contract applies to transitions inside parallel regions. The compiler emits canonical `duration` only when the field is supplied, keeps the transition's source-map identity unchanged, and leaves the generated entry transition instantaneous. Duration controls the blend after its condition is satisfied; it is not an exit-time gate or a delay before starting the transition. Percentage timing and transition easing remain outside this typed field.
+
+          `tests/playwright/authoring-behavior-runtime.js` compiles a 1000ms transition through the public CLI, schedules its input at frame 1, and checks distinct intermediate poses at frames 16, 31, and 46 at 60fps before the destination at frame 91. The same render path supplies control and instantaneous comparisons. Source, compiled output, frame PNGs, and hashes are retained in the typed-behavior runtime CI artifact.
+
+          ## Blend states
+          ''')
+          replace(doc, 'transition duration and exit time', 'exit time')
+          roadmap = 'ROADMAP.md'
+          replace(roadmap, 'transition duration and exit time', 'exit time', 2)
+          replace(roadmap, 'Select further work from an explicit unblocked issue',
+              '[#225](https://github.com/George-RD/rive-rs-cli/issues/225) adds optional `duration_ms`\nexpressions to authored transitions, including parallel regions, with whole-millisecond\nvalidation, unchanged default output, and retained public-CLI runtime blend evidence.\nExit-time gates remain part of the open behavior slice.\n\nSelect further work from an explicit unblocked issue')
+          replace(roadmap, 'and typed listener actions complete in PR #221 |',
+              'and typed listener actions complete in PR #221; transition duration added in #225 |')
+          todo = 'meta/todos/todo.behavior-authoring-compiler.md'
+          replace(todo, 'transition duration and exit time', 'exit time')
+          replace(todo, 'Against the acceptance criteria:', '''Issue #225 adds optional `duration_ms` scalar expressions to authored transitions on the existing region-lowering path. The evaluated value must be a finite, nonnegative whole number of milliseconds within `u32::MAX`; invalid values fail at authored paths instead of truncating or saturating. Only an explicitly supplied duration emits canonical `duration`, so old scenes, source maps, and committed binaries retain their defaults. No builder/encoder change or second lowering pass is introduced.
+
+          `tests/authoring_transition_duration_contract.rs` covers parameter evaluation, deterministic lowering and stable source maps, omitted/zero compatibility through binary compilation, integer boundaries, invalid numeric values, expression-specific diagnostics, the programmatic non-finite path, and scoped region timing. `tests/playwright/authoring-behavior-runtime.js` drives a 1000ms transition through the public CLI at 60fps and compares resting, instantaneous, and timed output, requiring distinct intermediate poses and the same final destination. Source, binary, frames, and hashes are retained with the existing typed-behavior CI artifact.
+
+          TDD red evidence: test-only head `1d22222518c88c868d5fcbb105d221dea7d53d85`, workflow run `34022244950`, job `101456825456`, compiled and failed the duration contract because `duration_ms` was unknown. The implementation passed the same contract in run `34022460445`, job `101457407010`. Final exact-head verification and the separate Standards/Spec self-review are recorded on the pull request for #225. Local Cargo execution was unavailable in the implementing chat environment.
+
+          Against the acceptance criteria:''')
+          replace('CHANGELOG.md', '### Added\n',
+              '### Added\n\n- **Timed authored transitions.** Optional `duration_ms` scalar expressions blend between named states over whole milliseconds, including in parallel regions. Values must be finite integers from 0 through `u32::MAX`; invalid expressions retain authored diagnostic paths. Omitted durations preserve existing scenes, source maps, and binaries, and explicit zero remains instantaneous. Public-CLI runtime evidence compares intermediate poses with instantaneous output.\n')
           PY
-      - run: cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
       - run: cargo fmt
       - run: cargo fmt --check
       - run: cargo test --locked --test authoring_transition_duration_contract
-      - name: Commit the verified tracer bullet to its work branch
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - run: node --check tests/playwright/authoring-behavior-runtime.js
+      - run: node tests/playwright/authoring-behavior-runtime.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: transition-duration-workbench-evidence
+          path: target/playwright-behavior
+          retention-days: 7
+      - name: Commit verified contracts and documentation
         run: |
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/authoring/spec.rs src/authoring/frontend/compiler/behavior.rs docs/authoring.schema.v0.json tests/authoring_transition_duration_contract.rs
-          git commit -m 'feat(authoring): lower transition duration through canonical scene (#225)'
+          git add src/authoring/frontend/compiler/behavior.rs tests/authoring_transition_duration_contract.rs tests/playwright/authoring-behavior-runtime.js docs/authoring-spec-v0.md ROADMAP.md meta/todos/todo.behavior-authoring-compiler.md CHANGELOG.md
+          git commit -m 'test(authoring): verify timed blends through public CLI and document contract (#225)'
           git push origin HEAD:refs/heads/agent/authoring-transition-duration
