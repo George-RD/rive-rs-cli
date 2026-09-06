@@ -5,7 +5,7 @@ on:
     branches: [agent/authoring-exit-time]
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: authoring-exit-time-workbench
@@ -17,19 +17,40 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Retain exact source for connected development
-        run: git archive --format=tar.gz HEAD -o /tmp/rive-source.tar.gz
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply reviewed source edits
+        run: python3 .github/authoring-workbench.py
+      - name: Format and regenerate schemas
+        run: |
+          cargo fmt
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
+          UPDATE_SCENE_SCHEMA=1 cargo test --locked --lib scene_schema_file_is_in_sync
+      - name: Check selected public contracts
+        run: |
+          cargo test --locked --test authoring_transition_exit_time_contract
+          cargo test --locked --test authoring_transition_duration_contract
+      - name: Commit verified edits on the work branch only
+        run: |
+          git diff --check
+          git add -u -- . ':!.github'
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'feat(authoring): compile exit-time gates through canonical transitions (#227)'
+            git push origin HEAD:refs/heads/agent/authoring-exit-time
+          fi
+          git archive --format=tar.gz HEAD -o /tmp/rive-source.tar.gz
+      - name: Collect diagnostic patch
+        if: always()
+        run: git diff > /tmp/workbench.patch
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: authoring-workbench-source
-          path: /tmp/rive-source.tar.gz
+          path: |
+            /tmp/rive-source.tar.gz
+            /tmp/workbench.patch
           retention-days: 7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Check selected public contract
-        run: |
-          if test -f tests/authoring_transition_exit_time_contract.rs; then
-            cargo test --locked --test authoring_transition_exit_time_contract
-          else
-            cargo test --locked --test authoring_transition_duration_contract
-          fi
