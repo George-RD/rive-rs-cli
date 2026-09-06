@@ -447,6 +447,18 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<Spe
                             ));
                         }
 
+                        if transition.exit_time.is_some()
+                            && !matches!(
+                                &layer.states[transition.from],
+                                StateSpec::Animation { .. }
+                            )
+                        {
+                            return Err(format!(
+                                "exit_time requires an animation source state, but transition source {} in state machine '{}' is not an animation",
+                                transition.from, state_machine.name
+                            ));
+                        }
+
                         if let Some(conditions) = &transition.conditions {
                             for condition in conditions {
                                 if !input_names.contains_key(&condition.input) {

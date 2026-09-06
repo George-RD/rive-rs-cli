@@ -558,6 +558,17 @@
           ],
           "default": null
         },
+        "exit_time_ms": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "from": {
           "type": "string"
         },

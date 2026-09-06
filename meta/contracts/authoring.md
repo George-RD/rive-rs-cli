@@ -178,6 +178,19 @@ supplied duration emits canonical `duration`; omission preserves the previous sc
 and source map, and explicit zero preserves instantaneous binary behavior. Duration
 controls the blend after a condition fires, not an exit-time gate or percentage.
 
+A transition may also declare `exit_time_ms`, evaluated in document parameter scope
+as whole milliseconds from 0 through `u32::MAX`. Invalid numeric values report
+`invalid_transition_exit_time`; expression errors retain their own codes and paths.
+Only named motion sources are supported: a blend source reports
+`unsupported_transition_exit_source` at the authored `.exit_time_ms` path. Blend
+destinations remain valid. Root and region transitions use the same compiler path.
+The gate requires outgoing animation time and the existing condition, not elapsed
+time since the input. Duration controls blending independently; runtime loop timing
+is unchanged. Omission/null preserves output and source-map identity; explicit zero
+enables a zero-time gate and therefore changes encoded flags. Canonical `exit_time`
+is an unsigned 32-bit value wired through the existing transition object; no second
+lowering pass or encoder is introduced.
+
 A behavior state declares exactly one of `motion` and `blend`. Neither returns
 `missing_state_motion` and both return `ambiguous_state_motion`, each at the state
 path. `blend` is `{"input": <number input id>, "stops": [{"motion": <track id>,
@@ -215,9 +228,9 @@ ids inside a region are
 
 Typed behavior validates its lowered scene with file-asset `source` fields removed, the
 same way the visual path does, so a document may declare `font_assets` or `image_assets`
-alongside a statechart. Additive blend states, direct blend states, exit time, and
+alongside a statechart. Additive blend states, direct blend states, advanced exit timing, and
 view-model properties other than `bool` are not exposed by this frontend.
-`stacking`, `continuity`, `waypoint`, `blend`, `regions`, and `duration_ms` are optional and
+`stacking`, `continuity`, `waypoint`, `blend`, `regions`, `duration_ms`, and `exit_time_ms` are optional and
 their defaults reproduce the previous lowered output, so `authoring_format_version`
 remains 0.
 

@@ -12,7 +12,7 @@
 
 `stacking`, motion `continuity` and `waypoint`, state `blend`, and statechart `regions` are optional fields whose defaults (`runtime`, `per_keyframe`, `auto`, and absent `blend` and `regions`) leave the canonical `SceneSpec` and source map unchanged. The `number` and `trigger` input kinds, the comparison and trigger transition conditions, and the `number_change` and `trigger_change` listener actions are new variants of the input, condition, and listener-action unions. A document that uses none of them lowers as it did before, so `authoring_format_version` stays `0`; `tests/showcase_artifact.rs` recompiles each committed showcase and compares the bytes against the checked-in `.riv`.
 
-`duration_ms` is an optional transition field. Omitting it preserves existing canonical scenes, source maps, and compiled artifacts; explicit zero remains instantaneous. This additive capability keeps `authoring_format_version` at `0`.
+`exit_time_ms` is an optional outgoing-animation gate; its contract is described under Transition exit time. `duration_ms` is an optional transition field. Omitting it preserves existing canonical scenes, source maps, and compiled artifacts; explicit zero remains instantaneous. This additive capability keeps `authoring_format_version` at `0`.
 
 The generated JSON Schema is available through `authoring::authoring_schema()` and uses this stable identifier:
 
@@ -452,6 +452,29 @@ The same contract applies to transitions inside parallel regions. The compiler e
 
 `tests/playwright/authoring-behavior-runtime.js` compiles a 1000ms transition through the public CLI, schedules its input at frame 1, and checks distinct intermediate poses at frames 16, 31, and 46 at 60fps before the destination at frame 91. The same render path supplies control and instantaneous comparisons. Source, compiled output, frame PNGs, and hashes are retained in the typed-behavior runtime CI artifact.
 
+## Transition exit time
+
+`exit_time_ms` prevents a transition from leaving its named motion state before the outgoing animation reaches the specified point. The `when` condition must also be satisfied. It is animation time, not a delay started by an input:
+
+```json
+{
+  "id": "engage",
+  "from": "resting",
+  "to": "engaged",
+  "when": { "input": "pressed", "equals": true },
+  "exit_time_ms": { "kind": "literal", "value": 1000, "unit": "scalar" },
+  "duration_ms": { "kind": "literal", "value": 250, "unit": "scalar" }
+}
+```
+
+With a one-shot outgoing track, an input that becomes true early waits for 1000ms of animation time; an input that becomes true after that point can transition immediately. Once allowed, the optional `duration_ms` controls the blend independently. For looping animations, the official runtime repeats gates within the animation's duration on subsequent cycles; gates beyond one cycle use accumulated animation time. This field does not change that runtime behavior.
+
+The scalar expression uses document parameters and must resolve to a finite integer from 0 through 4294967295 milliseconds. Negative, fractional, and oversized results report `invalid_transition_exit_time` at the authored `.exit_time_ms` path; expression errors retain their existing codes and paths. Parallel-region transitions use the same validation and lowering. The source must name a motion track: a blend source reports `unsupported_transition_exit_source` at `.exit_time_ms`, because an ordinary runtime transition cannot enforce that gate on a blend. A blend destination is allowed.
+
+Omitted or null gates preserve the previous canonical scene, source map, and compiled bytes. Explicit zero writes canonical `exit_time: 0` and enables the runtime gate flag, so its binary representation differs from omission. Entry transitions remain ungated. Canonical `TransitionSpec.exit_time` accepts an unsigned 32-bit millisecond value and rejects entry, exit, any, and blend source states. Percentage timing, pause-on-exit, early exit, and blend-source animation selection remain outside this field. Both format versions are unchanged.
+
+`tests/authoring_transition_exit_time_contract.rs` verifies the public compiler and encoded properties. `tests/playwright/authoring-behavior-runtime.js` retains authored source, compiled binaries, representative PNGs, and hashes under `typed-interaction/exit-time` in the typed-behavior runtime CI artifact. Comparisons cover early input, late input, unmet conditions, looping, and exit time combined with duration.
+
 ## Blend states
 
 A behavior state declares exactly one of `motion` and `blend`. `motion` names an authored motion track. `blend` maps a number input onto at least two motion tracks, each with the input value at which that track is fully applied:
@@ -510,7 +533,7 @@ Every layer is emitted with an entry state at index 0, the authored states from 
 
 Region ids are unique within a statechart; a repeat fails with `duplicate_behavior_region` at `$.behavior.statecharts[i].regions[j].id`. A region id may not match any other id the statechart scopes either. States, transitions, inputs, events, listeners and regions all claim the source-map identity `{statechart}/{id}`, and consumers resolve an entry by first match, so a collision makes that lookup ambiguous; it fails with `behavior_region_id_collision` at the same path. Every state and transition diagnostic listed above applies inside a region under the same `.regions[j]` prefix. The region above is from `examples/authoring/interactive-console.v0.json`, whose other region, `stream`, carries a token across the artboard while layer 0 is still in `standby`. Regions do not require inputs: `examples/authoring/signal-weave.v0.json` declares three layers with no inputs and no transitions between authored states, so each layer plays its own track.
 
-Additive blend states, direct blend states, exit time, and view-model number and trigger properties remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Additive blend states, direct blend states, advanced exit timing, and view-model number and trigger properties remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

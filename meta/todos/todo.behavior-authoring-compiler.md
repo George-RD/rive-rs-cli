@@ -71,4 +71,32 @@ Against the acceptance criteria:
 - Interaction tests drive pointer and input events and retain runtime evidence: met. `tests/authoring_console_runtime.rs` drives a pointer press and release plus the `load` input through the official runtime, and `tests/playwright/showcase-validation.js` drives the same artifact in the browser.
 - A complex interactive showcase is reproduced through the frontend: met. Issue #181 closed the exact-equivalence gate in PR #206, and the console reproduces stacking, waypoint continuity, a blend state, and parallel regions in one document without raw escapes.
 
-This todo remains open. Additive blend states, direct blend states, exit time, and view-model properties other than `bool` are not exposed by the AuthoringSpec frontend.
+This todo remains open. Additive blend states, direct blend states, advanced exit timing, and view-model properties other than `bool` are not exposed by the AuthoringSpec frontend.
+
+## Exit-time gate slice (#227)
+
+`exit_time_ms` adds outgoing-animation gates through the existing root/region
+compiler path. It accepts document-scoped scalar expressions resolving to finite
+whole milliseconds in `0..=u32::MAX`; invalid values preserve authored paths.
+Conditions remain required and `duration_ms` remains independent. Omitted/null
+gates preserve prior output and explicit zero enables the runtime flag. Typed
+blend sources and canonical non-animation sources are rejected rather than
+silently ignoring their gate. No encoder redesign or second compiler pass is added.
+
+The public exit-time contract covers parameter evaluation, integer boundaries,
+expression errors, programmatic non-finite values, zero/omission, conditions,
+deterministic source maps, region scope, supported destinations, and canonical
+source validation. The existing typed-behavior runtime artifact retains authored
+JSON, compiled binaries, PNGs, and hashes for early/late inputs, false conditions,
+loop timing, and exit time composed with duration.
+
+TDD: test-only head `103b9d33a7bc052192181aade451527fa50eaf00`, run
+`34024382002`, failed because `exit_time_ms` was unknown. Run `34024457586`
+passed the same public encoded-property contract and the duration regressions.
+Test-only head `f75b09a25a2cb1fc8bf0c754e63e305af67c23e8`, run
+`34024595568`, then failed both source-rejection contracts because the unsupported
+gates were accepted. The subsequent implementation rejects those sources before
+encoding. Final exact-head CI and separate Standards/Spec self-review are recorded
+on the pull request for #227. Local Cargo execution was unavailable; Rust execution
+and schema generation used GitHub Actions. This parent todo remains open for
+additive/direct blends, advanced exit timing, and non-boolean view-model properties.

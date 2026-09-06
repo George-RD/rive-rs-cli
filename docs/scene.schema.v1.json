@@ -8855,6 +8855,14 @@
             "null"
           ]
         },
+        "exit_time": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
         "from": {
           "format": "uint",
           "minimum": 0,
