@@ -178,7 +178,7 @@ supplied duration emits canonical `duration`; omission preserves the previous sc
 and source map, and explicit zero preserves instantaneous binary behavior. Duration
 controls the blend after a condition fires, not an exit-time gate or percentage.
 
-A transition may also declare `exit_time_ms`, evaluated in document scalar scope
+A transition may also declare `exit_time_ms`, evaluated in document parameter scope
 as whole milliseconds from 0 through `u32::MAX`. Invalid numeric values report
 `invalid_transition_exit_time`; expression errors retain their own codes and paths.
 Only named motion sources are supported: a blend source reports
