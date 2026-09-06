@@ -6,7 +6,7 @@ on:
     paths: [.github/workflows/agent-transition-work.yml]
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,5 +19,66 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
       - uses: Swatinem/rust-cache@v2
+      - name: Implement duration at the existing authoring seam
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              assert text.count(old) == 1, f"patch anchor mismatch: {path}"
+              p.write_text(text.replace(old, new))
+
+          replace('src/authoring/spec.rs', '''pub struct BehaviorTransitionSpec {
+              pub id: String,
+              pub from: String,
+              pub to: String,
+              pub when: BehaviorTransitionConditionSpec,
+          }''', '''pub struct BehaviorTransitionSpec {
+              pub id: String,
+              pub from: String,
+              pub to: String,
+              pub when: BehaviorTransitionConditionSpec,
+              #[serde(default)]
+              pub duration_ms: Option<ScalarExpr>,
+          }''')
+          replace('src/authoring/frontend/compiler/behavior.rs', '''        transitions.push(json!({
+                      "from": from,
+                      "to": to,
+                      "conditions": [condition]
+                  }));''', '''        let mut lowered_transition = json!({
+                      "from": from,
+                      "to": to,
+                      "conditions": [condition]
+                  });
+                  if let Some(expression) = &transition.duration_ms {
+                      let path = format!("{transition_path}.duration_ms");
+                      let duration =
+                          evaluate_expression(expression, &path, &spec.parameters, Unit::Scalar)?;
+                      if duration < 0.0 || duration > f64::from(u32::MAX) || duration.fract() != 0.0 {
+                          return Err(AuthoringDiagnostic::new(
+                              path,
+                              "invalid_transition_duration",
+                              format!("transition duration must be whole milliseconds between 0 and {}", u32::MAX),
+                          ));
+                      }
+                      lowered_transition["duration"] = json!(duration as u64);
+                  }
+                  transitions.push(lowered_transition);''')
+          PY
+      - run: cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
+      - run: cargo fmt
+      - run: cargo fmt --check
       - run: cargo test --locked --test authoring_transition_duration_contract
+      - name: Commit the verified tracer bullet to its work branch
+        run: |
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/authoring/spec.rs src/authoring/frontend/compiler/behavior.rs docs/authoring.schema.v0.json tests/authoring_transition_duration_contract.rs
+          git commit -m 'feat(authoring): lower transition duration through canonical scene (#225)'
+          git push origin HEAD:refs/heads/agent/authoring-transition-duration
