@@ -36,3 +36,5 @@ replace('src/builder/validation.rs',
 
                         if let Some(conditions) = &transition.conditions {''',
         '"exit_time requires an animation source state, but transition source')
+file = Path('tests/authoring_transition_exit_time_contract.rs')
+file.write_text(file.read_text().replace('PropertyValueReadRead::', 'PropertyValueRead::'))
