@@ -78,7 +78,7 @@ function listPngs(directory) {
   return pngs.sort();
 }
 
-function renderInteraction(riv, label, extraArgs = []) {
+function renderInteraction(riv, label, extraArgs = [], frames = "0,12") {
   const output = path.join(INTERACTION_DIR, label);
   fs.mkdirSync(output, { recursive: true });
   run("cargo", [
@@ -90,7 +90,9 @@ function renderInteraction(riv, label, extraArgs = []) {
     "--state-machine",
     INTERACTION_PLAN.stateMachine,
     "--frames",
-    "0,12",
+    frames,
+    "--fps",
+    "60",
     "-o",
     output,
     "--width",
@@ -152,6 +154,60 @@ function verifyCliInteraction() {
     `${JSON.stringify(evidence, null, 2)}\n`,
   );
   console.log("typed authored statechart responds to render --input and --pointer");
+  verifyCliTransitionDuration(riv);
+}
+
+function verifyCliTransitionDuration(instantaneousRiv) {
+  const durationMs = 1000;
+  const frames = [0, 1, 16, 31, 46, 91];
+  const input = `${INTERACTION_PLAN.input}=true@1`;
+  const document = JSON.parse(fs.readFileSync(INTERACTION_INPUT, "utf8"));
+  document.behavior.statecharts[0].transitions[0].duration_ms = {
+    kind: "literal",
+    value: durationMs,
+    unit: "scalar",
+  };
+  const source = path.join(INTERACTION_DIR, "timed.v0.json");
+  const timedRiv = path.join(INTERACTION_DIR, "timed.riv");
+  fs.writeFileSync(source, `${JSON.stringify(document, null, 2)}\n`);
+  run("cargo", ["run", "--quiet", "--", "authoring", "compile", source, "-o", timedRiv]);
+
+  const control = renderInteraction(instantaneousRiv, "duration/control", [], frames.join(","));
+  const instantaneous = renderInteraction(
+    instantaneousRiv, "duration/instantaneous", ["--input", input], frames.join(","),
+  );
+  const timed = renderInteraction(timedRiv, "duration/timed", ["--input", input], frames.join(","));
+  for (const result of [control, instantaneous, timed]) {
+    if (result.pngs.length !== frames.length) {
+      throw new Error("transition duration evidence has an unexpected frame count");
+    }
+  }
+  if (!control.first.equals(instantaneous.first) || !control.first.equals(timed.first)) {
+    throw new Error("transition duration changed the pose before the scheduled input");
+  }
+  if (control.last.equals(instantaneous.last) || !timed.last.equals(instantaneous.last)) {
+    throw new Error("timed transition did not finish at the instantaneous destination");
+  }
+  const intermediateHashes = new Set();
+  for (const index of [2, 3, 4]) {
+    const frame = fs.readFileSync(timed.pngs[index]);
+    if (frame.equals(control.last) || frame.equals(instantaneous.last)) {
+      throw new Error(`timed transition has no intermediate pose at frame ${frames[index]}`);
+    }
+    intermediateHashes.add(sha256(frame));
+  }
+  if (intermediateHashes.size !== 3) {
+    throw new Error("timed transition did not progress through distinct intermediate poses");
+  }
+  const evidence = { durationMs, fps: 60, input, frames };
+  for (const [label, result] of Object.entries({ control, instantaneous, timed })) {
+    evidence[label] = result.pngs.map((png) => sha256(fs.readFileSync(png)));
+  }
+  fs.writeFileSync(
+    path.join(INTERACTION_DIR, "duration", "evidence.json"),
+    `${JSON.stringify(evidence, null, 2)}\n`,
+  );
+  console.log("typed transition blends across intermediate frames and reaches its destination");
 }
 
 function assertSamePng(actualPath, baselinePath, label) {

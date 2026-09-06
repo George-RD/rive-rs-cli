@@ -518,7 +518,7 @@ fn lower_region(
         if let Some(expression) = &transition.duration_ms {
             let path = format!("{transition_path}.duration_ms");
             let duration = evaluate_expression(expression, &path, &spec.parameters, Unit::Scalar)?;
-            if duration < 0.0 || duration > f64::from(u32::MAX) || duration.fract() != 0.0 {
+            if !(0.0..=f64::from(u32::MAX)).contains(&duration) || duration.fract() != 0.0 {
                 return Err(AuthoringDiagnostic::new(
                     path,
                     "invalid_transition_duration",

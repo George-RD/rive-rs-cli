@@ -66,7 +66,10 @@ fn transition_duration_lowers_in_milliseconds_from_a_parameter() {
     let mut input = document();
     let baseline = lower(&input);
     input["parameters"] = json!({ "crossfade": { "value": 250.0, "unit": "scalar" } });
-    set_duration(&mut input, json!({ "kind": "parameter", "name": "crossfade" }));
+    set_duration(
+        &mut input,
+        json!({ "kind": "parameter", "name": "crossfade" }),
+    );
 
     let first = lower(&input);
     let second = lower(&input);
@@ -103,9 +106,13 @@ fn omitted_duration_preserves_the_scene_and_zero_preserves_binary_output() {
     let mut zero = lower(&input);
     assert_eq!(zero.source_map, baseline.source_map);
     assert_eq!(compiled(&zero.scene), compiled(&baseline.scene));
-    let transition = &mut zero.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1];
+    let transition =
+        &mut zero.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1];
     assert_eq!(transition["duration"], 0);
-    transition.as_object_mut().expect("transition object").remove("duration");
+    transition
+        .as_object_mut()
+        .expect("transition object")
+        .remove("duration");
     assert_eq!(zero.scene, baseline.scene);
 }
 
@@ -136,10 +143,26 @@ fn negative_fractional_and_out_of_range_durations_are_rejected() {
 #[test]
 fn duration_expressions_preserve_their_authored_diagnostics() {
     for (expression, code, suffix) in [
-        (json!({ "kind": "literal", "value": 250, "unit": "px" }), "unit_mismatch", ""),
-        (json!({ "kind": "parameter", "name": "missing" }), "unknown_parameter", ".name"),
-        (json!({ "kind": "divide", "value": literal(250.0), "divisor": 0 }), "division_by_zero", ".divisor"),
-        (json!({ "kind": "divide", "value": literal(1.0), "divisor": 2 }), "invalid_transition_duration", ""),
+        (
+            json!({ "kind": "literal", "value": 250, "unit": "px" }),
+            "unit_mismatch",
+            "",
+        ),
+        (
+            json!({ "kind": "parameter", "name": "missing" }),
+            "unknown_parameter",
+            ".name",
+        ),
+        (
+            json!({ "kind": "divide", "value": literal(250.0), "divisor": 0 }),
+            "division_by_zero",
+            ".divisor",
+        ),
+        (
+            json!({ "kind": "divide", "value": literal(1.0), "divisor": 2 }),
+            "invalid_transition_duration",
+            "",
+        ),
     ] {
         let mut input = document();
         set_duration(&mut input, expression);
@@ -178,14 +201,24 @@ fn region_duration_uses_shared_parameters_and_keeps_scoped_source_identity() {
     let layers = &lowered.scene["artboard"]["state_machines"][0]["layers"];
     assert!(layers[0]["transitions"][1].get("duration").is_none());
     assert_eq!(layers[1]["transitions"][1]["duration"], 125);
-    let source = lowered.source_map.entries.iter()
+    let source = lowered
+        .source_map
+        .entries
+        .iter()
         .find(|entry| entry.authored_id == "meter/alert/activate")
         .expect("region transition source map");
-    assert_eq!(source.authored_path, "$.behavior.statecharts[0].regions[0].transitions[0]");
-    assert_eq!(source.scene_paths, ["/artboard/state_machines/0/layers/1/transitions/1"]);
+    assert_eq!(
+        source.authored_path,
+        "$.behavior.statecharts[0].regions[0].transitions[0]"
+    );
+    assert_eq!(
+        source.scene_paths,
+        ["/artboard/state_machines/0/layers/1/transitions/1"]
+    );
     assert_builds(lowered.scene);
 
-    input["behavior"]["statecharts"][0]["regions"][0]["transitions"][0]["duration_ms"] = literal(-1.0);
+    input["behavior"]["statecharts"][0]["regions"][0]["transitions"][0]["duration_ms"] =
+        literal(-1.0);
     let error = lower_authoring_json(&input.to_string()).expect_err("invalid region duration");
     assert_diagnostic(
         &error,
