@@ -8,61 +8,42 @@ on:
 permissions:
   contents: write
 
-env:
-  CARGO_TERM_COLOR: always
-  RUSTFLAGS: "-D warnings"
-
 jobs:
-  contract:
+  documentation:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Apply reviewed duration patch with exact Unreleased anchor
+      - name: Reconcile authoring contract and example guidance
         run: |
-          git show 5b5c3814169a6377caf78a99c1a20b779eb66c8b:.github/workflows/agent-transition-work.yml > /tmp/duration-patch.yml
           python3 - <<'PY'
           from pathlib import Path
-          from textwrap import dedent
-          text = Path('/tmp/duration-patch.yml').read_text()
-          script = dedent(text.split("          python3 - <<'PY'\n", 1)[1].split('\n          PY\n', 1)[0])
-          old = "replace('CHANGELOG.md', '### Added\\n',"
-          assert script.count(old) == 1
-          script = script.replace(old, "replace('CHANGELOG.md', '## [Unreleased]\\n\\n### Added\\n',")
-          old = "'### Added\\n\\n- **Timed authored transitions.**"
-          assert script.count(old) == 1
-          script = script.replace(old, "'## [Unreleased]\\n\\n### Added\\n\\n- **Timed authored transitions.**")
-          script = script.replace("'''function verifyCliTransitionDuration", "r'''function verifyCliTransitionDuration")
-          exec(compile(script, 'reviewed-duration-patch', 'exec'))
+
+          def replace(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              assert text.count(old) == 1, f"patch anchor mismatch: {path}"
+              p.write_text(text.replace(old, new))
+
+          contract = 'meta/contracts/authoring.md'
+          replace(contract,
+              'alongside a statechart. Additive blend states, direct blend states, transition duration\nand exit time, and view-model properties other than `bool` are not exposed by this\nfrontend. `stacking`, `continuity`, `waypoint`, `blend`, and `regions` are optional and',
+              'alongside a statechart. Additive blend states, direct blend states, exit time, and\nview-model properties other than `bool` are not exposed by this frontend.\n`stacking`, `continuity`, `waypoint`, `blend`, `regions`, and `duration_ms` are optional and')
+          replace(contract, 'A behavior state declares exactly one of `motion` and `blend`.',
+              'A transition may declare `duration_ms` as a scalar expression evaluated in the\ndocument parameter scope. It must resolve to a finite whole number from 0 through\n`u32::MAX` milliseconds; negative, fractional, and oversized results return\n`invalid_transition_duration` at its authored `.duration_ms` path. Expression errors\nkeep their existing codes and paths. Region transitions follow the same rule. Only a\nsupplied duration emits canonical `duration`; omission preserves the previous scene\nand source map, and explicit zero preserves instantaneous binary behavior. Duration\ncontrols the blend after a condition fires, not an exit-time gate or percentage.\n\nA behavior state declares exactly one of `motion` and `blend`.')
+          examples = 'examples/authoring/README.md'
+          replace(examples,
+              'transition duration and exit time, and view-model number or trigger properties',
+              'exit time, and view-model number or trigger properties')
+          replace(examples, '`stacking-card.v0.json` sets',
+              'Transitions also accept optional `duration_ms` scalar expressions. The retained\n`tests/playwright/authoring-behavior-runtime.js` contract derives a 1000ms variant\nof `pointer-statechart.v0.json`, compiles it through the public CLI, and compares\nintermediate and final frames with the unchanged instantaneous fixture. See\n[transition duration](../../docs/authoring-spec-v0.md#transition-duration) for the\nparameter, unit, and validation contract.\n\n`stacking-card.v0.json` sets')
+          replace(examples, 'covers the\nten lowering cases for typed inputs', 'covers\ntyped inputs')
+          replace(examples, 'cargo test --test authoring_behavior_blend_contract\n',
+              'cargo test --test authoring_behavior_blend_contract\ncargo test --test authoring_transition_duration_contract\n')
           PY
-      - run: cargo fmt
-      - run: cargo fmt --check
-      - run: cargo test --locked --test authoring_transition_duration_contract
-      - run: cargo clippy --all-targets --all-features -- -D warnings
-      - run: npm install --no-save playwright@1.62.0
-      - run: npx playwright install --with-deps chromium
-      - run: node --check tests/playwright/authoring-behavior-runtime.js
-      - run: node tests/playwright/authoring-behavior-runtime.js
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: transition-duration-workbench-evidence
-          path: target/playwright-behavior
-          retention-days: 7
-      - name: Commit verified contracts and documentation
-        run: |
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/authoring/frontend/compiler/behavior.rs tests/authoring_transition_duration_contract.rs tests/playwright/authoring-behavior-runtime.js docs/authoring-spec-v0.md ROADMAP.md meta/todos/todo.behavior-authoring-compiler.md CHANGELOG.md
-          git commit -m 'test(authoring): verify timed blends through public CLI and document contract (#225)'
+          git add meta/contracts/authoring.md examples/authoring/README.md
+          git commit -m 'docs(authoring): reconcile transition duration contract and examples (#225)'
           git push origin HEAD:refs/heads/agent/authoring-transition-duration
