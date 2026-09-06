@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   workbench:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
           path: /tmp/rive-source.tar.gz
           retention-days: 7
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatin/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
       - name: Check selected public contract
         run: |
           if test -f tests/authoring_transition_exit_time_contract.rs; then
