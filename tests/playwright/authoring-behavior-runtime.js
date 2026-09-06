@@ -155,6 +155,7 @@ function verifyCliInteraction() {
   );
   console.log("typed authored statechart responds to render --input and --pointer");
   verifyCliTransitionDuration(riv);
+  verifyCliTransitionExitTime();
 }
 
 function verifyCliTransitionDuration(instantaneousRiv) {
@@ -208,6 +209,115 @@ function verifyCliTransitionDuration(instantaneousRiv) {
     `${JSON.stringify(evidence, null, 2)}\n`,
   );
   console.log("typed transition blends across intermediate frames and reaches its destination");
+}
+
+function verifyCliTransitionExitTime() {
+  const exitTimeMs = 1000;
+  const durationMs = 1000;
+  const frames = [0, 1, 30, 54, 66, 81, 96, 126];
+  const input = `${INTERACTION_PLAN.input}=true@1`;
+  const lateInput = `${INTERACTION_PLAN.input}=true@90`;
+  const directory = path.join(INTERACTION_DIR, "exit-time");
+  fs.mkdirSync(directory, { recursive: true });
+  const document = JSON.parse(fs.readFileSync(INTERACTION_INPUT, "utf8"));
+  for (const track of document.motion.tracks) {
+    track.duration_frames.value = 120;
+    track.keyframes[1].frame.value = 120;
+  }
+  const compile = (label) => {
+    const source = path.join(directory, `${label}.v0.json`);
+    const riv = path.join(directory, `${label}.riv`);
+    fs.writeFileSync(source, `${JSON.stringify(document, null, 2)}\n`);
+    run("cargo", ["run", "--quiet", "--", "authoring", "compile", source, "-o", riv]);
+    return riv;
+  };
+  const ungatedRiv = compile("ungated");
+  const transition = document.behavior.statecharts[0].transitions[0];
+  transition.exit_time_ms = { kind: "literal", value: exitTimeMs, unit: "scalar" };
+  const gatedRiv = compile("gated");
+  transition.duration_ms = { kind: "literal", value: durationMs, unit: "scalar" };
+  const blendedRiv = compile("blended");
+  const render = (riv, label, scheduledInput) => renderInteraction(
+    riv, `exit-time/${label}`, scheduledInput ? ["--input", scheduledInput] : [], frames.join(","),
+  );
+  const results = {
+    control: render(gatedRiv, "control"),
+    ungated: render(ungatedRiv, "ungated", input),
+    gated: render(gatedRiv, "gated", input),
+    late: render(gatedRiv, "late", lateInput),
+    blended: render(blendedRiv, "blended", input),
+  };
+  for (const [label, result] of Object.entries(results)) {
+    if (result.pngs.length !== frames.length) {
+      throw new Error(`${label} exit-time evidence has an unexpected frame count`);
+    }
+  }
+  const rest = results.control.first;
+  const destination = results.ungated.last;
+  if (rest.equals(destination) || fs.readFileSync(results.ungated.pngs[2]).equals(rest)) {
+    throw new Error("ungated comparison did not reach a distinct destination before the gate");
+  }
+  for (const png of results.control.pngs) {
+    if (!fs.readFileSync(png).equals(rest)) {
+      throw new Error("exit time bypassed its unmet input condition");
+    }
+  }
+  for (const label of ["gated", "blended", "late"]) {
+    for (const index of [0, 1, 2, 3]) {
+      if (!fs.readFileSync(results[label].pngs[index]).equals(rest)) {
+        throw new Error(`${label} left the outgoing state before the exit-time gate`);
+      }
+    }
+    if (!results[label].last.equals(destination)) {
+      throw new Error(`${label} did not finish at the expected destination`);
+    }
+  }
+  if (!fs.readFileSync(results.gated.pngs[4]).equals(destination)) {
+    throw new Error("satisfied exit-time gate did not release the transition");
+  }
+  if (!fs.readFileSync(results.late.pngs[5]).equals(rest)
+      || !fs.readFileSync(results.late.pngs[6]).equals(destination)) {
+    throw new Error("exit time was treated as a delay from the input instead of animation time");
+  }
+  const intermediateHashes = new Set();
+  for (const index of [4, 5, 6]) {
+    const frame = fs.readFileSync(results.blended.pngs[index]);
+    if (frame.equals(rest) || frame.equals(destination)) {
+      throw new Error(`exit-time plus duration has no intermediate pose at frame ${frames[index]}`);
+    }
+    intermediateHashes.add(sha256(frame));
+  }
+  if (intermediateHashes.size !== 3) {
+    throw new Error("exit-time plus duration did not advance through distinct blended poses");
+  }
+  delete transition.duration_ms;
+  document.motion.tracks[0].loop_type = "loop";
+  const loopedRiv = compile("looped");
+  const loopFrames = [0, 126, 150, 174, 186, 216];
+  const loopInput = `${INTERACTION_PLAN.input}=true@150`;
+  const looped = renderInteraction(loopedRiv, "exit-time/looped", ["--input", loopInput], loopFrames.join(","));
+  if (looped.pngs.length !== loopFrames.length) {
+    throw new Error("looped exit-time evidence has an unexpected frame count");
+  }
+  for (const index of [0, 1, 2, 3]) {
+    if (!fs.readFileSync(looped.pngs[index]).equals(rest)) {
+      throw new Error("looped transition did not wait for its next-cycle gate");
+    }
+  }
+  for (const index of [4, 5]) {
+    if (!fs.readFileSync(looped.pngs[index]).equals(destination)) {
+      throw new Error("looped exit-time gate did not release the transition");
+    }
+  }
+  const evidence = {
+    exitTimeMs, durationMs, fps: 60, input, lateInput, frames, loopFrames, loopInput,
+    looped: looped.pngs.map((png) => sha256(fs.readFileSync(png))),
+  };
+  for (const [label, result] of Object.entries(results)) {
+    evidence[label] = result.pngs.map((png) => sha256(fs.readFileSync(png)));
+  }
+  fs.writeFileSync(path.join(directory, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
+  console.log("typed exit-time gate waits for animation time, preserves conditions, and composes with duration");
 }
 
 function assertSamePng(actualPath, baselinePath, label) {

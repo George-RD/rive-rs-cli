@@ -41,13 +41,21 @@ fn encoded_transitions(scene: &Value) -> Vec<RivObject> {
 }
 
 fn property(object: &RivObject, key: u16) -> Option<PropertyValueRead> {
-    object.properties.iter().find(|property| property.key == key).map(|property| property.value.clone())
+    object
+        .properties
+        .iter()
+        .find(|property| property.key == key)
+        .map(|property| property.value.clone())
 }
 
 fn assert_diagnostic(error: &AuthoringError, code: &str, path: &str) {
-    assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == code && diagnostic.path == path
-    }), "missing {code} at {path}: {error:?}");
+    assert!(
+        error
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == code && diagnostic.path == path }),
+        "missing {code} at {path}: {error:?}"
+    );
 }
 
 fn set_exit_time(input: &mut Value, expression: Value) {
@@ -66,7 +74,8 @@ fn blend_state() -> Value {
 
 fn add_blend_input(input: &mut Value) {
     input["behavior"]["statecharts"][0]["inputs"]
-        .as_array_mut().expect("inputs")
+        .as_array_mut()
+        .expect("inputs")
         .push(json!({ "kind": "number", "id": "load", "value": literal(0.0) }));
 }
 
@@ -81,9 +90,18 @@ fn authored_exit_time_reaches_the_encoded_transition_with_its_enable_flag() {
     assert_eq!(transition["from"], 1);
     assert_eq!(transition["to"], 2);
     let encoded = encoded_transitions(&lowered.scene);
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME), Some(PropertyValueRead::UInt(750)));
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS), Some(PropertyValueRead::UInt(ENABLE_EXIT_TIME)));
-    assert_eq!(property(&encoded[0], property_keys::STATE_TRANSITION_FLAGS), None);
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME),
+        Some(PropertyValueRead::UInt(750))
+    );
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS),
+        Some(PropertyValueRead::UInt(ENABLE_EXIT_TIME))
+    );
+    assert_eq!(
+        property(&encoded[0], property_keys::STATE_TRANSITION_FLAGS),
+        None
+    );
 }
 
 #[test]
@@ -93,7 +111,8 @@ fn authored_blend_sources_reject_exit_time_at_the_authored_field() {
     input["behavior"]["statecharts"][0]["states"][0] = blend_state();
     lower(&input);
     set_exit_time(&mut input, literal(750.0));
-    let error = lower_authoring_json(&input.to_string()).expect_err("blend gate must not be ignored");
+    let error =
+        lower_authoring_json(&input.to_string()).expect_err("blend gate must not be ignored");
     assert_diagnostic(&error, "unsupported_transition_exit_source", EXIT_PATH);
 
     input["behavior"]["statecharts"][0]["transitions"][0]["from"] = json!("engaged");
@@ -104,20 +123,37 @@ fn authored_blend_sources_reject_exit_time_at_the_authored_field() {
 #[test]
 fn canonical_exit_time_rejects_non_animation_sources() {
     let baseline = lower(&document()).scene;
-    for source in ["entry", "exit", "any", "blend_state", "blend_state_direct", "blend_state_1d"] {
+    for source in [
+        "entry",
+        "exit",
+        "any",
+        "blend_state",
+        "blend_state_direct",
+        "blend_state_1d",
+    ] {
         let mut scene = baseline.clone();
-        scene["artboard"]["state_machines"][0]["inputs"].as_array_mut().expect("inputs")
+        scene["artboard"]["state_machines"][0]["inputs"]
+            .as_array_mut()
+            .expect("inputs")
             .push(json!({ "type": "number", "name": "load", "value": 0 }));
-        scene["artboard"]["state_machines"][0]["layers"][0]["states"][1] = if source == "blend_state_1d" {
-            json!({ "type": source, "input": "load" })
-        } else {
-            json!({ "type": source })
-        };
+        scene["artboard"]["state_machines"][0]["layers"][0]["states"][1] =
+            if source == "blend_state_1d" {
+                json!({ "type": source, "input": "load" })
+            } else {
+                json!({ "type": source })
+            };
         compile(&scene);
-        scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["exit_time"] = json!(0);
+        scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["exit_time"] =
+            json!(0);
         let gated: SceneSpec = serde_json::from_value(scene).expect("canonical gate");
-        let error = compile_scene(&gated, None, 0).expect_err("non-animation gate must be rejected");
-        assert!(error.to_string().contains("exit_time requires an animation source state"), "{source}: {error}");
+        let error =
+            compile_scene(&gated, None, 0).expect_err("non-animation gate must be rejected");
+        assert!(
+            error
+                .to_string()
+                .contains("exit_time requires an animation source state"),
+            "{source}: {error}"
+        );
     }
 }
 
@@ -126,12 +162,15 @@ fn omitted_and_null_gates_preserve_output_but_explicit_zero_enables_the_gate() {
     let mut input = document();
     let baseline = lower(&input);
     let transitions = &baseline.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"];
-    assert_eq!(transitions, &json!([
-        { "from": 0, "to": 1 },
-        { "from": 1, "to": 2, "conditions": [{
-            "input": "auth__interaction_2dstage__gate__pressed__input", "value": true
-        }] }
-    ]));
+    assert_eq!(
+        transitions,
+        &json!([
+            { "from": 0, "to": 1 },
+            { "from": 1, "to": 2, "conditions": [{
+                "input": "auth__interaction_2dstage__gate__pressed__input", "value": true
+            }] }
+        ])
+    );
     set_exit_time(&mut input, Value::Null);
     let omitted = lower(&input);
     assert_eq!(omitted.scene, baseline.scene);
@@ -139,10 +178,19 @@ fn omitted_and_null_gates_preserve_output_but_explicit_zero_enables_the_gate() {
     set_exit_time(&mut input, literal(0.0));
     let zero = lower(&input);
     assert_eq!(zero.source_map, baseline.source_map);
-    assert_eq!(zero.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["exit_time"], 0);
+    assert_eq!(
+        zero.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["exit_time"],
+        0
+    );
     let encoded = encoded_transitions(&zero.scene);
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS), Some(PropertyValueRead::UInt(ENABLE_EXIT_TIME)));
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME), None);
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS),
+        Some(PropertyValueRead::UInt(ENABLE_EXIT_TIME))
+    );
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME),
+        None
+    );
     assert_ne!(compile(&zero.scene), compile(&baseline.scene));
 }
 
@@ -152,10 +200,19 @@ fn exit_time_boundaries_round_trip_without_integer_narrowing() {
         let mut input = document();
         set_exit_time(&mut input, literal(f64::from(value)));
         let lowered = lower(&input);
-        assert_eq!(lowered.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["exit_time"], value);
+        assert_eq!(
+            lowered.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["exit_time"],
+            value
+        );
         let encoded = encoded_transitions(&lowered.scene);
-        assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME),
-            if value == 0 { None } else { Some(PropertyValueRead::UInt(u64::from(value))) });
+        assert_eq!(
+            property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME),
+            if value == 0 {
+                None
+            } else {
+                Some(PropertyValueRead::UInt(u64::from(value)))
+            }
+        );
     }
 }
 
@@ -171,16 +228,32 @@ fn exit_time_rejects_negative_fractional_and_oversized_values() {
 
 #[test]
 fn exit_time_preserves_expression_error_codes_and_paths() {
-    for (expression, code) in [
-        (json!({ "kind": "literal", "value": 10, "unit": "px" }), "unit_mismatch"),
-        (json!({ "kind": "parameter", "name": "missing" }), "unknown_parameter"),
-        (json!({ "kind": "divide", "value": literal(10.0), "divisor": 0 }), "division_by_zero"),
-        (json!({ "kind": "divide", "value": literal(1.0), "divisor": 2 }), "invalid_transition_exit_time"),
+    for (expression, code, suffix) in [
+        (
+            json!({ "kind": "literal", "value": 10, "unit": "px" }),
+            "unit_mismatch",
+            "",
+        ),
+        (
+            json!({ "kind": "parameter", "name": "missing" }),
+            "unknown_parameter",
+            ".name",
+        ),
+        (
+            json!({ "kind": "divide", "value": literal(10.0), "divisor": 0 }),
+            "division_by_zero",
+            ".divisor",
+        ),
+        (
+            json!({ "kind": "divide", "value": literal(1.0), "divisor": 2 }),
+            "invalid_transition_exit_time",
+            "",
+        ),
     ] {
         let mut input = document();
         set_exit_time(&mut input, expression);
         let error = lower_authoring_json(&input.to_string()).expect_err("invalid expression");
-        assert_diagnostic(&error, code, EXIT_PATH);
+        assert_diagnostic(&error, code, &format!("{EXIT_PATH}{suffix}"));
     }
 }
 
@@ -189,10 +262,11 @@ fn programmatic_exit_time_rejects_non_finite_values() {
     for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
         let mut input: AuthoringSpec = serde_json::from_value(document()).expect("typed document");
         input.behavior.statecharts[0].transitions[0].exit_time_ms = Some(ScalarExpr::Literal {
-            value, unit: Unit::Scalar,
+            value,
+            unit: Unit::Scalar,
         });
         let error = lower_authoring(&input).expect_err("non-finite milliseconds");
-        assert_diagnostic(&error, "non_finite", EXIT_PATH);
+        assert_diagnostic(&error, "non_finite", &format!("{EXIT_PATH}.value"));
     }
 }
 
@@ -208,12 +282,23 @@ fn exit_time_composes_with_duration_without_changing_identity_or_conditions() {
     assert_eq!(first.source_map, second.source_map);
     assert_eq!(first.source_map, baseline.source_map);
     assert_eq!(compile(&first.scene), compile(&second.scene));
-    assert_eq!(first.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["conditions"],
-        baseline.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["conditions"]);
+    assert_eq!(
+        first.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["conditions"],
+        baseline.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["conditions"]
+    );
     let encoded = encoded_transitions(&first.scene);
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_DURATION), Some(PropertyValueRead::UInt(250)));
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME), Some(PropertyValueReadRead::UInt(750)));
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS), Some(PropertyValueRead::UInt(ENABLE_EXIT_TIME)));
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_DURATION),
+        Some(PropertyValueRead::UInt(250))
+    );
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_EXIT_TIME),
+        Some(PropertyValueRead::UInt(750))
+    );
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS),
+        Some(PropertyValueRead::UInt(ENABLE_EXIT_TIME))
+    );
 }
 
 #[test]
@@ -234,18 +319,36 @@ fn parallel_region_gates_use_document_parameters_and_region_source_paths() {
     let layers = &lowered.scene["artboard"]["state_machines"][0]["layers"];
     assert!(layers[0]["transitions"][1].get("exit_time").is_none());
     assert_eq!(layers[1]["transitions"][1]["exit_time"], 750);
-    let source = lowered.source_map.entries.iter().find(|entry| entry.authored_id == "gate/parallel/engage")
+    let source = lowered
+        .source_map
+        .entries
+        .iter()
+        .find(|entry| entry.authored_id == "gate/parallel/engage")
         .expect("region transition source map");
-    assert_eq!(source.authored_path, "$.behavior.statecharts[0].regions[0].transitions[0]");
-    assert_eq!(source.scene_paths, ["/artboard/state_machines/0/layers/1/transitions/1"]);
+    assert_eq!(
+        source.authored_path,
+        "$.behavior.statecharts[0].regions[0].transitions[0]"
+    );
+    assert_eq!(
+        source.scene_paths,
+        ["/artboard/state_machines/0/layers/1/transitions/1"]
+    );
     let encoded = encoded_transitions(&lowered.scene);
-    assert_eq!(property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS), None);
-    assert_eq!(property(&encoded[3], property_keys::STATE_TRANSITION_EXIT_TIME), Some(PropertyValueRead::UInt(750)));
+    assert_eq!(
+        property(&encoded[1], property_keys::STATE_TRANSITION_FLAGS),
+        None
+    );
+    assert_eq!(
+        property(&encoded[3], property_keys::STATE_TRANSITION_EXIT_TIME),
+        Some(PropertyValueRead::UInt(750))
+    );
     let path = "$.behavior.statecharts[0].regions[0].transitions[0].exit_time_ms";
-    input["behavior"]["statecharts"][0]["regions"][0]["transitions"][0]["exit_time_ms"] = literal(-1.0);
+    input["behavior"]["statecharts"][0]["regions"][0]["transitions"][0]["exit_time_ms"] =
+        literal(-1.0);
     let error = lower_authoring_json(&input.to_string()).expect_err("invalid region gate");
     assert_diagnostic(&error, "invalid_transition_exit_time", path);
-    input["behavior"]["statecharts"][0]["regions"][0]["transitions"][0]["exit_time_ms"] = literal(750.0);
+    input["behavior"]["statecharts"][0]["regions"][0]["transitions"][0]["exit_time_ms"] =
+        literal(750.0);
     input["behavior"]["statecharts"][0]["regions"][0]["states"][0] = blend_state();
     let error = lower_authoring_json(&input.to_string()).expect_err("unsupported region source");
     assert_diagnostic(&error, "unsupported_transition_exit_source", path);
