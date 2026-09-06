@@ -32,14 +32,30 @@ jobs:
         run: |
           cargo test --locked --test authoring_transition_exit_time_contract
           cargo test --locked --test authoring_transition_duration_contract
+          cargo clippy --all-targets --all-features -- -D warnings
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check official-runtime evidence
+        run: |
+          npm install --no-save playwright@1.62.0
+          npx playwright install --with-deps chromium
+          node tests/playwright/authoring-behavior-runtime.js
+      - name: Check Cairn context and ownership
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn context > /tmp/cairn-context.txt
+          cairn scan --json > /tmp/cairn-scan.json
+          cairn lint --json > /tmp/cairn-lint.json
       - name: Commit verified edits on the work branch only
         run: |
           git diff --check
-          git add -u -- . ':!.github'
+          git add -u -- src tests docs meta CHANGELOG.md ROADMAP.md cairn.blueprint
           if ! git diff --cached --quiet; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'feat(authoring): compile exit-time gates through canonical transitions (#227)'
+            git commit -m 'feat(authoring): verify animation exit-time gates and runtime evidence (#227)'
             git push origin HEAD:refs/heads/agent/authoring-exit-time
           fi
           git archive --format=tar.gz HEAD -o /tmp/rive-source.tar.gz
@@ -53,4 +69,13 @@ jobs:
           path: |
             /tmp/rive-source.tar.gz
             /tmp/workbench.patch
+            /tmp/cairn-context.txt
+            /tmp/cairn-scan.json
+            /tmp/cairn-lint.json
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: authoring-workbench-runtime
+          path: target/playwright-behavior
           retention-days: 7
