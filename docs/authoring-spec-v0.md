@@ -12,6 +12,8 @@
 
 `stacking`, motion `continuity` and `waypoint`, state `blend`, and statechart `regions` are optional fields whose defaults (`runtime`, `per_keyframe`, `auto`, and absent `blend` and `regions`) leave the canonical `SceneSpec` and source map unchanged. The `number` and `trigger` input kinds, the comparison and trigger transition conditions, and the `number_change` and `trigger_change` listener actions are new variants of the input, condition, and listener-action unions. A document that uses none of them lowers as it did before, so `authoring_format_version` stays `0`; `tests/showcase_artifact.rs` recompiles each committed showcase and compares the bytes against the checked-in `.riv`.
 
+`duration_ms` is an optional transition field. Omitting it preserves existing canonical scenes, source maps, and compiled artifacts; explicit zero remains instantaneous. This additive capability keeps `authoring_format_version` at `0`.
+
 The generated JSON Schema is available through `authoring::authoring_schema()` and uses this stable identifier:
 
 ```text
@@ -430,6 +432,26 @@ The compiler lowers model properties to Rive view models, explicit inputs to nam
 
 The canonical builder validates the merged graph. Behavior validation drops asset `source` fields from its copy of the lowered scene the same way the visual path does, so a document may declare `font_assets` or `image_assets` and a statechart together. Runtime contracts prove both interaction paths: changing a bound view-model boolean through the official web runtime changes state, while the compiled typed interaction fixture is also driven through the public `rive-cli render` interface with both `--input` and `--pointer`, and both must converge on the same visible state.
 
+## Transition duration
+
+A transition may set `duration_ms` to blend from its source state to its destination over a fixed number of milliseconds:
+
+```json
+{
+  "id": "engage",
+  "from": "resting",
+  "to": "engaged",
+  "when": { "input": "pressed", "equals": true },
+  "duration_ms": { "kind": "literal", "value": 250, "unit": "scalar" }
+}
+```
+
+The expression uses scalar units and the document's parameter scope. For example, `{"kind": "parameter", "name": "crossfade-ms"}` reads a scalar parameter declared under `parameters`; arithmetic expressions are also supported. The evaluated value must be a finite whole number from 0 through 4294967295, matching the runtime's unsigned 32-bit millisecond field. Negative, fractional, and oversized results report `invalid_transition_duration` at the authored `.duration_ms` path. Expression errors retain their own codes and paths, including `unit_mismatch`, `unknown_parameter`, `division_by_zero`, and `non_finite` for programmatic non-finite values.
+
+The same contract applies to transitions inside parallel regions. The compiler emits canonical `duration` only when the field is supplied, keeps the transition's source-map identity unchanged, and leaves the generated entry transition instantaneous. Duration controls the blend after its condition is satisfied; it is not an exit-time gate or a delay before starting the transition. Percentage timing and transition easing remain outside this typed field.
+
+`tests/playwright/authoring-behavior-runtime.js` compiles a 1000ms transition through the public CLI, schedules its input at frame 1, and checks distinct intermediate poses at frames 16, 31, and 46 at 60fps before the destination at frame 91. The same render path supplies control and instantaneous comparisons. Source, compiled output, frame PNGs, and hashes are retained in the typed-behavior runtime CI artifact.
+
 ## Blend states
 
 A behavior state declares exactly one of `motion` and `blend`. `motion` names an authored motion track. `blend` maps a number input onto at least two motion tracks, each with the input value at which that track is fully applied:
@@ -488,7 +510,7 @@ Every layer is emitted with an entry state at index 0, the authored states from 
 
 Region ids are unique within a statechart; a repeat fails with `duplicate_behavior_region` at `$.behavior.statecharts[i].regions[j].id`. A region id may not match any other id the statechart scopes either. States, transitions, inputs, events, listeners and regions all claim the source-map identity `{statechart}/{id}`, and consumers resolve an entry by first match, so a collision makes that lookup ambiguous; it fails with `behavior_region_id_collision` at the same path. Every state and transition diagnostic listed above applies inside a region under the same `.regions[j]` prefix. The region above is from `examples/authoring/interactive-console.v0.json`, whose other region, `stream`, carries a token across the artboard while layer 0 is still in `standby`. Regions do not require inputs: `examples/authoring/signal-weave.v0.json` declares three layers with no inputs and no transitions between authored states, so each layer plays its own track.
 
-Additive blend states, direct blend states, transition duration and exit time, and view-model number and trigger properties remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Additive blend states, direct blend states, exit time, and view-model number and trigger properties remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

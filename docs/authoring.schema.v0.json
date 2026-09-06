@@ -547,6 +547,17 @@
     "BehaviorTransitionSpec": {
       "additionalProperties": false,
       "properties": {
+        "duration_ms": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScalarExpr"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "from": {
           "type": "string"
         },

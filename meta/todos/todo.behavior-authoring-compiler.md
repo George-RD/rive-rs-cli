@@ -57,6 +57,12 @@ PR #224 / issue #223 validates the fully qualified identities of the emitted typ
 
 The public contracts in `tests/authoring_behavior_identity_contract.rs` cover event/input ambiguity; repeated collisions spanning events, inputs, listeners, states, and transitions; state/transition ambiguity inside a parallel region; valid scoped reuse with deterministic output and canonical-builder acceptance; existing diagnostic precedence; and rollback of an invalid statechart replacement batch through `apply_operations`. The test-only head `afd0d994333fcee31fe7295f3145fd88ea45bec7` passed formatting and Clippy, then CI run `33961408886`, job `101293814122`, failed `events_and_inputs_must_not_share_a_behavior_source_identity` because lowering incorrectly succeeded with two `meter/load` entries. Final exact-head CI and two-axis self-review evidence are recorded on PR #224; local Cargo execution was unavailable in the implementing chat environment.
 
+Issue #225 adds optional `duration_ms` scalar expressions to authored transitions on the existing region-lowering path. The evaluated value must be a finite, nonnegative whole number of milliseconds within `u32::MAX`; invalid values fail at authored paths instead of truncating or saturating. Only an explicitly supplied duration emits canonical `duration`, so old scenes, source maps, and committed binaries retain their defaults. No builder/encoder change or second lowering pass is introduced.
+
+`tests/authoring_transition_duration_contract.rs` covers parameter evaluation, deterministic lowering and stable source maps, omitted/zero compatibility through binary compilation, integer boundaries, invalid numeric values, expression-specific diagnostics, the programmatic non-finite path, and scoped region timing. `tests/playwright/authoring-behavior-runtime.js` drives a 1000ms transition through the public CLI at 60fps and compares resting, instantaneous, and timed output, requiring distinct intermediate poses and the same final destination. Source, binary, frames, and hashes are retained with the existing typed-behavior CI artifact.
+
+TDD red evidence: test-only head `1d22222518c88c868d5fcbb105d221dea7d53d85`, workflow run `34022244950`, job `101456825456`, compiled and failed the duration contract because `duration_ms` was unknown. The implementation passed the same contract in run `34022460445`, job `101457407010`. Final exact-head verification and the separate Standards/Spec self-review are recorded on the pull request for #225. Local Cargo execution was unavailable in the implementing chat environment.
+
 Against the acceptance criteria:
 
 - Authored transitions never reference array indices: met. Conditions name a binding, an input, or a trigger by authored id, and region layer indices are assigned by the compiler.
@@ -65,4 +71,4 @@ Against the acceptance criteria:
 - Interaction tests drive pointer and input events and retain runtime evidence: met. `tests/authoring_console_runtime.rs` drives a pointer press and release plus the `load` input through the official runtime, and `tests/playwright/showcase-validation.js` drives the same artifact in the browser.
 - A complex interactive showcase is reproduced through the frontend: met. Issue #181 closed the exact-equivalence gate in PR #206, and the console reproduces stacking, waypoint continuity, a blend state, and parallel regions in one document without raw escapes.
 
-This todo remains open. Additive blend states, direct blend states, transition duration and exit time, and view-model properties other than `bool` are not exposed by the AuthoringSpec frontend.
+This todo remains open. Additive blend states, direct blend states, exit time, and view-model properties other than `bool` are not exposed by the AuthoringSpec frontend.

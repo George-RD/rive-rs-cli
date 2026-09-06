@@ -510,11 +510,27 @@ fn lower_region(
                     .expect("validated transition trigger")
             }),
         };
-        transitions.push(json!({
+        let mut lowered_transition = json!({
             "from": from,
             "to": to,
             "conditions": [condition]
-        }));
+        });
+        if let Some(expression) = &transition.duration_ms {
+            let path = format!("{transition_path}.duration_ms");
+            let duration = evaluate_expression(expression, &path, &spec.parameters, Unit::Scalar)?;
+            if !(0.0..=f64::from(u32::MAX)).contains(&duration) || duration.fract() != 0.0 {
+                return Err(AuthoringDiagnostic::new(
+                    path,
+                    "invalid_transition_duration",
+                    format!(
+                        "transition duration must be whole milliseconds between 0 and {}",
+                        u32::MAX
+                    ),
+                ));
+            }
+            lowered_transition["duration"] = json!(duration as u64);
+        }
+        transitions.push(lowered_transition);
         source_entries.push(SourceMapEntry {
             authored_id: region_scoped_id(statechart_id, region_id, &transition.id),
             authored_path: transition_path,

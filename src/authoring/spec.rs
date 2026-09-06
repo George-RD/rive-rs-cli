@@ -617,6 +617,8 @@ pub struct BehaviorTransitionSpec {
     pub from: String,
     pub to: String,
     pub when: BehaviorTransitionConditionSpec,
+    #[serde(default)]
+    pub duration_ms: Option<ScalarExpr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

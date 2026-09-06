@@ -169,6 +169,15 @@ at `$....transitions[i].when.input` or `$....transitions[i].when.trigger`. The
 whose kind does not match the declared input kind returns `invalid_listener_input` at
 that action's `input` path.
 
+A transition may declare `duration_ms` as a scalar expression evaluated in the
+document parameter scope. It must resolve to a finite whole number from 0 through
+`u32::MAX` milliseconds; negative, fractional, and oversized results return
+`invalid_transition_duration` at its authored `.duration_ms` path. Expression errors
+keep their existing codes and paths. Region transitions follow the same rule. Only a
+supplied duration emits canonical `duration`; omission preserves the previous scene
+and source map, and explicit zero preserves instantaneous binary behavior. Duration
+controls the blend after a condition fires, not an exit-time gate or percentage.
+
 A behavior state declares exactly one of `motion` and `blend`. Neither returns
 `missing_state_motion` and both return `ambiguous_state_motion`, each at the state
 path. `blend` is `{"input": <number input id>, "stops": [{"motion": <track id>,
@@ -206,9 +215,9 @@ ids inside a region are
 
 Typed behavior validates its lowered scene with file-asset `source` fields removed, the
 same way the visual path does, so a document may declare `font_assets` or `image_assets`
-alongside a statechart. Additive blend states, direct blend states, transition duration
-and exit time, and view-model properties other than `bool` are not exposed by this
-frontend. `stacking`, `continuity`, `waypoint`, `blend`, and `regions` are optional and
+alongside a statechart. Additive blend states, direct blend states, exit time, and
+view-model properties other than `bool` are not exposed by this frontend.
+`stacking`, `continuity`, `waypoint`, `blend`, `regions`, and `duration_ms` are optional and
 their defaults reproduce the previous lowered output, so `authoring_format_version`
 remains 0.
 
