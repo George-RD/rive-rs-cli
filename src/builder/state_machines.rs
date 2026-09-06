@@ -411,6 +411,10 @@ pub(crate) fn build_state_machines(
                         if let Some(duration) = transition.duration {
                             state_transition.duration = duration;
                         }
+                        if let Some(exit_time) = transition.exit_time {
+                            state_transition.exit_time = u64::from(exit_time);
+                            state_transition.flags |= StateTransition::ENABLE_EXIT_TIME;
+                        }
                         objects.push(Box::new(state_transition));
 
                         if let Some(conditions) = &transition.conditions {

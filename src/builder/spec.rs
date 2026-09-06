@@ -1606,6 +1606,7 @@ pub struct TransitionSpec {
     pub from: usize,
     pub to: usize,
     pub duration: Option<u64>,
+    pub exit_time: Option<u32>,
     pub conditions: Option<Vec<ConditionSpec>>,
     pub children: Option<Vec<TransitionChildSpec>>,
 }

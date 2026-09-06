@@ -439,6 +439,8 @@ pub struct StateTransition {
 }
 
 impl StateTransition {
+    pub const ENABLE_EXIT_TIME: u64 = 1 << 2;
+
     pub fn new(state_to_id: u64) -> Self {
         Self {
             state_to_id,

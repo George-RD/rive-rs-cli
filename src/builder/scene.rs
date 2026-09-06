@@ -1015,6 +1015,7 @@ mod tests {
                             from: 0,
                             to: 3,
                             duration: None,
+                            exit_time: None,
                             conditions: None,
                             children: None,
                         }]),
@@ -1121,6 +1122,7 @@ mod tests {
                             from: 0,
                             to: 1,
                             duration: None,
+                            exit_time: None,
                             conditions: None,
                             children: Some(vec![
                                 TransitionChildSpec::TransitionViewModelCondition {
@@ -1171,6 +1173,7 @@ mod tests {
                             from: 0,
                             to: 1,
                             duration: None,
+                            exit_time: None,
                             conditions: Some(vec![ConditionSpec {
                                 input: "enabled".to_string(),
                                 op: Some("gtee".to_string()),

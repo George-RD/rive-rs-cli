@@ -530,6 +530,21 @@ fn lower_region(
             }
             lowered_transition["duration"] = json!(duration as u64);
         }
+        if let Some(expression) = &transition.exit_time_ms {
+            let path = format!("{transition_path}.exit_time_ms");
+            let exit_time = evaluate_expression(expression, &path, &spec.parameters, Unit::Scalar)?;
+            if !(0.0..=f64::from(u32::MAX)).contains(&exit_time) || exit_time.fract() != 0.0 {
+                return Err(AuthoringDiagnostic::new(
+                    path,
+                    "invalid_transition_exit_time",
+                    format!(
+                        "transition exit time must be whole milliseconds between 0 and {}",
+                        u32::MAX
+                    ),
+                ));
+            }
+            lowered_transition["exit_time"] = json!(exit_time as u32);
+        }
         transitions.push(lowered_transition);
         source_entries.push(SourceMapEntry {
             authored_id: region_scoped_id(statechart_id, region_id, &transition.id),

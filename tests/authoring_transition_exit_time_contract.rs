@@ -15,8 +15,7 @@ fn authored_exit_time_reaches_the_encoded_transition_with_its_enable_flag() {
     input["behavior"]["statecharts"][0]["transitions"][0]["exit_time_ms"] =
         json!({ "kind": "parameter", "name": "gate" });
     let lowered = lower_authoring_json(&input.to_string()).expect("exit-time gate must lower");
-    let transition =
-        &lowered.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1];
+    let transition = &lowered.scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1];
     assert_eq!(transition["exit_time"], 750);
     assert_eq!(transition["from"], 1);
     assert_eq!(transition["to"], 2);
