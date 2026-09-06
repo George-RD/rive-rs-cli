@@ -5,10 +5,9 @@ use serde_json::{Value, json};
 use support::assert_builds;
 
 fn document() -> Value {
-    let mut input: Value = serde_json::from_str(include_str!(
-        "../examples/authoring/blend-meter.v0.json"
-    ))
-    .expect("authoring fixture");
+    let mut input: Value =
+        serde_json::from_str(include_str!("../examples/authoring/blend-meter.v0.json"))
+            .expect("authoring fixture");
     input["behavior"]["statecharts"][0] = json!({
         "id": "meter",
         "inputs": [{ "kind": "bool", "id": "enabled", "value": false }],
