@@ -1,0 +1,35 @@
+name: Authoring exit-time workbench
+
+on:
+  push:
+    branches: [agent/authoring-exit-time]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: authoring-exit-time-workbench
+  cancel-in-progress: true
+
+jobs:
+  workbench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retain exact source for connected development
+        run: git archive --format=tar.gz HEAD -o /tmp/rive-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: authoring-workbench-source
+          path: /tmp/rive-source.tar.gz
+          retention-days: 7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatin/rust-cache@v2
+      - name: Check selected public contract
+        run: |
+          if test -f tests/authoring_transition_exit_time_contract.rs; then
+            cargo test --locked --test authoring_transition_exit_time_contract
+          else
+            cargo test --locked --test authoring_transition_duration_contract
+          fi
