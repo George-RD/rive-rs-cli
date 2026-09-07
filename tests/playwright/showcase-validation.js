@@ -1,6 +1,8 @@
 const { chromium } = require("playwright");
 const { spawn } = require("node:child_process");
 const http = require("node:http");
+const path = require("node:path");
+const { readShowcaseCards, retainShowcaseFailure } = require("./showcase-diagnostics");
 const {
   plan,
   showcaseEntries,
@@ -23,6 +25,7 @@ const ENGAGED_NEEDLE_FLOOR = ENGAGED_NEEDLE_MIN_X / CONSOLE_ARTBOARD_WIDTH;
 const SETTLE_FRAMES = 120;
 const LIFECYCLE_TIMEOUT_MS = 20000;
 const NEEDLE_TIMEOUT_MS = 15000;
+const EVIDENCE_DIR = path.join(ROOT, "target", "showcase-validation");
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -155,29 +158,15 @@ async function waitForNeedle(page, compare, bound) {
   return { reached: false, observed };
 }
 
-async function waitForPlayingState(page, expected, label, pageErrors = []) {
-  try {
-    await page.waitForFunction(
-      (expected) =>
-        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
-          (card) => card.dataset.playing === expected
-        ),
-      expected,
-      { timeout: LIFECYCLE_TIMEOUT_MS, polling: POLLING_MS }
-    );
-  } catch {
-    const observed = await page.evaluate(() =>
-      Array.from(document.querySelectorAll(".card[data-showcase-id]")).map((card) => ({
-        id: card.dataset.showcaseId,
-        playing: card.dataset.playing,
-        ready: card.dataset.playbackReady,
-      }))
-    );
-    const reported = pageErrors.length ? ` page errors: ${JSON.stringify(pageErrors)}` : "";
-    throw new Error(
-      `${label} did not reach data-playing="${expected}" within ${LIFECYCLE_TIMEOUT_MS}ms: ${JSON.stringify(observed)}.${reported}`
-    );
-  }
+async function waitForPlayingState(page, expected) {
+  await page.waitForFunction(
+    (expected) =>
+      Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
+        (card) => card.dataset.playing === expected
+      ),
+    expected,
+    { timeout: LIFECYCLE_TIMEOUT_MS, polling: POLLING_MS }
+  );
 }
 
 async function pauseTimeline(page, id) {
@@ -303,37 +292,6 @@ function collectErrors(page, errors) {
   );
 }
 
-async function readCards(page) {
-  return page.evaluate(() =>
-    Array.from(document.querySelectorAll(".card[data-showcase-id]")).map((card) => {
-      const canvas = card.querySelector("canvas.scene");
-      const context = canvas?.getContext("2d");
-      let painted = 0;
-      if (canvas && context) {
-        const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
-        for (let i = 3; i < data.length; i += 4) {
-          if (data[i] !== 0) painted += 1;
-        }
-      }
-      return {
-        id: card.dataset.showcaseId,
-        provenance: card.dataset.provenance,
-        ready: card.dataset.playbackReady,
-        playing: card.dataset.playing,
-        painted,
-        aria: canvas?.getAttribute("aria-label") || "",
-        source: card.querySelector("[data-source-link=\"true\"]")?.getAttribute("href") || "",
-        evidence: card.querySelector("[data-evidence-link=\"true\"]")?.getAttribute("href") || "",
-        consumerAttestation:
-          card.querySelector("[data-consumer-attestation-link=\"true\"]")?.getAttribute("href") || "",
-        consumerEvidence:
-          card.querySelector("[data-consumer-evidence-link=\"true\"]")?.getAttribute("href") || "",
-        text: card.textContent || "",
-      };
-    })
-  );
-}
-
 async function readEvidenceStatuses(page) {
   return page.evaluate(async () =>
     Promise.all(
@@ -359,6 +317,9 @@ async function readEvidenceStatuses(page) {
     stdio: "ignore",
   });
   let browser;
+  let activePage = null;
+  let stage = "server";
+  const errors = [];
   const shutdown = () => {
     if (browser) browser.close().catch(() => {});
     server.kill("SIGTERM");
@@ -367,12 +328,16 @@ async function readEvidenceStatuses(page) {
 
   try {
     await waitForServer(PORT);
+    stage = "browser";
     browser = await chromium.launch();
-    const errors = [];
 
+    stage = "desktop:page";
     const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+    activePage = page;
+    stage = "desktop:navigation";
     collectErrors(page, errors);
     await page.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
+    stage = "desktop:ready";
     await page.waitForFunction(
       (expected) => {
         const cards = Array.from(document.querySelectorAll(".card[data-showcase-id]"));
@@ -384,6 +349,7 @@ async function readEvidenceStatuses(page) {
       entries.length,
       { timeout: 20000, polling: POLLING_MS }
     );
+    stage = "desktop:first-paint";
     await page.waitForFunction(
       () =>
         Array.from(document.querySelectorAll(".card[data-showcase-id]")).every((card) => {
@@ -400,12 +366,14 @@ async function readEvidenceStatuses(page) {
       { timeout: 30000, polling: POLLING_MS }
     );
 
-    const cards = await readCards(page);
+    stage = "desktop:cards";
+    const cards = await readShowcaseCards(page);
     const expectedIds = entries.map((entry) => entry.id);
     if (JSON.stringify(cards.map((card) => card.id)) !== JSON.stringify(expectedIds)) {
       errors.push(`manifest/card ids diverged: ${JSON.stringify(cards.map((card) => card.id))}`);
     }
     for (const card of cards) {
+      if (card.paintError) errors.push(`${card.id} paint could not be read: ${card.paintError}`);
       if (card.painted === 0) errors.push(`${card.id} rendered nothing`);
       if (card.playing !== "true") errors.push(`${card.id} did not enter live playback`);
       if (!card.aria) errors.push(`${card.id} is missing a canvas text alternative`);
@@ -434,6 +402,7 @@ async function readEvidenceStatuses(page) {
       }
     }
 
+    stage = "desktop:loop";
     await wait(1500);
     const decisionFlowPlaying = await page.evaluate(
       () => document.querySelector('[data-showcase-id="decision-flow"]')?.dataset.playing
@@ -442,8 +411,10 @@ async function readEvidenceStatuses(page) {
       errors.push("decision-flow one-shot did not restart as an intentional showcase loop");
     }
 
+    stage = "desktop:controls";
     await driveInteractiveControls(page, errors);
 
+    stage = "desktop:evidence";
     const evidenceStatuses = await readEvidenceStatuses(page);
     for (const evidence of evidenceStatuses) {
       if (evidence.status !== 200) {
@@ -451,11 +422,14 @@ async function readEvidenceStatuses(page) {
       }
     }
 
+    activePage = null;
+    stage = "lifecycle:page";
     const lifecycle = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
-    const lifecycleErrors = [];
+    activePage = lifecycle;
+    stage = "lifecycle:navigation";
     collectErrors(lifecycle, errors);
-    collectErrors(lifecycle, lifecycleErrors);
     await lifecycle.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
+    stage = "lifecycle:ready";
     await lifecycle.waitForFunction(
       (expected) => {
         const cards = Array.from(document.querySelectorAll(".card[data-showcase-id]"));
@@ -470,33 +444,46 @@ async function readEvidenceStatuses(page) {
       entries.length,
       { timeout: 20000, polling: POLLING_MS }
     );
+    stage = "lifecycle:pause";
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "false", "bfcache pause", lifecycleErrors);
+    await waitForPlayingState(lifecycle, "false");
+    stage = "lifecycle:resume";
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "true", "bfcache resume", lifecycleErrors);
+    await waitForPlayingState(lifecycle, "true");
     await lifecycle.close();
 
+    activePage = null;
+    stage = "phone:page";
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    activePage = phone;
+    stage = "phone:navigation";
     collectErrors(phone, errors);
     await phone.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
+    stage = "phone:cards";
     await phone.waitForFunction(
       (expected) => document.querySelectorAll(".card[data-showcase-id]").length === expected,
       entries.length,
       { timeout: 20000 }
     );
+    stage = "phone:layout";
     const phoneOverflow = await phone.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth
     );
     if (phoneOverflow > 1) errors.push(`showcase overflows phone viewport by ${phoneOverflow}px`);
 
+    activePage = null;
+    stage = "reduced-motion:page";
     const reduced = await browser.newPage({ viewport: { width: 900, height: 800 } });
+    activePage = reduced;
+    stage = "reduced-motion:navigation";
     await reduced.emulateMedia({ reducedMotion: "reduce" });
     collectErrors(reduced, errors);
     await reduced.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
+    stage = "reduced-motion:ready";
     await reduced.waitForFunction(
       (expected) => {
         const cards = Array.from(document.querySelectorAll(".card[data-showcase-id]"));
@@ -508,6 +495,7 @@ async function readEvidenceStatuses(page) {
       entries.length,
       { timeout: 20000, polling: POLLING_MS }
     );
+    stage = "reduced-motion:autoplay";
     const reducedPlaying = await reduced.evaluate(() =>
       Array.from(document.querySelectorAll(".card[data-showcase-id]"))
         .filter((card) => card.dataset.playing === "true")
@@ -518,11 +506,8 @@ async function readEvidenceStatuses(page) {
     }
 
     if (errors.length > 0) {
-      process.stdout.write(
-        `Showcase validation failed:\n${errors.map((error) => `  ${error}`).join("\n")}\n`
-      );
-      shutdown();
-      process.exit(1);
+      stage = "validation:assertions";
+      throw new Error(`Showcase validation failed:\n${errors.map((error) => `  ${error}`).join("\n")}`);
     }
 
     process.stdout.write(
@@ -531,7 +516,17 @@ async function readEvidenceStatuses(page) {
     shutdown();
     process.exit(0);
   } catch (error) {
-    process.stdout.write(`Showcase validation error: ${error.message}\n`);
+    process.stdout.write(`Showcase validation error [${stage}]: ${error.stack || error}\n`);
+    const report = await retainShowcaseFailure({
+      page: activePage,
+      directory: EVIDENCE_DIR,
+      stage,
+      error,
+      errors,
+    });
+    await new Promise((resolve) => {
+      process.stdout.write(`Showcase failure diagnostics: ${JSON.stringify(report)}\n`, resolve);
+    });
     shutdown();
     process.exit(1);
   }

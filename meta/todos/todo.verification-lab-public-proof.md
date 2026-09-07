@@ -75,3 +75,32 @@ final exact-head outcomes and separate Standards/Spec review are recorded on PR 
 
 This is a correctness follow-up within the completed public-proof track, not a new
 Authoring milestone. The broader behavior-authoring todo remains open.
+
+## Startup investigation: retained diagnostics (#231)
+
+The first bounded slice addresses the missing evidence in the existing showcase
+harness. Its failure path now retains the stage, original error/stack, collected
+console/page/request errors, viewport, per-card readiness/playing/logical-frame and
+paint state, and a screenshot under `target/showcase-validation`. CI uploads that
+directory and the harness log as `showcase-validation-diagnostics`, even on failure.
+Loading and first paint have distinct stages; desktop, lifecycle, phone, and reduced-
+motion waits identify their own context.
+
+The normal validation and failure report share one card reader. An unreadable canvas
+is reported separately from a canvas with zero painted pixels and cannot hide other
+cards. Diagnostic operations are bounded and their failures are recorded separately,
+so a closed/stalled page or unwritable artifact directory does not replace the original
+failure. The existing validation timeouts, all-canvases-painted predicate, runtime,
+assets, baselines, and production playback code are unchanged. No retries are added.
+
+`node --test tests/playwright/showcase-diagnostics-contract.js` covers retained browser
+state/PNG evidence, closed-page failure isolation, per-card paint-read failure, output
+write failure, and a stalled page probe. The local red/green sequence exposed and
+corrected loss of the original error on a closed page, loss of all cards when one canvas
+was unreadable, and an unbounded pending probe. Local browser execution is diagnostic-
+contract evidence, not a substitute for the pinned official-runtime CI suite.
+
+Issue #231 remains open: this slice does not establish or fix either reported startup
+cause. Reproduction against a pinned base, comparison under identical runtime/assets/
+viewport settings, a demonstrated owner-level fix, and repeated-run evidence are still
+required. Keep this investigation independent of the Authoring feature roadmap.

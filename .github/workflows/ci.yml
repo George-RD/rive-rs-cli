@@ -209,9 +209,22 @@ jobs:
           node-version: 20
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
+      - name: Run showcase diagnostic contracts
+        run: node --test tests/playwright/showcase-diagnostics-contract.js
       - run: node tests/playwright/site-validation.js
       - run: node tests/playwright/site-playback.js
-      - run: node tests/playwright/showcase-validation.js
+      - name: Run showcase validation
+        run: |
+          set -o pipefail
+          node tests/playwright/showcase-validation.js 2>&1 | tee showcase-validation.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: showcase-validation-diagnostics
+          path: |
+            showcase-validation.log
+            target/showcase-validation
+          retention-days: 7
       - name: Run paused-control playback regression
         run: node tests/playwright/site-paused-controls.js
       - uses: actions/upload-artifact@v4
