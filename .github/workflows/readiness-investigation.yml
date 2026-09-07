@@ -99,10 +99,11 @@ jobs:
                       assert report['error']['stack'] == evidence['failure']
                       assert report['diagnosticErrors'] == []
                       assert len(report['cards']) == 6
-                      assert all(card['ready'] == 'false' for card in report['cards'])
+                      assert all(card['ready'] == 'error' for card in report['cards'])
                       assert any('request failed:' in error for error in report['errors'])
                       assert (destination / 'failure.png').read_bytes().startswith(bytes([137,80,78,71,13,10,26,10]))
-                      assert json.dumps(report, separators=(',', ':')) in result.stderr
+                      logged_reports = [json.loads(line) for line in result.stderr.splitlines() if line.startswith('{')]
+                      assert report in logged_reports
               (output / 'diagnostic-contract.json').write_text(json.dumps(summary, indent=2) + '\n')
               print(json.dumps(summary, indent=2))
           finally:
