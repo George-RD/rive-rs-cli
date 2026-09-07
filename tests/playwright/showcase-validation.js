@@ -158,29 +158,15 @@ async function waitForNeedle(page, compare, bound) {
   return { reached: false, observed };
 }
 
-async function waitForPlayingState(page, expected, label, pageErrors = []) {
-  try {
-    await page.waitForFunction(
-      (expected) =>
-        Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
-          (card) => card.dataset.playing === expected
-        ),
-      expected,
-      { timeout: LIFECYCLE_TIMEOUT_MS, polling: POLLING_MS }
-    );
-  } catch {
-    const observed = await page.evaluate(() =>
-      Array.from(document.querySelectorAll(".card[data-showcase-id]")).map((card) => ({
-        id: card.dataset.showcaseId,
-        playing: card.dataset.playing,
-        ready: card.dataset.playbackReady,
-      }))
-    );
-    const reported = pageErrors.length ? ` page errors: ${JSON.stringify(pageErrors)}` : "";
-    throw new Error(
-      `${label} did not reach data-playing="${expected}" within ${LIFECYCLE_TIMEOUT_MS}ms: ${JSON.stringify(observed)}.${reported}`
-    );
-  }
+async function waitForPlayingState(page, expected) {
+  await page.waitForFunction(
+    (expected) =>
+      Array.from(document.querySelectorAll(".card[data-showcase-id]")).every(
+        (card) => card.dataset.playing === expected
+      ),
+    expected,
+    { timeout: LIFECYCLE_TIMEOUT_MS, polling: POLLING_MS }
+  );
 }
 
 async function pauseTimeline(page, id) {
@@ -345,6 +331,7 @@ async function readEvidenceStatuses(page) {
     stage = "browser";
     browser = await chromium.launch();
 
+    stage = "desktop:page";
     const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
     activePage = page;
     stage = "desktop:navigation";
@@ -435,12 +422,12 @@ async function readEvidenceStatuses(page) {
       }
     }
 
+    activePage = null;
+    stage = "lifecycle:page";
     const lifecycle = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
     activePage = lifecycle;
     stage = "lifecycle:navigation";
-    const lifecycleErrors = [];
     collectErrors(lifecycle, errors);
-    collectErrors(lifecycle, lifecycleErrors);
     await lifecycle.goto(`http://127.0.0.1:${PORT}/showcase.html`, { waitUntil: "load" });
     stage = "lifecycle:ready";
     await lifecycle.waitForFunction(
@@ -461,14 +448,16 @@ async function readEvidenceStatuses(page) {
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "false", "bfcache pause", lifecycleErrors);
+    await waitForPlayingState(lifecycle, "false");
     stage = "lifecycle:resume";
     await lifecycle.evaluate(() => {
       window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
     });
-    await waitForPlayingState(lifecycle, "true", "bfcache resume", lifecycleErrors);
+    await waitForPlayingState(lifecycle, "true");
     await lifecycle.close();
 
+    activePage = null;
+    stage = "phone:page";
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
     activePage = phone;
     stage = "phone:navigation";
@@ -486,6 +475,8 @@ async function readEvidenceStatuses(page) {
     );
     if (phoneOverflow > 1) errors.push(`showcase overflows phone viewport by ${phoneOverflow}px`);
 
+    activePage = null;
+    stage = "reduced-motion:page";
     const reduced = await browser.newPage({ viewport: { width: 900, height: 800 } });
     activePage = reduced;
     stage = "reduced-motion:navigation";
@@ -533,7 +524,9 @@ async function readEvidenceStatuses(page) {
       error,
       errors,
     });
-    process.stdout.write(`Showcase failure diagnostics: ${JSON.stringify(report)}\n`);
+    await new Promise((resolve) => {
+      process.stdout.write(`Showcase failure diagnostics: ${JSON.stringify(report)}\n`, resolve);
+    });
     shutdown();
     process.exit(1);
   }
