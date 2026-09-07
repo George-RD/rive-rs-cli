@@ -3,6 +3,7 @@ name: Readiness investigation
 on:
   push:
     branches: [agent/showcase-readiness-evidence]
+    paths: [.github/workflows/readiness-investigation.yml]
 
 permissions:
   contents: read
@@ -30,6 +31,64 @@ jobs:
           node-version: 20
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
+      - name: Add bounded observational tracing to the comparison
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/readiness-investigation.cjs')
+          source = p.read_text()
+          needle = 'const page = await context.newPage();'
+          replacement = '''const page = await context.newPage();
+                  await page.addInitScript(() => {
+                    const trace = { frames: [], ready: [] };
+                    window.__READINESS_TRACE = trace;
+                    const request = window.requestAnimationFrame.bind(window);
+                    const cancel = window.cancelAnimationFrame.bind(window);
+                    const pending = new Map();
+                    window.requestAnimationFrame = (callback) => {
+                      const record = {
+                        requestedAt: performance.now(),
+                        requestStack: new Error().stack,
+                        callback: String(callback).slice(0, 1000),
+                      };
+                      const id = request((time) => {
+                        record.firedAt = performance.now();
+                        pending.delete(id);
+                        callback(time);
+                      });
+                      record.id = id;
+                      pending.set(id, record);
+                      if (trace.frames.length < 4096) trace.frames.push(record);
+                      return id;
+                    };
+                    window.cancelAnimationFrame = (id) => {
+                      const record = pending.get(id);
+                      if (record) {
+                        record.cancelledAt = performance.now();
+                        record.cancelStack = new Error().stack;
+                        pending.delete(id);
+                      }
+                      cancel(id);
+                    };
+                    new MutationObserver((records) => {
+                      for (const record of records) {
+                        const card = record.target;
+                        if (card.dataset.playbackReady === 'true' && trace.ready.length < 100) {
+                          trace.ready.push({ id: card.dataset.showcaseId, time: performance.now() });
+                        }
+                      }
+                    }).observe(document, { subtree: true, attributes: true, attributeFilter: ['data-playback-ready'] });
+                  });'''
+          assert source.count(needle) == 1
+          source = source.replace(needle, replacement)
+          needle = 'url: location.href,'
+          assert source.count(needle) == 1
+          source = source.replace(needle, 'url: location.href, trace: window.__READINESS_TRACE,')
+          source = source.replace('console.log(JSON.stringify(result));', 'console.log(JSON.stringify({ label, ready: result.ready, elapsedMs: result.elapsedMs, probeFailure: result.probeFailure }));')
+          p.write_text(source)
+          Path('target/readiness-investigation').mkdir(parents=True, exist_ok=True)
+          Path('target/readiness-investigation/executed-probe.cjs').write_text(source)
+          PY
       - name: Compare historical and current readiness
         run: |
           set -o pipefail
