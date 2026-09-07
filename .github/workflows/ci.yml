@@ -65,6 +65,7 @@ jobs:
       - run: node tests/playwright/visual-contract.js
       - run: node tests/playwright/landing-lifecycle-contract.js
       - run: node tests/provenance/production-showcase.js
+      - run: node --test tests/playwright/site-playback-contract.js
 
   runtime-eval-evidence:
     needs: [check, browser-contracts]
@@ -211,3 +212,11 @@ jobs:
       - run: node tests/playwright/site-validation.js
       - run: node tests/playwright/site-playback.js
       - run: node tests/playwright/showcase-validation.js
+      - name: Run paused-control playback regression
+        run: node tests/playwright/site-paused-controls.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paused-control-playback-evidence
+          path: target/site-paused-controls
+          retention-days: 7
