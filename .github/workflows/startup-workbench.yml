@@ -1,0 +1,33 @@
+name: Startup workbench
+on:
+  push:
+    branches: [agent/showcase-startup-reproduction]
+    paths: [.github/workflows/startup-workbench.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 602ca840f750e966ce85d116cea48ee682d172ba
+          persist-credentials: false
+      - run: git archive --format=tar.gz HEAD > source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: startup-pinned-source
+          path: source.tar.gz
+          retention-days: 1
+      - name: Read architecture context
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn context | tee cairn-context.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: startup-cairn-context
+          path: cairn-context.txt
+          retention-days: 1
