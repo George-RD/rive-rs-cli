@@ -227,10 +227,14 @@ jobs:
             target/showcase-validation
           retention-days: 7
       - name: Run paused-control playback regression
-        run: node tests/playwright/site-paused-controls.js
+        run: |
+          set -o pipefail
+          node tests/playwright/site-paused-controls.js 2>&1 | tee paused-controls.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: paused-control-playback-evidence
-          path: target/site-paused-controls
+          path: |
+            paused-controls.log
+            target/site-paused-controls
           retention-days: 7
