@@ -70,7 +70,11 @@
 
     function detachScheduledFrame() {
       if (instance && instance.frameRequestId) {
-        global.cancelAnimationFrame(instance.frameRequestId);
+        if (typeof instance.runtime?.cancelAnimationFrame === "function") {
+          instance.runtime.cancelAnimationFrame(instance.frameRequestId);
+        } else {
+          global.cancelAnimationFrame(instance.frameRequestId);
+        }
         instance.frameRequestId = null;
       }
     }
