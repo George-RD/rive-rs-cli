@@ -1,0 +1,44 @@
+name: Readiness investigation
+
+on:
+  push:
+    branches: [agent/showcase-readiness-evidence]
+
+permissions:
+  contents: read
+
+jobs:
+  investigate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Retain pinned source snapshot
+        run: |
+          mkdir -p target/readiness-source
+          git archive HEAD site tests/playwright .github/workflows .agents meta cairn.blueprint CONTEXT.md assets/rive.js assets/rive.wasm examples/authoring scripts | gzip > target/readiness-source/source.tar.gz
+          git rev-parse HEAD > target/readiness-source/head.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: readiness-source
+          path: target/readiness-source
+          retention-days: 7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Compare historical and current readiness
+        run: |
+          set -o pipefail
+          node scripts/readiness-investigation.cjs 2>&1 | tee readiness-investigation.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: readiness-investigation
+          path: |
+            readiness-investigation.log
+            target/readiness-investigation
+          retention-days: 7
