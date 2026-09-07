@@ -66,6 +66,7 @@ jobs:
       - run: node tests/playwright/landing-lifecycle-contract.js
       - run: node tests/provenance/production-showcase.js
       - run: node --test tests/playwright/site-playback-contract.js
+      - run: node --test tests/playwright/site-scheduling-contract.js
 
   runtime-eval-evidence:
     needs: [check, browser-contracts]
