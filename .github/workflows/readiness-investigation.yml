@@ -1,4 +1,4 @@
-name: Readiness investigation
+name: Readiness verification
 
 on:
   push:
@@ -8,96 +8,130 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
 jobs:
-  investigate:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+      - run: cargo test --locked --all-features
+
+  browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Retain pinned source snapshot
-        run: |
-          mkdir -p target/readiness-source
-          git archive HEAD site tests/playwright .github/workflows .agents meta cairn.blueprint CONTEXT.md assets/rive.js assets/rive.wasm examples/authoring scripts | gzip > target/readiness-source/source.tar.gz
-          git rev-parse HEAD > target/readiness-source/head.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: readiness-source
-          path: target/readiness-source
-          retention-days: 7
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
-      - name: Add bounded observational tracing to the comparison
+      - name: Run existing browser and diagnostic contracts
+        run: |
+          node tests/playwright/shared-contract.js
+          node tests/playwright/visual-contract.js
+          node tests/playwright/landing-lifecycle-contract.js
+          node tests/provenance/production-showcase.js
+          node --test tests/playwright/site-playback-contract.js tests/playwright/site-scheduling-contract.js tests/playwright/showcase-diagnostics-contract.js
+      - name: Compare retained diagnostics under a real failed asset request
         run: |
           python3 - <<'PY'
-          from pathlib import Path
-          p = Path('scripts/readiness-investigation.cjs')
-          source = p.read_text()
-          needle = 'const page = await context.newPage();'
-          replacement = '''const page = await context.newPage();
-                  await page.addInitScript(() => {
-                    const trace = { frames: [], ready: [] };
-                    window.__READINESS_TRACE = trace;
-                    const request = window.requestAnimationFrame.bind(window);
-                    const cancel = window.cancelAnimationFrame.bind(window);
-                    const pending = new Map();
-                    window.requestAnimationFrame = (callback) => {
-                      const record = {
-                        requestedAt: performance.now(),
-                        requestStack: new Error().stack,
-                        callback: String(callback).slice(0, 1000),
-                      };
-                      const id = request((time) => {
-                        record.firedAt = performance.now();
-                        pending.delete(id);
-                        callback(time);
-                      });
-                      record.id = id;
-                      pending.set(id, record);
-                      if (trace.frames.length < 4096) trace.frames.push(record);
-                      return id;
-                    };
-                    window.cancelAnimationFrame = (id) => {
-                      const record = pending.get(id);
-                      if (record) {
-                        record.cancelledAt = performance.now();
-                        record.cancelStack = new Error().stack;
-                        pending.delete(id);
-                      }
-                      cancel(id);
-                    };
-                    new MutationObserver((records) => {
-                      for (const record of records) {
-                        const card = record.target;
-                        if (card.dataset.playbackReady === 'true' && trace.ready.length < 100) {
-                          trace.ready.push({ id: card.dataset.showcaseId, time: performance.now() });
-                        }
-                      }
-                    }).observe(document, { subtree: true, attributes: true, attributeFilter: ['data-playback-ready'] });
-                  });'''
-          assert source.count(needle) == 1
-          source = source.replace(needle, replacement)
-          needle = 'url: location.href,'
-          assert source.count(needle) == 1
-          source = source.replace(needle, 'url: location.href, trace: window.__READINESS_TRACE,')
-          source = source.replace('console.log(JSON.stringify(result));', 'console.log(JSON.stringify({ label, ready: result.ready, elapsedMs: result.elapsedMs, probeFailure: result.probeFailure }));')
-          p.write_text(source)
-          Path('target/readiness-investigation').mkdir(parents=True, exist_ok=True)
-          Path('target/readiness-investigation/executed-probe.cjs').write_text(source)
+          import hashlib, json, pathlib, shutil, subprocess
+          root = pathlib.Path.cwd()
+          output = root / 'target/readiness-verification'
+          output.mkdir(parents=True, exist_ok=True)
+          preload = root / 'scripts/.readiness-network-fault.cjs'
+          preload.write_text('''const { chromium } = require("playwright");
+          const launch = chromium.launch.bind(chromium);
+          chromium.launch = async (...args) => {
+            const browser = await launch(...args);
+            const newPage = browser.newPage.bind(browser);
+            browser.newPage = async (...pageArgs) => {
+              const page = await newPage(...pageArgs);
+              await page.route("**/*.riv", (route) => route.abort("failed"));
+              return page;
+            };
+            return browser;
+          };
+          ''')
+          harness = root / 'tests/playwright/.readiness-harness.cjs'
+          versions = {
+              'before': subprocess.check_output(['git', 'show', '14b5131db043b2d6ad52c600036e411ff91ada4f:tests/playwright/site-paused-controls.js']),
+              'after': (root / 'tests/playwright/site-paused-controls.js').read_bytes(),
+          }
+          summary = {}
+          try:
+              for name, source in versions.items():
+                  harness.write_bytes(source)
+                  evidence_dir = root / 'target/site-paused-controls'
+                  shutil.rmtree(evidence_dir, ignore_errors=True)
+                  result = subprocess.run(['node', '--require', str(preload), str(harness)], capture_output=True, text=True, timeout=45)
+                  destination = output / ('asset-failure-' + name)
+                  shutil.copytree(evidence_dir, destination)
+                  (destination / 'harness.cjs').write_bytes(source)
+                  (destination / 'network-fault.cjs').write_bytes(preload.read_bytes())
+                  (destination / 'process.log').write_text(result.stdout + result.stderr)
+                  evidence = json.loads((destination / 'evidence.json').read_text())
+                  assert result.returncode == 1, (name, result.returncode)
+                  assert evidence['passed'] is False
+                  assert 'Timeout 20000ms exceeded' in evidence['failure']
+                  assert evidence['frames'] == {}
+                  has_contract = evidence.get('diagnostics', {}).get('stage') == 'paused:ready'
+                  summary[name] = {'sourceSha256': hashlib.sha256(source).hexdigest(), 'exitCode': result.returncode, 'retainedReadinessContract': has_contract}
+                  if name == 'before':
+                      assert not has_contract, 'pinned original unexpectedly has the new diagnostic contract'
+                  else:
+                      assert has_contract, evidence
+                      report = json.loads((destination / 'failure.json').read_text())
+                      assert report == evidence['diagnostics']
+                      assert report['error']['stack'] == evidence['failure']
+                      assert report['diagnosticErrors'] == []
+                      assert len(report['cards']) == 6
+                      assert all(card['ready'] == 'false' for card in report['cards'])
+                      assert any('request failed:' in error for error in report['errors'])
+                      assert (destination / 'failure.png').read_bytes().startswith(bytes([137,80,78,71,13,10,26,10]))
+                      assert json.dumps(report, separators=(',', ':')) in result.stderr
+              (output / 'diagnostic-contract.json').write_text(json.dumps(summary, indent=2) + '\n')
+              print(json.dumps(summary, indent=2))
+          finally:
+              harness.unlink(missing_ok=True)
+              preload.unlink(missing_ok=True)
           PY
-      - name: Compare historical and current readiness
+      - name: Run public site and paired playback
+        run: |
+          node tests/playwright/site-validation.js
+          node tests/playwright/site-playback.js
+      - name: Retain three predetermined full showcase and paused-control runs
         run: |
           set -o pipefail
-          node scripts/readiness-investigation.cjs 2>&1 | tee readiness-investigation.log
+          for round in 1 2 3; do
+            mkdir -p "target/readiness-verification/run-$round"
+            node tests/playwright/showcase-validation.js 2>&1 | tee "target/readiness-verification/run-$round/showcase.log"
+            rm -rf target/site-paused-controls
+            node tests/playwright/site-paused-controls.js 2>&1 | tee "target/readiness-verification/run-$round/paused-controls.log"
+            cp -R target/site-paused-controls "target/readiness-verification/run-$round/paused-controls"
+          done
+          cp tests/playwright/site-paused-controls.js target/readiness-verification/verified-harness.js
+          git rev-parse HEAD > target/readiness-verification/head.txt
+          git diff --exit-code
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: readiness-investigation
+          name: readiness-verification
           path: |
-            readiness-investigation.log
-            target/readiness-investigation
+            target/readiness-verification
+            target/site-paused-controls
+            target/showcase-validation
           retention-days: 7
