@@ -146,5 +146,69 @@ These are fixed-count comparison results, not retry-until-green or a new CI retr
 policy. Local Node tests also pass; full browser and Rust verification runs in GitHub
 Actions because the local browser navigation is policy-blocked and Rust is unavailable.
 Final exact-head CI and Standards/Spec self-review are recorded in the pull request.
-Issue #231 remains open for the earlier loading-stage timeout: this first-paint
-reproduction does not establish that both historical symptoms have the same cause.
+At the end of PR #233, issue #231 remained open for the earlier loading-stage
+timeout: the first-paint reproduction alone did not establish a shared cause.
+
+
+## Startup investigation: readiness observation resolved (#231)
+
+A separate reproduction now identifies why the original readiness wait could time
+out despite successful loading. The browser-frame polling callback used by
+`page.waitForFunction` was cancelled by the old `detachScheduledFrame` implementation.
+The cards became ready, but the observer never ran again. PR #233 already fixes that
+owner-level defect; no second production change is required.
+
+Uninstrumented comparison run `34158421547` at head
+`35e405465c81bb3cb2b3d5eeef95b8bd8bac70bb`, artifact `10031794719`, compares
+`site/playback.js` from the original failing head
+`c1c8fef906b71e0ef716bfd5ea0ccccf5ba5db4b`, pre-fix base
+`602ca840f750e966ce85d116cea48ee682d172ba`, and corrected main
+`14b5131db043b2d6ad52c600036e411ff91ada4f`. Each gets four predetermined runs,
+with alternating order, fresh browser contexts, identical runtime/assets, a
+1280x1000 viewport, reduced motion, and the original 20000ms RAF readiness predicate.
+The historical and pre-fix versions each fail two of four runs; corrected main passes
+all four. Every timeout snapshot shows all six cards ready at frame zero with no
+collected browser/request errors. No controls are driven in this comparison.
+
+Observational trace run `34158724551` at head
+`f044cd887bf05a5e78618c3d4a122d742a5090f9`, artifact `10031893423`, repeats the same
+fixed-count comparison, adding bounded callback and readiness-mutation recording.
+Each old version again fails two of four runs; current passes all four. In each
+failure, the trace retains a Playwright predicate callback cancelled by
+`detachScheduledFrame` through browser cancellation, with no subsequent firing.
+All cards report ready 194.8-235ms after navigation. One retained sequence is:
+
+- Original failing version, round 1: poll handle 1 requested at 128.9ms;
+  `detachScheduledFrame -> startStateMachine -> initialize` cancels it at 229.8ms;
+  all six cards report ready at 235ms; the wait times out after 20010ms.
+- Corrected version, round 4: both observed polling callbacks fire, neither is
+  cancelled, and the readiness wait succeeds after 150ms. Corrected runtime draw
+  cancellation passes through `ia.cancelAnimationFrame`, the owning runtime API.
+
+The traces preserve callback text, request/cancellation stacks, readiness timestamps,
+source bytes, hashes, screenshots, and the executed probe. Both runs use Node
+20.20.2, Playwright 1.62.0, Chromium 151.0.7922.34, and the same vendored assets.
+The corrected playback SHA-256 is
+`acd31678f9157a2d8b8b9f6d24b3782438109088c6374893ce0bd738adb1d94d`;
+the original failing test source is retained alongside the comparison.
+The original historical artifact did not capture callback state, so this attributes
+the reproduced failure on its pinned implementation, not an unavailable original
+trace. It supplies the previously missing causal evidence without assuming that
+all future readiness timeouts have this cause.
+
+`site-paused-controls.js` restores explicit RAF polling instead of the later 50ms
+polling workaround, without changing its 20-second limit or ready predicate. The
+existing runtime test still checks 25 separate paused inputs, boolean/number/trigger
+response, unchanged same-frame pixels, and forward-frame motion. It now uses the
+shared bounded failure reporter instead of its duplicated unbounded page probe,
+retaining the failing stage, request errors, card/frame/paint state, original stack,
+PNG, and any secondary diagnostic failures. Playback/runtime hashes accompany the
+existing source/artifact hashes. CI retains stderr fallback output with `pipefail`,
+and report-write failure no longer bypasses browser/server cleanup.
+
+This completes the causal investigation needed by #231 rather than introducing a
+new scheduler or compiler milestone. The permanent deterministic scheduler contracts
+remain in `site-scheduling-contract.js`; the restored official-runtime guard covers
+the real readiness call site. Temporary tracing/comparison helpers are not retained
+in the production diff. Final runtime verification, failure-injection results,
+Standards/Spec self-review, and exact-head CI outcomes are recorded in the PR.

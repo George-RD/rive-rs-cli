@@ -6,6 +6,7 @@ const path = require("node:path");
 const { setTimeout: wait } = require("node:timers/promises");
 const { chromium } = require("playwright");
 const { ROOT, showcaseEntries } = require("../../site/stage");
+const { retainShowcaseFailure } = require("./showcase-diagnostics");
 
 const PORT = Number(process.env.SITE_PAUSED_CONTROLS_PORT || 8774);
 const ORIGIN = `http://127.0.0.1:${PORT}`;
@@ -87,6 +88,8 @@ async function setInput(page, name, value) {
     artifactSha256: sha256(fs.readFileSync(path.join(ROOT, entry.artifact))),
     source: entry.source,
     sourceSha256: sha256(fs.readFileSync(path.join(ROOT, entry.source))),
+    playbackSha256: sha256(fs.readFileSync(path.join(ROOT, "site/playback.js"))),
+    runtimeSha256: sha256(fs.readFileSync(path.join(ROOT, "assets/rive.js"))),
     repeatedInputs: REPEATED_INPUTS,
     frames: {},
     errors: [],
@@ -98,9 +101,12 @@ async function setInput(page, name, value) {
   });
   let browser;
   let page;
+  let stage = "server";
   try {
     await waitForServer();
+    stage = "browser";
     browser = await chromium.launch();
+    stage = "paused:page";
     page = await browser.newPage({
       viewport: { width: 1280, height: 1000 },
       reducedMotion: "reduce",
@@ -109,16 +115,23 @@ async function setInput(page, name, value) {
     page.on("console", (message) => {
       if (message.type() === "error") evidence.errors.push(message.text());
     });
+    page.on("requestfailed", (request) => {
+      evidence.errors.push(`request failed: ${request.url()} (${request.failure()?.errorText || "unknown"})`);
+    });
+    stage = "paused:navigation";
     await page.goto(`${ORIGIN}/showcase.html`, { waitUntil: "load" });
+    stage = "paused:ready";
     await page.waitForFunction((id) =>
       document.querySelector(`[data-showcase-id="${id}"]`)?.dataset.playbackReady === "true",
-    INTERACTIVE_ID, { timeout: 20000, polling: 50 });
+    INTERACTIVE_ID, { timeout: 20000, polling: "raf" });
+    stage = "paused:initial-frame";
     await page.evaluate(async ({ id, frame }) => {
       const timeline = window.__RIVE_SHOWCASE_TIMELINES.get(id);
       await timeline.pause();
       await timeline.seekToFrame(frame);
     }, { id: INTERACTIVE_ID, frame: PAUSED_FRAME });
 
+    stage = "paused:controls";
     const before = await capture(page, "before", evidence);
     assert.equal(before.frame, PAUSED_FRAME);
     assert.equal(before.playing, false);
@@ -155,6 +168,7 @@ async function setInput(page, name, value) {
       `paused trigger did not reset the needle: ${resetFrame.needle}`);
     assert.equal(resetFrame.frame, PAUSED_FRAME);
 
+    stage = "paused:seek";
     await page.evaluate(async ({ id, frame }) => {
       await window.__RIVE_SHOWCASE_TIMELINES.get(id).seekToFrame(frame);
     }, { id: INTERACTIVE_ID, frame: PAUSED_FRAME });
@@ -173,28 +187,26 @@ async function setInput(page, name, value) {
   } catch (error) {
     evidence.passed = false;
     evidence.failure = error.stack || String(error);
-    if (page && !page.isClosed()) {
-      try {
-        evidence.page = await page.evaluate(() => ({
-          url: location.href,
-          timelines: Array.from(window.__RIVE_SHOWCASE_TIMELINES?.keys() || []),
-          cards: Array.from(document.querySelectorAll("[data-showcase-id]")).map((card) => ({
-            id: card.dataset.showcaseId,
-            ready: card.dataset.playbackReady,
-            playing: card.dataset.playing,
-          })),
-        }));
-        await page.screenshot({ path: path.join(OUTPUT, "failure.png") });
-      } catch (captureError) {
-        evidence.captureFailure = String(captureError);
-      }
-    }
+    evidence.diagnostics = await retainShowcaseFailure({
+      page,
+      directory: OUTPUT,
+      stage,
+      error,
+      errors: evidence.errors,
+    });
+    process.stderr.write(`${JSON.stringify(evidence.diagnostics)}\n`);
     process.stderr.write(`${evidence.failure}\n`);
     process.exitCode = 1;
   } finally {
-    fs.writeFileSync(path.join(OUTPUT, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-    if (browser) await browser.close();
-    server.kill("SIGTERM");
+    try {
+      fs.writeFileSync(path.join(OUTPUT, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
+    } finally {
+      try {
+        if (browser) await browser.close();
+      } finally {
+        server.kill("SIGTERM");
+      }
+    }
   }
 })().catch((error) => {
   process.stderr.write(`${error.stack || error}\n`);
