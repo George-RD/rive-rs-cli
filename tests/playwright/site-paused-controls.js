@@ -97,10 +97,11 @@ async function setInput(page, name, value) {
     stdio: "ignore",
   });
   let browser;
+  let page;
   try {
     await waitForServer();
     browser = await chromium.launch();
-    const page = await browser.newPage({
+    page = await browser.newPage({
       viewport: { width: 1280, height: 1000 },
       reducedMotion: "reduce",
     });
@@ -111,7 +112,7 @@ async function setInput(page, name, value) {
     await page.goto(`${ORIGIN}/showcase.html`, { waitUntil: "load" });
     await page.waitForFunction((id) =>
       document.querySelector(`[data-showcase-id="${id}"]`)?.dataset.playbackReady === "true",
-    INTERACTIVE_ID, { timeout: 20000 });
+    INTERACTIVE_ID, { timeout: 20000, polling: 50 });
     await page.evaluate(async ({ id, frame }) => {
       const timeline = window.__RIVE_SHOWCASE_TIMELINES.get(id);
       await timeline.pause();
@@ -172,6 +173,22 @@ async function setInput(page, name, value) {
   } catch (error) {
     evidence.passed = false;
     evidence.failure = error.stack || String(error);
+    if (page && !page.isClosed()) {
+      try {
+        evidence.page = await page.evaluate(() => ({
+          url: location.href,
+          timelines: Array.from(window.__RIVE_SHOWCASE_TIMELINES?.keys() || []),
+          cards: Array.from(document.querySelectorAll("[data-showcase-id]")).map((card) => ({
+            id: card.dataset.showcaseId,
+            ready: card.dataset.playbackReady,
+            playing: card.dataset.playing,
+          })),
+        }));
+        await page.screenshot({ path: path.join(OUTPUT, "failure.png") });
+      } catch (captureError) {
+        evidence.captureFailure = String(captureError);
+      }
+    }
     process.stderr.write(`${evidence.failure}\n`);
     process.exitCode = 1;
   } finally {
