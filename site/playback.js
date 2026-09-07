@@ -202,9 +202,8 @@
       if (input && typeof input.fire === "function") input.fire();
     }
 
-    function advanceOneStep() {
+    function settleAtCurrentFrame() {
       if (!instance || destroyed || mode !== "stateMachine") return;
-      stepsAdvanced += 1;
       stepTo(CLOCK_ORIGIN_MS + stepsAdvanced * stepMs);
     }
 
@@ -231,7 +230,7 @@
       resize,
       setInput,
       fireTrigger,
-      advanceOneStep,
+      settleAtCurrentFrame,
       readInputs,
       destroy,
     };
@@ -374,7 +373,7 @@
       const settled = seekChain
         .then(async () => {
           if (playing || destroyed) return;
-          for (const controller of controllers) controller.advanceOneStep();
+          for (const controller of controllers) controller.settleAtCurrentFrame();
         })
         .finally(() => {
           settleQueued = false;
