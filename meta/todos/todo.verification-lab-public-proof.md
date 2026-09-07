@@ -100,7 +100,51 @@ corrected loss of the original error on a closed page, loss of all cards when on
 was unreadable, and an unbounded pending probe. Local browser execution is diagnostic-
 contract evidence, not a substitute for the pinned official-runtime CI suite.
 
-Issue #231 remains open: this slice does not establish or fix either reported startup
-cause. Reproduction against a pinned base, comparison under identical runtime/assets/
-viewport settings, a demonstrated owner-level fix, and repeated-run evidence are still
-required. Keep this investigation independent of the Authoring feature roadmap.
+That diagnostics-only slice did not establish or fix either reported startup cause.
+The scheduler follow-up below reproduces the first-paint symptom; the earlier loading
+symptom remains distinct. Keep this investigation independent of the Authoring
+feature roadmap.
+
+## Startup investigation: scheduler ownership (#231)
+
+The vendored `assets/rive.js` schedules instance draws through the runtime's own
+`requestAnimationFrame` queue, falling back to the browser only when that API is
+absent. Runtime handles are not browser handles. `site/playback.js` incorrectly
+passed runtime handles to browser cancellation, leaving automatic runtime draws
+queued while potentially cancelling unrelated browser playback or paint callbacks.
+
+Controlled playback now cancels through `instance.runtime.cancelAnimationFrame`
+when available, preserving the browser fallback. The logical timeline's own browser
+frame handles still use browser cancellation. No runtime assets, compiled scenes,
+visual baselines, readiness timeouts, painted predicates, or clock semantics change.
+
+Four public-controller contracts in `tests/playwright/site-scheduling-contract.js`
+exercise two external scheduler namespaces and the browser-only fallback. They
+require unrelated browser callbacks to survive initialization and automatic runtime
+draws not to advance a controlled scene. The pinned production implementation fails
+both runtime-queue contracts; the correction passes all four and the existing seven
+playback contracts. CI runs the new contracts in the browser-contracts job.
+
+Comparison run `34146258757`, head `46d7e422b8db4e7f4889c1b849efabbf4ccf3d99`,
+retains base and corrected sources, Node 20.20.2 / Playwright 1.62.0, runtime/artifact
+hashes, logs, PNGs, and result JSON in artifact `10027787158`. Its sources were checked
+against base `602ca840f750e966ce85d116cea48ee682d172ba` and corrected playback blob
+`1c4461fa174f76423928992b98b96717d554f0bf`.
+
+Three predetermined showcase runs per implementation used identical vendored runtime,
+assets, viewport and assertions, alternating comparison order. Base results were
+pass/fail/pass: the second run timed out at `desktop:first-paint` after 30 seconds.
+All six cards were ready with no collected browser errors; the Horaxon canvas had
+zero painted pixels, and four timelines were stuck at frame zero while the other two
+reached frame 1798. The failure JSON and screenshot retain that distinction.
+All three corrected runs passed, including interaction, bfcache, phone layout and
+reduced motion. Corrected site validation, paired playback and paused-control runtime
+checks also passed. Twenty-five separately dispatched unchanged inputs preserve
+identical frame-30 PNG hashes; explicit frame 31 advances motion.
+
+These are fixed-count comparison results, not retry-until-green or a new CI retry
+policy. Local Node tests also pass; full browser and Rust verification runs in GitHub
+Actions because the local browser navigation is policy-blocked and Rust is unavailable.
+Final exact-head CI and Standards/Spec self-review are recorded in the pull request.
+Issue #231 remains open for the earlier loading-stage timeout: this first-paint
+reproduction does not establish that both historical symptoms have the same cause.
