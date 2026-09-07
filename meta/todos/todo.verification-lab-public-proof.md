@@ -18,7 +18,8 @@ without changing the AuthoringSpec compiler dependency graph.
   and reusable site playback interface; completed in PR #216.
 - #200 — reuse that interface for a provenance-aware original-work showcase; completed
   in PR #218.
-- #201 — lead the landing/production-proof slice in PR #219.
+- #201 — lead the landing page with original/production proof while keeping parity as
+  the separate correctness route; completed in PR #219.
 
 ## Acceptance criteria
 
