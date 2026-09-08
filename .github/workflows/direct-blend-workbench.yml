@@ -1,0 +1,56 @@
+name: Direct blend workbench
+
+on:
+  push:
+    branches: [agent/authoring-direct-blends]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: direct-blend-workbench
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    env:
+      RUSTFLAGS: "-D warnings"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply bounded source patch when present
+        run: |
+          if test -f scripts/direct-blend-workbench.py; then
+            python3 scripts/direct-blend-workbench.py
+          fi
+          cargo fmt
+      - name: Retain formatted source on feature branch
+        run: |
+          git add src tests docs examples meta cairn.blueprint ROADMAP.md
+          if ! git diff --cached --quiet; then
+            test "$(git ls-remote origin refs/heads/agent/authoring-direct-blends | cut -f1)" = "$GITHUB_SHA"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: format direct blend workbench sources"
+            git push origin HEAD:refs/heads/agent/authoring-direct-blends
+          fi
+      - name: Record source revision
+        run: git rev-parse HEAD | tee source-head.txt
+      - name: Direct blend contract
+        run: |
+          set -o pipefail
+          cargo test --locked --test authoring_direct_blend_contract 2>&1 | tee direct-blend-tests.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: direct-blend-workbench
+          path: |
+            source-head.txt
+            direct-blend-tests.log
+          retention-days: 7
