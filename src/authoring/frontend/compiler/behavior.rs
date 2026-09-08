@@ -7,10 +7,10 @@ use crate::builder::{SceneSpec, build_scene};
 use super::super::super::expression::evaluate_expression;
 use super::super::super::lower::{runtime_name, without_asset_sources};
 use super::super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec, BehaviorInputKind,
-    BehaviorInputSpec, BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec,
-    BehaviorPropertySpec, BehaviorStateSpec, BehaviorTransitionConditionSpec,
-    BehaviorTransitionSpec, Quantity, SourceMapEntry, Unit,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorInputKind, BehaviorInputSpec,
+    BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec, BehaviorPropertySpec,
+    BehaviorStateSpec, BehaviorTransitionConditionSpec, BehaviorTransitionSpec, Quantity,
+    SourceMapEntry, Unit,
 };
 use super::MotionTargetIndex;
 
@@ -18,6 +18,12 @@ pub(super) struct BehaviorLoweringOutput {
     pub(super) artboard_children: Vec<Value>,
     pub(super) state_machines: Vec<Value>,
     pub(super) source_entries: Vec<SourceMapEntry>,
+}
+
+struct LoweredBehaviorProperty {
+    runtime_name: String,
+    kind: BehaviorInputKind,
+    value: Value,
 }
 
 pub(super) fn lower_behavior(
@@ -59,14 +65,29 @@ pub(super) fn lower_behavior(
                 ],
                 "view_model_property",
             );
-            match property {
-                BehaviorPropertySpec::Bool { .. } => properties.push(json!({
-                    "type": "view_model_property_boolean",
-                    "name": property_name
-                })),
-            }
-            property_runtime_by_id
-                .insert((model.id.as_str(), property.id()), property_name.clone());
+            let (property_type, value) = match property {
+                BehaviorPropertySpec::Bool { value, .. } => {
+                    ("view_model_property_boolean", json!(value))
+                }
+                BehaviorPropertySpec::Number { value, .. } => (
+                    "view_model_property_number",
+                    json!(evaluate_expression(
+                        value,
+                        &format!("$.behavior.models[{model_index}].properties[{property_index}].value"),
+                        &spec.parameters,
+                        Unit::Scalar,
+                    ).map_err(AuthoringError::one)?),
+                ),
+            };
+            properties.push(json!({ "type": property_type, "name": property_name }));
+            property_runtime_by_id.insert(
+                (model.id.as_str(), property.id()),
+                LoweredBehaviorProperty {
+                    runtime_name: property_name.clone(),
+                    kind: property.kind(),
+                    value,
+                },
+            );
             source_entries.push(SourceMapEntry {
                 authored_id: format!("{}/{}", model.id, property.id()),
                 authored_path: format!(
@@ -141,12 +162,7 @@ pub(super) fn lower_behavior(
                     .iter()
                     .flat_map(|region| &region.transitions),
             )
-            .filter_map(|transition| match &transition.when {
-                BehaviorTransitionConditionSpec::Binding(condition) => {
-                    Some(condition.binding.as_str())
-                }
-                _ => None,
-            })
+            .filter_map(|transition| transition.when.binding().map(|(id, _)| id))
             .collect::<HashSet<_>>();
         let mut input_name_by_binding = HashMap::new();
         let mut inputs = Vec::new();
@@ -167,16 +183,16 @@ pub(super) fn lower_behavior(
             let model_name = model_runtime_by_id
                 .get(binding.model.as_str())
                 .expect("validated behavior model");
-            let property_name = property_runtime_by_id
+            let property = property_runtime_by_id
                 .get(&(binding.model.as_str(), binding.property.as_str()))
                 .expect("validated behavior property");
             inputs.push(json!({
-                "type": "bool",
+                "type": property.kind.as_str(),
                 "name": input_name,
-                "value": binding_bool_value(spec, binding),
+                "value": property.value,
                 "view_model_binding": {
                     "view_model": model_name,
-                    "property": property_name
+                    "property": property.runtime_name
                 }
             }));
 
@@ -486,6 +502,18 @@ fn lower_region(
                     .expect("validated transition binding"),
                 "value": condition.equals
             }),
+            BehaviorTransitionConditionSpec::NumberBinding(condition) => json!({
+                "input": input_name_by_binding
+                    .get(condition.binding.as_str())
+                    .expect("validated transition binding"),
+                "op": condition.compare.as_str(),
+                "value": evaluate_expression(
+                    &condition.value,
+                    &format!("{transition_path}.when.value"),
+                    &spec.parameters,
+                    Unit::Scalar,
+                )?
+            }),
             BehaviorTransitionConditionSpec::Input(condition) => json!({
                 "input": input_name_by_id
                     .get(condition.input.as_str())
@@ -640,7 +668,14 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     for (binding_index, binding) in spec.behavior.bindings.iter().enumerate() {
         let binding_path = format!("$.behavior.bindings[{binding_index}]");
         validate_id(&binding.id, &format!("{binding_path}.id"), &mut diagnostics);
-        if bindings.insert(binding.id.as_str(), binding).is_some() {
+        let property_kind = models
+            .get(binding.model.as_str())
+            .and_then(|model| find_property(model, &binding.property))
+            .map(BehaviorPropertySpec::kind);
+        if bindings
+            .insert(binding.id.as_str(), property_kind)
+            .is_some()
+        {
             diagnostics.push(AuthoringDiagnostic::new(
                 format!("{binding_path}.id"),
                 "duplicate_behavior_binding",
@@ -886,7 +921,7 @@ fn validate_region(
     parameters: &BTreeMap<String, Quantity>,
     motion_tracks: &HashSet<&str>,
     inputs: &HashMap<&str, &BehaviorInputSpec>,
-    bindings: &HashMap<&str, &BehaviorBindingSpec>,
+    bindings: &HashMap<&str, Option<BehaviorInputKind>>,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
     let RegionValidation {
@@ -1076,20 +1111,34 @@ fn validate_condition(
     transition_path: &str,
     statechart_id: &str,
     inputs: &HashMap<&str, &BehaviorInputSpec>,
-    bindings: &HashMap<&str, &BehaviorBindingSpec>,
+    bindings: &HashMap<&str, Option<BehaviorInputKind>>,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
-    let (field, id, expected) = match condition {
-        BehaviorTransitionConditionSpec::Binding(condition) => {
-            if !bindings.contains_key(condition.binding.as_str()) {
+    if let Some((binding, expected)) = condition.binding() {
+        match bindings.get(binding) {
+            None => diagnostics.push(AuthoringDiagnostic::new(
+                format!("{transition_path}.when.binding"),
+                "unknown_behavior_binding",
+                format!("behavior binding '{binding}' is not defined"),
+            )),
+            Some(Some(actual)) if *actual != expected => {
                 diagnostics.push(AuthoringDiagnostic::new(
                     format!("{transition_path}.when.binding"),
-                    "unknown_behavior_binding",
-                    format!("behavior binding '{}' is not defined", condition.binding),
+                    "invalid_condition_binding",
+                    format!(
+                        "condition expects a {} binding but '{binding}' references a {} property",
+                        expected.as_str(),
+                        actual.as_str()
+                    ),
                 ));
             }
-            return;
+            Some(_) => {}
         }
+        return;
+    }
+    let (field, id, expected) = match condition {
+        BehaviorTransitionConditionSpec::Binding(_)
+        | BehaviorTransitionConditionSpec::NumberBinding(_) => return,
         BehaviorTransitionConditionSpec::Input(condition) => {
             ("input", &condition.input, BehaviorInputKind::Bool)
         }
@@ -1176,16 +1225,4 @@ fn find_property<'a>(
         .properties
         .iter()
         .find(|property| property.id() == property_id)
-}
-
-fn binding_bool_value(spec: &AuthoringSpec, binding: &BehaviorBindingSpec) -> bool {
-    let model = spec
-        .behavior
-        .models
-        .iter()
-        .find(|model| model.id == binding.model)
-        .expect("validated behavior model");
-    match find_property(model, &binding.property).expect("validated behavior property") {
-        BehaviorPropertySpec::Bool { value, .. } => *value,
-    }
 }

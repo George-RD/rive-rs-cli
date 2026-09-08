@@ -318,6 +318,26 @@
       ],
       "type": "object"
     },
+    "BehaviorNumberBindingConditionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "binding": {
+          "type": "string"
+        },
+        "compare": {
+          "$ref": "#/$defs/BehaviorCompare"
+        },
+        "value": {
+          "$ref": "#/$defs/ScalarExpr"
+        }
+      },
+      "required": [
+        "binding",
+        "compare",
+        "value"
+      ],
+      "type": "object"
+    },
     "BehaviorNumberConditionSpec": {
       "additionalProperties": false,
       "properties": {
@@ -352,6 +372,27 @@
             },
             "value": {
               "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "number",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/$defs/ScalarExpr"
             }
           },
           "required": [
@@ -538,6 +579,9 @@
         },
         {
           "$ref": "#/$defs/BehaviorNumberConditionSpec"
+        },
+        {
+          "$ref": "#/$defs/BehaviorNumberBindingConditionSpec"
         },
         {
           "$ref": "#/$defs/BehaviorTriggerConditionSpec"

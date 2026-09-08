@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use crate::objects::core::{RiveObject, property_keys};
-use crate::objects::data_binding::{BindablePropertyBoolean, DataBindContext};
+use crate::objects::data_binding::{
+    BindablePropertyBoolean, BindablePropertyNumber, DataBindContext,
+};
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
     BlendState1DInput, BlendState1DViewModel, BlendStateDirect, EntryState, ExitState,
@@ -70,12 +72,12 @@ fn view_model_property_name(object: &ObjectSpec) -> Option<&str> {
     }
 }
 
-fn resolve_view_model_binding_ids(
-    artboard_children: &[ObjectSpec],
+fn resolve_view_model_binding_ids<'a>(
+    artboard_children: &'a [ObjectSpec],
     view_model_id_base: u64,
     view_model_name: &str,
     property_name: &str,
-) -> Option<(u64, u64)> {
+) -> Option<(u64, u64, &'a ObjectSpec)> {
     let mut view_model_id = view_model_id_base;
     for child in artboard_children {
         let ObjectSpec::ViewModel { name, children } = child else {
@@ -86,7 +88,7 @@ fn resolve_view_model_binding_ids(
             for property in children.as_deref().unwrap_or_default() {
                 if let Some(name) = view_model_property_name(property) {
                     if name == property_name {
-                        return Some((view_model_id, property_id));
+                        return Some((view_model_id, property_id, property));
                     }
                     property_id += 1;
                 }
@@ -113,14 +115,43 @@ pub(crate) fn build_state_machines(
 
         let mut input_name_to_index: HashMap<String, usize> = HashMap::new();
         let mut bound_bool_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
+        let mut bound_number_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
         if let Some(inputs) = &state_machine.inputs {
             for (input_index, input) in inputs.iter().enumerate() {
                 match input {
-                    InputSpec::Number { name, value } => {
+                    InputSpec::Number {
+                        name,
+                        value,
+                        view_model_binding,
+                    } => {
+                        if view_model_binding.is_some() && !value.is_finite() {
+                            return Err(format!(
+                                "bound number input '{name}' requires a finite initial value"
+                            ));
+                        }
                         objects.push(Box::new(StateMachineNumber {
                             name: name.clone(),
                             value: *value,
                         }));
+                        if let Some(binding) = view_model_binding {
+                            let (view_model_id, property_id, property) = resolve_view_model_binding_ids(
+                                artboard_children,
+                                view_model_id_base,
+                                &binding.view_model,
+                                &binding.property,
+                            ).ok_or_else(|| format!(
+                                "unknown view-model binding referenced by number input '{}': '{}.{}'",
+                                name, binding.view_model, binding.property
+                            ))?;
+                            if !matches!(property, ObjectSpec::ViewModelPropertyNumber { .. }) {
+                                return Err(format!(
+                                    "number input '{}' requires a number view-model property: '{}.{}'",
+                                    name, binding.view_model, binding.property
+                                ));
+                            }
+                            bound_number_input_paths
+                                .insert(name.clone(), (view_model_id, property_id));
+                        }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
                     InputSpec::Bool {
@@ -133,7 +164,7 @@ pub(crate) fn build_state_machines(
                             value: if *value { 1 } else { 0 },
                         }));
                         if let Some(binding) = view_model_binding {
-                            let (view_model_id, property_id) =
+                            let (view_model_id, property_id, _) =
                                 resolve_view_model_binding_ids(
                                     artboard_children,
                                     view_model_id_base,
@@ -434,6 +465,19 @@ pub(crate) fn build_state_machines(
                                         .as_deref()
                                         .map(parse_condition_op)
                                         .unwrap_or(0);
+                                    if bound_number_input_paths.contains_key(&condition.input)
+                                        && condition
+                                            .value
+                                            .as_ref()
+                                            .and_then(json_value_to_f32)
+                                            .filter(|value| value.is_finite())
+                                            .is_none()
+                                    {
+                                        return Err(format!(
+                                            "bound number input '{}' requires a finite numeric condition value",
+                                            condition.input
+                                        ));
+                                    }
                                     match condition.value.as_ref() {
                                         Some(serde_json::Value::Number(_)) => {
                                             let value = condition
@@ -446,9 +490,34 @@ pub(crate) fn build_state_machines(
                                                         condition.input
                                                     )
                                                 })?;
-                                            objects.push(Box::new(TransitionNumberCondition::new(
-                                                input_id, op, value,
-                                            )));
+                                            if let Some(&(view_model_id, property_id)) =
+                                                bound_number_input_paths.get(&condition.input)
+                                            {
+                                                objects.push(Box::new(
+                                                    TransitionViewModelCondition { op_value: op },
+                                                ));
+                                                objects.push(Box::new(BindablePropertyNumber {
+                                                    property_value: 0.0,
+                                                }));
+                                                objects.push(Box::new(DataBindContext::new(
+                                                    property_keys::BINDABLE_PROPERTY_NUMBER_VALUE
+                                                        as u64,
+                                                    0,
+                                                    encode_id_path(&[view_model_id, property_id]),
+                                                )));
+                                                objects.push(Box::new(
+                                                    TransitionPropertyViewModelComparator,
+                                                ));
+                                                objects.push(Box::new(
+                                                    TransitionValueNumberComparator { value },
+                                                ));
+                                            } else {
+                                                objects.push(Box::new(
+                                                    TransitionNumberCondition::new(
+                                                        input_id, op, value,
+                                                    ),
+                                                ));
+                                            }
                                         }
                                         Some(serde_json::Value::Bool(v)) => {
                                             let bool_op = if condition.op.is_some() {

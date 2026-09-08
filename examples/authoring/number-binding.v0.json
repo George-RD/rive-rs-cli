@@ -1,0 +1,72 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "behavior-stage",
+    "width": { "value": 240.0, "unit": "px" },
+    "height": { "value": 160.0, "unit": "px" }
+  },
+  "parameters": {
+    "initial-load": { "value": 25.0, "unit": "scalar" },
+    "threshold": { "value": 60.0, "unit": "scalar" }
+  },
+  "visual": {
+    "nodes": [{
+      "kind": "rectangle", "id": "panel",
+      "width": { "kind": "literal", "value": 80.0, "unit": "px" },
+      "height": { "kind": "literal", "value": 48.0, "unit": "px" },
+      "fill": "#246BFD"
+    }]
+  },
+  "motion": {
+    "poses": [
+      { "id": "rest", "targets": [{ "target": "panel", "transform": {
+        "x": { "kind": "literal", "value": 40.0, "unit": "px" },
+        "y": { "kind": "literal", "value": 80.0, "unit": "px" }
+      }}]},
+      { "id": "active", "targets": [{ "target": "panel", "transform": {
+        "x": { "kind": "literal", "value": 160.0, "unit": "px" },
+        "y": { "kind": "literal", "value": 80.0, "unit": "px" }
+      }}]}
+    ],
+    "tracks": [
+      { "id": "rest-track", "fps": 60,
+        "duration_frames": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+        "keyframes": [
+          { "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" }, "pose": "rest" },
+          { "frame": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "pose": "rest" }
+        ]
+      },
+      { "id": "active-track", "fps": 60,
+        "duration_frames": { "kind": "literal", "value": 1.0, "unit": "scalar" },
+        "keyframes": [
+          { "frame": { "kind": "literal", "value": 0.0, "unit": "scalar" }, "pose": "active" },
+          { "frame": { "kind": "literal", "value": 1.0, "unit": "scalar" }, "pose": "active" }
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "models": [{ "id": "gate-model", "properties": [{
+      "kind": "number", "id": "load",
+      "value": { "kind": "parameter", "name": "initial-load" }
+    }]}],
+    "bindings": [{ "id": "gate-load", "model": "gate-model", "property": "load" }],
+    "statecharts": [{
+      "id": "gate", "initial": "resting",
+      "states": [
+        { "id": "resting", "motion": "rest-track" },
+        { "id": "engaged", "motion": "active-track" }
+      ],
+      "transitions": [
+        { "id": "engage", "from": "resting", "to": "engaged", "when": {
+          "binding": "gate-load", "compare": "greater_or_equal",
+          "value": { "kind": "parameter", "name": "threshold" }
+        }},
+        { "id": "release", "from": "engaged", "to": "resting", "when": {
+          "binding": "gate-load", "compare": "less",
+          "value": { "kind": "parameter", "name": "threshold" }
+        }}
+      ]
+    }]
+  }
+}

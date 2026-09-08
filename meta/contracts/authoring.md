@@ -155,7 +155,7 @@ opacity, width, and height remain separate roadmap slices.
 
 A statechart declares typed inputs as `{"kind": "bool", "id": ..., "value": ...}`,
 `{"kind": "number", "id": ..., "value": <scalar expression>}`, or
-`{"kind": "trigger", "id": ...}`. Transition conditions are an untagged union of four
+`{"kind": "trigger", "id": ...}`. Transition conditions are an untagged union of five
 forms: `{"binding": ..., "equals": ...}`, `{"input": ..., "equals": ...}`,
 `{"input": ..., "compare": ..., "value": <scalar expression>}` where `compare` is
 one of `equal`, `not_equal`, `greater`, `greater_or_equal`, `less`, or
@@ -163,8 +163,15 @@ one of `equal`, `not_equal`, `greater`, `greater_or_equal`, `less`, or
 `number`, and `trigger` input respectively: a mismatch returns
 `invalid_condition_input` and an undeclared id returns `unknown_behavior_input`, both
 at `$....transitions[i].when.input` or `$....transitions[i].when.trigger`. The
-`binding` form instead resolves against `bindings` and returns
-`unknown_behavior_binding` at `$....transitions[i].when.binding`. Listener actions are
+`binding` forms instead resolve against `bindings`: `equals` requires a boolean
+property, while `{"binding": ..., "compare": ..., "value": <scalar expression>}`
+requires a number property. A mismatch returns `invalid_condition_binding` and an
+unknown id returns `unknown_behavior_binding`, both at the authored `.when.binding`.
+Numeric model values and thresholds use document parameters, scalar units and the
+existing finite/f32-survival checks, including unused properties. Each using chart
+gets one synthesized input per binding, shared across its regions. The condition
+reads a host-initialized bound model instance, not a synchronized machine input.
+The authored property value initializes the synthesized input only. Listener actions are
 `bool_change`, `number_change` with a scalar `value`, and `trigger_change`; an action
 whose kind does not match the declared input kind returns `invalid_listener_input` at
 that action's `input` path.
@@ -229,7 +236,7 @@ ids inside a region are
 Typed behavior validates its lowered scene with file-asset `source` fields removed, the
 same way the visual path does, so a document may declare `font_assets` or `image_assets`
 alongside a statechart. Additive blend states, direct blend states, advanced exit timing, and
-view-model properties other than `bool` are not exposed by this frontend.
+view-model properties beyond `bool` and `number` are not exposed by this frontend.
 `stacking`, `continuity`, `waypoint`, `blend`, `regions`, `duration_ms`, and `exit_time_ms` are optional and
 their defaults reproduce the previous lowered output, so `authoring_format_version`
 remains 0.

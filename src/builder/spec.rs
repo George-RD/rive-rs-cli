@@ -1507,6 +1507,8 @@ pub enum InputSpec {
     Number {
         name: String,
         value: f32,
+        #[serde(default)]
+        view_model_binding: Option<ViewModelInputBindingSpec>,
     },
     Bool {
         name: String,
