@@ -1,7 +1,6 @@
 from pathlib import Path
-import json
 
-if 'fn model_binding_sources_are_exclusive' in Path('tests/authoring_model_blend_contract.rs').read_text():
+if Path('meta/research/model-blend-authoring.md').exists():
     raise SystemExit(0)
 
 
@@ -12,263 +11,276 @@ def replace(path, before, after):
     file.write_text(text.replace(before, after))
 
 
-file = Path('tests/authoring_model_blend_contract.rs')
-file.write_text(file.read_text() + '''
+p = Path('tests/authoring_model_blend_contract.rs')
+s = p.read_text()
+start = s.index('\nfn lower(input:')
+end = s.index('\n#[test]\nfn model_binding_sources', start)
+helpers = s[start:end]
+s = s[:start] + s[end:]
+position = s.index('\n#[test]')
+p.write_text(s[:position] + helpers + s[position:])
 
-fn lower(input: &Value) -> rive_cli::authoring::LoweredAuthoring {
-    lower_authoring_json(&input.to_string()).expect("valid bound blend")
-}
-
-fn compile(scene: &Value) -> Vec<u8> {
-    let scene = serde_json::from_value(scene.clone()).expect("canonical scene");
-    compile_scene(&scene, None, 0).expect("binary compilation")
-}
-
-fn assert_diagnostic(input: &Value, code: &str, path: &str) {
-    let error = lower_authoring_json(&input.to_string()).expect_err("invalid bound blend");
-    assert!(error.diagnostics.iter().any(|entry| entry.code == code && entry.path == path), "{error:?}");
-}
-
-#[test]
-fn model_binding_sources_are_exclusive_and_reject_runtime_indices() {
-    for child in [
-        json!({"motion":"left-track"}),
-        json!({"motion":"left-track", "input":"left-weight", "binding":"left-model"}),
-        json!({"motion":"left-track", "binding":null}),
-        json!({"motion":"left-track", "binding":"left-model", "input_id":0}),
-        json!({"motion":"left-track", "binding":"left-model", "weight":50}),
-    ] {
-        let mut input = document();
-        input["behavior"]["statecharts"][0]["states"][0]["direct_blend"]["motions"][1] = child;
-        assert_diagnostic(&input, "invalid_json", "$");
-    }
-}
-
-#[test]
-fn model_blend_reference_errors_keep_authored_paths() {
-    let child = "/behavior/statecharts/0/states/0/direct_blend/motions/1";
-    for (pointer, path, code) in [
-        (format!("{child}/binding"), "$.behavior.statecharts[0].states[0].direct_blend.motions[1].binding", "unknown_behavior_binding"),
-        (format!("{child}/motion"), "$.behavior.statecharts[0].states[0].direct_blend.motions[1].motion", "unknown_behavior_motion"),
-        ("/behavior/bindings/0/model".to_string(), "$.behavior.bindings[0].model", "unknown_behavior_model"),
-        ("/behavior/bindings/0/property".to_string(), "$.behavior.bindings[0].property", "unknown_behavior_property"),
-    ] {
-        let mut input = document();
-        *input.pointer_mut(&pointer).expect("reference") = json!("missing");
-        assert_diagnostic(&input, code, path);
-    }
-    let mut input = document();
-    input["behavior"]["models"][0]["properties"][0] = json!({"kind":"bool", "id":"left", "value":false});
-    assert_diagnostic(&input, "invalid_blend_binding", "$.behavior.statecharts[0].states[0].direct_blend.motions[1].binding");
-}
-
-#[test]
-fn a_region_only_model_binding_is_emitted_and_resolves_the_region_path() {
-    let mut input = document();
-    let state = input["behavior"]["statecharts"][0]["states"][0].clone();
-    let chart = &mut input["behavior"]["statecharts"][0];
-    chart["states"][0] = json!({"id":"blending", "motion":"rest-track"});
-    chart["regions"] = json!([{"id":"secondary", "initial":"blending", "states":[state]}]);
-    let output = lower(&input);
-    let machine = &output.scene["artboard"]["state_machines"][0];
-    assert_eq!(machine["inputs"].as_array().expect("inputs").len(), 6);
-    assert_eq!(machine["layers"][1]["states"][1]["children"][1]["input_id"], 0);
-    let source = output.source_map.entries.iter().find(|entry| entry.authored_id == "panel/secondary/blending").expect("region source");
-    assert_eq!(source.scene_paths, ["/artboard/state_machines/0/layers/1/states/1"]);
-    compile(&output.scene);
-    input["behavior"]["models"][0]["properties"][0] = json!({"kind":"bool", "id":"left", "value":false});
-    assert_diagnostic(&input, "invalid_blend_binding", "$.behavior.statecharts[0].regions[0].states[0].direct_blend.motions[1].binding");
-}
-
-#[test]
-fn transition_root_and_region_consumers_share_one_synthesized_input() {
-    let mut input = document();
-    let state = input["behavior"]["statecharts"][0]["states"][0].clone();
-    let chart = &mut input["behavior"]["statecharts"][0];
-    chart["regions"] = json!([{"id":"secondary", "initial":"blending", "states":[state]}]);
-    chart["transitions"][0]["when"] = json!({"binding":"left-model", "compare":"greater_or_equal", "value":{"kind":"literal", "value":60, "unit":"scalar"}});
-    let output = lower(&input);
-    let machine = &output.scene["artboard"]["state_machines"][0];
-    assert_eq!(machine["inputs"].as_array().expect("inputs").len(), 6);
-    for layer in [0, 1] {
-        assert_eq!(machine["layers"][layer]["states"][1]["children"][1]["input_id"], 0);
-    }
-    let source = output.source_map.entries.iter().find(|entry| entry.authored_id == "left-model").expect("binding source");
-    assert_eq!(source.scene_paths, ["/artboard/state_machines/0/inputs/0"]);
-    let parsed = parse_riv(&compile(&output.scene), &InspectFilter::default()).expect("encoded scene");
-    assert_eq!(parsed.objects.iter().filter(|object| object.type_key == type_keys::DATA_BIND_CONTEXT).count(), 3);
-}
-
-#[test]
-fn shared_model_bindings_resolve_chart_local_input_offsets() {
-    let mut input = document();
-    let mut second = input["behavior"]["statecharts"][0].clone();
-    second["id"] = json!("other-panel");
-    input["behavior"]["statecharts"].as_array_mut().expect("charts").push(second);
-    input["behavior"]["models"][0]["properties"].as_array_mut().expect("properties").push(json!({"kind":"bool", "id":"enabled", "value":false}));
-    input["behavior"]["bindings"].as_array_mut().expect("bindings").insert(0, json!({"id":"enabled-model", "model":"weights", "property":"enabled"}));
-    input["behavior"]["statecharts"][0]["transitions"][0]["when"] = json!({"binding":"enabled-model", "equals":true});
-    let output = lower(&input);
-    let machines = &output.scene["artboard"]["state_machines"];
-    assert_eq!(machines[0]["layers"][0]["states"][1]["children"][1]["input_id"], 1);
-    assert_eq!(machines[1]["layers"][0]["states"][1]["children"][1]["input_id"], 0);
-    let source = output.source_map.entries.iter().find(|entry| entry.authored_id == "left-model").expect("shared source");
-    assert_eq!(source.scene_paths, ["/artboard/state_machines/0/inputs/1", "/artboard/state_machines/1/inputs/0"]);
-    for entry in &output.source_map.entries {
-        for pointer in &entry.scene_paths {
-            assert!(output.scene.pointer(pointer).is_some(), "{pointer}");
-        }
-    }
-    compile(&output.scene);
-    assert_eq!(output, lower(&input));
-}
-
-#[test]
-fn native_blend_binding_counts_model_properties_and_precedes_its_consumer() {
-    use rive_cli::builder::build_scene;
-    use rive_cli::objects::core::PropertyValue;
-    let mut input = document();
-    let left = input["behavior"]["models"][0]["properties"][0].clone();
-    let mut properties: Vec<_> = (0..128).map(|index| json!({"kind":"bool", "id":format!("unused-{index}"), "value":false})).collect();
-    properties.push(left);
-    input["behavior"]["models"][0]["properties"] = json!(properties);
-    input["behavior"]["models"].as_array_mut().expect("models").insert(0, json!({"id":"earlier", "properties":[{"kind":"bool", "id":"unused", "value":false}]}));
-    let scene: SceneSpec = serde_json::from_value(lower(&input).scene).expect("canonical scene");
-    let objects = build_scene(&scene, None).expect("build scene");
-    let context = objects.iter().position(|object| object.type_key() == type_keys::DATA_BIND_CONTEXT).expect("binding context");
-    assert_eq!(objects[context - 1].type_key(), type_keys::BINDABLE_PROPERTY_NUMBER);
-    assert_eq!(objects[context + 1].type_key(), type_keys::BLEND_ANIMATION_DIRECT);
-    assert!(objects[context].properties().iter().any(|field| field.key == property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS && field.value == PropertyValue::Bytes(vec![1, 128, 1])));
-    assert!(objects[context - 1].properties().iter().any(|field| field.key == property_keys::BINDABLE_PROPERTY_NUMBER_VALUE && field.value == PropertyValue::Float(25.0)));
-    compile_scene(&scene, None, 0).expect("multibyte model binding compiles");
-}
-
-#[test]
-fn an_explicit_canonical_fixed_weight_is_not_reinterpreted_as_a_model_binding() {
-    let mut scene = lower(&document()).scene;
-    let child = &mut scene["artboard"]["state_machines"][0]["layers"][0]["states"][1]["children"][1];
-    child["blend_source"] = json!(1);
-    child["mix_value"] = json!(40);
-    let parsed = parse_riv(&compile(&scene), &InspectFilter::default()).expect("encoded fixed blend");
-    assert!(!parsed.objects.iter().any(|object| object.type_key == type_keys::DATA_BIND_CONTEXT));
-    let child = parsed.objects.iter().filter(|object| object.type_key == type_keys::BLEND_ANIMATION_DIRECT).nth(1).expect("fixed child");
-    assert!(child.properties.iter().any(|field| field.key == property_keys::BLEND_ANIMATION_DIRECT_BLEND_SOURCE && field.value == PropertyValueRead::UInt(1)));
-    assert!(child.properties.iter().any(|field| field.key == property_keys::BLEND_ANIMATION_DIRECT_MIX_VALUE && field.value == PropertyValueRead::Float(40.0)));
-}
-
-#[test]
-fn input_only_direct_blends_retain_their_pre_model_binding_binary() {
-    use sha2::{Digest, Sha256};
-    let input: Value = serde_json::from_str(include_str!("../examples/authoring/direct-blend-panel.v0.json")).expect("input-driven example");
-    let bytes = compile(&lower(&input).scene);
-    assert_eq!(format!("{:x}", Sha256::digest(&bytes)), "5f2ae61031eb5c0474e66d87f66c30678825b467fa9b15e82504463074b55f99");
-}
-
-#[test]
-fn a_failed_statechart_edit_preserves_model_blend_source_identity() {
-    use rive_cli::authoring::{AuthoringContainer, AuthoringEntity, AuthoringOperation, AuthoringPlacement, AuthoringSpec, AuthoringTarget, apply_operations, lower_authoring};
-    let input = document();
-    let spec: AuthoringSpec = serde_json::from_value(input.clone()).expect("typed source");
-    let snapshot = serde_json::to_value(&spec).expect("snapshot");
-    let before = lower_authoring(&spec).expect("initial lowered source");
-    let mut replacement = input["behavior"]["statecharts"][0].clone();
-    replacement["states"][0]["direct_blend"]["motions"][1]["binding"] = json!("missing");
-    let operations = [
-        AuthoringOperation::Remove { target: AuthoringTarget::BehaviorStatechart { target_id: "panel".to_string() } },
-        AuthoringOperation::Insert { entity: AuthoringEntity::BehaviorStatechart(serde_json::from_value(replacement).expect("replacement")), placement: AuthoringPlacement::Into { container: AuthoringContainer::BehaviorStatecharts } },
-    ];
-    let error = apply_operations(&spec, &operations).expect_err("invalid model source must roll back");
-    assert!(error.diagnostics.iter().any(|entry| entry.code == "unknown_behavior_binding"));
-    assert_eq!(serde_json::to_value(&spec).expect("unchanged"), snapshot);
-    assert_eq!(lower_authoring(&spec).expect("still valid"), before);
-}
+replace('cairn.blueprint', '''                "./tests/authoring_mirror_contract.rs",
+''', '''                "./tests/authoring_mirror_contract.rs",
+                "./tests/authoring_model_blend_contract.rs",
 ''')
 
-replace('tests/authoring_direct_blend_contract.rs', '''    assert_eq!(motion["additionalProperties"], false);
-    assert_eq!(motion["required"], json!(["motion", "input"]));''', '''    let variants = motion["anyOf"].as_array().expect("exclusive weight sources");
-    assert_eq!(variants.len(), 2);
-    assert_eq!(variants[0]["additionalProperties"], false);
-    assert_eq!(variants[0]["required"], json!(["motion", "input"]));
-    assert_eq!(variants[1]["additionalProperties"], false);
-    assert_eq!(variants[1]["required"], json!(["motion", "binding"]));''')
+p = 'docs/authoring-spec-v0.md'
+replace(p, '''change the model condition. Typed blend inputs and listener actions still target
+explicitly declared machine inputs. Converters, string/enum/trigger model properties,
+model-bound blends, and listener writes to model properties are outside this slice.''', '''change the model condition. Direct blends may also select numeric bindings as
+described below; one-dimensional blend inputs and listener actions still target
+explicitly declared machine inputs. Converters, string/enum/trigger model properties,
+model-bound one-dimensional blends, and listener writes to model properties remain
+outside the typed subset.''')
+replace(p, '''`direct_blend` gives each named motion its own local number input instead of selecting neighbouring stops from a shared input:''', '''`direct_blend` gives each named motion its own number input or numeric model binding instead of selecting neighbouring stops from a shared input:''')
+replace(p, '''Binding IDs and raw-animation IDs are not substitutes for these references. Unknown fields, including runtime indices, are rejected.''', '''A binding ID is not an `input` alias: use the exclusive `binding` form below. Raw-animation IDs are not typed motion references. Unknown fields, including runtime indices, are rejected.''')
+replace(p, '''Static expression weights, additive states and model-bound direct blends remain outside this slice.''', '''Static expression weights and additive states remain outside the typed subset.''')
+replace(p, '''## Parallel regions
+''', '''### Model-bound direct weights
 
-example = json.loads(Path('examples/authoring/direct-blend-panel.v0.json').read_text())
-example['behavior']['models'] = [{'id': 'weights', 'properties': [
-    {'kind': 'number', 'id': side, 'value': {'kind': 'literal', 'value': 0, 'unit': 'scalar'}}
-    for side in ['left', 'right']
-]}]
-example['behavior']['bindings'] = [
-    {'id': f'{side}-model', 'model': 'weights', 'property': side}
-    for side in ['left', 'right']
-]
-chart = example['behavior']['statecharts'][0]
-chart['inputs'] = [value for value in chart['inputs'] if value['id'] not in ['left-weight', 'right-weight']]
-for index, side in enumerate(['left', 'right'], 1):
-    chart['states'][0]['direct_blend']['motions'][index] = {'motion': f'{side}-track', 'binding': f'{side}-model'}
-Path('examples/authoring/model-blend-panel.v0.json').write_text(json.dumps(example, indent=2) + '\n')
+A child may use `binding` instead of `input`:
 
-p = 'tests/playwright/authoring-direct-blend-runtime.js'
-replace(p, '''const FIXTURE = "authoring_direct_blend";
-const DIRECTORY = path.join(ROOT, "target/playwright-behavior/direct-blend");
-const SOURCE = path.join(ROOT, "examples/authoring/direct-blend-panel.v0.json");''', '''const MODEL_BOUND = process.argv.includes("--model-bound");
-const MODE = MODEL_BOUND ? "model-blend" : "direct-blend";
-const FIXTURE = MODEL_BOUND ? "authoring_model_blend" : "authoring_direct_blend";
-const DIRECTORY = path.join(ROOT, "target/playwright-behavior", MODE);
-const SOURCE = path.join(ROOT, "examples/authoring", `${MODE}-panel.v0.json`);''')
-replace(p, '''    left: name("panel/left-weight"),
-    right: name("panel/right-weight"),''', '''    left: name(MODEL_BOUND ? "left-model" : "panel/left-weight"),
-    right: name(MODEL_BOUND ? "right-model" : "panel/right-weight"),
-    model: MODEL_BOUND ? name("weights") : null,
-    leftProperty: MODEL_BOUND ? name("weights/left") : null,
-    rightProperty: MODEL_BOUND ? name("weights/right") : null,''')
-replace(p, '''        stateMachines: [plan.machine],''', '''        autoBind: false, stateMachines: [plan.machine],''')
-replace(p, '''    window.__DIRECT_BLEND = {
-      runtime, left: find(plan.left), right: find(plan.right),
-      reset: find(plan.reset), resume: find(plan.resume),
-    };''', '''    const leftInput = find(plan.left);
-    const rightInput = find(plan.right);
-    let instance = null;
-    let left = leftInput;
-    let right = rightInput;
-    if (plan.model) {
-      const model = runtime.viewModelByName(plan.model);
-      if (!model) throw new Error(`missing model ${plan.model}`);
-      instance = model.instance();
-      if (!instance) throw new Error("missing model instance");
-      left = instance.number(plan.leftProperty);
-      right = instance.number(plan.rightProperty);
-      if (!left || !right) throw new Error("missing model weight properties");
-      left.value = 0;
-      right.value = 0;
-      runtime.bindViewModelInstance(instance);
-    }
-    window.__DIRECT_BLEND = {
-      runtime, instance, left, right, leftInput, rightInput,
-      reset: find(plan.reset), resume: find(plan.resume),
-    };''')
-replace(p, '''      rightWeight: window.__DIRECT_BLEND.right.value,''', '''      rightWeight: window.__DIRECT_BLEND.right.value,
-      leftInput: window.__DIRECT_BLEND.leftInput.value,
-      rightInput: window.__DIRECT_BLEND.rightInput.value,''')
-replace(p, '''    await mount(page, plan);
-    for (const [label''', '''    await mount(page, plan);
-    if (MODEL_BOUND) {
-      samples.push(await sample(page, "initial-model", { left: 40, right: 40 }));
-      await page.evaluate(() => {
-        window.__DIRECT_BLEND.leftInput.value = 90;
-        window.__DIRECT_BLEND.rightInput.value = 10;
-      });
-      samples.push(await sample(page, "input-only", { left: 40, right: 40 }));
-      assert.equal(samples.at(-1).leftWeight, 0);
-      assert.equal(samples.at(-1).rightWeight, 0);
-    }
-    for (const [label''')
-replace(p, '''    assert.deepEqual(errors, []);
-    const evidence = {''', '''    assert.deepEqual(errors, []);
-    if (MODEL_BOUND) {
-      for (const sample of samples.slice(1)) {
-        assert.equal(sample.leftInput, 90, `${sample.label}: model must not mirror input`);
-        assert.equal(sample.rightInput, 10, `${sample.label}: model must not mirror input`);
-      }
-    }
-    const evidence = {''')
-replace(p, '''    console.log("direct blend weights controlled independent motions, clamped, reversed, exited and resumed");''', '''    console.log(`${MODE}: independent weights clamped, reversed, exited and resumed${MODEL_BOUND ? "; model changes, not synthesized inputs, controlled the result" : ""}`);''')
+```json
+{
+  "id": "blending",
+  "direct_blend": {
+    "motions": [
+      { "motion": "rest-track", "input": "foundation" },
+      { "motion": "left-track", "binding": "left-model" },
+      { "motion": "right-track", "binding": "right-model" }
+    ]
+  }
+}
+```
+
+Each binding names a numeric model property through `behavior.bindings`. Both source
+fields, neither field, null sources and unknown fields are rejected. An unknown
+binding reports `unknown_behavior_binding` at the child's `.binding`; a boolean
+property reports `invalid_blend_binding` there. Invalid model/property references
+keep their declaration paths. The same rules apply in parallel regions.
+
+The compiler emits a binding even when only a blend uses it. Transition, root-state
+and region uses share one synthesized input per binding per chart. Actual emitted
+indices and source-map paths remain chart-local. The canonical builder emits the
+native numeric bindable property and data-binding context before its direct-blend
+consumer, using the existing model/property index resolver. It does not continuously
+copy model values into machine inputs or simulate motion on the host.
+
+`examples/authoring/model-blend-panel.v0.json` retains a full-weight rest motion and
+two independently bound contributions. The host creates, initializes and binds the
+model instance, then changes its `number(...)` properties. Resolve model/property
+runtime names from the compile report, as in the numeric binding example above.
+Changing a synthesized input, including with `render --input`, does not change a
+model-controlled weight. The percentages, clamping and authored-order semantics are
+the same as for input-driven direct blends.
+
+Run `node tests/playwright/authoring-direct-blend-runtime.js --model-bound` for the
+public-CLI/official-runtime proof. It retains evidence under
+`target/playwright-behavior/model-blend`, separately from the existing input proof.
+It checks model-only changes, input-only non-effects, partial/full weights,
+independence, clamping, reversal and timed exit/resume. The normal typed-behavior CI
+artifact retains both modes. Existing input-driven documents keep their bytes;
+`authoring_format_version` stays 0.
+
+## Parallel regions
+''')
+replace(p, '''Additive blend states, model-bound direct blends, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset''', '''Additive blend states, model-bound one-dimensional blends, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset''')
+
+p = 'meta/contracts/authoring.md'
+replace(p, '''A behavior state declares exactly one of `motion` and `blend`. Neither returns
+`missing_state_motion` and both return `ambiguous_state_motion`, each at the state
+path.''', '''A behavior state declares exactly one of `motion`, `blend`, and `direct_blend`.
+None returns `missing_state_motion` and multiple sources return
+`ambiguous_state_motion`, each at the state path.''')
+replace(p, '''alongside a statechart. Additive blend states, model-bound direct blends, advanced exit timing, and
+view-model properties beyond `bool` and `number` are not exposed by this frontend.''', '''alongside a statechart. Additive blend states, model-bound one-dimensional blends,
+advanced exit timing, and view-model properties beyond `bool` and `number` are not
+exposed by this frontend.''')
+replace(p, '''Duration is supported; exit-time gates on direct sources are rejected. Model-bound
+weights, static weight expressions and additive states are not exposed.''', '''Duration is supported; exit-time gates on direct sources are rejected. Static
+weight expressions and additive states are not exposed.
+
+## Model-bound direct weights (#241)
+
+Each direct-blend child selects exactly one of `{motion, input}` and
+`{motion, binding}`. Only a numeric model property is a valid bound weight. Unknown
+binding and wrong-kind diagnostics use the child's authored `.binding` path;
+model/property declaration errors retain their own paths. The strict typed union
+and published schema reject ambiguous, missing, null and unknown fields.
+
+Blend-only uses participate in the same used-binding collection as transitions.
+Shared root/region/transition uses emit one bound input per chart, in authored
+binding order. Canonical input indices include all preceding bound inputs; a shared
+binding's source map retains every chart-local input path. Root and region states
+reuse the same lowering and atomic-operation validation. Existing unbound documents
+and source identities remain unchanged.
+
+The canonical builder consumes bound number inputs as native direct-blend data
+bindings. Model mutation controls the weight independently of the synthesized
+machine input; initialization and binding of the model instance belong to the host.
+No parallel compiler, host-side input mirroring or direct binary encoding is added.
+The same browser harness verifies input-driven and model-bound modes separately.''')
+
+p = 'meta/contracts/builder.md'
+replace(p, '''This affects transition evaluation only; model instance initialization belongs to
+the host. No input synchronization, model-bound blend, or conversion is promised.''', '''Model instance initialization belongs to the host. No input synchronization or
+conversion is promised.
+
+## Numeric view-model direct-blend bindings
+
+An input-source canonical direct-blend child pointing to a number input with
+`view_model_binding` consumes that model property, not the synthesized input value.
+The builder resolves model/property indices through the same resolver as numeric
+transition conditions. It emits `BindablePropertyNumber`, its `DataBindContext`
+using the numeric value property key and encoded source path, then the
+`BlendAnimationDirect` with data-bind source 2 and no input ID. This ordering is
+required by the runtime's most-recent-bindable-property importer. The bindable
+property uses the validated finite initial value from the canonical number input.
+
+An absent or null source selector means input source 0. Unbound input-driven output
+is unchanged. Explicit non-input source selectors are not reinterpreted; in
+particular a fixed mix source 1 keeps its mix value and does not gain a binding.
+The canonical schema and existing binary object types are unchanged.''')
+
+p = Path('examples/authoring/README.md')
+p.write_text(p.read_text() + '''
+
+## Model-bound direct blend panel
+
+`model-blend-panel.v0.json` uses the same two-panel motions but takes both weights
+from the `weights` model's numeric `left` and `right` properties. `foundation` stays
+at 100. The host must create, initialize and bind the model instance, resolving
+runtime names from the compile report's source map. Change the model properties,
+not the synthesized machine inputs; those inputs are not kept in sync.
+
+```sh
+cargo run -- authoring compile examples/authoring/model-blend-panel.v0.json -o /tmp/model-blend-panel.riv --json
+node tests/playwright/authoring-direct-blend-runtime.js --model-bound
+```
+
+The shared browser harness measures both panels while varying model weights and
+holding the synthesized inputs at unrelated values. Source, compiled binary, compile
+report, eleven PNGs, positions and hashes are retained separately under
+`target/playwright-behavior/model-blend`. `reset` and `resume` retain the existing
+100ms state transitions. No host-side motion calculations or input mirroring are
+used to produce the rendered result.
+''')
+
+p = Path('ROADMAP.md')
+s = p.read_text().replace('additive blend states, model-bound direct blends, advanced exit timing', 'additive blend states, model-bound one-dimensional blends, advanced exit timing')
+s = s.replace('Additive blend states, model-bound direct blends, advanced exit timing', 'Additive blend states, model-bound one-dimensional blends, advanced exit timing')
+s = s.replace('input-driven direct blends added in #239 |', 'input-driven direct blends added in #239; model-bound direct weights added in #241 / PR #242 |')
+s = s.replace('## Priority order', '''[#241](https://github.com/George-RD/rive-rs-cli/issues/241), implemented in PR #242,
+adds numeric model-bound direct weights through the same compiler and canonical
+builder. Exclusive `{motion, binding}` children share emitted bindings with root,
+region and transition consumers. Native data-bound objects, not synthesized-input
+mirroring, control the weights. Retained public-CLI runtime evidence separates
+model mutation from input-only mutation and covers independent contributions,
+clamping, reversal and state transitions. Existing input-driven output is preserved.
+The broader behavior todo remains open for its remaining capabilities.
+
+## Priority order''')
+p.write_text(s)
+
+p = Path('meta/todos/todo.behavior-authoring-compiler.md')
+p.write_text(p.read_text() + '''
+
+## Model-bound direct blend slice (#241 / PR #242)
+
+Direct children accept exclusive `{motion, binding}` beside the unchanged input
+form. Numeric model bindings used only by blends are emitted; shared transition,
+root and region uses are deduplicated per chart. Actual chart-local indices and
+source-map paths are retained. Unknown bindings and boolean sources fail at the
+child's authored path, while invalid model/property declarations retain theirs.
+
+The canonical builder emits the native bindable-number/context/direct-child sequence
+through existing object types and model index resolution. It does not synchronize
+synthesized inputs or simulate animations. Explicit raw fixed sources are not
+reinterpreted. The original input panel retains its prior compiled SHA-256.
+
+Ten public contracts cover native encoding, exclusive source forms, reference/type
+errors, region-only uses, shared consumers, multi-chart offsets, multibyte property
+indices, fixed-source preservation, byte compatibility and atomic-edit rollback.
+The existing direct-blend browser harness adds a model-bound mode rather than a
+second copy of the harness. It retains model-only and input-only evidence, independent
+weights, clamping, reversal and timed exit/resume for `model-blend-panel.v0.json`.
+
+[Model blend evidence](../research/model-blend-authoring.md) records observed
+red/green revisions and runtime provenance. Final exact-head CI/MSRV and separate
+Standards/Spec self-review are recorded on PR #242. This parent remains open for
+additive states, model-bound one-dimensional blends, broader timing, other property
+kinds and conversions.
+''')
+
+Path('meta/research/model-blend-authoring.md').write_text('''---
+id: res.model-blend-authoring
+nodes:
+  - rive-cli.intelligence.authoring
+  - rive-cli.core.builder
+  - rive-cli.verification.rust
+  - rive-cli.verification.browser
+date: 2026-09-09
+method: primary
+---
+
+# Model-bound direct weights (#241)
+
+## Reconciliation and native semantics
+
+Main `40d9a5ee4e1b50819a44c3ff5bc49d611fdf44c8` contained merged #240 and no open
+PRs. The remaining behavior todo explicitly called for model-bound direct blends.
+#241 continues #175 after the completed number-binding and input-direct slices;
+it does not reopen the independent low-level coverage programme.
+
+The runtime header `rive-app/rive-runtime/include/rive/animation/blend_animation_direct.hpp`
+defines direct sources input=0, fixed mix=1 and data bind=2. Its
+`src/animation/blend_animation_direct.cpp` imports source 2 from the most recent
+`BindablePropertyImporter`. These primary files were inspected through GitHub.
+The implementation uses existing numeric bindable/context objects before the direct
+child; pointing at the synthesized input alone would not bind a model weight.
+
+The canonical number input's `view_model_binding` supplies the named model/property
+path through the existing resolver. Explicit raw non-input sources are preserved.
+Authoring uses an exclusive input/binding union and includes blend-only references
+in used-binding discovery without a new lowering pass or index-repair mechanism.
+The host initializes and binds the model instance; no input mirroring is promised.
+
+## Observed test-first evidence
+
+- Test-only source `21ec42762acc65a18098929dd856cff064d3812a`, run `34276198243`,
+  job `102229687624`, compiled and failed because `binding` was an unknown direct
+  child field. The contract also checks native encoded source 2 and bindable/context
+  objects, so schema acceptance alone cannot satisfy it.
+- The unchanged contract passed on source
+  `b1d94ece335a3da50a5ec610ae0619e741f6e979`, run `34276456042`, together with
+  all-target/all-feature Clippy.
+- Expanded contracts and Clippy passed in run `34277015841`. They cover authored
+  errors, shared/region-only references, scoped/multibyte indices, native ordering,
+  explicit fixed-source preservation, old-byte compatibility and atomic rollback.
+
+Local cloning and Rust execution were unavailable. Branch-scoped Actions performed
+formatting, schema generation and executable verification; downloaded source/log
+artifacts supported local inspection. Temporary workbench files are excluded from
+the delivery diff. Final exact-head CI/MSRV and separate Standards/Spec self-review
+are retained on PR #242; intermediate runs are not the final merge gate.
+
+## Runtime evidence
+
+`tests/playwright/authoring-direct-blend-runtime.js --model-bound` compiles the new
+example through the public CLI and loads the bundled official runtime. It reuses the
+existing input-driven harness and its pixel measurements instead of duplicating
+that infrastructure. The model supplies independent left/right contributions after
+a full-weight rest motion. Mutating synthesized inputs alone leaves both panels at
+rest; model-only mutation changes their measured positions while those inputs remain
+at unrelated 90/10 values.
+
+The eleven cases cover initial binding, input-only mutation, zero/partial/full model
+weights, independent contributions, reversal, out-of-range clamping, timed exit and
+resume, and return to zero. Source, binary, compile report/source map, PNGs, positions,
+runtime/WASM hashes and browser version are retained in
+`target/playwright-behavior/model-blend`, under the normal typed-behavior CI artifact.
+The original input mode remains separately verified. The parent behavior todo stays
+open; one-dimensional model blends, additive states, static expression weights,
+other property kinds, broader timing and conversions are not included.
+''')
