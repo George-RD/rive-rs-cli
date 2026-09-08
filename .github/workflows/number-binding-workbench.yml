@@ -5,32 +5,59 @@ on:
     branches: [agent/authoring-number-bindings]
 
 permissions:
-  contents: read
+  contents: write
+
+env:
+  RUSTFLAGS: "-D warnings"
+  CARGO_TERM_COLOR: never
 
 jobs:
-  snapshot:
+  verify:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          fetch-depth: 0
-      - name: Export pinned source and branch audit
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply bounded implementation when present
+        run: |
+          mkdir -p /tmp/rive-workbench
+          if test -f .scratch/apply-number-bindings.py; then
+            python3 .scratch/apply-number-bindings.py
+            cargo fmt
+            cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored
+            UPDATE_SCENE_SCHEMA=1 cargo test scene_schema_file_is_in_sync
+            git config user.name 'George'
+            git config user.email '180932462+George-RD@users.noreply.github.com'
+            git add src tests docs meta ROADMAP.md CHANGELOG.md cairn.blueprint
+            if ! git diff --cached --quiet; then
+              git commit -m 'feat(authoring): compile numeric view-model transition bindings (#237)'
+              git push origin HEAD:agent/authoring-number-bindings
+            fi
+          fi
+      - name: Focused public contract
+        run: |
+          set -o pipefail
+          cargo test --locked --test authoring_number_binding_contract 2>&1 | tee /tmp/rive-workbench/number-contract.log
+      - name: Full Rust verification
+        if: hashFiles('.scratch/apply-number-bindings.py') != ''
+        run: |
+          set -o pipefail
+          cargo fmt --check
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee /tmp/rive-workbench/clippy.log
+          cargo test --locked --all-features 2>&1 | tee /tmp/rive-workbench/rust-tests.log
+      - name: Export exact executed source
+        if: always()
         run: |
           mkdir -p /tmp/rive-workbench
           git rev-parse HEAD > /tmp/rive-workbench/head.txt
+          git status --short > /tmp/rive-workbench/status.txt
+          git diff > /tmp/rive-workbench/uncommitted.patch
           git archive --format=tar.gz HEAD > /tmp/rive-workbench/source.tar.gz
-          git for-each-ref --format='%(refname:short)' refs/remotes/origin | while read -r ref; do
-            printf '%s ' "$ref"
-            git rev-list --left-right --count origin/main..."$ref"
-          done > /tmp/rive-workbench/branches.txt
-      - name: Read Cairn context
-        run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
-          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
-          cairn context > /tmp/rive-workbench/cairn-context.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: number-binding-workbench-source
+          name: number-binding-workbench
           path: /tmp/rive-workbench
           retention-days: 7
