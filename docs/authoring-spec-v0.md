@@ -471,9 +471,11 @@ load.value = 60;
 ```
 
 Changing only a synthesized input, including through `render --input`, does not
-change the model condition. Typed blend inputs and listener actions still target
+change the model condition. Direct blends may also select numeric bindings as
+described below; one-dimensional blend inputs and listener actions still target
 explicitly declared machine inputs. Converters, string/enum/trigger model properties,
-model-bound blends, and listener writes to model properties are outside this slice.
+model-bound one-dimensional blends, and listener writes to model properties remain
+outside the typed subset.
 
 The official-runtime test compiles this example through the public CLI, proves that
 input-only mutation does not transition, then mutates the model through 59, 60, 90
@@ -549,7 +551,7 @@ Rive mixes the two neighbouring stop animations in sequence rather than as a wei
 
 ## Direct blend states
 
-`direct_blend` gives each named motion its own local number input instead of selecting neighbouring stops from a shared input:
+`direct_blend` gives each named motion its own number input or numeric model binding instead of selecting neighbouring stops from a shared input:
 
 ```json
 {
@@ -568,11 +570,57 @@ Each input is a percentage weight. The official runtime clamps values below 0 to
 
 `examples/authoring/direct-blend-panel.v0.json` uses a first rest motion with its `foundation` number input initialized to 100. That reestablishes both panels' baseline before two independent inputs contribute motion. With that baseline, a weight of 50 places its panel halfway from x 40 to x 200; reversing either weight returns that panel towards rest without changing the other panel. This example does not claim that every arbitrary combination of overlapping tracks has the same midpoint semantics.
 
-The collection contains 1 through 1000 children. `invalid_direct_blend_motions` reports an empty or oversized collection at `.direct_blend.motions`. Each `motion` must name a typed motion track; each `input` must name a number input declared in the same chart. Unknown references report `unknown_behavior_motion` or `unknown_behavior_input` at the child's `.motion` or `.input`; non-number inputs report `invalid_blend_input` at `.input`. Binding IDs and raw-animation IDs are not substitutes for these references. Unknown fields, including runtime indices, are rejected.
+The collection contains 1 through 1000 children. `invalid_direct_blend_motions` reports an empty or oversized collection at `.direct_blend.motions`. Each `motion` must name a typed motion track; each `input` must name a number input declared in the same chart. Unknown references report `unknown_behavior_motion` or `unknown_behavior_input` at the child's `.motion` or `.input`; non-number inputs report `invalid_blend_input` at `.input`. A binding ID is not an `input` alias: use the exclusive `binding` form below. Raw-animation IDs are not typed motion references. Unknown fields, including runtime indices, are rejected.
 
 The same form works in parallel regions. The compiler resolves animation indices from its existing lowered scene and input indices from the emitted chart inputs, including offsets from binding-generated inputs. It lowers to existing `blend_state_direct` and `blend_animation_direct` objects without a new encoder path. Source-map identities remain attached to named states and regions. Transitions may enter or leave direct states and use `duration_ms`; `exit_time_ms` on a direct-blend source is rejected with `unsupported_transition_exit_source`, just as for a one-dimensional blend.
 
-The runtime contract `tests/playwright/authoring-direct-blend-runtime.js` compiles the source through the public CLI and retains the source, binary, compile report, measured positions, PNGs and hashes. Cases cover independent 0/50/100 inputs, runtime clamping, reversal, leaving the direct state, resuming it and returning both inputs to zero. Static expression weights, additive states and model-bound direct blends remain outside this slice. Omission or null leaves existing canonical output and bytes unchanged; the authoring format stays at version 0.
+The runtime contract `tests/playwright/authoring-direct-blend-runtime.js` compiles the source through the public CLI and retains the source, binary, compile report, measured positions, PNGs and hashes. Cases cover independent 0/50/100 inputs, runtime clamping, reversal, leaving the direct state, resuming it and returning both inputs to zero. Static expression weights and additive states remain outside the typed subset. Omission or null leaves existing canonical output and bytes unchanged; the authoring format stays at version 0.
+
+### Model-bound direct weights
+
+A child may use `binding` instead of `input`:
+
+```json
+{
+  "id": "blending",
+  "direct_blend": {
+    "motions": [
+      { "motion": "rest-track", "input": "foundation" },
+      { "motion": "left-track", "binding": "left-model" },
+      { "motion": "right-track", "binding": "right-model" }
+    ]
+  }
+}
+```
+
+Each binding names a numeric model property through `behavior.bindings`. Both source
+fields, neither field, null sources and unknown fields are rejected. An unknown
+binding reports `unknown_behavior_binding` at the child's `.binding`; a boolean
+property reports `invalid_blend_binding` there. Invalid model/property references
+keep their declaration paths. The same rules apply in parallel regions.
+
+The compiler emits a binding even when only a blend uses it. Transition, root-state
+and region uses share one synthesized input per binding per chart. Actual emitted
+indices and source-map paths remain chart-local. The canonical builder emits the
+native numeric bindable property and data-binding context before its direct-blend
+consumer, using the existing model/property index resolver. It does not continuously
+copy model values into machine inputs or simulate motion on the host.
+
+`examples/authoring/model-blend-panel.v0.json` retains a full-weight rest motion and
+two independently bound contributions. The host creates, initializes and binds the
+model instance, then changes its `number(...)` properties. Resolve model/property
+runtime names from the compile report, as in the numeric binding example above.
+Changing a synthesized input, including with `render --input`, does not change a
+model-controlled weight. The percentages, clamping and authored-order semantics are
+the same as for input-driven direct blends.
+
+Run `node tests/playwright/authoring-direct-blend-runtime.js --model-bound` for the
+public-CLI/official-runtime proof. It retains evidence under
+`target/playwright-behavior/model-blend`, separately from the existing input proof.
+It checks model-only changes, input-only non-effects, partial/full weights,
+independence, clamping, reversal and timed exit/resume. The normal typed-behavior CI
+artifact retains both modes. Existing input-driven documents keep their bytes;
+`authoring_format_version` stays 0.
 
 ## Parallel regions
 
@@ -609,7 +657,7 @@ Every layer is emitted with an entry state at index 0, the authored states from 
 
 Region ids are unique within a statechart; a repeat fails with `duplicate_behavior_region` at `$.behavior.statecharts[i].regions[j].id`. A region id may not match any other id the statechart scopes either. States, transitions, inputs, events, listeners and regions all claim the source-map identity `{statechart}/{id}`, and consumers resolve an entry by first match, so a collision makes that lookup ambiguous; it fails with `behavior_region_id_collision` at the same path. Every state and transition diagnostic listed above applies inside a region under the same `.regions[j]` prefix. The region above is from `examples/authoring/interactive-console.v0.json`, whose other region, `stream`, carries a token across the artboard while layer 0 is still in `standby`. Regions do not require inputs: `examples/authoring/signal-weave.v0.json` declares three layers with no inputs and no transitions between authored states, so each layer plays its own track.
 
-Additive blend states, model-bound direct blends, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Additive blend states, model-bound one-dimensional blends, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

@@ -25,6 +25,26 @@ fn document() -> Value {
     input
 }
 
+fn lower(input: &Value) -> rive_cli::authoring::LoweredAuthoring {
+    lower_authoring_json(&input.to_string()).expect("valid bound blend")
+}
+
+fn compile(scene: &Value) -> Vec<u8> {
+    let scene = serde_json::from_value(scene.clone()).expect("canonical scene");
+    compile_scene(&scene, None, 0).expect("binary compilation")
+}
+
+fn assert_diagnostic(input: &Value, code: &str, path: &str) {
+    let error = lower_authoring_json(&input.to_string()).expect_err("invalid bound blend");
+    assert!(
+        error
+            .diagnostics
+            .iter()
+            .any(|entry| entry.code == code && entry.path == path),
+        "{error:?}"
+    );
+}
+
 #[test]
 fn model_weights_compile_to_native_bound_direct_blends_without_transition_use() {
     let input = document().to_string();
@@ -79,26 +99,6 @@ fn model_weights_compile_to_native_bound_direct_blends_without_transition_use() 
             .filter(|object| object.type_key == type_keys::DATA_BIND_CONTEXT)
             .count(),
         1
-    );
-}
-
-fn lower(input: &Value) -> rive_cli::authoring::LoweredAuthoring {
-    lower_authoring_json(&input.to_string()).expect("valid bound blend")
-}
-
-fn compile(scene: &Value) -> Vec<u8> {
-    let scene = serde_json::from_value(scene.clone()).expect("canonical scene");
-    compile_scene(&scene, None, 0).expect("binary compilation")
-}
-
-fn assert_diagnostic(input: &Value, code: &str, path: &str) {
-    let error = lower_authoring_json(&input.to_string()).expect_err("invalid bound blend");
-    assert!(
-        error
-            .diagnostics
-            .iter()
-            .any(|entry| entry.code == code && entry.path == path),
-        "{error:?}"
     );
 }
 
