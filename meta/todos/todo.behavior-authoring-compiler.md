@@ -140,3 +140,30 @@ evidence for `direct-blend-panel.v0.json`.
 [Direct blend evidence](../research/direct-blend-authoring.md) records observed
 red/green revisions and runtime proof. The parent remains open for additive states,
 model-bound direct blends, advanced timing, other property kinds and conversions.
+
+
+## Model-bound direct blend slice (#241 / PR #242)
+
+Direct children accept exclusive `{motion, binding}` beside the unchanged input
+form. Numeric model bindings used only by blends are emitted; shared transition,
+root and region uses are deduplicated per chart. Actual chart-local indices and
+source-map paths are retained. Unknown bindings and boolean sources fail at the
+child's authored path, while invalid model/property declarations retain theirs.
+
+The canonical builder emits the native bindable-number/context/direct-child sequence
+through existing object types and model index resolution. It does not synchronize
+synthesized inputs or simulate animations. Explicit raw fixed sources are not
+reinterpreted. The original input panel retains its prior compiled SHA-256.
+
+Ten public contracts cover native encoding, exclusive source forms, reference/type
+errors, region-only uses, shared consumers, multi-chart offsets, multibyte property
+indices, fixed-source preservation, byte compatibility and atomic-edit rollback.
+The existing direct-blend browser harness adds a model-bound mode rather than a
+second copy of the harness. It retains model-only and input-only evidence, independent
+weights, clamping, reversal and timed exit/resume for `model-blend-panel.v0.json`.
+
+[Model blend evidence](../research/model-blend-authoring.md) records observed
+red/green revisions and runtime provenance. Final exact-head CI/MSRV and separate
+Standards/Spec self-review are recorded on PR #242. This parent remains open for
+additive states, model-bound one-dimensional blends, broader timing, other property
+kinds and conversions.

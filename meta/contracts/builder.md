@@ -37,5 +37,21 @@ fail before encoded output. Existing model/property index resolution and numeric
 bindable-property/comparator objects are reused. Numeric model properties encode
 the inherited ViewModelComponent name field, not Component name/parent fields.
 Unbound numeric inputs and boolean binding binaries retain their existing behavior.
-This affects transition evaluation only; model instance initialization belongs to
-the host. No input synchronization, model-bound blend, or conversion is promised.
+Model instance initialization belongs to the host. No input synchronization or
+conversion is promised.
+
+## Numeric view-model direct-blend bindings
+
+An input-source canonical direct-blend child pointing to a number input with
+`view_model_binding` consumes that model property, not the synthesized input value.
+The builder resolves model/property indices through the same resolver as numeric
+transition conditions. It emits `BindablePropertyNumber`, its `DataBindContext`
+using the numeric value property key and encoded source path, then the
+`BlendAnimationDirect` with data-bind source 2 and no input ID. This ordering is
+required by the runtime's most-recent-bindable-property importer. The bindable
+property uses the validated finite initial value from the canonical number input.
+
+An absent or null source selector means input source 0. Unbound input-driven output
+is unchanged. Explicit non-input source selectors are not reinterpreted; in
+particular a fixed mix source 1 keeps its mix value and does not gain a binding.
+The canonical schema and existing binary object types are unchanged.

@@ -55,7 +55,7 @@ parallel regions, and typed listener actions, and adds
 `examples/authoring/interactive-console.v0.json` and its committed
 `examples/authoring/interactive-console.v0.riv` as end-to-end evidence, with the
 animation-only `examples/authoring/signal-weave.v0.json` proving parallel regions
-without any input. Additive blend states, model-bound direct blends, advanced exit timing,
+without any input. Additive blend states, model-bound one-dimensional blends, advanced exit timing,
 and view-model properties beyond `bool` and `number` are still not exposed, so
 `todo.behavior-authoring-compiler.md` stays open.
 
@@ -133,6 +133,15 @@ canonical builder. The direct-blend panel example and retained runtime contract 
 independent weights, partial/full contribution, clamping, reversal and state transitions.
 The broader behavior todo stays open for its remaining capabilities.
 
+[#241](https://github.com/George-RD/rive-rs-cli/issues/241), implemented in PR #242,
+adds numeric model-bound direct weights through the same compiler and canonical
+builder. Exclusive `{motion, binding}` children share emitted bindings with root,
+region and transition consumers. Native data-bound objects, not synthesized-input
+mirroring, control the weights. Retained public-CLI runtime evidence separates
+model mutation from input-only mutation and covers independent contributions,
+clamping, reversal and state transitions. Existing input-driven output is preserved.
+The broader behavior todo remains open for its remaining capabilities.
+
 ## Priority order
 
 | Priority | Work | Status | Exit gate |
@@ -145,7 +154,7 @@ The broader behavior todo stays open for its remaining capabilities.
 | P1 | [Authoring delivery path](meta/todos/todo.authoring-delivery-path.md) | complete in PR #197 | one-pass compiler, shared compile seam, first-class Authoring CLI, complex animated runtime proof |
 | P1 | [Public verification and original-work proof](meta/todos/todo.verification-lab-public-proof.md) | complete in PR #219 | frame-locked parity proof, manifest-driven original showcase, original landing proof, and separately bounded production-consumer provenance |
 | P2 | [Pose and motion compiler slice](meta/todos/todo.motion-authoring-compiler.md) | complete in PR #197 | compact tracks and poses reproduce complex motion with retained official-runtime proof through one compiler-owned scene draft |
-| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206; number and trigger inputs, blend states, parallel regions, and typed listener actions complete in PR #221; transition duration added in #225; animation exit-time gates added in #227; numeric model bindings added in #237 / PR #238; input-driven direct blends added in #239 | supported typed behavior reproduces a complex interactive showcase exactly; additive blend states, model-bound direct blends, advanced exit timing, and view-model properties beyond `bool` and `number` remain open |
+| P2 | [Behavior and statechart compiler slice](meta/todos/todo.behavior-authoring-compiler.md) | open; #179 complete in PR #203; #180 complete in PR #204; #181 complete in PR #206; number and trigger inputs, blend states, parallel regions, and typed listener actions complete in PR #221; transition duration added in #225; animation exit-time gates added in #227; numeric model bindings added in #237 / PR #238; input-driven direct blends added in #239; model-bound direct weights added in #241 / PR #242 | supported typed behavior reproduces a complex interactive showcase exactly; additive blend states, model-bound one-dimensional blends, advanced exit timing, and view-model properties beyond `bool` and `number` remain open |
 | P2 | [Semantic prompt evaluations](meta/todos/todo.semantic-prompt-evals.md) | complete in PR #209 | static, animated, and interactive semantic evidence are independently gated from structural/runtime results |
 | P3 | [Incremental typed authoring operations](meta/todos/todo.incremental-authoring-operations.md) | complete in PR #212 | stable-ID edits validate atomically and preserve unaffected source-map identity |
 | P3 | [AI generation skills](meta/todos/todo.ai-generation-skills.md) | complete in PR #215 | complex prompts target AuthoringSpec; task-focused schema/source-map context and stable-ID repair are integrated with eval evidence |

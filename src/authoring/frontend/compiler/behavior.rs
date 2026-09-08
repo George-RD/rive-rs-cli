@@ -169,8 +169,18 @@ pub(super) fn lower_behavior(
                     .flat_map(|region| &region.transitions),
             )
             .filter_map(|transition| transition.when.binding().map(|(id, _)| id))
+            .chain(
+                statechart
+                    .states
+                    .iter()
+                    .chain(statechart.regions.iter().flat_map(|region| &region.states))
+                    .filter_map(|state| state.direct_blend.as_ref())
+                    .flat_map(|blend| &blend.motions)
+                    .filter_map(|motion| motion.binding()),
+            )
             .collect::<HashSet<_>>();
         let mut input_name_by_binding = HashMap::new();
+        let mut input_index_by_id = HashMap::new();
         let mut inputs = Vec::new();
         for (binding_index, binding) in spec.behavior.bindings.iter().enumerate() {
             if !used_bindings.contains(binding.id.as_str()) {
@@ -186,6 +196,7 @@ pub(super) fn lower_behavior(
                 "input",
             );
             input_name_by_binding.insert(binding.id.as_str(), input_name.clone());
+            input_index_by_id.insert(binding.id.as_str(), input_index);
             let model_name = model_runtime_by_id
                 .get(binding.model.as_str())
                 .expect("validated behavior model");
@@ -210,7 +221,6 @@ pub(super) fn lower_behavior(
         }
 
         let mut input_name_by_id = HashMap::new();
-        let mut input_index_by_id = HashMap::new();
         for (input_index, input) in statechart.inputs.iter().enumerate() {
             let input_path = format!("{statechart_path}.inputs[{input_index}]");
             let scene_input_index = inputs.len();
@@ -480,12 +490,12 @@ fn lower_region(
                     .motions
                     .iter()
                     .map(|motion| {
-                        let animation_name = animation_runtime_name(spec, &motion.motion);
+                        let animation_name = animation_runtime_name(spec, motion.motion());
                         json!({
                             "type": "blend_animation_direct",
                             "animation_id": animation_index_by_name.get(animation_name.as_str())
                                 .expect("validated motion has a lowered animation"),
-                            "input_id": input_index_by_id.get(motion.input.as_str())
+                            "input_id": input_index_by_id.get(motion.source_id())
                                 .expect("validated direct blend input")
                         })
                     })
@@ -982,10 +992,13 @@ fn validate_region(
         validate_state_motion(
             state,
             &state_path,
-            statechart_id,
-            parameters,
-            motion_tracks,
-            inputs,
+            StateMotionContext {
+                statechart_id,
+                parameters,
+                motion_tracks,
+                inputs,
+                bindings,
+            },
             diagnostics,
         );
     }
@@ -1035,15 +1048,27 @@ fn validate_region(
     }
 }
 
+struct StateMotionContext<'a> {
+    statechart_id: &'a str,
+    parameters: &'a BTreeMap<String, Quantity>,
+    motion_tracks: &'a HashSet<&'a str>,
+    inputs: &'a HashMap<&'a str, &'a BehaviorInputSpec>,
+    bindings: &'a HashMap<&'a str, Option<BehaviorInputKind>>,
+}
+
 fn validate_state_motion(
     state: &BehaviorStateSpec,
     state_path: &str,
-    statechart_id: &str,
-    parameters: &BTreeMap<String, Quantity>,
-    motion_tracks: &HashSet<&str>,
-    inputs: &HashMap<&str, &BehaviorInputSpec>,
+    context: StateMotionContext<'_>,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
+    let StateMotionContext {
+        statechart_id,
+        parameters,
+        motion_tracks,
+        inputs,
+        bindings,
+    } = context;
     if let Some(blend) = &state.direct_blend {
         if state.motion.is_some() || state.blend.is_some() {
             diagnostics.push(AuthoringDiagnostic::new(
@@ -1062,20 +1087,41 @@ fn validate_state_motion(
         }
         for (index, motion) in blend.motions.iter().enumerate() {
             let path = format!("{state_path}.direct_blend.motions[{index}]");
-            if !motion_tracks.contains(motion.motion.as_str()) {
+            if !motion_tracks.contains(motion.motion()) {
                 diagnostics.push(AuthoringDiagnostic::new(
                     format!("{path}.motion"),
                     "unknown_behavior_motion",
-                    format!("motion track '{}' is not defined", motion.motion),
+                    format!("motion track '{}' is not defined", motion.motion()),
                 ));
             }
-            match inputs.get(motion.input.as_str()) {
+            if let Some(binding) = motion.binding() {
+                match bindings.get(binding) {
+                    None => diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{path}.binding"),
+                        "unknown_behavior_binding",
+                        format!("behavior binding '{binding}' is not defined"),
+                    )),
+                    Some(Some(actual)) if *actual != BehaviorInputKind::Number => {
+                        diagnostics.push(AuthoringDiagnostic::new(
+                            format!("{path}.binding"),
+                            "invalid_blend_binding",
+                            format!(
+                                "direct blend binding '{binding}' must reference a number property but references {}",
+                                actual.as_str()
+                            ),
+                        ));
+                    }
+                    Some(_) => {}
+                }
+                continue;
+            }
+            match inputs.get(motion.source_id()) {
                 None => diagnostics.push(AuthoringDiagnostic::new(
                     format!("{path}.input"),
                     "unknown_behavior_input",
                     format!(
                         "behavior input '{}' is not defined in statechart '{statechart_id}'",
-                        motion.input
+                        motion.source_id()
                     ),
                 )),
                 Some(input) if input.kind() != BehaviorInputKind::Number => {
@@ -1084,7 +1130,7 @@ fn validate_state_motion(
                         "invalid_blend_input",
                         format!(
                             "direct blend input '{}' must be a number input but is declared as {}",
-                            motion.input,
+                            motion.source_id(),
                             input.kind().as_str()
                         ),
                     ));

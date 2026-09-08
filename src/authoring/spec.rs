@@ -548,10 +548,32 @@ pub struct BehaviorBlendSpec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct BehaviorDirectBlendMotionSpec {
-    pub motion: String,
-    pub input: String,
+#[serde(untagged, deny_unknown_fields)]
+pub enum BehaviorDirectBlendMotionSpec {
+    Input { motion: String, input: String },
+    Binding { motion: String, binding: String },
+}
+
+impl BehaviorDirectBlendMotionSpec {
+    pub(crate) fn motion(&self) -> &str {
+        match self {
+            Self::Input { motion, .. } | Self::Binding { motion, .. } => motion,
+        }
+    }
+
+    pub(crate) fn source_id(&self) -> &str {
+        match self {
+            Self::Input { input, .. } => input,
+            Self::Binding { binding, .. } => binding,
+        }
+    }
+
+    pub(crate) fn binding(&self) -> Option<&str> {
+        match self {
+            Self::Input { .. } => None,
+            Self::Binding { binding, .. } => Some(binding),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

@@ -198,9 +198,9 @@ enables a zero-time gate and therefore changes encoded flags. Canonical `exit_ti
 is an unsigned 32-bit value wired through the existing transition object; no second
 lowering pass or encoder is introduced.
 
-A behavior state declares exactly one of `motion` and `blend`. Neither returns
-`missing_state_motion` and both return `ambiguous_state_motion`, each at the state
-path. `blend` is `{"input": <number input id>, "stops": [{"motion": <track id>,
+A behavior state declares exactly one of `motion`, `blend`, and `direct_blend`.
+None returns `missing_state_motion` and multiple sources return
+`ambiguous_state_motion`, each at the state path. `blend` is `{"input": <number input id>, "stops": [{"motion": <track id>,
 "value": <scalar expression>}, ...]}` and lowers to a `blend_state_1d` whose children
 are `blend_animation_1d` entries naming the lowered animations.
 `docs/authoring.schema.v0.json` records `minItems` 2 and `maxItems` 1000 on `stops`,
@@ -235,8 +235,9 @@ ids inside a region are
 
 Typed behavior validates its lowered scene with file-asset `source` fields removed, the
 same way the visual path does, so a document may declare `font_assets` or `image_assets`
-alongside a statechart. Additive blend states, model-bound direct blends, advanced exit timing, and
-view-model properties beyond `bool` and `number` are not exposed by this frontend.
+alongside a statechart. Additive blend states, model-bound one-dimensional blends,
+advanced exit timing, and view-model properties beyond `bool` and `number` are not
+exposed by this frontend.
 `stacking`, `continuity`, `waypoint`, `blend`, `direct_blend`, `regions`, `duration_ms`, and `exit_time_ms` are optional and
 their defaults reproduce the previous lowered output, so `authoring_format_version`
 remains 0.
@@ -261,5 +262,26 @@ Runtime weights are clamped percentages and applied sequentially, not normalized
 relative shares. The panel example deliberately puts a full-weight rest motion
 first, followed by separate motion contributions. The browser contract checks
 partial/full/zero weights, independence, reversal, clamping and state transitions.
-Duration is supported; exit-time gates on direct sources are rejected. Model-bound
-weights, static weight expressions and additive states are not exposed.
+Duration is supported; exit-time gates on direct sources are rejected. Static
+weight expressions and additive states are not exposed.
+
+## Model-bound direct weights (#241)
+
+Each direct-blend child selects exactly one of `{motion, input}` and
+`{motion, binding}`. Only a numeric model property is a valid bound weight. Unknown
+binding and wrong-kind diagnostics use the child's authored `.binding` path;
+model/property declaration errors retain their own paths. The strict typed union
+and published schema reject ambiguous, missing, null and unknown fields.
+
+Blend-only uses participate in the same used-binding collection as transitions.
+Shared root/region/transition uses emit one bound input per chart, in authored
+binding order. Canonical input indices include all preceding bound inputs; a shared
+binding's source map retains every chart-local input path. Root and region states
+reuse the same lowering and atomic-operation validation. Existing unbound documents
+and source identities remain unchanged.
+
+The canonical builder consumes bound number inputs as native direct-blend data
+bindings. Model mutation controls the weight independently of the synthesized
+machine input; initialization and binding of the model instance belong to the host.
+No parallel compiler, host-side input mirroring or direct binary encoding is added.
+The same browser harness verifies input-driven and model-bound modes separately.

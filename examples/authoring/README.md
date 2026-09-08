@@ -223,3 +223,24 @@ The browser test retains its source, binary, compile report, frames, positions a
 hashes under `target/playwright-behavior/direct-blend`. Public Rust contracts cover
 canonical indices, binding-generated offsets, regions, authored diagnostics, strict
 schema, deterministic bytes and rejected incremental edits.
+
+
+## Model-bound direct blend panel
+
+`model-blend-panel.v0.json` uses the same two-panel motions but takes both weights
+from the `weights` model's numeric `left` and `right` properties. `foundation` stays
+at 100. The host must create, initialize and bind the model instance, resolving
+runtime names from the compile report's source map. Change the model properties,
+not the synthesized machine inputs; those inputs are not kept in sync.
+
+```sh
+cargo run -- authoring compile examples/authoring/model-blend-panel.v0.json -o /tmp/model-blend-panel.riv --json
+node tests/playwright/authoring-direct-blend-runtime.js --model-bound
+```
+
+The shared browser harness measures both panels while varying model weights and
+holding the synthesized inputs at unrelated values. Source, compiled binary, compile
+report, eleven PNGs, positions and hashes are retained separately under
+`target/playwright-behavior/model-blend`. `reset` and `resume` retain the existing
+100ms state transitions. No host-side motion calculations or input mirroring are
+used to produce the rendered result.
