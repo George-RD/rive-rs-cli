@@ -55,5 +55,5 @@ fn named_direct_blends_preserve_authored_order_and_resolve_canonical_indices() {
         state_source.scene_paths,
         ["/artboard/state_machines/0/layers/0/states/1"]
     );
-    assert_builds(&first.scene);
+    assert_builds(first.scene);
 }
