@@ -43,6 +43,11 @@ The host initializes and binds the model instance; no input mirroring is promise
 - Expanded contracts and Clippy passed in run `34277015841`. They cover authored
   errors, shared/region-only references, scoped/multibyte indices, native ordering,
   explicit fixed-source preservation, old-byte compatibility and atomic rollback.
+- Source `73214c76ff456c03536578b45fe75d3db2b46001`, run `34277179381`, passed
+  all 1,101 Rust tests (one pre-existing schema helper ignored), Clippy and both
+  official-runtime blend modes. Artifact `10076276538` retained source, logs and
+  frames; its SHA-256 is
+  `5e5f4f7440fd8c72c5dc0a627e445268eb3d3c51ab626476984d0d49d2a3c6e1`.
 
 Local cloning and Rust execution were unavailable. Branch-scoped Actions performed
 formatting, schema generation and executable verification; downloaded source/log
@@ -62,9 +67,15 @@ at unrelated 90/10 values.
 
 The eleven cases cover initial binding, input-only mutation, zero/partial/full model
 weights, independent contributions, reversal, out-of-range clamping, timed exit and
-resume, and return to zero. Source, binary, compile report/source map, PNGs, positions,
-runtime/WASM hashes and browser version are retained in
-`target/playwright-behavior/model-blend`, under the normal typed-behavior CI artifact.
-The original input mode remains separately verified. The parent behavior todo stays
-open; one-dimensional model blends, additive states, static expression weights,
-other property kinds, broader timing and conversions are not included.
+resume, and return to zero. Measured centres were 39.5px at zero, 119.5px at half
+and 199.5px at full weight. The model-driven binary SHA-256 is
+`bc107cad1542c95190a125b24ce97a6c62e05fd553972bc47f2cad3735c5f8d4`.
+The downloaded artifact and all eleven PNG digests were checked locally, and
+representative input-only and independent-weight frames were inspected.
+
+Source, binary, compile report/source map, PNGs, positions, runtime/WASM hashes and
+browser version are retained in `target/playwright-behavior/model-blend`, under the
+normal typed-behavior CI artifact. The original input mode remains separately
+verified. The parent behavior todo stays open; one-dimensional model blends,
+additive states, static expression weights, other property kinds, broader timing
+and conversions are not included.
