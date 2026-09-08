@@ -36,12 +36,12 @@ jobs:
         run: cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored
       - name: Retain generated source on feature branch
         run: |
-          git add src tests docs examples meta cairn.blueprint ROADMAP.md
+          git add src tests docs examples meta cairn.blueprint ROADMAP.md .github/workflows/ci.yml
           if ! git diff --cached --quiet; then
             test "$(git ls-remote origin refs/heads/agent/authoring-direct-blends | cut -f1)" = "$GITHUB_SHA"
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "feat(authoring): lower named direct blends through canonical scene (#239)"
+            git commit -m "test(authoring): retain direct blend runtime fixture and delivery contracts (#239)"
             git push origin HEAD:refs/heads/agent/authoring-direct-blends
           fi
       - name: Record source revision
@@ -49,14 +49,25 @@ jobs:
         run: |
           git rev-parse HEAD | tee source-head.txt
           git archive HEAD -o source.tar
-      - name: Direct blend contract
+      - name: Rust contracts
         run: |
           set -o pipefail
-          cargo test --locked --test authoring_direct_blend_contract 2>&1 | tee direct-blend-tests.log
+          cargo test --locked --all-features 2>&1 | tee direct-blend-tests.log
       - name: Clippy
         run: |
           set -o pipefail
           cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee direct-blend-clippy.log
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install runtime harness
+        run: |
+          npm install --no-save --no-package-lock playwright@1.62.0
+          npx playwright install --with-deps chromium
+      - name: Direct blend runtime
+        run: |
+          set -o pipefail
+          node tests/playwright/authoring-direct-blend-runtime.js 2>&1 | tee direct-blend-runtime.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -66,4 +77,6 @@ jobs:
             source.tar
             direct-blend-tests.log
             direct-blend-clippy.log
+            direct-blend-runtime.log
+            target/playwright-behavior/direct-blend
           retention-days: 7
