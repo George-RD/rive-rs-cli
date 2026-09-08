@@ -176,8 +176,17 @@ impl<'a> AuthoringCompiler<'a> {
             artboard_children,
             state_machines,
             source_entries,
-        } = behavior::lower_behavior(spec, child_index_base, 0, listener_targets)
-            .map_err(|error| rewrite_error_paths(spec, error))?;
+        } = behavior::lower_behavior(
+            spec,
+            child_index_base,
+            0,
+            listener_targets,
+            lowered.scene["artboard"]["animations"]
+                .as_array()
+                .map(Vec::as_slice)
+                .unwrap_or(&[]),
+        )
+        .map_err(|error| rewrite_error_paths(spec, error))?;
         validate_behavior_source_identities(&source_entries)
             .map_err(|error| rewrite_error_paths(spec, error))?;
 

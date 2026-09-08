@@ -1,0 +1,332 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "direct-blend-panel",
+    "width": {
+      "value": 240,
+      "unit": "px"
+    },
+    "height": {
+      "value": 160,
+      "unit": "px"
+    }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "rectangle",
+        "id": "left-panel",
+        "width": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "fill": "#246BFD",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 40,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 40,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "right-panel",
+        "width": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "fill": "#22C55E",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 40,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 120,
+            "unit": "px"
+          }
+        }
+      }
+    ]
+  },
+  "motion": {
+    "poses": [
+      {
+        "id": "rest",
+        "targets": [
+          {
+            "target": "left-panel",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 40,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 40,
+                "unit": "px"
+              }
+            }
+          },
+          {
+            "target": "right-panel",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 40,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 120,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "left-moved",
+        "targets": [
+          {
+            "target": "left-panel",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 200,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 40,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "right-moved",
+        "targets": [
+          {
+            "target": "right-panel",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 200,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 120,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "rest-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 1,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "rest"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            },
+            "pose": "rest"
+          }
+        ]
+      },
+      {
+        "id": "left-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 1,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "left-moved"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            },
+            "pose": "left-moved"
+          }
+        ]
+      },
+      {
+        "id": "right-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 1,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "right-moved"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 1,
+              "unit": "scalar"
+            },
+            "pose": "right-moved"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "statecharts": [
+      {
+        "id": "panel",
+        "inputs": [
+          {
+            "kind": "number",
+            "id": "foundation",
+            "value": {
+              "kind": "literal",
+              "value": 100,
+              "unit": "scalar"
+            }
+          },
+          {
+            "kind": "number",
+            "id": "left-weight",
+            "value": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "kind": "number",
+            "id": "right-weight",
+            "value": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            }
+          },
+          {
+            "kind": "trigger",
+            "id": "reset"
+          },
+          {
+            "kind": "trigger",
+            "id": "resume"
+          }
+        ],
+        "initial": "blending",
+        "states": [
+          {
+            "id": "blending",
+            "direct_blend": {
+              "motions": [
+                {
+                  "motion": "rest-track",
+                  "input": "foundation"
+                },
+                {
+                  "motion": "left-track",
+                  "input": "left-weight"
+                },
+                {
+                  "motion": "right-track",
+                  "input": "right-weight"
+                }
+              ]
+            }
+          },
+          {
+            "id": "resting",
+            "motion": "rest-track"
+          }
+        ],
+        "transitions": [
+          {
+            "id": "reset-state",
+            "from": "blending",
+            "to": "resting",
+            "when": {
+              "trigger": "reset"
+            },
+            "duration_ms": {
+              "kind": "literal",
+              "value": 100,
+              "unit": "scalar"
+            }
+          },
+          {
+            "id": "resume-state",
+            "from": "resting",
+            "to": "blending",
+            "when": {
+              "trigger": "resume"
+            },
+            "duration_ms": {
+              "kind": "literal",
+              "value": 100,
+              "unit": "scalar"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

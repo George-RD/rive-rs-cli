@@ -10,7 +10,7 @@
 - Additive compiler capability may be introduced within v0 only when existing v0 documents lower to the same canonical `SceneSpec` and source map.
 - `scene_format_version` remains independently versioned. v0 currently lowers to `SceneSpec` version `1`.
 
-`stacking`, motion `continuity` and `waypoint`, state `blend`, and statechart `regions` are optional fields whose defaults (`runtime`, `per_keyframe`, `auto`, and absent `blend` and `regions`) leave the canonical `SceneSpec` and source map unchanged. The `number` and `trigger` input kinds, the comparison and trigger transition conditions, and the `number_change` and `trigger_change` listener actions are new variants of the input, condition, and listener-action unions. A document that uses none of them lowers as it did before, so `authoring_format_version` stays `0`; `tests/showcase_artifact.rs` recompiles each committed showcase and compares the bytes against the checked-in `.riv`.
+`stacking`, motion `continuity` and `waypoint`, state `blend` and `direct_blend`, and statechart `regions` are optional fields whose defaults (`runtime`, `per_keyframe`, `auto`, and absent `blend`, `direct_blend`, and `regions`) leave the canonical `SceneSpec` and source map unchanged. The `number` and `trigger` input kinds, the comparison and trigger transition conditions, and the `number_change` and `trigger_change` listener actions are new variants of the input, condition, and listener-action unions. A document that uses none of them lowers as it did before, so `authoring_format_version` stays `0`; `tests/showcase_artifact.rs` recompiles each committed showcase and compares the bytes against the checked-in `.riv`.
 
 `exit_time_ms` is an optional outgoing-animation gate; its contract is described under Transition exit time. `duration_ms` is an optional transition field. Omitting it preserves existing canonical scenes, source maps, and compiled artifacts; explicit zero remains instantaneous. This additive capability keeps `authoring_format_version` at `0`.
 
@@ -29,7 +29,7 @@ A v0 document has four explicit graphs plus a deterministic file-scope asset reg
 - `components`: reusable authored visual definitions with typed parameter defaults and an optional `stacking` order.
 - `visual`: the root visual graph, with an optional `stacking` order.
 - `motion`: typed poses and tracks, per-track `continuity` and per-keyframe `waypoint`, plus `raw_animations` for canonical expert escapes.
-- `behavior`: typed boolean and numeric view models and bindings, `bool`, `number`, and `trigger` state-machine inputs, named Rive events, typed listeners, named states that play one motion track or blend at least two, parallel regions, and binding, boolean, comparison, and trigger transitions plus `raw_state_machines` for canonical expert escapes.
+- `behavior`: typed boolean and numeric view models and bindings, `bool`, `number`, and `trigger` state-machine inputs, named Rive events, typed listeners, named states that play one motion track, use a one-dimensional blend, or mix independent motion weights, parallel regions, and binding, boolean, comparison, and trigger transitions plus `raw_state_machines` for canonical expert escapes.
 
 The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, mirror, distribute, and along-path patterns, group-scoped transform-anchor constraints, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Motion and behavior remain deliberately incremental: v0 exposes only compiler-proven typed subsets and retains raw canonical escapes for unsupported features.
 
@@ -526,7 +526,7 @@ Omitted or null gates preserve the previous canonical scene, source map, and com
 
 ## Blend states
 
-A behavior state declares exactly one of `motion` and `blend`. `motion` names an authored motion track. `blend` maps a number input onto at least two motion tracks, each with the input value at which that track is fully applied:
+A behavior state declares exactly one of `motion`, `blend`, and `direct_blend`. `motion` names an authored motion track. `blend` maps a number input onto at least two motion tracks, each with the input value at which that track is fully applied:
 
 ```json
 {
@@ -541,11 +541,38 @@ A behavior state declares exactly one of `motion` and `blend`. `motion` names an
 }
 ```
 
-The state lowers to a `blend_state_1d` whose `input` is the lowered input name and whose children are `blend_animation_1d` entries naming the lowered animations. A state with neither field fails with `missing_state_motion` and a state with both fails with `ambiguous_state_motion`, both at the state path. `unknown_behavior_input` and `invalid_blend_input` fire at `$.behavior.statecharts[i].states[j].blend.input` when the named input is absent or is not a number input, and `unknown_behavior_motion` at `$.behavior.statecharts[i].states[j].blend.stops[k].motion` for a track that is not defined.
+The state lowers to a `blend_state_1d` whose `input` is the lowered input name and whose children are `blend_animation_1d` entries naming the lowered animations. A state with no motion source fails with `missing_state_motion` and a state with multiple sources fails with `ambiguous_state_motion`, both at the state path. `unknown_behavior_input` and `invalid_blend_input` fire at `$.behavior.statecharts[i].states[j].blend.input` when the named input is absent or is not a number input, and `unknown_behavior_motion` at `$.behavior.statecharts[i].states[j].blend.stops[k].motion` for a track that is not defined.
 
 A blend needs between 2 and 1000 stops; a count outside that range fails with `invalid_blend_stops` at `$.behavior.statecharts[i].states[j].blend.stops`. Stop values must strictly increase. Rive's `BlendState1DInstance` binary-searches its children as ascending thresholds, so an out-of-order or repeated value would leave a stop unreachable; it fails with `invalid_blend_stop_order` at `$.behavior.statecharts[i].states[j].blend.stops[k].value`. Each value is narrowed to a 32-bit float before the comparison, because that is the width the emitted `blend_animation_1d` carries and the encoder writes, so two thresholds that differ only below `f32` precision are rejected instead of arriving at the runtime as duplicates. Both checks run on the typed Rust path as well as through the published JSON schema.
 
 Rive mixes the two neighbouring stop animations in sequence rather than as a weighted average, so an input between two stops does not render at the arithmetic midpoint. `tests/authoring_behavior_blend_runtime.rs` drives `examples/authoring/blend-meter.v0.json` at `load` 0, 50, and 100: the stops hold the needle within 3px of x 40 and x 200, and 50 renders it near x 146 rather than at x 120. The mapping stays monotonic; the test asserts that ordering rather than the exact middle position.
+
+## Direct blend states
+
+`direct_blend` gives each named motion its own local number input instead of selecting neighbouring stops from a shared input:
+
+```json
+{
+  "id": "blending",
+  "direct_blend": {
+    "motions": [
+      { "motion": "rest-track", "input": "foundation" },
+      { "motion": "left-track", "input": "left-weight" },
+      { "motion": "right-track", "input": "right-weight" }
+    ]
+  }
+}
+```
+
+Each input is a percentage weight. The official runtime clamps values below 0 to no contribution and above 100 to full contribution. These are not relative weights normalized to a total. Children are applied in authored order, so later motions can modify properties already changed by earlier motions. The compiler preserves that order.
+
+`examples/authoring/direct-blend-panel.v0.json` uses a first rest motion with its `foundation` number input initialized to 100. That reestablishes both panels' baseline before two independent inputs contribute motion. With that baseline, a weight of 50 places its panel halfway from x 40 to x 200; reversing either weight returns that panel towards rest without changing the other panel. This example does not claim that every arbitrary combination of overlapping tracks has the same midpoint semantics.
+
+The collection contains 1 through 1000 children. `invalid_direct_blend_motions` reports an empty or oversized collection at `.direct_blend.motions`. Each `motion` must name a typed motion track; each `input` must name a number input declared in the same chart. Unknown references report `unknown_behavior_motion` or `unknown_behavior_input` at the child's `.motion` or `.input`; non-number inputs report `invalid_blend_input` at `.input`. Binding IDs and raw-animation IDs are not substitutes for these references. Unknown fields, including runtime indices, are rejected.
+
+The same form works in parallel regions. The compiler resolves animation indices from its existing lowered scene and input indices from the emitted chart inputs, including offsets from binding-generated inputs. It lowers to existing `blend_state_direct` and `blend_animation_direct` objects without a new encoder path. Source-map identities remain attached to named states and regions. Transitions may enter or leave direct states and use `duration_ms`; `exit_time_ms` on a direct-blend source is rejected with `unsupported_transition_exit_source`, just as for a one-dimensional blend.
+
+The runtime contract `tests/playwright/authoring-direct-blend-runtime.js` compiles the source through the public CLI and retains the source, binary, compile report, measured positions, PNGs and hashes. Cases cover independent 0/50/100 inputs, runtime clamping, reversal, leaving the direct state, resuming it and returning both inputs to zero. Static expression weights, additive states and model-bound direct blends remain outside this slice. Omission or null leaves existing canonical output and bytes unchanged; the authoring format stays at version 0.
 
 ## Parallel regions
 
@@ -582,7 +609,7 @@ Every layer is emitted with an entry state at index 0, the authored states from 
 
 Region ids are unique within a statechart; a repeat fails with `duplicate_behavior_region` at `$.behavior.statecharts[i].regions[j].id`. A region id may not match any other id the statechart scopes either. States, transitions, inputs, events, listeners and regions all claim the source-map identity `{statechart}/{id}`, and consumers resolve an entry by first match, so a collision makes that lookup ambiguous; it fails with `behavior_region_id_collision` at the same path. Every state and transition diagnostic listed above applies inside a region under the same `.regions[j]` prefix. The region above is from `examples/authoring/interactive-console.v0.json`, whose other region, `stream`, carries a token across the artboard while layer 0 is still in `standby`. Regions do not require inputs: `examples/authoring/signal-weave.v0.json` declares three layers with no inputs and no transitions between authored states, so each layer plays its own track.
 
-Additive blend states, direct blend states, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Additive blend states, model-bound direct blends, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

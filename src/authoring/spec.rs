@@ -549,12 +549,28 @@ pub struct BehaviorBlendSpec {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct BehaviorDirectBlendMotionSpec {
+    pub motion: String,
+    pub input: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorDirectBlendSpec {
+    #[schemars(length(min = 1, max = 1000))]
+    pub motions: Vec<BehaviorDirectBlendMotionSpec>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct BehaviorStateSpec {
     pub id: String,
     #[serde(default)]
     pub motion: Option<String>,
     #[serde(default)]
     pub blend: Option<BehaviorBlendSpec>,
+    #[serde(default)]
+    pub direct_blend: Option<BehaviorDirectBlendSpec>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

@@ -205,3 +205,21 @@ non-trivial typed statechart lowers exactly to the expected canonical SceneSpec.
 The CLI contract compiles typed visual and motion content through the shared
 SceneSpec compilation seam, validates the resulting `.riv`, preserves file IDs
 and input-relative assets, and checks full source-mapped JSON diagnostics.
+
+## Direct blend panel
+
+`direct-blend-panel.v0.json` applies two independently weighted panel motions in one
+state. Keep `foundation` at its initial 100 to apply the rest motion first, then set
+`left-weight` and `right-weight` independently from 0 to 100. Rive applies ordered
+percentage contributions; the compiler does not normalize the inputs. `reset` exits
+to the rest state and `resume` returns to the blend, with 100ms transition duration.
+
+```sh
+cargo run -- authoring compile examples/authoring/direct-blend-panel.v0.json -o /tmp/direct-blend-panel.riv --json
+node tests/playwright/authoring-direct-blend-runtime.js
+```
+
+The browser test retains its source, binary, compile report, frames, positions and
+hashes under `target/playwright-behavior/direct-blend`. Public Rust contracts cover
+canonical indices, binding-generated offsets, regions, authored diagnostics, strict
+schema, deterministic bytes and rejected incremental edits.

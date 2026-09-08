@@ -104,6 +104,39 @@
       ],
       "type": "string"
     },
+    "BehaviorDirectBlendMotionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "input": {
+          "type": "string"
+        },
+        "motion": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "motion",
+        "input"
+      ],
+      "type": "object"
+    },
+    "BehaviorDirectBlendSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "motions": {
+          "items": {
+            "$ref": "#/$defs/BehaviorDirectBlendMotionSpec"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "motions"
+      ],
+      "type": "object"
+    },
     "BehaviorEventSpec": {
       "additionalProperties": false,
       "properties": {
@@ -481,6 +514,17 @@
           "anyOf": [
             {
               "$ref": "#/$defs/BehaviorBlendSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "direct_blend": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BehaviorDirectBlendSpec"
             },
             {
               "type": "null"

@@ -31,12 +31,18 @@ pub(super) fn lower_behavior(
     child_index_base: usize,
     state_machine_index_base: usize,
     listener_targets: MotionTargetIndex,
+    animations: &[Value],
 ) -> Result<BehaviorLoweringOutput, AuthoringError> {
     let diagnostics = validate_behavior(spec);
     if !diagnostics.is_empty() {
         return Err(AuthoringError::many(diagnostics));
     }
 
+    let animation_index_by_name = animations
+        .iter()
+        .enumerate()
+        .filter_map(|(index, animation)| animation["name"].as_str().map(|name| (name, index)))
+        .collect::<HashMap<_, _>>();
     let mut source_entries = Vec::new();
     let mut artboard_children = Vec::with_capacity(
         spec.behavior.models.len()
@@ -204,6 +210,7 @@ pub(super) fn lower_behavior(
         }
 
         let mut input_name_by_id = HashMap::new();
+        let mut input_index_by_id = HashMap::new();
         for (input_index, input) in statechart.inputs.iter().enumerate() {
             let input_path = format!("{statechart_path}.inputs[{input_index}]");
             let scene_input_index = inputs.len();
@@ -238,6 +245,7 @@ pub(super) fn lower_behavior(
                 }),
             });
             input_name_by_id.insert(input.id(), input_name.clone());
+            input_index_by_id.insert(input.id(), scene_input_index);
             source_entries.push(SourceMapEntry {
                 authored_id: format!("{}/{}", statechart.id, input.id()),
                 authored_path: format!("{statechart_path}.inputs[{input_index}]"),
@@ -320,6 +328,8 @@ pub(super) fn lower_behavior(
                 },
                 &input_name_by_id,
                 &input_name_by_binding,
+                &input_index_by_id,
+                &animation_index_by_name,
                 &mut source_entries,
             )
             .map_err(AuthoringError::one)?,
@@ -342,6 +352,8 @@ pub(super) fn lower_behavior(
                     },
                     &input_name_by_id,
                     &input_name_by_binding,
+                    &input_index_by_id,
+                    &animation_index_by_name,
                     &mut source_entries,
                 )
                 .map_err(AuthoringError::one)?,
@@ -410,6 +422,8 @@ fn lower_region(
     context: RegionContext<'_>,
     input_name_by_id: &HashMap<&str, String>,
     input_name_by_binding: &HashMap<&str, String>,
+    input_index_by_id: &HashMap<&str, usize>,
+    animation_index_by_name: &HashMap<&str, usize>,
     source_entries: &mut Vec<SourceMapEntry>,
 ) -> Result<Value, AuthoringDiagnostic> {
     let RegionContext {
@@ -433,12 +447,12 @@ fn lower_region(
     let mut states = vec![json!({ "type": "entry" })];
     for (state_index, state) in authored_states.iter().enumerate() {
         let state_path = format!("{authored_path}.states[{state_index}]");
-        let lowered = match (&state.motion, &state.blend) {
-            (Some(motion), None) => json!({
+        let lowered = match (&state.motion, &state.blend, &state.direct_blend) {
+            (Some(motion), None, None) => json!({
                 "type": "animation",
                 "animation": animation_runtime_name(spec, motion)
             }),
-            (None, Some(blend)) => {
+            (None, Some(blend), None) => {
                 let input = input_name_by_id
                     .get(blend.input.as_str())
                     .expect("validated blend input");
@@ -461,11 +475,28 @@ fn lower_region(
                     "children": children
                 })
             }
+            (None, None, Some(blend)) => {
+                let children = blend
+                    .motions
+                    .iter()
+                    .map(|motion| {
+                        let animation_name = animation_runtime_name(spec, &motion.motion);
+                        json!({
+                            "type": "blend_animation_direct",
+                            "animation_id": animation_index_by_name.get(animation_name.as_str())
+                                .expect("validated motion has a lowered animation"),
+                            "input_id": input_index_by_id.get(motion.input.as_str())
+                                .expect("validated direct blend input")
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                json!({ "type": "blend_state_direct", "children": children })
+            }
             _ => {
                 return Err(AuthoringDiagnostic::new(
                     state_path,
                     "missing_state_motion",
-                    "a behavior state must declare exactly one of 'motion' or 'blend'",
+                    "a behavior state must declare exactly one of 'motion', 'blend', or 'direct_blend'",
                 ));
             }
         };
@@ -560,7 +591,9 @@ fn lower_region(
         }
         if let Some(expression) = &transition.exit_time_ms {
             let path = format!("{transition_path}.exit_time_ms");
-            if authored_states[from - 1].blend.is_some() {
+            if authored_states[from - 1].blend.is_some()
+                || authored_states[from - 1].direct_blend.is_some()
+            {
                 return Err(AuthoringDiagnostic::new(
                     path,
                     "unsupported_transition_exit_source",
@@ -1011,6 +1044,56 @@ fn validate_state_motion(
     inputs: &HashMap<&str, &BehaviorInputSpec>,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
+    if let Some(blend) = &state.direct_blend {
+        if state.motion.is_some() || state.blend.is_some() {
+            diagnostics.push(AuthoringDiagnostic::new(
+                state_path,
+                "ambiguous_state_motion",
+                "a behavior state must declare exactly one of 'motion', 'blend', or 'direct_blend'",
+            ));
+            return;
+        }
+        if !(1..=BLEND_STOP_LIMIT).contains(&blend.motions.len()) {
+            diagnostics.push(AuthoringDiagnostic::new(
+                format!("{state_path}.direct_blend.motions"),
+                "invalid_direct_blend_motions",
+                format!("a direct blend needs between 1 and {BLEND_STOP_LIMIT} motions"),
+            ));
+        }
+        for (index, motion) in blend.motions.iter().enumerate() {
+            let path = format!("{state_path}.direct_blend.motions[{index}]");
+            if !motion_tracks.contains(motion.motion.as_str()) {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{path}.motion"),
+                    "unknown_behavior_motion",
+                    format!("motion track '{}' is not defined", motion.motion),
+                ));
+            }
+            match inputs.get(motion.input.as_str()) {
+                None => diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{path}.input"),
+                    "unknown_behavior_input",
+                    format!(
+                        "behavior input '{}' is not defined in statechart '{statechart_id}'",
+                        motion.input
+                    ),
+                )),
+                Some(input) if input.kind() != BehaviorInputKind::Number => {
+                    diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{path}.input"),
+                        "invalid_blend_input",
+                        format!(
+                            "direct blend input '{}' must be a number input but is declared as {}",
+                            motion.input,
+                            input.kind().as_str()
+                        ),
+                    ));
+                }
+                Some(_) => {}
+            }
+        }
+        return;
+    }
     match (&state.motion, &state.blend) {
         (None, None) => diagnostics.push(AuthoringDiagnostic::new(
             state_path,
