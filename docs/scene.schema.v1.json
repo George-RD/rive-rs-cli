@@ -300,6 +300,16 @@
             "value": {
               "format": "float",
               "type": "number"
+            },
+            "view_model_binding": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ViewModelInputBindingSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "required": [

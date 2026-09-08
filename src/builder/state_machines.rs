@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use crate::objects::core::{RiveObject, property_keys};
-use crate::objects::data_binding::{BindablePropertyBoolean, DataBindContext};
+use crate::objects::data_binding::{
+    BindablePropertyBoolean, BindablePropertyNumber, DataBindContext,
+};
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
     BlendState1DInput, BlendState1DViewModel, BlendStateDirect, EntryState, ExitState,
@@ -113,14 +115,31 @@ pub(crate) fn build_state_machines(
 
         let mut input_name_to_index: HashMap<String, usize> = HashMap::new();
         let mut bound_bool_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
+        let mut bound_number_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
         if let Some(inputs) = &state_machine.inputs {
             for (input_index, input) in inputs.iter().enumerate() {
                 match input {
-                    InputSpec::Number { name, value } => {
+                    InputSpec::Number {
+                        name,
+                        value,
+                        view_model_binding,
+                    } => {
                         objects.push(Box::new(StateMachineNumber {
                             name: name.clone(),
                             value: *value,
                         }));
+                        if let Some(binding) = view_model_binding {
+                            let path = resolve_view_model_binding_ids(
+                                artboard_children,
+                                view_model_id_base,
+                                &binding.view_model,
+                                &binding.property,
+                            ).ok_or_else(|| format!(
+                                "unknown view-model binding referenced by number input '{}': '{}.{}'",
+                                name, binding.view_model, binding.property
+                            ))?;
+                            bound_number_input_paths.insert(name.clone(), path);
+                        }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
                     InputSpec::Bool {
@@ -446,9 +465,34 @@ pub(crate) fn build_state_machines(
                                                         condition.input
                                                     )
                                                 })?;
-                                            objects.push(Box::new(TransitionNumberCondition::new(
-                                                input_id, op, value,
-                                            )));
+                                            if let Some(&(view_model_id, property_id)) =
+                                                bound_number_input_paths.get(&condition.input)
+                                            {
+                                                objects.push(Box::new(
+                                                    TransitionViewModelCondition { op_value: op },
+                                                ));
+                                                objects.push(Box::new(BindablePropertyNumber {
+                                                    property_value: 0.0,
+                                                }));
+                                                objects.push(Box::new(DataBindContext::new(
+                                                    property_keys::BINDABLE_PROPERTY_NUMBER_VALUE
+                                                        as u64,
+                                                    0,
+                                                    encode_id_path(&[view_model_id, property_id]),
+                                                )));
+                                                objects.push(Box::new(
+                                                    TransitionPropertyViewModelComparator,
+                                                ));
+                                                objects.push(Box::new(
+                                                    TransitionValueNumberComparator { value },
+                                                ));
+                                            } else {
+                                                objects.push(Box::new(
+                                                    TransitionNumberCondition::new(
+                                                        input_id, op, value,
+                                                    ),
+                                                ));
+                                            }
                                         }
                                         Some(serde_json::Value::Bool(v)) => {
                                             let bool_op = if condition.op.is_some() {

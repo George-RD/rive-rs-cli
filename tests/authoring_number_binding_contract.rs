@@ -40,7 +40,11 @@ fn numeric_view_model_binding_compiles_to_a_model_condition_not_an_input_conditi
     let scene: SceneSpec = serde_json::from_value(lowered.scene).expect("canonical scene");
     let bytes = compile_scene(&scene, None, 0).expect("bound scene must compile");
     let parsed = parse_riv(&bytes, &InspectFilter::default()).expect("encoded scene");
-    let types: Vec<_> = parsed.objects.iter().map(|object| object.type_key).collect();
+    let types: Vec<_> = parsed
+        .objects
+        .iter()
+        .map(|object| object.type_key)
+        .collect();
     assert!(types.contains(&type_keys::TRANSITION_VIEW_MODEL_CONDITION));
     assert!(types.contains(&type_keys::BINDABLE_PROPERTY_NUMBER));
     assert!(types.contains(&type_keys::TRANSITION_VALUE_NUMBER_COMPARATOR));

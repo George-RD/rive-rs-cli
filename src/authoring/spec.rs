@@ -386,12 +386,20 @@ pub struct BehaviorModelSpec {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum BehaviorPropertySpec {
     Bool { id: String, value: bool },
+    Number { id: String, value: ScalarExpr },
 }
 
 impl BehaviorPropertySpec {
     pub(crate) fn id(&self) -> &str {
         match self {
-            Self::Bool { id, .. } => id,
+            Self::Bool { id, .. } | Self::Number { id, .. } => id,
+        }
+    }
+
+    pub(crate) fn kind(&self) -> BehaviorInputKind {
+        match self {
+            Self::Bool { .. } => BehaviorInputKind::Bool,
+            Self::Number { .. } => BehaviorInputKind::Number,
         }
     }
 }
@@ -597,6 +605,14 @@ pub struct BehaviorNumberConditionSpec {
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+pub struct BehaviorNumberBindingConditionSpec {
+    pub binding: String,
+    pub compare: BehaviorCompare,
+    pub value: ScalarExpr,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 pub struct BehaviorTriggerConditionSpec {
     pub trigger: String,
 }
@@ -607,7 +623,18 @@ pub enum BehaviorTransitionConditionSpec {
     Binding(BehaviorBindingConditionSpec),
     Input(BehaviorInputConditionSpec),
     Number(BehaviorNumberConditionSpec),
+    NumberBinding(BehaviorNumberBindingConditionSpec),
     Trigger(BehaviorTriggerConditionSpec),
+}
+
+impl BehaviorTransitionConditionSpec {
+    pub(crate) fn binding(&self) -> Option<&str> {
+        match self {
+            Self::Binding(condition) => Some(&condition.binding),
+            Self::NumberBinding(condition) => Some(&condition.binding),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
