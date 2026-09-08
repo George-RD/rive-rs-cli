@@ -31,13 +31,18 @@ Authored order is retained. No new binary encoder or host-side simulation is add
 - Run `34258438290` generated source head
   `8283b4a6b0dbd2aaec1b44963ff2ff20c2a6c85a`; the unchanged lowering/index/source-map
   test passed, and all-target/all-feature Clippy passed.
+- Run `34259653669` generated source head
+  `717d10d5a8a8b127601dbdffa87e72bdf76a0efb`; the expanded public contracts,
+  locked all-feature Rust suite and all-target/all-feature Clippy passed.
 
 Local network cloning and Cargo execution were unavailable. Source editing was
 performed through the connected GitHub API, with branch-scoped temporary Actions
 for Rust execution, formatting and generated schema. Downloaded source snapshots
-were used for local inspection and review. Temporary workbench files are removed
-before the final merge head. Final exact-head checks and separate Standards/Spec
-self-review are recorded on the delivery pull request.
+were used for local inspection and review. The workbench files are removed from
+the delivery diff; the runtime contract is part of normal CI. See delivery PR #240
+for observed runtime measurements, retained artifacts, final exact-head CI/MSRV
+and separate Standards/Spec self-review. Intermediate runs do not replace that
+final merge gate.
 
 ## Runtime contract
 
@@ -50,7 +55,7 @@ inputs. Pixel positions, not host-side animation calculations, determine success
 report, representative PNGs, measured positions and hashes in
 `target/playwright-behavior/direct-blend`. It checks zero/partial/full weights,
 independence, clamping, reversal, leaving/resuming the state and return to zero.
-Runtime observation is pending until the recorded delivery check completes.
+The normal `typed-behavior-runtime-evidence` CI artifact retains this evidence.
 
 ## Remaining scope
 
