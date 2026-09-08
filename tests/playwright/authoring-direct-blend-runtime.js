@@ -9,9 +9,11 @@ const {
   visualBrowserLaunchOptions, captureCanvasPng, openFixturePage,
 } = require("./shared");
 
-const FIXTURE = "authoring_direct_blend";
-const DIRECTORY = path.join(ROOT, "target/playwright-behavior/direct-blend");
-const SOURCE = path.join(ROOT, "examples/authoring/direct-blend-panel.v0.json");
+const MODEL_BOUND = process.argv.includes("--model-bound");
+const MODE = MODEL_BOUND ? "model-blend" : "direct-blend";
+const FIXTURE = MODEL_BOUND ? "authoring_model_blend" : "authoring_direct_blend";
+const DIRECTORY = path.join(ROOT, "target/playwright-behavior", MODE);
+const SOURCE = path.join(ROOT, "examples/authoring", `${MODE}-panel.v0.json`);
 const PORT = 8129;
 const SETTLE_MS = 250;
 const POSITION_TOLERANCE = 1;
@@ -41,8 +43,11 @@ function buildFixture() {
   return {
     fixture: FIXTURE,
     machine: name("panel"),
-    left: name("panel/left-weight"),
-    right: name("panel/right-weight"),
+    left: name(MODEL_BOUND ? "left-model" : "panel/left-weight"),
+    right: name(MODEL_BOUND ? "right-model" : "panel/right-weight"),
+    model: MODEL_BOUND ? name("weights") : null,
+    leftProperty: MODEL_BOUND ? name("weights/left") : null,
+    rightProperty: MODEL_BOUND ? name("weights/right") : null,
     reset: name("panel/reset"),
     resume: name("panel/resume"),
     binarySha256: sha256(fs.readFileSync(binary)),
@@ -64,7 +69,7 @@ async function mount(page, plan) {
     await new Promise((resolve, reject) => {
       runtime = new rive.Rive({
         src: `${plan.fixture}.riv`, canvas, autoplay: true,
-        stateMachines: [plan.machine],
+        autoBind: false, stateMachines: [plan.machine],
         onLoad: resolve,
         onLoadError: (error) => reject(new Error(String(error))),
       });
@@ -75,8 +80,25 @@ async function mount(page, plan) {
       if (!input) throw new Error(`missing input ${name}`);
       return input;
     };
+    const leftInput = find(plan.left);
+    const rightInput = find(plan.right);
+    let instance = null;
+    let left = leftInput;
+    let right = rightInput;
+    if (plan.model) {
+      const model = runtime.viewModelByName(plan.model);
+      if (!model) throw new Error(`missing model ${plan.model}`);
+      instance = model.instance();
+      if (!instance) throw new Error("missing model instance");
+      left = instance.number(plan.leftProperty);
+      right = instance.number(plan.rightProperty);
+      if (!left || !right) throw new Error("missing model weight properties");
+      left.value = 0;
+      right.value = 0;
+      runtime.bindViewModelInstance(instance);
+    }
     window.__DIRECT_BLEND = {
-      runtime, left: find(plan.left), right: find(plan.right),
+      runtime, instance, left, right, leftInput, rightInput,
       reset: find(plan.reset), resume: find(plan.resume),
     };
   }, plan);
@@ -103,6 +125,8 @@ async function sample(page, label, expected) {
       left: center(40, [36, 107, 253]), right: center(120, [34, 197, 94]),
       leftWeight: window.__DIRECT_BLEND.left.value,
       rightWeight: window.__DIRECT_BLEND.right.value,
+      leftInput: window.__DIRECT_BLEND.leftInput.value,
+      rightInput: window.__DIRECT_BLEND.rightInput.value,
     };
   });
   for (const [side, x] of Object.entries(expected)) {
@@ -131,6 +155,16 @@ async function main() {
     page.on("pageerror", (error) => errors.push(String(error)));
     page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
     await mount(page, plan);
+    if (MODEL_BOUND) {
+      samples.push(await sample(page, "initial-model", { left: 40, right: 40 }));
+      await page.evaluate(() => {
+        window.__DIRECT_BLEND.leftInput.value = 90;
+        window.__DIRECT_BLEND.rightInput.value = 10;
+      });
+      samples.push(await sample(page, "input-only", { left: 40, right: 40 }));
+      assert.equal(samples.at(-1).leftWeight, 0);
+      assert.equal(samples.at(-1).rightWeight, 0);
+    }
     for (const [label, left, right, expectedLeft, expectedRight] of [
       ["zero", 0, 0, 40, 40],
       ["left-half", 50, 0, 120, 40],
@@ -157,6 +191,12 @@ async function main() {
     });
     samples.push(await sample(page, "zero-again", { left: 40, right: 40 }));
     assert.deepEqual(errors, []);
+    if (MODEL_BOUND) {
+      for (const sample of samples.slice(1)) {
+        assert.equal(sample.leftInput, 90, `${sample.label}: model must not mirror input`);
+        assert.equal(sample.rightInput, 10, `${sample.label}: model must not mirror input`);
+      }
+    }
     const evidence = {
       plan, samples,
       runtimeSha256: sha256(fs.readFileSync(path.join(ROOT, "assets/rive.js"))),
@@ -164,7 +204,7 @@ async function main() {
       browser: browser.version(),
     };
     fs.writeFileSync(path.join(DIRECTORY, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-    console.log("direct blend weights controlled independent motions, clamped, reversed, exited and resumed");
+    console.log(`${MODE}: independent weights clamped, reversed, exited and resumed${MODEL_BOUND ? "; model changes, not synthesized inputs, controlled the result" : ""}`);
   } finally {
     if (page) await page.close();
     if (browser) await browser.close();

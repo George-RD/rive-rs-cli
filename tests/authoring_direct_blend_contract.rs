@@ -296,8 +296,14 @@ fn direct_blend_schema_is_strict_and_matches_the_published_contract() {
     assert_eq!(direct["properties"]["motions"]["minItems"], 1);
     assert_eq!(direct["properties"]["motions"]["maxItems"], 1000);
     let motion = &schema["$defs"]["BehaviorDirectBlendMotionSpec"];
-    assert_eq!(motion["additionalProperties"], false);
-    assert_eq!(motion["required"], json!(["motion", "input"]));
+    let variants = motion["anyOf"]
+        .as_array()
+        .expect("exclusive weight sources");
+    assert_eq!(variants.len(), 2);
+    assert_eq!(variants[0]["additionalProperties"], false);
+    assert_eq!(variants[0]["required"], json!(["motion", "input"]));
+    assert_eq!(variants[1]["additionalProperties"], false);
+    assert_eq!(variants[1]["required"], json!(["motion", "binding"]));
     let mut input = document();
     input["behavior"]["statecharts"][0]["states"][0]["direct_blend"]["motions"][0]["input_id"] =
         json!(0);
