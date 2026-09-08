@@ -29,7 +29,7 @@ A v0 document has four explicit graphs plus a deterministic file-scope asset reg
 - `components`: reusable authored visual definitions with typed parameter defaults and an optional `stacking` order.
 - `visual`: the root visual graph, with an optional `stacking` order.
 - `motion`: typed poses and tracks, per-track `continuity` and per-keyframe `waypoint`, plus `raw_animations` for canonical expert escapes.
-- `behavior`: typed boolean view models and bindings, `bool`, `number`, and `trigger` state-machine inputs, named Rive events, typed listeners, named states that play one motion track or blend at least two, parallel regions, and binding, boolean, comparison, and trigger transitions plus `raw_state_machines` for canonical expert escapes.
+- `behavior`: typed boolean and numeric view models and bindings, `bool`, `number`, and `trigger` state-machine inputs, named Rive events, typed listeners, named states that play one motion track or blend at least two, parallel regions, and binding, boolean, comparison, and trigger transitions plus `raw_state_machines` for canonical expert escapes.
 
 The visual compiler slice is intentionally narrow. It supports ellipses, rectangles, triangles, polygons, stars, literal text, static images, groups, component instances, deterministic grid, radial, mirror, distribute, and along-path patterns, group-scoped transform-anchor constraints, semantic font and image assets, and raw `SceneSpec` objects. Shapes and text share one solid/linear/radial paint contract; stroke width is a positive pixel expression, and strokes may include a typed trim path. Polygon and star point counts must be at least three; star inner radius is a scalar ratio from zero to one. Motion and behavior remain deliberately incremental: v0 exposes only compiler-proven typed subsets and retains raw canonical escapes for unsupported features.
 
@@ -405,7 +405,7 @@ warning: $.motion.tracks[0].keyframes[1] [waypoint_stop_start]: waypoint 'mid' a
 
 ## Typed behavior interaction
 
-Typed behavior stays on the same compiler-owned `SceneSpec` draft as visual and motion lowering and keeps authored interaction free of runtime indices. A behavior model may currently declare boolean properties, and bindings select a model and property by authored ID. A statechart declares named states, an authored initial state, and named transitions whose `from` and `to` fields reference state IDs.
+Typed behavior stays on the same compiler-owned `SceneSpec` draft as visual and motion lowering and keeps authored interaction free of runtime indices. A behavior model may declare boolean or numeric properties, and bindings select a model and property by authored ID. A statechart declares named states, an authored initial state, and named transitions whose `from` and `to` fields reference state IDs.
 
 Statechart `inputs` are typed by `kind`. A `bool` input carries a boolean `value`, a `number` input carries a scalar expression, and a `trigger` input carries no value:
 
@@ -419,9 +419,10 @@ Statechart `inputs` are typed by `kind`. A `bool` input carries a boolean `value
 
 Statecharts also declare named Rive `events` and typed `listeners`. A listener targets either an authored visual ID for pointer interaction or an authored event ID when `listener_type` is `event`; the compiler resolves that semantic target to the generated runtime object name. The supported listener types are `enter`, `exit`, `down`, `up`, `move`, `event`, and `click`. The typed actions are `bool_change`, whose `value` defaults to `true`, `number_change`, which sets a number input from a scalar expression, and `trigger_change`, which fires a trigger. An action kind that does not match the declared kind of the input it names fails with `invalid_listener_input` at `$.behavior.statecharts[i].listeners[j].actions[k].input`.
 
-Transition conditions are an untagged union of four forms:
+Transition conditions are an untagged union of five forms:
 
-- `{"binding": ..., "equals": <bool>}` checks a view-model binding.
+- `{"binding": ..., "equals": <bool>}` checks a boolean view-model binding.
+- `{"binding": ..., "compare": ..., "value": <scalar expression>}` checks a numeric view-model binding with the same six comparisons as a number input.
 - `{"input": ..., "equals": <bool>}` checks a boolean input.
 - `{"input": ..., "compare": ..., "value": <scalar expression>}` checks a number input, where `compare` is `equal`, `not_equal`, `greater`, `greater_or_equal`, `less`, or `less_or_equal`.
 - `{"trigger": ...}` fires on a trigger input.
@@ -431,6 +432,54 @@ The condition form and the input kind must agree. `unknown_behavior_input` fires
 The compiler lowers model properties to Rive view models, explicit inputs to named state-machine inputs, events to named artboard event objects, listeners to canonical state-machine listeners, and conditions to runtime input names. Source-map entries preserve the authored model, property, binding, input, event, listener, statechart, states, and transitions. Unknown input, event, listener-target, and listener-action references fail at their authored JSON paths.
 
 The canonical builder validates the merged graph. Behavior validation drops asset `source` fields from its copy of the lowered scene the same way the visual path does, so a document may declare `font_assets` or `image_assets` and a statechart together. Runtime contracts prove both interaction paths: changing a bound view-model boolean through the official web runtime changes state, while the compiled typed interaction fixture is also driven through the public `rive-cli render` interface with both `--input` and `--pointer`, and both must converge on the same visible state.
+
+## Numeric view-model bindings
+
+A model property accepts `{"kind": "number", "id": "load", "value": <scalar expression>}`.
+Its initial value and a bound comparison threshold use document parameters and
+scalar units. Unknown parameters, incompatible units, non-finite numbers, and
+values that overflow or underflow the runtime's f32 representation fail at the
+authored expression path, including unused model properties.
+
+```json
+"when": {
+  "binding": "gate-load",
+  "compare": "greater_or_equal",
+  "value": { "kind": "parameter", "name": "threshold" }
+}
+```
+
+`examples/authoring/number-binding.v0.json` provides the complete model, binding,
+parameters, motion and reverse transition. The binding must name a numeric property
+for this condition, or a boolean property for `equals`; a mismatch reports
+`invalid_condition_binding` at `.when.binding`. An unknown binding reports
+`unknown_behavior_binding` there. Root transitions and parallel regions share this
+validation and lowering path.
+
+**A bound condition reads the model instance, not the synthesized machine input.**
+The property's authored value initializes that input, following the existing boolean
+convention. It does not serialize a default view-model instance or continuously
+synchronize the input. The host must create, initialize, and bind its model instance.
+Resolve model and property runtime names from the compile report's source map:
+
+```javascript
+const instance = runtime.viewModelByName(modelRuntimeName).instance();
+const load = instance.number(propertyRuntimeName);
+load.value = 25;
+runtime.bindViewModelInstance(instance);
+load.value = 60;
+```
+
+Changing only a synthesized input, including through `render --input`, does not
+change the model condition. Typed blend inputs and listener actions still target
+explicitly declared machine inputs. Converters, string/enum/trigger model properties,
+model-bound blends, and listener writes to model properties are outside this slice.
+
+The official-runtime test compiles this example through the public CLI, proves that
+input-only mutation does not transition, then mutates the model through 59, 60, 90
+and 59 against a threshold of 60. The typed-behavior CI artifact retains authored
+JSON, the compile report/source map, binary, PNGs, measured positions and hashes.
+Both schema versions remain unchanged; published schemas include the new forms.
 
 ## Transition duration
 
@@ -533,7 +582,7 @@ Every layer is emitted with an entry state at index 0, the authored states from 
 
 Region ids are unique within a statechart; a repeat fails with `duplicate_behavior_region` at `$.behavior.statecharts[i].regions[j].id`. A region id may not match any other id the statechart scopes either. States, transitions, inputs, events, listeners and regions all claim the source-map identity `{statechart}/{id}`, and consumers resolve an entry by first match, so a collision makes that lookup ambiguous; it fails with `behavior_region_id_collision` at the same path. Every state and transition diagnostic listed above applies inside a region under the same `.regions[j]` prefix. The region above is from `examples/authoring/interactive-console.v0.json`, whose other region, `stream`, carries a token across the artboard while layer 0 is still in `standby`. Regions do not require inputs: `examples/authoring/signal-weave.v0.json` declares three layers with no inputs and no transitions between authored states, so each layer plays its own track.
 
-Additive blend states, direct blend states, advanced exit timing, and view-model number and trigger properties remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Additive blend states, direct blend states, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

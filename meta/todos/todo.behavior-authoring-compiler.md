@@ -66,12 +66,12 @@ TDD red evidence: test-only head `1d22222518c88c868d5fcbb105d221dea7d53d85`, wor
 Against the acceptance criteria:
 
 - Authored transitions never reference array indices: met. Conditions name a binding, an input, or a trigger by authored id, and region layer indices are assigned by the compiler.
-- Bindings express source, target, and conversion intent with typed validation: partly met. Model, property, input, and trigger references are typed and validated at authored paths, but `BehaviorPropertySpec` still has one variant, `bool`, so no numeric or enumerated conversion can be authored.
+- Bindings express source, target, and conversion intent with typed validation: partly met. Model, property, input, and trigger references are typed and validated at authored paths, `BehaviorPropertySpec` supports `bool` and `number`, but conversions and enumerated properties remain outside the typed frontend.
 - The compiler selects bindings, poses, or blend animations without changing authored intent: met. A state names motion tracks and a number input; the compiler emits the `blend_state_1d` and its `blend_animation_1d` children.
 - Interaction tests drive pointer and input events and retain runtime evidence: met. `tests/authoring_console_runtime.rs` drives a pointer press and release plus the `load` input through the official runtime, and `tests/playwright/showcase-validation.js` drives the same artifact in the browser.
 - A complex interactive showcase is reproduced through the frontend: met. Issue #181 closed the exact-equivalence gate in PR #206, and the console reproduces stacking, waypoint continuity, a blend state, and parallel regions in one document without raw escapes.
 
-This todo remains open. Additive blend states, direct blend states, advanced exit timing, and view-model properties other than `bool` are not exposed by the AuthoringSpec frontend.
+This todo remains open. Additive blend states, direct blend states, advanced exit timing, and view-model properties beyond `bool` and `number` are not exposed by the AuthoringSpec frontend.
 
 ## Exit-time gate slice (#227)
 
@@ -99,4 +99,26 @@ gates were accepted. The subsequent implementation rejects those sources before
 encoding. Final exact-head CI and separate Standards/Spec self-review are recorded
 on the pull request for #227. Local Cargo execution was unavailable; Rust execution
 and schema generation used GitHub Actions. This parent todo remains open for
-additive/direct blends, advanced exit timing, and non-boolean view-model properties.
+additive/direct blends, advanced exit timing, and model properties beyond boolean and number, and conversions.
+
+## Numeric view-model binding slice (#237)
+
+PR #238 adds numeric model properties and `{binding, compare, value}` conditions.
+Document-scoped scalar expressions, typed reference validation, chart-scoped binding
+inputs, parallel-region lowering, deterministic source maps and atomic rejection
+reuse the existing compiler/builder seams. The runtime proof required correcting
+the numeric model property's inherited name field. The authored initial value
+belongs to the synthesized input; host model instances require initialization and
+binding. These comparisons are not input synchronization or model-bound blends.
+The parent behavior todo remains open for its remaining capabilities.
+
+The 15 public contracts cover operators, parameters, authored diagnostics, unused
+properties, multi-model/multibyte indices, chart/region identity, determinism,
+compatibility and canonical finite-value rejection. The runtime proof compiles
+`number-binding.v0.json`, holds after input-only mutation, then crosses and reverses
+at model values 59/60/90/59. Source, binary, PNGs, positions and hashes are retained.
+
+[Numeric model binding evidence](../research/number-model-bindings.md) records
+observed red/green runs and pinned format provenance. Final exact-head CI/MSRV and
+separate Standards/Spec self-review are recorded in PR #238 before merge. Local
+Cargo is unavailable; Rust and official-runtime execution use GitHub Actions.

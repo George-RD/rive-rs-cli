@@ -152,8 +152,10 @@ jobs:
       - run: cargo build
       - run: npm install --no-save playwright@1.62.0
       - run: npx playwright install --with-deps chromium
-      - name: Run typed behavior runtime contract
-        run: node tests/playwright/authoring-behavior-runtime.js
+      - name: Run typed behavior runtime contracts
+        run: |
+          node tests/playwright/authoring-behavior-runtime.js
+          node tests/playwright/authoring-number-binding-runtime.js
       - uses: actions/upload-artifact@v4
         if: always()
         with:

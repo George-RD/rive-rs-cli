@@ -9,6 +9,7 @@ canonical `SceneSpec` object graph.
 | `text-label.v0.json` | Typed literal text and semantic text styling |
 | `typed-motion.v0.json` | Typed visual composition, relative image asset, poses, and timeline motion |
 | `behavior-binding.v0.json` | Boolean view-model binding driving a named typed statechart |
+| `number-binding.v0.json` | Parameterized numeric view-model threshold with forward and reverse named transitions |
 | `pointer-statechart.v0.json` | Boolean state-machine input, named event, pointer listener, and input-driven transition |
 | `raw-pulse.v0.json` | The explicit raw SceneSpec escape hatch for unsupported concepts |
 | `complex-static-showcase.v0.json` | A complex static composition built without raw scene, motion, or behavior escapes |
@@ -39,8 +40,10 @@ event. Its contract compares the complete lowering with an explicitly authored
 canonical state machine and then sends that SceneSpec through the shared builder.
 Blend states and parallel layers are now typed, in `blend-meter.v0.json` and
 `interactive-console.v0.json`. Additive blend states, direct blend states,
-exit time, and view-model number or trigger properties
-are not exposed by the AuthoringSpec frontend.
+advanced exit timing, and view-model properties beyond boolean and number
+are not exposed by the AuthoringSpec frontend. The numeric binding example requires
+host initialization of the model instance, not just a machine-input assignment.
+See [numeric model bindings](../../docs/authoring-spec-v0.md#numeric-view-model-bindings).
 
 Transitions also accept optional `duration_ms` scalar expressions. The retained
 `tests/playwright/authoring-behavior-runtime.js` contract derives a 1000ms variant
