@@ -70,6 +70,7 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
                 "./tests/authoring_behavior_blend_runtime.rs",
                 "./tests/authoring_behavior_contract.rs",
                 "./tests/authoring_behavior_exit_gate.rs",
+                "./tests/authoring_behavior_limits_contract.rs",
                 "./tests/authoring_cli.rs",
                 "./tests/authoring_cli_builder_failures.rs",
                 "./tests/authoring_compiler_characterization.rs",
