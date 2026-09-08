@@ -56,21 +56,24 @@ jobs:
         run: |
           set -o pipefail
           cargo test --locked --test authoring_model_blend_contract 2>&1 | tee model-blend-tests.log
+      - name: All Rust tests
+        run: |
+          set -o pipefail
+          cargo test --locked --all-features 2>&1 | tee model-blend-all-tests.log
       - name: Clippy
         run: |
           set -o pipefail
           cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee model-blend-clippy.log
       - uses: actions/setup-node@v4
-        if: hashFiles('tests/playwright/authoring-model-blend-runtime.js') != ''
         with:
           node-version: '20'
-      - name: Model blend runtime
-        if: hashFiles('tests/playwright/authoring-model-blend-runtime.js') != ''
+      - name: Input and model blend runtime
         run: |
           set -o pipefail
           npm install --no-save --no-package-lock playwright@1.62.0
           npx playwright install --with-deps chromium
-          node tests/playwright/authoring-model-blend-runtime.js 2>&1 | tee model-blend-runtime.log
+          node tests/playwright/authoring-direct-blend-runtime.js 2>&1 | tee model-blend-input-runtime.log
+          node tests/playwright/authoring-direct-blend-runtime.js --model-bound 2>&1 | tee model-blend-runtime.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -78,8 +81,7 @@ jobs:
           path: |
             source-head.txt
             source.tar
-            model-blend-tests.log
-            model-blend-clippy.log
-            model-blend-runtime.log
+            model-blend-*.log
+            target/playwright-behavior/direct-blend
             target/playwright-behavior/model-blend
           retention-days: 7
