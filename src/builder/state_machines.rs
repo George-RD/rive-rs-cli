@@ -124,6 +124,11 @@ pub(crate) fn build_state_machines(
                         value,
                         view_model_binding,
                     } => {
+                        if view_model_binding.is_some() && !value.is_finite() {
+                            return Err(format!(
+                                "bound number input '{name}' requires a finite initial value"
+                            ));
+                        }
                         objects.push(Box::new(StateMachineNumber {
                             name: name.clone(),
                             value: *value,
@@ -465,6 +470,7 @@ pub(crate) fn build_state_machines(
                                             .value
                                             .as_ref()
                                             .and_then(json_value_to_f32)
+                                            .filter(|value| value.is_finite())
                                             .is_none()
                                     {
                                         return Err(format!(

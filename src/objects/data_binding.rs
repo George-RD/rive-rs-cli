@@ -389,16 +389,10 @@ impl RiveObject for ViewModelPropertyNumber {
         type_keys::VIEW_MODEL_PROPERTY_NUMBER
     }
     fn properties(&self) -> Vec<Property> {
-        vec![
-            Property {
-                key: property_keys::COMPONENT_NAME,
-                value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
-            },
-        ]
+        vec![Property {
+            key: property_keys::VIEW_MODEL_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
     }
 }
 
