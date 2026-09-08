@@ -274,7 +274,10 @@ fn an_oversized_statechart_replacement_rolls_back_the_operation_batch() {
 fn behavior_collection_bounds_match_the_published_schema() {
     let schema = authoring_schema();
     for (owner, fields) in [
-        ("BehaviorSection", &["models", "bindings", "statecharts"][..]),
+        (
+            "BehaviorSection",
+            &["models", "bindings", "statecharts"][..],
+        ),
         ("BehaviorModelSpec", &["properties"][..]),
         ("BehaviorListenerSpec", &["actions"][..]),
         ("BehaviorRegionSpec", &["states", "transitions"][..]),
