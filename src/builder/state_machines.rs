@@ -72,12 +72,12 @@ fn view_model_property_name(object: &ObjectSpec) -> Option<&str> {
     }
 }
 
-fn resolve_view_model_binding_ids(
-    artboard_children: &[ObjectSpec],
+fn resolve_view_model_binding_ids<'a>(
+    artboard_children: &'a [ObjectSpec],
     view_model_id_base: u64,
     view_model_name: &str,
     property_name: &str,
-) -> Option<(u64, u64)> {
+) -> Option<(u64, u64, &'a ObjectSpec)> {
     let mut view_model_id = view_model_id_base;
     for child in artboard_children {
         let ObjectSpec::ViewModel { name, children } = child else {
@@ -88,7 +88,7 @@ fn resolve_view_model_binding_ids(
             for property in children.as_deref().unwrap_or_default() {
                 if let Some(name) = view_model_property_name(property) {
                     if name == property_name {
-                        return Some((view_model_id, property_id));
+                        return Some((view_model_id, property_id, property));
                     }
                     property_id += 1;
                 }
@@ -129,7 +129,7 @@ pub(crate) fn build_state_machines(
                             value: *value,
                         }));
                         if let Some(binding) = view_model_binding {
-                            let path = resolve_view_model_binding_ids(
+                            let (view_model_id, property_id, property) = resolve_view_model_binding_ids(
                                 artboard_children,
                                 view_model_id_base,
                                 &binding.view_model,
@@ -138,7 +138,14 @@ pub(crate) fn build_state_machines(
                                 "unknown view-model binding referenced by number input '{}': '{}.{}'",
                                 name, binding.view_model, binding.property
                             ))?;
-                            bound_number_input_paths.insert(name.clone(), path);
+                            if !matches!(property, ObjectSpec::ViewModelPropertyNumber { .. }) {
+                                return Err(format!(
+                                    "number input '{}' requires a number view-model property: '{}.{}'",
+                                    name, binding.view_model, binding.property
+                                ));
+                            }
+                            bound_number_input_paths
+                                .insert(name.clone(), (view_model_id, property_id));
                         }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
@@ -152,7 +159,7 @@ pub(crate) fn build_state_machines(
                             value: if *value { 1 } else { 0 },
                         }));
                         if let Some(binding) = view_model_binding {
-                            let (view_model_id, property_id) =
+                            let (view_model_id, property_id, _) =
                                 resolve_view_model_binding_ids(
                                     artboard_children,
                                     view_model_id_base,
@@ -453,6 +460,18 @@ pub(crate) fn build_state_machines(
                                         .as_deref()
                                         .map(parse_condition_op)
                                         .unwrap_or(0);
+                                    if bound_number_input_paths.contains_key(&condition.input)
+                                        && condition
+                                            .value
+                                            .as_ref()
+                                            .and_then(json_value_to_f32)
+                                            .is_none()
+                                    {
+                                        return Err(format!(
+                                            "bound number input '{}' requires a finite numeric condition value",
+                                            condition.input
+                                        ));
+                                    }
                                     match condition.value.as_ref() {
                                         Some(serde_json::Value::Number(_)) => {
                                             let value = condition

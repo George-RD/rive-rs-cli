@@ -7,10 +7,10 @@ use crate::builder::{SceneSpec, build_scene};
 use super::super::super::expression::evaluate_expression;
 use super::super::super::lower::{runtime_name, without_asset_sources};
 use super::super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorBindingSpec, BehaviorInputKind,
-    BehaviorInputSpec, BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec,
-    BehaviorPropertySpec, BehaviorStateSpec, BehaviorTransitionConditionSpec,
-    BehaviorTransitionSpec, Quantity, SourceMapEntry, Unit,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorInputKind, BehaviorInputSpec,
+    BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec, BehaviorPropertySpec,
+    BehaviorStateSpec, BehaviorTransitionConditionSpec, BehaviorTransitionSpec, Quantity,
+    SourceMapEntry, Unit,
 };
 use super::MotionTargetIndex;
 
@@ -162,7 +162,7 @@ pub(super) fn lower_behavior(
                     .iter()
                     .flat_map(|region| &region.transitions),
             )
-            .filter_map(|transition| transition.when.binding())
+            .filter_map(|transition| transition.when.binding().map(|(id, _)| id))
             .collect::<HashSet<_>>();
         let mut input_name_by_binding = HashMap::new();
         let mut inputs = Vec::new();
@@ -668,7 +668,14 @@ fn validate_behavior(spec: &AuthoringSpec) -> Vec<AuthoringDiagnostic> {
     for (binding_index, binding) in spec.behavior.bindings.iter().enumerate() {
         let binding_path = format!("$.behavior.bindings[{binding_index}]");
         validate_id(&binding.id, &format!("{binding_path}.id"), &mut diagnostics);
-        if bindings.insert(binding.id.as_str(), binding).is_some() {
+        let property_kind = models
+            .get(binding.model.as_str())
+            .and_then(|model| find_property(model, &binding.property))
+            .map(BehaviorPropertySpec::kind);
+        if bindings
+            .insert(binding.id.as_str(), property_kind)
+            .is_some()
+        {
             diagnostics.push(AuthoringDiagnostic::new(
                 format!("{binding_path}.id"),
                 "duplicate_behavior_binding",
@@ -914,7 +921,7 @@ fn validate_region(
     parameters: &BTreeMap<String, Quantity>,
     motion_tracks: &HashSet<&str>,
     inputs: &HashMap<&str, &BehaviorInputSpec>,
-    bindings: &HashMap<&str, &BehaviorBindingSpec>,
+    bindings: &HashMap<&str, Option<BehaviorInputKind>>,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
     let RegionValidation {
@@ -1104,16 +1111,28 @@ fn validate_condition(
     transition_path: &str,
     statechart_id: &str,
     inputs: &HashMap<&str, &BehaviorInputSpec>,
-    bindings: &HashMap<&str, &BehaviorBindingSpec>,
+    bindings: &HashMap<&str, Option<BehaviorInputKind>>,
     diagnostics: &mut Vec<AuthoringDiagnostic>,
 ) {
-    if let Some(binding) = condition.binding() {
-        if !bindings.contains_key(binding) {
-            diagnostics.push(AuthoringDiagnostic::new(
+    if let Some((binding, expected)) = condition.binding() {
+        match bindings.get(binding) {
+            None => diagnostics.push(AuthoringDiagnostic::new(
                 format!("{transition_path}.when.binding"),
                 "unknown_behavior_binding",
                 format!("behavior binding '{binding}' is not defined"),
-            ));
+            )),
+            Some(Some(actual)) if *actual != expected => {
+                diagnostics.push(AuthoringDiagnostic::new(
+                    format!("{transition_path}.when.binding"),
+                    "invalid_condition_binding",
+                    format!(
+                        "condition expects a {} binding but '{binding}' references a {} property",
+                        expected.as_str(),
+                        actual.as_str()
+                    ),
+                ));
+            }
+            Some(_) => {}
         }
         return;
     }

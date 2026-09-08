@@ -628,10 +628,10 @@ pub enum BehaviorTransitionConditionSpec {
 }
 
 impl BehaviorTransitionConditionSpec {
-    pub(crate) fn binding(&self) -> Option<&str> {
+    pub(crate) fn binding(&self) -> Option<(&str, BehaviorInputKind)> {
         match self {
-            Self::Binding(condition) => Some(&condition.binding),
-            Self::NumberBinding(condition) => Some(&condition.binding),
+            Self::Binding(condition) => Some((&condition.binding, BehaviorInputKind::Bool)),
+            Self::NumberBinding(condition) => Some((&condition.binding, BehaviorInputKind::Number)),
             _ => None,
         }
     }

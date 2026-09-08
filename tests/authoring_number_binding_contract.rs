@@ -40,7 +40,11 @@ fn numeric_view_model_binding_compiles_to_a_model_condition_not_an_input_conditi
     let scene: SceneSpec = serde_json::from_value(lowered.scene).expect("canonical scene");
     let bytes = compile_scene(&scene, None, 0).expect("bound scene must compile");
     let parsed = parse_riv(&bytes, &InspectFilter::default()).expect("encoded scene");
-    let types: Vec<_> = parsed.objects.iter().map(|object| object.type_key).collect();
+    let types: Vec<_> = parsed
+        .objects
+        .iter()
+        .map(|object| object.type_key)
+        .collect();
     assert!(types.contains(&type_keys::TRANSITION_VIEW_MODEL_CONDITION));
     assert!(types.contains(&type_keys::BINDABLE_PROPERTY_NUMBER));
     assert!(types.contains(&type_keys::TRANSITION_VALUE_NUMBER_COMPARATOR));
@@ -49,10 +53,13 @@ fn numeric_view_model_binding_compiles_to_a_model_condition_not_an_input_conditi
 
 fn assert_binding_type_error(input: &Value) {
     let error = lower_authoring_json(&input.to_string()).expect_err("mismatched binding type");
-    assert!(error.diagnostics.iter().any(|diagnostic| {
-        diagnostic.code == "invalid_condition_binding"
-            && diagnostic.path == "$.behavior.statecharts[0].transitions[0].when.binding"
-    }), "{error:?}");
+    assert!(
+        error.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "invalid_condition_binding"
+                && diagnostic.path == "$.behavior.statecharts[0].transitions[0].when.binding"
+        }),
+        "{error:?}"
+    );
 }
 
 #[test]
@@ -75,7 +82,9 @@ fn boolean_binding_rejects_a_numeric_property_at_the_authored_condition() {
 
 #[test]
 fn canonical_number_binding_rejects_a_non_number_model_property() {
-    let mut scene = lower_authoring_json(&document().to_string()).expect("authoring").scene;
+    let mut scene = lower_authoring_json(&document().to_string())
+        .expect("authoring")
+        .scene;
     scene["artboard"]["children"][1]["children"][0]["type"] = json!("view_model_property_boolean");
     let scene: SceneSpec = serde_json::from_value(scene).expect("canonical scene");
     let error = compile_scene(&scene, None, 0).expect_err("binding must name a number property");
@@ -84,12 +93,16 @@ fn canonical_number_binding_rejects_a_non_number_model_property() {
 
 #[test]
 fn canonical_number_binding_rejects_non_numeric_conditions() {
-    let scene = lower_authoring_json(&document().to_string()).expect("authoring").scene;
+    let scene = lower_authoring_json(&document().to_string())
+        .expect("authoring")
+        .scene;
     for value in [json!(true), Value::Null] {
         let mut invalid = scene.clone();
-        invalid["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["conditions"][0]["value"] = value;
+        invalid["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["conditions"][0]
+            ["value"] = value;
         let invalid: SceneSpec = serde_json::from_value(invalid).expect("canonical scene");
-        let error = compile_scene(&invalid, None, 0).expect_err("bound number condition must be numeric");
+        let error =
+            compile_scene(&invalid, None, 0).expect_err("bound number condition must be numeric");
         assert!(error.to_string().contains("number"), "{error}");
     }
 }
