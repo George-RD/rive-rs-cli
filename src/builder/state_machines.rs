@@ -32,6 +32,9 @@ use super::spec::{
     TransitionChildSpec,
 };
 
+const DIRECT_BLEND_SOURCE_INPUT: u64 = 0;
+const DIRECT_BLEND_SOURCE_DATA_BIND: u64 = 2;
+
 fn encode_id_path(ids: &[u64]) -> Vec<u8> {
     let mut output = Vec::new();
     for &id in ids {
@@ -397,7 +400,12 @@ pub(crate) fn build_state_machines(
                         objects.push(Box::new(BlendStateDirect));
                         if let Some(children) = children {
                             for child in children {
-                                append_blend_state_direct_child(child, objects);
+                                append_blend_state_direct_child(
+                                    child,
+                                    state_machine.inputs.as_deref().unwrap_or_default(),
+                                    &bound_number_input_paths,
+                                    objects,
+                                );
                             }
                         }
                     }
@@ -614,6 +622,8 @@ fn append_blend_state_child(spec: &BlendStateChildSpec, objects: &mut Vec<Box<dy
 
 fn append_blend_state_direct_child(
     spec: &BlendStateDirectChildSpec,
+    inputs: &[InputSpec],
+    bound_number_input_paths: &HashMap<String, (u64, u64)>,
     objects: &mut Vec<Box<dyn RiveObject>>,
 ) {
     let BlendStateDirectChildSpec::BlendAnimationDirect {
@@ -622,11 +632,36 @@ fn append_blend_state_direct_child(
         mix_value,
         blend_source,
     } = spec;
+    let binding = input_id
+        .and_then(|index| usize::try_from(index).ok())
+        .and_then(|index| inputs.get(index))
+        .and_then(|input| match input {
+            InputSpec::Number { name, value, .. } => {
+                bound_number_input_paths.get(name).map(|ids| (*ids, *value))
+            }
+            _ => None,
+        });
+    let mut input_id = input_id.unwrap_or(u32::MAX as u64);
+    let mut blend_source = blend_source.unwrap_or(DIRECT_BLEND_SOURCE_INPUT);
+    if blend_source == DIRECT_BLEND_SOURCE_INPUT
+        && let Some(((view_model_id, property_id), value)) = binding
+    {
+        objects.push(Box::new(BindablePropertyNumber {
+            property_value: value,
+        }));
+        objects.push(Box::new(DataBindContext::new(
+            property_keys::BINDABLE_PROPERTY_NUMBER_VALUE as u64,
+            0,
+            encode_id_path(&[view_model_id, property_id]),
+        )));
+        input_id = u32::MAX as u64;
+        blend_source = DIRECT_BLEND_SOURCE_DATA_BIND;
+    }
     objects.push(Box::new(BlendAnimationDirect {
         animation_id: *animation_id,
-        input_id: input_id.unwrap_or(u32::MAX as u64),
+        input_id,
         mix_value: mix_value.unwrap_or(100.0),
-        blend_source: blend_source.unwrap_or(0),
+        blend_source,
     }));
 }
 

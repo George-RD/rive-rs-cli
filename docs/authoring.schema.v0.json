@@ -105,20 +105,40 @@
       "type": "string"
     },
     "BehaviorDirectBlendMotionSpec": {
-      "additionalProperties": false,
-      "properties": {
-        "input": {
-          "type": "string"
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "type": "string"
+            },
+            "motion": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "motion",
+            "input"
+          ],
+          "type": "object"
         },
-        "motion": {
-          "type": "string"
+        {
+          "additionalProperties": false,
+          "properties": {
+            "binding": {
+              "type": "string"
+            },
+            "motion": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "motion",
+            "binding"
+          ],
+          "type": "object"
         }
-      },
-      "required": [
-        "motion",
-        "input"
-      ],
-      "type": "object"
+      ]
     },
     "BehaviorDirectBlendSpec": {
       "additionalProperties": false,
