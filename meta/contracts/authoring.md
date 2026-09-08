@@ -235,9 +235,9 @@ ids inside a region are
 
 Typed behavior validates its lowered scene with file-asset `source` fields removed, the
 same way the visual path does, so a document may declare `font_assets` or `image_assets`
-alongside a statechart. Additive blend states, direct blend states, advanced exit timing, and
+alongside a statechart. Additive blend states, model-bound direct blends, advanced exit timing, and
 view-model properties beyond `bool` and `number` are not exposed by this frontend.
-`stacking`, `continuity`, `waypoint`, `blend`, `regions`, `duration_ms`, and `exit_time_ms` are optional and
+`stacking`, `continuity`, `waypoint`, `blend`, `direct_blend`, `regions`, `duration_ms`, and `exit_time_ms` are optional and
 their defaults reproduce the previous lowered output, so `authoring_format_version`
 remains 0.
 
@@ -245,3 +245,21 @@ The first version stays JSON. Its constraints align or derive direct-child `x` a
 `y` transform anchors; they are not a rendered-bounds or general CAD solver. A
 custom textual DSL or broader constraint system requires separate evidence and an
 accepted decision.
+
+## Input-driven direct blends (#239)
+
+A state chooses exactly one of `motion`, `blend`, and `direct_blend`. Direct blends
+contain 1..=1000 ordered `{motion, input}` children naming typed motion tracks and
+chart-local number inputs. Canonical animation indices come from the existing
+lowered scene; input indices include any preceding binding-generated inputs.
+Root charts and regions share this lowering. The canonical builder and encoder
+remain the only binary path. Source-map state identities and omitted-field output
+remain stable. Invalid references, kinds, counts and competing sources are rejected
+at authored paths. Removing a referenced motion is atomic.
+
+Runtime weights are clamped percentages and applied sequentially, not normalized
+relative shares. The panel example deliberately puts a full-weight rest motion
+first, followed by separate motion contributions. The browser contract checks
+partial/full/zero weights, independence, reversal, clamping and state transitions.
+Duration is supported; exit-time gates on direct sources are rejected. Model-bound
+weights, static weight expressions and additive states are not exposed.

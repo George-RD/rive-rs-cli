@@ -122,3 +122,21 @@ at model values 59/60/90/59. Source, binary, PNGs, positions and hashes are reta
 observed red/green runs and pinned format provenance. Final exact-head CI/MSRV and
 separate Standards/Spec self-review are recorded in PR #238 before merge. Local
 Cargo is unavailable; Rust and official-runtime execution use GitHub Actions.
+
+## Input-driven direct blend slice (#239)
+
+Named `direct_blend` states now lower ordered `{motion, input}` children through
+the existing canonical direct-blend objects. Inputs are chart-local numbers, not
+bindings. Animation indices come from the compiler's actual lowered scene; input
+indices include binding-generated inputs. Regions, state source maps and transition
+durations share the same compiler path. Direct-source exit gates are rejected.
+
+The new public contract covers deterministic compilation, schema/cardinality,
+raw-motion composition, binding input offsets, region reuse, invalid references and
+types, competing motion sources, old-output compatibility and atomic motion removal.
+The public CLI/runtime contract retains independent-weight and state-transition
+evidence for `direct-blend-panel.v0.json`.
+
+[Direct blend evidence](../research/direct-blend-authoring.md) records observed
+red/green revisions and runtime proof. The parent remains open for additive states,
+model-bound direct blends, advanced timing, other property kinds and conversions.
