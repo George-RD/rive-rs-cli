@@ -1,3 +1,4 @@
+mod behavior_limits;
 mod constraint;
 mod deterministic_math;
 mod expression;
@@ -44,6 +45,7 @@ pub fn lower_authoring_json(input: &str) -> Result<LoweredAuthoring, AuthoringEr
 
 pub fn lower_authoring(spec: &AuthoringSpec) -> Result<LoweredAuthoring, AuthoringError> {
     limits::validate_expansion_limits(spec)?;
+    behavior_limits::validate_behavior_limits(spec)?;
     frontend::lower_authoring(spec)
 }
 
