@@ -24,33 +24,46 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Apply bounded source patch when present
         run: |
           if test -f scripts/direct-blend-workbench.py; then
             python3 scripts/direct-blend-workbench.py
           fi
           cargo fmt
-      - name: Retain formatted source on feature branch
+      - name: Regenerate authoring schema
+        run: cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored
+      - name: Retain generated source on feature branch
         run: |
           git add src tests docs examples meta cairn.blueprint ROADMAP.md
           if ! git diff --cached --quiet; then
             test "$(git ls-remote origin refs/heads/agent/authoring-direct-blends | cut -f1)" = "$GITHUB_SHA"
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore: format direct blend workbench sources"
+            git commit -m "feat(authoring): lower named direct blends through canonical scene (#239)"
             git push origin HEAD:refs/heads/agent/authoring-direct-blends
           fi
       - name: Record source revision
-        run: git rev-parse HEAD | tee source-head.txt
+        if: always()
+        run: |
+          git rev-parse HEAD | tee source-head.txt
+          git archive HEAD -o source.tar
       - name: Direct blend contract
         run: |
           set -o pipefail
           cargo test --locked --test authoring_direct_blend_contract 2>&1 | tee direct-blend-tests.log
+      - name: Clippy
+        run: |
+          set -o pipefail
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee direct-blend-clippy.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: direct-blend-workbench
           path: |
             source-head.txt
+            source.tar
             direct-blend-tests.log
+            direct-blend-clippy.log
           retention-days: 7
