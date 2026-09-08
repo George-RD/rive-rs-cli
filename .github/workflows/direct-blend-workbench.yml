@@ -36,7 +36,8 @@ jobs:
         run: cargo test --test authoring_contract regenerate_published_authoring_schema -- --ignored
       - name: Retain generated source on feature branch
         run: |
-          git add src tests docs examples meta cairn.blueprint ROADMAP.md .github/workflows/ci.yml
+          git restore .github/workflows/ci.yml
+          git add src tests docs examples meta cairn.blueprint ROADMAP.md
           if ! git diff --cached --quiet; then
             test "$(git ls-remote origin refs/heads/agent/authoring-direct-blends | cut -f1)" = "$GITHUB_SHA"
             git config user.name "github-actions[bot]"
