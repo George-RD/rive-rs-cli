@@ -39,24 +39,45 @@ fn model_weights_compile_to_native_bound_direct_blends_without_transition_use() 
     assert_eq!(children[0]["input_id"], 1);
     assert_eq!(children[1]["input_id"], 0);
     assert_eq!(children[2]["input_id"], 3);
-    let binding = first.source_map.entries.iter()
+    let binding = first
+        .source_map
+        .entries
+        .iter()
         .find(|entry| entry.authored_id == "left-model")
         .expect("binding source map");
     assert_eq!(binding.scene_paths, ["/artboard/state_machines/0/inputs/0"]);
     let scene: SceneSpec = serde_json::from_value(first.scene).expect("canonical scene");
     let bytes = compile_scene(&scene, None, 0).expect("binary compilation");
     let parsed = parse_riv(&bytes, &InspectFilter::default()).expect("encoded scene");
-    let direct: Vec<_> = parsed.objects.iter()
+    let direct: Vec<_> = parsed
+        .objects
+        .iter()
         .filter(|object| object.type_key == type_keys::BLEND_ANIMATION_DIRECT)
         .collect();
     assert_eq!(direct.len(), 3);
-    assert!(direct[1].properties.iter().any(|field|
-        field.key == property_keys::BLEND_ANIMATION_DIRECT_BLEND_SOURCE
-            && field.value == PropertyValueRead::UInt(2)));
-    assert!(!direct[1].properties.iter().any(|field|
-        field.key == property_keys::BLEND_ANIMATION_DIRECT_INPUT_ID));
-    assert_eq!(parsed.objects.iter().filter(|object|
-        object.type_key == type_keys::BINDABLE_PROPERTY_NUMBER).count(), 1);
-    assert_eq!(parsed.objects.iter().filter(|object|
-        object.type_key == type_keys::DATA_BIND_CONTEXT).count(), 1);
+    assert!(direct[1].properties.iter().any(|field| field.key
+        == property_keys::BLEND_ANIMATION_DIRECT_BLEND_SOURCE
+        && field.value == PropertyValueRead::UInt(2)));
+    assert!(
+        !direct[1]
+            .properties
+            .iter()
+            .any(|field| field.key == property_keys::BLEND_ANIMATION_DIRECT_INPUT_ID)
+    );
+    assert_eq!(
+        parsed
+            .objects
+            .iter()
+            .filter(|object| object.type_key == type_keys::BINDABLE_PROPERTY_NUMBER)
+            .count(),
+        1
+    );
+    assert_eq!(
+        parsed
+            .objects
+            .iter()
+            .filter(|object| object.type_key == type_keys::DATA_BIND_CONTEXT)
+            .count(),
+        1
+    );
 }
