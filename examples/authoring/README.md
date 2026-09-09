@@ -245,3 +245,20 @@ report, eleven PNGs, positions and hashes are retained separately under
 `target/playwright-behavior/model-blend`. `reset` and `resume` retain the existing
 100ms state transitions. No host-side motion calculations or input mirroring are
 used to produce the rendered result.
+
+## Automatic sequence
+
+`automatic-sequence.v0.json` moves two panels without inputs, events, models or
+host mutation. The upper panel starts after its motion reaches 500ms; the lower
+parallel region starts at 1000ms. Each transition blends for another 500ms, then
+holds the destination. Both use explicit `when: "always"` with named states.
+
+```sh
+cargo run -- authoring compile examples/authoring/automatic-sequence.v0.json -o /tmp/automatic-sequence.riv --json
+node tests/playwright/authoring-automatic-transition-runtime.js
+```
+
+The runtime test retains six comparison variants and their rendered frames under
+`target/playwright-behavior/automatic-transitions`. Removing `exit_time_ms` makes
+an automatic transition immediately eligible; it does not wait for the motion's
+end. Do not create cycles of ungated automatic transitions.

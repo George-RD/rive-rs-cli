@@ -1,4 +1,7 @@
-use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorTransitionSpec};
+use super::spec::{
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorTransitionGuardSpec,
+    BehaviorTransitionSpec,
+};
 
 const MAX_BEHAVIOR_COLLECTION_ITEMS: usize = 1000;
 
@@ -55,11 +58,13 @@ fn validate_transition_guards(
     path: &str,
 ) -> Result<(), AuthoringError> {
     for (index, transition) in transitions.iter().enumerate() {
-        validate_count(
-            transition.when.conditions().len(),
-            1,
-            &format!("{path}.transitions[{index}].when.all"),
-        )?;
+        if let BehaviorTransitionGuardSpec::All { all } = &transition.when {
+            validate_count(
+                all.len(),
+                1,
+                &format!("{path}.transitions[{index}].when.all"),
+            )?;
+        }
     }
     Ok(())
 }

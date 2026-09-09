@@ -88,6 +88,15 @@ and parallel regions share bounds, authored diagnostics, timing, binding reuse a
 atomic operations. Public contracts and retained runtime truth cases cover the
 slice. This is part of the open behavior todo, not a new architecture track.
 
+[#249](https://github.com/George-RD/rive-rs-cli/issues/249) adds explicit
+`when: "always"` transitions through the existing root/region guard lowerer.
+Automatic transitions need no dummy inputs or model bindings, preserve named
+source identity, and compose with the existing animation exit gate and independent
+blend duration. The input-free two-region sequence and retained public-CLI runtime
+comparisons cover timed, instantaneous, ungated and explicit-zero-gate behavior.
+Missing/null guards remain invalid, and `all` still requires at least one leaf.
+This is a bounded continuation of the open behavior todo, not a new scheduler.
+
 Select further work from an explicit unblocked issue or create a bounded roadmap gap
 only when current evidence justifies it; do not promote the independent lower-level
 coverage issues by default.

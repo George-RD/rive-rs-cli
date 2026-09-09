@@ -255,3 +255,25 @@ transition collection fails at its collection path before guard inspection. The
 public JSON/typed regression first failed on the region path, then passed after
 reordering validation. Runtime guard evidence contains 30 interactive samples
 and 30 deterministic timing frames; final exact-head evidence is on PR #248.
+
+## Explicit automatic transitions (#249)
+
+The required transition guard now accepts the exact literal `"always"` beside the
+existing leaf and `all` forms. Root charts and parallel regions lower it to an
+empty canonical condition array through the same compiler. No inputs, bindings,
+new runtime objects or alternate lowering pass are introduced. Existing duration
+and animation exit-time validation are unchanged; missing/null guards and empty
+`all` groups remain invalid.
+
+Public contracts cover native zero-condition encoding, typed/schema strictness,
+source-map identity, root/region bounds and timing, shared bound guards, blend
+exit-source rejection and atomic edits. `automatic-sequence.v0.json` proves two
+input-free regions through the public CLI/bundled-runtime path, comparing resting,
+engaged, timed, instantaneous, ungated and zero-gate output.
+
+TDD: run `34378356290`, source `e2ee148c4310d3fd825f812387754c9b9853bf8e`,
+compiled the tracer and failed with `invalid_json` for the unsupported guard. Run
+`34378564691` passed that same tracer and the 29 existing guard/duration/exit-time
+contracts on formatted source `072d2d91d99a20bf191b79650bb4bb38af3fe5ab`.
+Final expanded runtime, exact-head CI and separate Standards/Spec self-review
+are recorded on the pull request for #249. The parent behavior todo remains open.
