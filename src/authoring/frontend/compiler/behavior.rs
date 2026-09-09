@@ -186,6 +186,14 @@ pub(super) fn lower_behavior(
                     .filter_map(|state| state.blend.as_ref())
                     .filter_map(|blend| blend.binding()),
             )
+            .chain(
+                statechart
+                    .states
+                    .iter()
+                    .chain(statechart.regions.iter().flat_map(|region| &region.states))
+                    .filter_map(|state| state.blend.as_ref())
+                    .filter_map(|blend| blend.binding()),
+            )
             .collect::<HashSet<_>>();
         let mut input_name_by_binding = HashMap::new();
         let mut input_index_by_id = HashMap::new();

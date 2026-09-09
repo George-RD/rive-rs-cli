@@ -62,15 +62,40 @@ fn model_blends_encode_a_native_view_model_consumer_and_binding_context() {
         .iter()
         .position(|object| object.type_key == type_keys::BLEND_STATE_1D_VIEW_MODEL)
         .expect("model-bound blend must use the native model state");
-    assert_eq!(parsed.objects[state_index - 2].type_key, type_keys::BINDABLE_PROPERTY_NUMBER);
-    assert_eq!(parsed.objects[state_index - 1].type_key, type_keys::DATA_BIND_CONTEXT);
-    assert_eq!(parsed.objects[state_index + 1].type_key, type_keys::BLEND_ANIMATION_1D);
-    assert!(parsed.objects[state_index - 2].properties.iter().any(|field|
-        field.key == property_keys::BINDABLE_PROPERTY_NUMBER_VALUE
-            && field.value == PropertyValueRead::Float(25.0)));
-    assert!(parsed.objects[state_index - 1].properties.iter().any(|field|
-        field.key == property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS
-            && field.value == PropertyValueRead::Bytes(vec![0, 0])));
-    assert!(!parsed.objects.iter().any(|object|
-        object.type_key == type_keys::BLEND_STATE_1D_INPUT));
+    assert_eq!(
+        parsed.objects[state_index - 2].type_key,
+        type_keys::BINDABLE_PROPERTY_NUMBER
+    );
+    assert_eq!(
+        parsed.objects[state_index - 1].type_key,
+        type_keys::DATA_BIND_CONTEXT
+    );
+    assert_eq!(
+        parsed.objects[state_index + 1].type_key,
+        type_keys::BLEND_ANIMATION_1D
+    );
+    assert!(
+        parsed.objects[state_index - 2]
+            .properties
+            .iter()
+            .any(
+                |field| field.key == property_keys::BINDABLE_PROPERTY_NUMBER_VALUE
+                    && field.value == PropertyValueRead::Float(25.0)
+            )
+    );
+    assert!(
+        parsed.objects[state_index - 1]
+            .properties
+            .iter()
+            .any(
+                |field| field.key == property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS
+                    && field.value == PropertyValueRead::Bytes(vec![0, 0])
+            )
+    );
+    assert!(
+        !parsed
+            .objects
+            .iter()
+            .any(|object| object.type_key == type_keys::BLEND_STATE_1D_INPUT)
+    );
 }
