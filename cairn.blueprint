@@ -109,6 +109,7 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
                 "./tests/authoring_text_contract.rs",
                 "./tests/authoring_transition_duration_contract.rs",
                 "./tests/authoring_transition_exit_time_contract.rs",
+                "./tests/authoring_transition_guard_contract.rs",
                 "./tests/authoring_trim_path_contract.rs",
                 "./tests/authoring_validation_contract.rs",
                 "./tests/authoring_weave_runtime.rs",

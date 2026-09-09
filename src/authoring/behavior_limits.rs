@@ -1,4 +1,4 @@
-use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec};
+use super::spec::{AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorTransitionSpec};
 
 const MAX_BEHAVIOR_COLLECTION_ITEMS: usize = 1000;
 
@@ -28,6 +28,7 @@ pub(crate) fn validate_behavior_limits(spec: &AuthoringSpec) -> Result<(), Autho
         ] {
             validate_count(count, minimum, &format!("{path}.{field}"))?;
         }
+        validate_transition_guards(&chart.transitions, &path)?;
         for (listener_index, listener) in chart.listeners.iter().enumerate() {
             validate_count(
                 listener.actions.len(),
@@ -43,7 +44,22 @@ pub(crate) fn validate_behavior_limits(spec: &AuthoringSpec) -> Result<(), Autho
                 0,
                 &format!("{region_path}.transitions"),
             )?;
+            validate_transition_guards(&region.transitions, &region_path)?;
         }
+    }
+    Ok(())
+}
+
+fn validate_transition_guards(
+    transitions: &[BehaviorTransitionSpec],
+    path: &str,
+) -> Result<(), AuthoringError> {
+    for (index, transition) in transitions.iter().enumerate() {
+        validate_count(
+            transition.when.conditions().len(),
+            1,
+            &format!("{path}.transitions[{index}].when.all"),
+        )?;
     }
     Ok(())
 }

@@ -171,7 +171,8 @@ pub(super) fn lower_behavior(
                     .iter()
                     .flat_map(|region| &region.transitions),
             )
-            .filter_map(|transition| transition.when.binding().map(|(id, _)| id))
+            .flat_map(|transition| transition.when.conditions())
+            .filter_map(|condition| condition.binding().map(|(id, _)| id))
             .chain(
                 statechart
                     .states
@@ -573,53 +574,62 @@ fn lower_region(
         let to = *state_index_by_id
             .get(transition.to.as_str())
             .expect("validated transition target");
-        let condition = match &transition.when {
-            BehaviorTransitionConditionSpec::Binding(condition) => json!({
-                "input": input_name_by_binding
-                    .get(condition.binding.as_str())
-                    .expect("validated transition binding"),
-                "value": condition.equals
-            }),
-            BehaviorTransitionConditionSpec::NumberBinding(condition) => json!({
-                "input": input_name_by_binding
-                    .get(condition.binding.as_str())
-                    .expect("validated transition binding"),
-                "op": condition.compare.as_str(),
-                "value": evaluate_expression(
-                    &condition.value,
-                    &format!("{transition_path}.when.value"),
-                    &spec.parameters,
-                    Unit::Scalar,
-                )?
-            }),
-            BehaviorTransitionConditionSpec::Input(condition) => json!({
-                "input": input_name_by_id
-                    .get(condition.input.as_str())
-                    .expect("validated transition input"),
-                "value": condition.equals
-            }),
-            BehaviorTransitionConditionSpec::Number(condition) => json!({
-                "input": input_name_by_id
-                    .get(condition.input.as_str())
-                    .expect("validated transition input"),
-                "op": condition.compare.as_str(),
-                "value": evaluate_expression(
-                    &condition.value,
-                    &format!("{transition_path}.when.value"),
-                    &spec.parameters,
-                    Unit::Scalar,
-                )?
-            }),
-            BehaviorTransitionConditionSpec::Trigger(condition) => json!({
-                "input": input_name_by_id
-                    .get(condition.trigger.as_str())
-                    .expect("validated transition trigger")
-            }),
-        };
+        let conditions = transition
+            .when
+            .conditions()
+            .iter()
+            .enumerate()
+            .map(|(index, condition)| {
+                let condition_path = transition.when.condition_path(&transition_path, index);
+                Ok(match condition {
+                    BehaviorTransitionConditionSpec::Binding(condition) => json!({
+                        "input": input_name_by_binding
+                            .get(condition.binding.as_str())
+                            .expect("validated transition binding"),
+                        "value": condition.equals
+                    }),
+                    BehaviorTransitionConditionSpec::NumberBinding(condition) => json!({
+                        "input": input_name_by_binding
+                            .get(condition.binding.as_str())
+                            .expect("validated transition binding"),
+                        "op": condition.compare.as_str(),
+                        "value": evaluate_expression(
+                            &condition.value,
+                            &format!("{condition_path}.value"),
+                            &spec.parameters,
+                            Unit::Scalar,
+                        )?
+                    }),
+                    BehaviorTransitionConditionSpec::Input(condition) => json!({
+                        "input": input_name_by_id
+                            .get(condition.input.as_str())
+                            .expect("validated transition input"),
+                        "value": condition.equals
+                    }),
+                    BehaviorTransitionConditionSpec::Number(condition) => json!({
+                        "input": input_name_by_id
+                            .get(condition.input.as_str())
+                            .expect("validated transition input"),
+                        "op": condition.compare.as_str(),
+                        "value": evaluate_expression(
+                            &condition.value,
+                            &format!("{condition_path}.value"),
+                            &spec.parameters,
+                            Unit::Scalar,
+                        )?
+                    }),
+                    BehaviorTransitionConditionSpec::Trigger(condition) => json!({
+                        "input": input_name_by_id
+                            .get(condition.trigger.as_str())
+                            .expect("validated transition trigger")
+                    }),
+                })
+            })
+            .collect::<Result<Vec<_>, AuthoringDiagnostic>>()?;
         let mut lowered_transition = json!({
             "from": from,
             "to": to,
-            "conditions": [condition]
+            "conditions": conditions
         });
         if let Some(expression) = &transition.duration_ms {
             let path = format!("{transition_path}.duration_ms");
@@ -1074,14 +1084,16 @@ fn validate_region(
                 ));
             }
         }
-        validate_condition(
-            &transition.when,
-            &transition_path,
-            statechart_id,
-            inputs,
-            bindings,
-            diagnostics,
-        );
+        for (index, condition) in transition.when.conditions().iter().enumerate() {
+            validate_condition(
+                condition,
+                &transition.when.condition_path(&transition_path, index),
+                statechart_id,
+                inputs,
+                bindings,
+                diagnostics,
+            );
+        }
     }
 }
 
@@ -1294,7 +1306,7 @@ fn validate_state_motion(
 
 fn validate_condition(
     condition: &BehaviorTransitionConditionSpec,
-    transition_path: &str,
+    condition_path: &str,
     statechart_id: &str,
     inputs: &HashMap<&str, &BehaviorInputSpec>,
     bindings: &HashMap<&str, Option<BehaviorInputKind>>,
@@ -1303,13 +1315,13 @@ fn validate_condition(
     if let Some((binding, expected)) = condition.binding() {
         match bindings.get(binding) {
             None => diagnostics.push(AuthoringDiagnostic::new(
-                format!("{transition_path}.when.binding"),
+                format!("{condition_path}.binding"),
                 "unknown_behavior_binding",
                 format!("behavior binding '{binding}' is not defined"),
             )),
             Some(Some(actual)) if *actual != expected => {
                 diagnostics.push(AuthoringDiagnostic::new(
-                    format!("{transition_path}.when.binding"),
+                    format!("{condition_path}.binding"),
                     "invalid_condition_binding",
                     format!(
                         "condition expects a {} binding but '{binding}' references a {} property",
@@ -1337,13 +1349,13 @@ fn validate_condition(
     };
     match inputs.get(id.as_str()) {
         None => diagnostics.push(AuthoringDiagnostic::new(
-            format!("{transition_path}.when.{field}"),
+            format!("{condition_path}.{field}"),
             "unknown_behavior_input",
             format!("behavior input '{id}' is not defined in statechart '{statechart_id}'"),
         )),
         Some(input) if input.kind() != expected => {
             diagnostics.push(AuthoringDiagnostic::new(
-                format!("{transition_path}.when.{field}"),
+                format!("{condition_path}.{field}"),
                 "invalid_condition_input",
                 format!(
                     "condition expects a {} input but '{id}' is declared as {}",

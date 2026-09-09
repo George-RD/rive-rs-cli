@@ -693,6 +693,30 @@
         }
       ]
     },
+    "BehaviorTransitionGuardSpec": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BehaviorTransitionConditionSpec"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "items": {
+                "$ref": "#/$defs/BehaviorTransitionConditionSpec"
+              },
+              "maxItems": 1000,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "all"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "BehaviorTransitionSpec": {
       "additionalProperties": false,
       "properties": {
@@ -728,7 +752,7 @@
           "type": "string"
         },
         "when": {
-          "$ref": "#/$defs/BehaviorTransitionConditionSpec"
+          "$ref": "#/$defs/BehaviorTransitionGuardSpec"
         }
       },
       "required": [
