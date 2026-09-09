@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Cairn 0.9.0
         run: |
-          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          curl --proto '=https' --tls1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
       - name: Validate architecture graph
         run: |
           export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
@@ -156,6 +156,7 @@ jobs:
         run: |
           node tests/playwright/authoring-behavior-runtime.js
           node tests/playwright/authoring-number-binding-runtime.js
+          node tests/playwright/authoring-transition-guard-runtime.js
           node tests/playwright/authoring-direct-blend-runtime.js
           node tests/playwright/authoring-direct-blend-runtime.js --model-bound
           node tests/playwright/authoring-direct-blend-runtime.js --model-bound --one-dimensional
