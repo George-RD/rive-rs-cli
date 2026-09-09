@@ -56,8 +56,8 @@ jobs:
         run: |
           set -o pipefail
           cairn context > /tmp/fixed-blend-evidence/cairn-context.txt
-          cairn scan --format json | tee /tmp/fixed-blend-evidence/cairn-scan.json
-          cairn lint --format json | tee /tmp/fixed-blend-evidence/cairn-lint.json
+          cairn scan --json | tee /tmp/fixed-blend-evidence/cairn-scan.json
+          cairn lint --json | tee /tmp/fixed-blend-evidence/cairn-lint.json
       - name: Bundled official-runtime blend evidence
         id: runtime
         continue-on-error: true
