@@ -10,11 +10,12 @@ use super::super::super::spec::{
     AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorDirectBlendMotionSpec,
     BehaviorInputKind, BehaviorInputSpec, BehaviorListenerActionSpec, BehaviorListenerType,
     BehaviorModelSpec, BehaviorPropertySpec, BehaviorStateSpec, BehaviorTransitionConditionSpec,
-    BehaviorTransitionSpec, Quantity, SourceMapEntry, Unit,
+    BehaviorTransitionSpec, Quantity, ScalarExpr, SourceMapEntry, Unit,
 };
 use super::MotionTargetIndex;
 
 const DIRECT_BLEND_SOURCE_FIXED: u64 = 1;
+const MAX_DIRECT_BLEND_WEIGHT: f64 = 100.0;
 
 pub(super) struct BehaviorLoweringOutput {
     pub(super) artboard_children: Vec<Value>,
@@ -526,11 +527,10 @@ fn lower_region(
                             }
                             BehaviorDirectBlendMotionSpec::Weight { weight, .. } => {
                                 child["blend_source"] = json!(DIRECT_BLEND_SOURCE_FIXED);
-                                child["mix_value"] = json!(evaluate_expression(
+                                child["mix_value"] = json!(evaluate_fixed_blend_weight(
                                     weight,
                                     &format!("{state_path}.direct_blend.motions[{index}].weight"),
-                                    &spec.parameters,
-                                    Unit::Scalar,
+                                    &spec.parameters
                                 )?);
                             }
                         }
@@ -1146,6 +1146,22 @@ impl StateMotionContext<'_> {
     }
 }
 
+fn evaluate_fixed_blend_weight(
+    weight: &ScalarExpr,
+    path: &str,
+    parameters: &BTreeMap<String, Quantity>,
+) -> Result<f64, AuthoringDiagnostic> {
+    let value = evaluate_expression(weight, path, parameters, Unit::Scalar)?;
+    if !(0.0..=MAX_DIRECT_BLEND_WEIGHT).contains(&value) {
+        return Err(AuthoringDiagnostic::new(
+            path,
+            "invalid_blend_weight",
+            format!("a fixed blend weight must be between 0 and {MAX_DIRECT_BLEND_WEIGHT} percent"),
+        ));
+    }
+    Ok(value)
+}
+
 fn validate_state_motion(
     state: &BehaviorStateSpec,
     state_path: &str,
@@ -1187,12 +1203,9 @@ fn validate_state_motion(
                     context.validate_blend_source(binding, Some(binding), &path, diagnostics);
                 }
                 BehaviorDirectBlendMotionSpec::Weight { weight, .. } => {
-                    if let Err(error) = evaluate_expression(
-                        weight,
-                        &format!("{path}.weight"),
-                        parameters,
-                        Unit::Scalar,
-                    ) {
+                    if let Err(error) =
+                        evaluate_fixed_blend_weight(weight, &format!("{path}.weight"), parameters)
+                    {
                         diagnostics.push(error);
                     }
                 }
