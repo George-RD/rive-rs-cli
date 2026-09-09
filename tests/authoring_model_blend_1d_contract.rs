@@ -34,7 +34,10 @@ fn model_bound_one_dimensional_blends_lower_without_transition_consumers() {
     assert_eq!(machine["inputs"][0]["value"], 25.0);
     assert!(machine["inputs"][0]["view_model_binding"].is_object());
     assert_eq!(machine["layers"][0]["states"][1]["type"], "blend_state_1d");
-    assert_eq!(machine["layers"][0]["states"][1]["input_id"], 0);
+    assert_eq!(
+        machine["layers"][0]["states"][1]["input"],
+        machine["inputs"][0]["name"]
+    );
     let binding = first
         .source_map
         .entries

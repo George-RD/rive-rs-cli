@@ -178,6 +178,14 @@ pub(super) fn lower_behavior(
                     .flat_map(|blend| &blend.motions)
                     .filter_map(|motion| motion.binding()),
             )
+            .chain(
+                statechart
+                    .states
+                    .iter()
+                    .chain(statechart.regions.iter().flat_map(|region| &region.states))
+                    .filter_map(|state| state.blend.as_ref())
+                    .filter_map(|blend| blend.binding()),
+            )
             .collect::<HashSet<_>>();
         let mut input_name_by_binding = HashMap::new();
         let mut input_index_by_id = HashMap::new();
@@ -463,11 +471,16 @@ fn lower_region(
                 "animation": animation_runtime_name(spec, motion)
             }),
             (None, Some(blend), None) => {
-                let input = input_name_by_id
-                    .get(blend.input.as_str())
-                    .expect("validated blend input");
-                let mut children = Vec::with_capacity(blend.stops.len());
-                for (stop_index, stop) in blend.stops.iter().enumerate() {
+                let input_names = if blend.binding().is_some() {
+                    input_name_by_binding
+                } else {
+                    input_name_by_id
+                };
+                let input = input_names
+                    .get(blend.source_id())
+                    .expect("validated blend source");
+                let mut children = Vec::with_capacity(blend.stops().len());
+                for (stop_index, stop) in blend.stops().iter().enumerate() {
                     children.push(json!({
                         "type": "blend_animation_1d",
                         "animation": animation_runtime_name(spec, &stop.motion),
@@ -1167,40 +1180,61 @@ fn validate_state_motion(
             }
         }
         (None, Some(blend)) => {
-            match inputs.get(blend.input.as_str()) {
-                None => diagnostics.push(AuthoringDiagnostic::new(
-                    format!("{state_path}.blend.input"),
-                    "unknown_behavior_input",
-                    format!(
-                        "behavior input '{}' is not defined in statechart '{statechart_id}'",
-                        blend.input
-                    ),
-                )),
-                Some(input) if input.kind() != BehaviorInputKind::Number => {
-                    diagnostics.push(AuthoringDiagnostic::new(
-                        format!("{state_path}.blend.input"),
-                        "invalid_blend_input",
-                        format!(
-                            "blend input '{}' must be a number input but is declared as {}",
-                            blend.input,
-                            input.kind().as_str()
-                        ),
-                    ));
+            if let Some(binding) = blend.binding() {
+                match bindings.get(binding) {
+                    None => diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{state_path}.blend.binding"),
+                        "unknown_behavior_binding",
+                        format!("behavior binding '{binding}' is not defined"),
+                    )),
+                    Some(Some(actual)) if *actual != BehaviorInputKind::Number => {
+                        diagnostics.push(AuthoringDiagnostic::new(
+                            format!("{state_path}.blend.binding"),
+                            "invalid_blend_binding",
+                            format!(
+                                "blend binding '{binding}' must reference a number property but references {}",
+                                actual.as_str()
+                            ),
+                        ));
+                    }
+                    Some(_) => {}
                 }
-                Some(_) => {}
+            } else {
+                match inputs.get(blend.source_id()) {
+                    None => diagnostics.push(AuthoringDiagnostic::new(
+                        format!("{state_path}.blend.input"),
+                        "unknown_behavior_input",
+                        format!(
+                            "behavior input '{}' is not defined in statechart '{statechart_id}'",
+                            blend.source_id()
+                        ),
+                    )),
+                    Some(input) if input.kind() != BehaviorInputKind::Number => {
+                        diagnostics.push(AuthoringDiagnostic::new(
+                            format!("{state_path}.blend.input"),
+                            "invalid_blend_input",
+                            format!(
+                                "blend input '{}' must be a number input but is declared as {}",
+                                blend.source_id(),
+                                input.kind().as_str()
+                            ),
+                        ));
+                    }
+                    Some(_) => {}
+                }
             }
-            if !(BLEND_STOP_MINIMUM..=BLEND_STOP_LIMIT).contains(&blend.stops.len()) {
+            if !(BLEND_STOP_MINIMUM..=BLEND_STOP_LIMIT).contains(&blend.stops().len()) {
                 diagnostics.push(AuthoringDiagnostic::new(
                     format!("{state_path}.blend.stops"),
                     "invalid_blend_stops",
                     format!(
                         "a blend needs between {BLEND_STOP_MINIMUM} and {BLEND_STOP_LIMIT} stops but declares {}",
-                        blend.stops.len()
+                        blend.stops().len()
                     ),
                 ));
             }
             let mut previous = None;
-            for (stop_index, stop) in blend.stops.iter().enumerate() {
+            for (stop_index, stop) in blend.stops().iter().enumerate() {
                 if !motion_tracks.contains(stop.motion.as_str()) {
                     diagnostics.push(AuthoringDiagnostic::new(
                         format!("{state_path}.blend.stops[{stop_index}].motion"),
