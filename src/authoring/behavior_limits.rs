@@ -38,13 +38,13 @@ pub(crate) fn validate_behavior_limits(spec: &AuthoringSpec) -> Result<(), Autho
         }
         for (region_index, region) in chart.regions.iter().enumerate() {
             let region_path = format!("{path}.regions[{region_index}]");
-            validate_transition_guards(&region.transitions, &region_path)?;
             validate_count(region.states.len(), 1, &format!("{region_path}.states"))?;
             validate_count(
                 region.transitions.len(),
                 0,
                 &format!("{region_path}.transitions"),
             )?;
+            validate_transition_guards(&region.transitions, &region_path)?;
         }
     }
     Ok(())

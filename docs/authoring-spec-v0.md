@@ -433,6 +433,57 @@ The compiler lowers model properties to Rive view models, explicit inputs to nam
 
 The canonical builder validates the merged graph. Behavior validation drops asset `source` fields from its copy of the lowered scene the same way the visual path does, so a document may declare `font_assets` or `image_assets` and a statechart together. Runtime contracts prove both interaction paths: changing a bound view-model boolean through the official web runtime changes state, while the compiled typed interaction fixture is also driven through the public `rive-cli render` interface with both `--input` and `--pointer`, and both must converge on the same visible state.
 
+## Combined transition conditions
+
+Keep a single condition in `when`, or require several conditions together with
+`when.all`. For example, this transition requires both an armed input and a load
+of at least 60:
+
+```json
+{
+  "id": "engage",
+  "from": "resting",
+  "to": "engaged",
+  "when": {
+    "all": [
+      { "input": "armed", "equals": true },
+      {
+        "input": "load",
+        "compare": "greater_or_equal",
+        "value": { "kind": "literal", "value": 60, "unit": "scalar" }
+      }
+    ]
+  }
+}
+```
+
+An `all` group contains 1–1000 of the existing five condition forms. Conditions
+are emitted in authored order and must all hold in the same runtime update.
+Boolean and numeric model bindings, explicit inputs, and triggers can be mixed.
+A trigger is momentary: a trigger fired while another condition is false is not
+queued until that condition becomes true. Fire it again when the other conditions
+are satisfied.
+
+The group is flat. Nested groups, `any`, negation, and an `all` object containing
+additional condition fields are rejected. An empty or oversized group reports
+`invalid_behavior_collection_count` at `.when.all` through both the JSON and typed
+Rust entry points. Leaf errors retain their existing codes at indexed paths such
+as `$.behavior.statecharts[0].transitions[0].when.all[1].input`; numeric expression
+errors can point further into `.value`. Regions use the corresponding
+`.regions[i].transitions[j].when.all[k]` paths.
+
+Existing single-condition documents keep their SceneSpec, source-map and binary
+output. Wrapping one condition in `all` gives the same output. Groups do not add
+runtime inputs beyond the bindings already required by their leaves; bindings are
+shared with other transitions and blend consumers in the same chart. Model leaves
+still read the bound model instance, not a mirrored machine input.
+
+`duration_ms` and `exit_time_ms` work independently of the guard. The exit gate
+cannot bypass a false member of `all`. The public CLI and official-runtime
+contracts retain mixed model/input/trigger truth cases for root and region
+transitions, blocked-trigger/re-fire evidence, and timed frames in the
+`typed-behavior-runtime-evidence` artifact under `transition-guards`.
+
 ## Numeric view-model bindings
 
 A model property accepts `{"kind": "number", "id": "load", "value": <scalar expression>}`.

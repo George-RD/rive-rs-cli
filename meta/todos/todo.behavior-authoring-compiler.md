@@ -213,3 +213,45 @@ input parameter cases and proves fixed weights compose with model-driven control
 red/green runs and runtime contract. Exact delivery-head CI/MSRV and separate
 Standards/Spec self-review are recorded on the PR before merge. This parent remains
 open for additive states, broader timing, other property kinds and conversions.
+
+## Conjunctive transition guards (#247)
+
+PR #248 adds `when: {"all": [...]}` as a flat group of 1–1000 existing leaf
+conditions. All members must hold together. A distinct guard wrapper preserves the
+five leaf types and prevents recursive groups in the schema and deserializer.
+Both JSON and typed Rust lowering enforce the collection bounds before compiler
+work. Existing single-condition SceneSpec, source maps and binaries stay unchanged.
+
+The existing root/region lowerer iterates the guard's conditions in authored order.
+Reference and expression diagnostics retain indexed authored paths; used bindings
+are collected across every leaf and shared with blend consumers. No canonical
+builder/encoder change, second lowering pass, new runtime type or host-side input
+mirroring is added. Duration and exit-time gates remain independent of conditions.
+
+`tests/authoring_transition_guard_contract.rs` covers mixed order, five native
+encoded condition kinds, single-leaf byte equivalence, region binding collection
+and reuse, JSON/typed bounds, schema bounds, strict group forms, indexed reference
+and parameter errors, timing and operation-batch rollback.
+`tests/playwright/authoring-transition-guard-runtime.js` compiles retained sources
+through the public CLI. Root and region truth cases require each of the five
+condition kinds, prove blocked triggers are not replayed, and separate model
+mutation from synthesized input mutation. CLI render cases prove each false input
+still blocks after exit time and the complete guard respects both exit time and
+blend duration. Sources, compile reports, binaries, PNGs and hashes are retained
+under `target/playwright-behavior/transition-guards` by the existing artifact.
+
+TDD red/green evidence is retained in development run `34370679285`, job
+`102530793770`: the public tracer failed with `invalid_json` before the wrapper was
+introduced, then passed after implementation and schema regeneration. Compiler
+implementation commit: `cb08ccd703c42d46492b195aa37b884505993c85`. The temporary
+branch-scoped development runner removed itself and its patch script from the
+resulting tree. Final exact-head checks and separate Standards/Spec self-review
+are recorded on PR #248. Local Rust execution was unavailable in this chat.
+
+The parent todo remains open for the other behavior capability gaps.
+
+Standards review also restored outer-before-inner region validation: an oversized
+transition collection fails at its collection path before guard inspection. The
+public JSON/typed regression first failed on the region path, then passed after
+reordering validation. Runtime guard evidence contains 30 interactive samples
+and 30 deterministic timing frames; final exact-head evidence is on PR #248.

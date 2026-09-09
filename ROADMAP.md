@@ -80,6 +80,14 @@ are corrected. Model initialization remains the host's responsibility; conversio
 string/enum/trigger models and model-bound blends remain outside this slice.
 The parent behavior todo stays open.
 
+[#247](https://github.com/George-RD/rive-rs-cli/issues/247), implemented in PR #248,
+adds flat `when.all` transition guards through the existing condition lowerer.
+Groups combine named input, model-binding and trigger conditions without raw
+SceneSpec or extra states. Single-condition output stays unchanged; root charts
+and parallel regions share bounds, authored diagnostics, timing, binding reuse and
+atomic operations. Public contracts and retained runtime truth cases cover the
+slice. This is part of the open behavior todo, not a new architecture track.
+
 Select further work from an explicit unblocked issue or create a bounded roadmap gap
 only when current evidence justifies it; do not promote the independent lower-level
 coverage issues by default.
