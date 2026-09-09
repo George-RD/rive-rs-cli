@@ -1,0 +1,80 @@
+name: Automatic transition workbench
+on:
+  push:
+    branches: [agent/authoring-automatic-transitions]
+permissions:
+  contents: write
+concurrency:
+  group: automatic-transition-workbench
+  cancel-in-progress: false
+jobs:
+  workbench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Apply scoped changes and retain formatted source
+        run: |
+          mkdir -p /tmp/automatic-transition-evidence
+          if [ -f .automatic-transition-patch.py ]; then python3 .automatic-transition-patch.py; fi
+          git restore .github/workflows/ci.yml
+          cargo fmt
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          git add -- examples/authoring/automatic-sequence.v0.json
+          git diff --cached --quiet || git commit -m 'test(authoring): retain automatic sequence contracts and runtime proof (#249)'
+          git push origin HEAD:agent/authoring-automatic-transitions
+      - name: Rust verification
+        id: rust
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo fmt --check
+          cargo clippy --locked --all-targets --all-features -- -D warnings 2>&1 | tee /tmp/automatic-transition-evidence/clippy.log
+          cargo test --locked --all-features 2>&1 | tee /tmp/automatic-transition-evidence/rust-tests.log
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Public CLI runtime proof
+        id: runtime
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node tests/playwright/authoring-automatic-transition-runtime.js 2>&1 | tee /tmp/automatic-transition-evidence/runtime.log
+      - name: Cairn architecture validation
+        id: architecture
+        continue-on-error: true
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          set -o pipefail
+          cairn context > /tmp/automatic-transition-evidence/cairn-context.txt
+          cairn scan --json | tee /tmp/automatic-transition-evidence/cairn-scan.json
+          cairn lint --json | tee /tmp/automatic-transition-evidence/cairn-lint.json
+      - name: Require every verification gate
+        if: always()
+        run: |
+          test '${{ steps.rust.outcome }}' = 'success'
+          test '${{ steps.runtime.outcome }}' = 'success'
+          test '${{ steps.architecture.outcome }}' = 'success'
+      - name: Retain exact source and logs
+        if: always()
+        run: |
+          mkdir -p /tmp/automatic-transition-evidence
+          git rev-parse HEAD > /tmp/automatic-transition-evidence/source-head.txt
+          git archive --format=tar.gz HEAD > /tmp/automatic-transition-evidence/source.tar.gz
+          if [ -d target/playwright-behavior/automatic-transitions ]; then cp -r target/playwright-behavior/automatic-transitions /tmp/automatic-transition-evidence/; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: automatic-transition-source
+          path: /tmp/automatic-transition-evidence/
