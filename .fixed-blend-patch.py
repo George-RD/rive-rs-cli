@@ -1,30 +1,10 @@
 from pathlib import Path
-import re
-p = Path('src/authoring/frontend/compiler/behavior.rs')
+p = Path('tests/authoring_direct_blend_contract.rs')
 s = p.read_text()
-if 'fn evaluate_fixed_blend_weight(' not in s:
-    s = s.replace('SourceMapEntry, Unit,', 'ScalarExpr, SourceMapEntry, Unit,')
-    s = s.replace('const DIRECT_BLEND_SOURCE_FIXED: u64 = 1;', 'const DIRECT_BLEND_SOURCE_FIXED: u64 = 1;\nconst MAX_DIRECT_BLEND_WEIGHT: f64 = 100.0;')
-    pattern = r'evaluate_expression\(\s*weight,\s*(&format!\([^\n]+\)),\s*(&spec\.parameters|parameters),\s*Unit::Scalar,?\s*\)'
-    s, count = re.subn(pattern, r'evaluate_fixed_blend_weight(weight, \1, \2)', s)
-    assert count == 2, count
-    anchor = 'fn validate_state_motion('
+if 'assert_eq!(variants.len(), 2);' in s:
+    assert s.count('assert_eq!(variants.len(), 2);') == 1
+    s = s.replace('assert_eq!(variants.len(), 2);', 'assert_eq!(variants.len(), 3);')
+    anchor = '    assert_eq!(variants[1]["required"], json!(["motion", "binding"]));'
     assert s.count(anchor) == 1
-    helper = '''fn evaluate_fixed_blend_weight(
-    weight: &ScalarExpr,
-    path: &str,
-    parameters: &BTreeMap<String, Quantity>,
-) -> Result<f64, AuthoringDiagnostic> {
-    let value = evaluate_expression(weight, path, parameters, Unit::Scalar)?;
-    if !(0.0..=MAX_DIRECT_BLEND_WEIGHT).contains(&value) {
-        return Err(AuthoringDiagnostic::new(
-            path,
-            "invalid_blend_weight",
-            format!("a fixed blend weight must be between 0 and {MAX_DIRECT_BLEND_WEIGHT} percent"),
-        ));
-    }
-    Ok(value)
-}
-
-'''
-    p.write_text(s.replace(anchor, helper + anchor))
+    s = s.replace(anchor, anchor + '\n    assert_eq!(variants[2]["additionalProperties"], false);\n    assert_eq!(variants[2]["required"], json!(["motion", "weight"]));\n    assert_eq!(variants[2]["properties"]["weight"]["$ref"], "#/$defs/ScalarExpr");')
+    p.write_text(s)
