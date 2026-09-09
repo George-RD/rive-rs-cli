@@ -701,12 +701,38 @@ impl BehaviorTransitionConditionSpec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged, deny_unknown_fields)]
+pub enum BehaviorTransitionGuardSpec {
+    Condition(BehaviorTransitionConditionSpec),
+    All {
+        #[schemars(length(min = 1, max = 1000))]
+        all: Vec<BehaviorTransitionConditionSpec>,
+    },
+}
+
+impl BehaviorTransitionGuardSpec {
+    pub(crate) fn conditions(&self) -> &[BehaviorTransitionConditionSpec] {
+        match self {
+            Self::Condition(condition) => std::slice::from_ref(condition),
+            Self::All { all } => all,
+        }
+    }
+
+    pub(crate) fn condition_path(&self, transition_path: &str, index: usize) -> String {
+        match self {
+            Self::Condition(_) => format!("{transition_path}.when"),
+            Self::All { .. } => format!("{transition_path}.when.all[{index}]"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct BehaviorTransitionSpec {
     pub id: String,
     pub from: String,
     pub to: String,
-    pub when: BehaviorTransitionConditionSpec,
+    pub when: BehaviorTransitionGuardSpec,
     #[serde(default)]
     pub duration_ms: Option<ScalarExpr>,
     #[serde(default)]
