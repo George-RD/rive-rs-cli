@@ -475,3 +475,16 @@ fn the_model_bound_one_dimensional_panel_compiles_deterministically() {
     assert_eq!(first, second);
     assert_eq!(compile(&first.scene), compile(&second.scene));
 }
+
+#[test]
+fn input_only_blends_retain_the_pre_binding_binary() {
+    use sha2::{Digest, Sha256};
+    let input: Value =
+        serde_json::from_str(include_str!("../examples/authoring/blend-meter.v0.json"))
+            .expect("input-driven example");
+    let bytes = compile(&lower(&input).scene);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "9d03090b542d1e9e11364524b7e49d9f8517edcc89c845036dd01fe6f2bdf15d"
+    );
+}

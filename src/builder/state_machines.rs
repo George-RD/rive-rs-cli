@@ -427,7 +427,7 @@ pub(crate) fn build_state_machines(
                             input.as_deref(),
                             *input_id,
                         )?;
-                        if append_bound_number_input(
+                        if append_bound_number_source(
                             Some(input_id),
                             state_machine.inputs.as_deref().unwrap_or_default(),
                             &bound_number_input_paths,
@@ -642,7 +642,7 @@ fn append_blend_state_direct_child(
         blend_source,
     } = spec;
     let bound = blend_source.unwrap_or(DIRECT_BLEND_SOURCE_INPUT) == DIRECT_BLEND_SOURCE_INPUT
-        && append_bound_number_input(*input_id, inputs, bound_number_input_paths, objects);
+        && append_bound_number_source(*input_id, inputs, bound_number_input_paths, objects);
     let mut input_id = input_id.unwrap_or(u32::MAX as u64);
     let mut blend_source = blend_source.unwrap_or(DIRECT_BLEND_SOURCE_INPUT);
     if bound {
@@ -687,7 +687,7 @@ fn append_blend_state_1d_child(
     Ok(())
 }
 
-fn append_bound_number_input(
+fn append_bound_number_source(
     input_id: Option<u64>,
     inputs: &[InputSpec],
     bound_number_input_paths: &HashMap<String, (u64, u64)>,

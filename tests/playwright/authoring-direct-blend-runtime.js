@@ -222,7 +222,8 @@ async function main() {
       browser: browser.version(),
     };
     fs.writeFileSync(path.join(DIRECTORY, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-    console.log(`${MODE}: independent weights clamped, reversed, exited and resumed${MODEL_BOUND ? "; model changes, not synthesized inputs, controlled the result" : ""}`);
+    const behavior = ONE_DIMENSIONAL ? "numeric stops interpolated, clamped, reversed, exited and resumed" : "independent weights clamped, reversed, exited and resumed";
+    console.log(`${MODE}: ${behavior}${MODEL_BOUND ? "; model changes, not synthesized inputs, controlled the result" : ""}`);
   } finally {
     if (page) await page.close();
     if (browser) await browser.close();
