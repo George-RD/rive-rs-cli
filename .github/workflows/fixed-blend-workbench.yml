@@ -18,35 +18,72 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: fixed-blend-weights
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Install Cairn
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - name: Apply scoped changes and format
         run: |
           mkdir -p /tmp/fixed-blend-evidence
           if [ -f .fixed-blend-patch.py ]; then python3 .fixed-blend-patch.py; fi
+          if [ -f .fixed-runtime-patch.py ]; then python3 .fixed-runtime-patch.py; fi
+          if [ -f .fixed-docs-patch.py ]; then python3 .fixed-docs-patch.py; fi
           cargo fmt
           cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src tests examples docs meta ROADMAP.md cairn.blueprint .github/workflows/ci.yml
-          git diff --cached --quiet || git commit -m 'chore(authoring): format fixed-weight contract and generated schema'
+          git add src tests examples docs meta ROADMAP.md cairn.blueprint
+          git diff --cached --quiet || git commit -m 'feat(authoring): retain fixed-weight implementation and verification contracts'
           git push origin HEAD:agent/authoring-fixed-blend-weights
-      - name: Public fixed-weight contract
-        id: contracts
+      - name: Complete Rust verification
+        id: rust
         continue-on-error: true
         run: |
           set -o pipefail
-          cargo test --locked --test authoring_fixed_blend_contract 2>&1 | tee /tmp/fixed-blend-evidence/contracts.log
+          cargo fmt --check
+          cargo clippy --locked --all-targets --all-features -- -D warnings 2>&1 | tee /tmp/fixed-blend-evidence/clippy.log
+          cargo test --locked --all-features 2>&1 | tee /tmp/fixed-blend-evidence/rust.log
+      - name: Architecture verification
+        id: architecture
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cairn context > /tmp/fixed-blend-evidence/cairn-context.txt
+          cairn scan --format json | tee /tmp/fixed-blend-evidence/cairn-scan.json
+          cairn lint --format json | tee /tmp/fixed-blend-evidence/cairn-lint.json
+      - name: Bundled official-runtime blend evidence
+        id: runtime
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node --check tests/playwright/authoring-direct-blend-runtime.js
+          node tests/playwright/authoring-direct-blend-runtime.js --fixed-weights 2>&1 | tee /tmp/fixed-blend-evidence/fixed-runtime.log
+          node tests/playwright/authoring-direct-blend-runtime.js --fixed-weights --model-bound 2>&1 | tee /tmp/fixed-blend-evidence/model-fixed-runtime.log
+          node tests/playwright/authoring-direct-blend-runtime.js 2>&1 | tee /tmp/fixed-blend-evidence/input-runtime.log
+          node tests/playwright/authoring-direct-blend-runtime.js --model-bound 2>&1 | tee /tmp/fixed-blend-evidence/model-runtime.log
+          node tests/playwright/authoring-direct-blend-runtime.js --model-bound --one-dimensional 2>&1 | tee /tmp/fixed-blend-evidence/model-1d-runtime.log
       - name: Retain exact source and logs
         if: always()
         run: |
           mkdir -p /tmp/fixed-blend-evidence
           git rev-parse HEAD > /tmp/fixed-blend-evidence/source-head.txt
           git archive --format=tar.gz HEAD > /tmp/fixed-blend-evidence/source.tar.gz
+          if [ -d target/playwright-behavior ]; then cp -r target/playwright-behavior /tmp/fixed-blend-evidence/runtime; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: fixed-blend-source
           path: /tmp/fixed-blend-evidence/
-      - name: Require passing contract
+      - name: Require all verification
         if: always()
-        run: test '${{ steps.contracts.outcome }}' = success
+        run: |
+          test '${{ steps.rust.outcome }}' = success
+          test '${{ steps.architecture.outcome }}' = success
+          test '${{ steps.runtime.outcome }}' = success
