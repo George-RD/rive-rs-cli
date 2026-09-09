@@ -66,6 +66,7 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
         Module RustTests "Unit, integration, and CLI end-to-end tests" id "rive-cli.verification.rust" @test {
             path [
                 "./tests/authoring_along_path_contract.rs",
+                "./tests/authoring_automatic_transition_contract.rs",
                 "./tests/authoring_behavior_blend_contract.rs",
                 "./tests/authoring_behavior_blend_runtime.rs",
                 "./tests/authoring_behavior_contract.rs",

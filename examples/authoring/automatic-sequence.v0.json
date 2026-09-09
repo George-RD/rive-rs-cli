@@ -1,0 +1,336 @@
+{
+  "authoring_format_version": 0,
+  "artboard": {
+    "id": "automatic-sequence",
+    "width": {
+      "value": 240,
+      "unit": "px"
+    },
+    "height": {
+      "value": 160,
+      "unit": "px"
+    }
+  },
+  "visual": {
+    "nodes": [
+      {
+        "kind": "rectangle",
+        "id": "upper",
+        "width": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "fill": "#246BFD",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 40,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 48,
+            "unit": "px"
+          }
+        }
+      },
+      {
+        "kind": "rectangle",
+        "id": "lower",
+        "width": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "height": {
+          "kind": "literal",
+          "value": 24,
+          "unit": "px"
+        },
+        "fill": "#24C890",
+        "transform": {
+          "x": {
+            "kind": "literal",
+            "value": 40,
+            "unit": "px"
+          },
+          "y": {
+            "kind": "literal",
+            "value": 112,
+            "unit": "px"
+          }
+        }
+      }
+    ]
+  },
+  "motion": {
+    "poses": [
+      {
+        "id": "upper-rest",
+        "targets": [
+          {
+            "target": "upper",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 40,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 48,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "upper-active",
+        "targets": [
+          {
+            "target": "upper",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 200,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 48,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "lower-rest",
+        "targets": [
+          {
+            "target": "lower",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 40,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 112,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "lower-active",
+        "targets": [
+          {
+            "target": "lower",
+            "transform": {
+              "x": {
+                "kind": "literal",
+                "value": 200,
+                "unit": "px"
+              },
+              "y": {
+                "kind": "literal",
+                "value": 112,
+                "unit": "px"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "tracks": [
+      {
+        "id": "upper-rest-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 120,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "upper-rest"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 120,
+              "unit": "scalar"
+            },
+            "pose": "upper-rest"
+          }
+        ]
+      },
+      {
+        "id": "upper-active-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 120,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "upper-active"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 120,
+              "unit": "scalar"
+            },
+            "pose": "upper-active"
+          }
+        ]
+      },
+      {
+        "id": "lower-rest-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 120,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "lower-rest"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 120,
+              "unit": "scalar"
+            },
+            "pose": "lower-rest"
+          }
+        ]
+      },
+      {
+        "id": "lower-active-track",
+        "fps": 60,
+        "duration_frames": {
+          "kind": "literal",
+          "value": 120,
+          "unit": "scalar"
+        },
+        "keyframes": [
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 0,
+              "unit": "scalar"
+            },
+            "pose": "lower-active"
+          },
+          {
+            "frame": {
+              "kind": "literal",
+              "value": 120,
+              "unit": "scalar"
+            },
+            "pose": "lower-active"
+          }
+        ]
+      }
+    ]
+  },
+  "behavior": {
+    "statecharts": [
+      {
+        "id": "sequence",
+        "initial": "resting",
+        "states": [
+          {
+            "id": "resting",
+            "motion": "upper-rest-track"
+          },
+          {
+            "id": "engaged",
+            "motion": "upper-active-track"
+          }
+        ],
+        "transitions": [
+          {
+            "id": "advance",
+            "from": "resting",
+            "to": "engaged",
+            "when": "always",
+            "exit_time_ms": {
+              "kind": "literal",
+              "value": 500,
+              "unit": "scalar"
+            },
+            "duration_ms": {
+              "kind": "literal",
+              "value": 500,
+              "unit": "scalar"
+            }
+          }
+        ],
+        "regions": [
+          {
+            "id": "lower",
+            "initial": "resting",
+            "states": [
+              {
+                "id": "resting",
+                "motion": "lower-rest-track"
+              },
+              {
+                "id": "engaged",
+                "motion": "lower-active-track"
+              }
+            ],
+            "transitions": [
+              {
+                "id": "advance",
+                "from": "resting",
+                "to": "engaged",
+                "when": "always",
+                "exit_time_ms": {
+                  "kind": "literal",
+                  "value": 1000,
+                  "unit": "scalar"
+                },
+                "duration_ms": {
+                  "kind": "literal",
+                  "value": 500,
+                  "unit": "scalar"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -484,6 +484,44 @@ contracts retain mixed model/input/trigger truth cases for root and region
 transitions, blocked-trigger/re-fire evidence, and timed frames in the
 `typed-behavior-runtime-evidence` artifact under `transition-guards`.
 
+## Automatic transitions
+
+Use `"when": "always"` to advance without an input, model binding or trigger. The
+field stays required: missing `when`, `null`, unknown strings and `{"always": true}`
+are rejected. `always` is a complete guard, not a leaf inside `all`; an empty `all`
+remains invalid.
+
+```json
+{
+  "id": "advance",
+  "from": "resting",
+  "to": "engaged",
+  "when": "always",
+  "exit_time_ms": { "kind": "literal", "value": 500, "unit": "scalar" },
+  "duration_ms": { "kind": "literal", "value": 500, "unit": "scalar" }
+}
+```
+
+This transition becomes eligible when the outgoing motion reaches 500ms, then
+blends to the destination over 500ms. With no exit gate, `always` is eligible on
+state entry; it does not wait for the motion to finish. Eligibility is evaluated
+by the runtime on advance, not by a host timer. Keep the outgoing motion long
+enough to reach its gate. Existing animation-only exit-source validation still
+applies; `always` does not enable exit gates on blend states.
+
+Root charts and parallel regions share this contract. The compiler emits zero
+conditions and no extra inputs or bindings. Conditional and automatic transitions
+can coexist, retaining authored order. Put an unconditional fallback after the
+conditional alternatives it should not pre-empt. Avoid cycles of ungated `always`
+transitions: this feature adds neither a scheduler nor a cycle guard.
+
+`examples/authoring/automatic-sequence.v0.json` runs two input-free regions. The
+upper panel begins after 500ms and the lower after 1000ms; both blend for 500ms.
+`tests/playwright/authoring-automatic-transition-runtime.js` compiles through the
+public CLI and retains source, binaries, compile reports, frames and measured
+positions under `target/playwright-behavior/automatic-transitions`. It compares
+resting, engaged, timed, instantaneous, ungated and explicit-zero-gate variants.
+
 ## Numeric view-model bindings
 
 A model property accepts `{"kind": "number", "id": "load", "value": <scalar expression>}`.
@@ -549,13 +587,13 @@ A transition may set `duration_ms` to blend from its source state to its destina
 
 The expression uses scalar units and the document's parameter scope. For example, `{"kind": "parameter", "name": "crossfade-ms"}` reads a scalar parameter declared under `parameters`; arithmetic expressions are also supported. The evaluated value must be a finite whole number from 0 through 4294967295, matching the runtime's unsigned 32-bit millisecond field. Negative, fractional, and oversized results report `invalid_transition_duration` at the authored `.duration_ms` path. Expression errors retain their own codes and paths, including `unit_mismatch`, `unknown_parameter`, `division_by_zero`, and `non_finite` for programmatic non-finite values.
 
-The same contract applies to transitions inside parallel regions. The compiler emits canonical `duration` only when the field is supplied, keeps the transition's source-map identity unchanged, and leaves the generated entry transition instantaneous. Duration controls the blend after its condition is satisfied; it is not an exit-time gate or a delay before starting the transition. Percentage timing and transition easing remain outside this typed field.
+The same contract applies to transitions inside parallel regions. The compiler emits canonical `duration` only when the field is supplied, keeps the transition's source-map identity unchanged, and leaves the generated entry transition instantaneous. Duration controls the blend after its guard is satisfied; it is not an exit-time gate or a delay before starting the transition. Percentage timing and transition easing remain outside this typed field.
 
 `tests/playwright/authoring-behavior-runtime.js` compiles a 1000ms transition through the public CLI, schedules its input at frame 1, and checks distinct intermediate poses at frames 16, 31, and 46 at 60fps before the destination at frame 91. The same render path supplies control and instantaneous comparisons. Source, compiled output, frame PNGs, and hashes are retained in the typed-behavior runtime CI artifact.
 
 ## Transition exit time
 
-`exit_time_ms` prevents a transition from leaving its named motion state before the outgoing animation reaches the specified point. The `when` condition must also be satisfied. It is animation time, not a delay started by an input:
+`exit_time_ms` prevents a transition from leaving its named motion state before the outgoing animation reaches the specified point. The `when` guard must also be satisfied; `"always"` imposes no input or model condition. It is animation time, not a delay started by an input:
 
 ```json
 {
