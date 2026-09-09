@@ -1,0 +1,35 @@
+name: Automatic transition workbench
+on:
+  push:
+    branches: [agent/authoring-automatic-transitions]
+permissions:
+  contents: read
+concurrency:
+  group: automatic-transition-workbench
+  cancel-in-progress: false
+jobs:
+  workbench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Test-first contract
+        run: |
+          mkdir -p /tmp/automatic-transition-evidence
+          set -o pipefail
+          cargo test --locked --test authoring_automatic_transition_contract 2>&1 | tee /tmp/automatic-transition-evidence/contracts.log
+      - name: Retain exact source and logs
+        if: always()
+        run: |
+          mkdir -p /tmp/automatic-transition-evidence
+          git rev-parse HEAD > /tmp/automatic-transition-evidence/source-head.txt
+          git archive --format=tar.gz HEAD > /tmp/automatic-transition-evidence/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: automatic-transition-source
+          path: /tmp/automatic-transition-evidence/
