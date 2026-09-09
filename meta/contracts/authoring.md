@@ -262,13 +262,12 @@ Runtime weights are clamped percentages and applied sequentially, not normalized
 relative shares. The panel example deliberately puts a full-weight rest motion
 first, followed by separate motion contributions. The browser contract checks
 partial/full/zero weights, independence, reversal, clamping and state transitions.
-Duration is supported; exit-time gates on direct sources are rejected. Static
-weight expressions and additive states are not exposed.
+Duration is supported; exit-time gates on direct sources are rejected. Fixed weight expressions are exposed by #245 below; additive states are not exposed.
 
 ## Model-bound direct weights (#241)
 
-Each direct-blend child selects exactly one of `{motion, input}` and
-`{motion, binding}`. Only a numeric model property is a valid bound weight. Unknown
+Each direct-blend child selects exactly one of `{motion, input}`,
+`{motion, binding}` and, after #245, `{motion, weight}`. Only a numeric model property is a valid bound weight. Unknown
 binding and wrong-kind diagnostics use the child's authored `.binding` path;
 model/property declaration errors retain their own paths. The strict typed union
 and published schema reject ambiguous, missing, null and unknown fields.
@@ -309,3 +308,27 @@ region-only discovery, shared/multi-chart uses, nonzero/multibyte indices,
 deterministic maps/bytes, native encoding and atomic-edit rejection. The three-stop
 panel example and existing browser harness's one-dimensional mode retain CLI/source,
 binary, measured renders and hashes in the typed-behavior runtime artifact.
+
+## Fixed direct-blend weights (#245)
+
+`{motion, weight}` accepts a scalar expression evaluated against document
+parameters. The result must be finite and representable in the runtime float,
+within 0..=100 percent; fractions are valid. Out-of-range constants report
+`invalid_blend_weight` at `.weight` before float narrowing. Existing expression
+errors retain their specific codes and authored paths. The typed union and
+published schema reject multiple sources, null, missing and runtime-only fields.
+
+Root and parallel-region lowering emit `blend_source: 1` and `mix_value` through
+the existing canonical direct-blend child. Fixed weights allocate no inputs or
+model contexts. Mixed sources retain authored child order and actual chart-local
+input indices. Old input/model-driven JSON, binary output and source-map identities
+remain unchanged. Atomic operations reuse these validations and roll back failure.
+
+The public fixed-blend contracts cover encoding, scalar boundaries/arithmetic,
+strict schema forms, diagnostic paths, non-finite programmatic parameters, regions,
+mixed source offsets across charts, ordering, rollback and legacy model binaries.
+The existing input-binary regression remains in the direct/model contracts.
+The shared browser harness adds fixed/input and fixed/model modes without replacing
+existing cases. Pure-constant cases contain only reset/resume trigger inputs and
+must render zero, fractional, half and full weights, authored-order overwrites and
+timed exit/re-entry. Evidence includes exact sources, binaries and rendered pixels.

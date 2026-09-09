@@ -192,3 +192,24 @@ records test-first failures, native object provenance and verification. Final
 exact-head CI/MSRV and separate Standards/Spec self-review belong on the PR before
 merge. The parent remains open for additive states, broader timing, other model
 property kinds and conversions; this is a bounded continuation, not a new track.
+
+## Fixed direct-blend weight slice (#245)
+
+Adds exclusive `{motion, weight: <scalar expression>}` children through the shared
+root/region compiler and existing canonical fixed-blend source. Finite scalar
+percentages in 0..=100 include fractions and document parameter arithmetic.
+Out-of-range values fail before float narrowing; existing expression errors retain
+authored paths. Fixed children create no synthetic input or model binding object.
+Mixed input/model/fixed sources preserve order and chart-local indices.
+
+Eleven public contracts cover native encoding, schema exclusivity, boundaries,
+expressions, non-finite typed parameters, regions, mixed source offsets, source-map
+identity, atomic rollback and legacy model bytes. The original input-byte guard
+remains unchanged. `fixed-blend-panel.v0.json` replaces the artificial foundation
+input with a fixed rest weight; the shared browser harness also compiles no-numeric-
+input parameter cases and proves fixed weights compose with model-driven controls.
+
+[Fixed blend evidence](../research/fixed-blend-authoring.md) records the observed
+red/green runs and runtime contract. Exact delivery-head CI/MSRV and separate
+Standards/Spec self-review are recorded on the PR before merge. This parent remains
+open for additive states, broader timing, other property kinds and conversions.

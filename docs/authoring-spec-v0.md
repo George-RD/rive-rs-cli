@@ -598,7 +598,7 @@ their JSON and bytes; `authoring_format_version` remains 0.
 
 ## Direct blend states
 
-`direct_blend` gives each named motion its own number input or numeric model binding instead of selecting neighbouring stops from a shared input:
+`direct_blend` gives each named motion its own number input, numeric model binding or fixed scalar weight instead of selecting neighbouring stops from a shared input:
 
 ```json
 {
@@ -621,7 +621,7 @@ The collection contains 1 through 1000 children. `invalid_direct_blend_motions` 
 
 The same form works in parallel regions. The compiler resolves animation indices from its existing lowered scene and input indices from the emitted chart inputs, including offsets from binding-generated inputs. It lowers to existing `blend_state_direct` and `blend_animation_direct` objects without a new encoder path. Source-map identities remain attached to named states and regions. Transitions may enter or leave direct states and use `duration_ms`; `exit_time_ms` on a direct-blend source is rejected with `unsupported_transition_exit_source`, just as for a one-dimensional blend.
 
-The runtime contract `tests/playwright/authoring-direct-blend-runtime.js` compiles the source through the public CLI and retains the source, binary, compile report, measured positions, PNGs and hashes. Cases cover independent 0/50/100 inputs, runtime clamping, reversal, leaving the direct state, resuming it and returning both inputs to zero. Static expression weights and additive states remain outside the typed subset. Omission or null leaves existing canonical output and bytes unchanged; the authoring format stays at version 0.
+The runtime contract `tests/playwright/authoring-direct-blend-runtime.js` compiles the source through the public CLI and retains the source, binary, compile report, measured positions, PNGs and hashes. Cases cover independent 0/50/100 inputs, runtime clamping, reversal, leaving the direct state, resuming it and returning both inputs to zero. Fixed expression weights are described below; additive states remain outside the typed subset. Omission or null leaves existing canonical output and bytes unchanged; the authoring format stays at version 0.
 
 ### Model-bound direct weights
 
@@ -640,8 +640,8 @@ A child may use `binding` instead of `input`:
 }
 ```
 
-Each binding names a numeric model property through `behavior.bindings`. Both source
-fields, neither field, null sources and unknown fields are rejected. An unknown
+Each binding names a numeric model property through `behavior.bindings`. A child selects exactly one of `input`, `binding` and `weight`. Multiple source
+fields, missing sources, null sources and unknown fields are rejected. An unknown
 binding reports `unknown_behavior_binding` at the child's `.binding`; a boolean
 property reports `invalid_blend_binding` there. Invalid model/property references
 keep their declaration paths. The same rules apply in parallel regions.
@@ -778,3 +778,46 @@ Semantic diagnostics point to authored paths. JSON syntax and unknown-field erro
   "behavior": {}
 }
 ```
+
+### Fixed direct weights
+
+Use `weight` for a contribution that is known at compile time. A child selects
+exactly one of `input`, `binding` and `weight`; runtime indices remain unavailable.
+
+```json
+{
+  "id": "blending",
+  "direct_blend": {
+    "motions": [
+      { "motion": "rest-track", "weight": { "kind": "literal", "value": 100, "unit": "scalar" } },
+      { "motion": "left-track", "weight": { "kind": "parameter", "name": "contribution" } },
+      { "motion": "right-track", "input": "right-weight" }
+    ]
+  }
+}
+```
+
+Declare `contribution` in document `parameters`, for example
+`{"value": 25.5, "unit": "scalar"}`. The normal scalar-expression operators are
+supported. Fixed values must be finite, representable scene scalars between 0 and
+100 inclusive; fractions are valid percentages. `invalid_blend_weight` reports a
+range violation at the child's `.weight` before narrowing to the runtime float.
+Unknown parameters, wrong units, division by zero and numeric representation
+errors preserve their existing expression diagnostics and nested authored paths.
+Unlike dynamic controls, invalid authored constants are rejected, not clamped.
+
+The compiler emits a native constant without an input or binding object. Input,
+model-bound and fixed contributions can be mixed, including in parallel regions.
+They retain authored order and are not normalized: a full-weight rest motion
+last can overwrite motion that earlier children applied. Changing a fixed value
+requires recompilation; use `input` or `binding` for runtime changes.
+
+`examples/authoring/fixed-blend-panel.v0.json` replaces the original panel's
+artificial `foundation` input with a fixed 100-percent rest contribution. Its
+left/right controls remain independent. Run the shared runtime harness with
+`--fixed-weights` for this example plus parameterized zero, fractional, half,
+full, reordered and reset/resume cases with no numeric inputs at all. Add
+`--model-bound` to prove a fixed rest contribution composes with model-driven
+weights without input mirroring. Sources, binaries, compile reports, measurements,
+PNGs and hashes are retained under `target/playwright-behavior/fixed-blend` and
+`model-fixed-blend`, alongside the unchanged existing runtime modes.
