@@ -45,13 +45,43 @@ retained the tested source and logs. Workflow trigger SHAs may precede the forma
 bot-published tested source; exported artifacts record that source explicitly.
 Temporary workflow/patch files are removed from the delivered change.
 
-## Runtime and merge gate
+## Observed complete verification
 
-The shared direct-blend harness preserves its input, model and model-1D modes and
-adds fixed/input and fixed/model modes. The checked example removes `foundation`;
-pure-constant variants use scalar parameters and expose only two trigger inputs.
-Pixel assertions cover zero, 25.5/75.5, half, full, reversed contributions, rest-last
-ordering and timed reset/resume. Fixed/model checks retain input-only non-effects.
-Sources, compile reports, binaries, PNGs, positions and JS/WASM hashes are retained.
-Final exact-head CI, Rust 1.88 and the separate Standards/Spec self-review are
-recorded on the delivery PR; structural lowering alone is not the runtime gate.
+Run `34358874270` verified source
+`a99e6bf9df2bd4ab14ea418255c2f0502142023c`: formatting, all-target/all-feature
+Clippy, 1,125 Rust tests passed, zero failed, and one existing regeneration helper
+ignored. Cairn scan and lint passed with no errors; 97 warnings and 11 informational
+findings remain visible. The full-suite schema guard was extended from two to three
+strict sources, not removed. An earlier workbench Cairn invocation used unsupported
+`--format json`; the successful run used the repository's normal `--json` flags.
+
+Artifact `10107122169` (`fixed-blend-source`) retains exact source and logs, public
+CLI compilation reports, binaries, runtime positions and frames. Archive SHA-256:
+`21906ff777619fc6f2410fd5776b7af6e3e37985cd4cdbadb6d68a1ea1fb1ac0`.
+
+All five shared runtime modes passed, with 62 measured samples: 17 fixed/input and
+pure-constant cases, 11 fixed/model cases, plus the unchanged input (9), model (11)
+and model-1D (14) modes. Pure-constant variants expose only reset/resume triggers;
+no numeric inputs exist. Cases cover zero, fractional, half and full weights,
+reversed contributions, rest-last ordering, and reset/resume transitions. Model
+cases retain the input-only non-effect check.
+
+For 25.5/75.5-percent contributions, the expected marker centers are 80.8/160.8 px;
+observed raster centers are 80/160 px, within the existing one-pixel tolerance.
+Reset returns both markers to 39.5 px and resume restores 80/160 px. Putting the
+100-percent rest motion last returns both to 39.5 px, proving authored order rather
+than normalized shares. The retained fractional PNG was visually inspected.
+
+Runtime JavaScript SHA-256:
+`9bfa2546433e72e7fb6e1cb63d863febe24563ba8644ddbb095518f2ef29b4a7`.
+WASM SHA-256:
+`0e018bfd0826a276c4fbefae4d3dd0fe1be127eed10bedce4268f3890e54d47b`.
+Chromium: `151.0.7922.34`.
+
+## Delivery gate and remaining scope
+
+The permanent CI workflow adds both fixed modes without removing existing gates or
+changing tolerances. After temporary workbench removal, exact delivery-head normal
+CI, Rust 1.88 and separate Standards/Spec self-review are recorded on the PR before
+merge. The behavior parent remains open; additive states, broader timing, other
+model property kinds and conversions are not claimed by this slice.
