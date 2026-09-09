@@ -157,6 +157,7 @@ jobs:
           node tests/playwright/authoring-behavior-runtime.js
           node tests/playwright/authoring-number-binding-runtime.js
           node tests/playwright/authoring-transition-guard-runtime.js
+          node tests/playwright/authoring-automatic-transition-runtime.js
           node tests/playwright/authoring-direct-blend-runtime.js
           node tests/playwright/authoring-direct-blend-runtime.js --model-bound
           node tests/playwright/authoring-direct-blend-runtime.js --model-bound --one-dimensional
