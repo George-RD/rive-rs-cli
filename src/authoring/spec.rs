@@ -540,11 +540,40 @@ pub struct BehaviorBlendStopSpec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct BehaviorBlendSpec {
-    pub input: String,
-    #[schemars(length(min = 2, max = 1000))]
-    pub stops: Vec<BehaviorBlendStopSpec>,
+#[serde(untagged, deny_unknown_fields)]
+pub enum BehaviorBlendSpec {
+    Input {
+        input: String,
+        #[schemars(length(min = 2, max = 1000))]
+        stops: Vec<BehaviorBlendStopSpec>,
+    },
+    Binding {
+        binding: String,
+        #[schemars(length(min = 2, max = 1000))]
+        stops: Vec<BehaviorBlendStopSpec>,
+    },
+}
+
+impl BehaviorBlendSpec {
+    pub(crate) fn source_id(&self) -> &str {
+        match self {
+            Self::Input { input, .. } => input,
+            Self::Binding { binding, .. } => binding,
+        }
+    }
+
+    pub(crate) fn binding(&self) -> Option<&str> {
+        match self {
+            Self::Input { .. } => None,
+            Self::Binding { binding, .. } => Some(binding),
+        }
+    }
+
+    pub(crate) fn stops(&self) -> &[BehaviorBlendStopSpec] {
+        match self {
+            Self::Input { stops, .. } | Self::Binding { stops, .. } => stops,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]

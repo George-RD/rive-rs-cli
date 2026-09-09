@@ -427,7 +427,16 @@ pub(crate) fn build_state_machines(
                             input.as_deref(),
                             *input_id,
                         )?;
-                        objects.push(Box::new(BlendState1DInput { input_id }));
+                        if append_bound_number_source(
+                            Some(input_id),
+                            state_machine.inputs.as_deref().unwrap_or_default(),
+                            &bound_number_input_paths,
+                            objects,
+                        ) {
+                            objects.push(Box::new(BlendState1DViewModel));
+                        } else {
+                            objects.push(Box::new(BlendState1DInput { input_id }));
+                        }
                         if let Some(children) = children {
                             for child in children {
                                 append_blend_state_1d_child(
@@ -632,28 +641,11 @@ fn append_blend_state_direct_child(
         mix_value,
         blend_source,
     } = spec;
-    let binding = input_id
-        .and_then(|index| usize::try_from(index).ok())
-        .and_then(|index| inputs.get(index))
-        .and_then(|input| match input {
-            InputSpec::Number { name, value, .. } => {
-                bound_number_input_paths.get(name).map(|ids| (*ids, *value))
-            }
-            _ => None,
-        });
+    let bound = blend_source.unwrap_or(DIRECT_BLEND_SOURCE_INPUT) == DIRECT_BLEND_SOURCE_INPUT
+        && append_bound_number_source(*input_id, inputs, bound_number_input_paths, objects);
     let mut input_id = input_id.unwrap_or(u32::MAX as u64);
     let mut blend_source = blend_source.unwrap_or(DIRECT_BLEND_SOURCE_INPUT);
-    if blend_source == DIRECT_BLEND_SOURCE_INPUT
-        && let Some(((view_model_id, property_id), value)) = binding
-    {
-        objects.push(Box::new(BindablePropertyNumber {
-            property_value: value,
-        }));
-        objects.push(Box::new(DataBindContext::new(
-            property_keys::BINDABLE_PROPERTY_NUMBER_VALUE as u64,
-            0,
-            encode_id_path(&[view_model_id, property_id]),
-        )));
+    if bound {
         input_id = u32::MAX as u64;
         blend_source = DIRECT_BLEND_SOURCE_DATA_BIND;
     }
@@ -693,6 +685,35 @@ fn append_blend_state_1d_child(
         value: value.unwrap_or(0.0),
     }));
     Ok(())
+}
+
+fn append_bound_number_source(
+    input_id: Option<u64>,
+    inputs: &[InputSpec],
+    bound_number_input_paths: &HashMap<String, (u64, u64)>,
+    objects: &mut Vec<Box<dyn RiveObject>>,
+) -> bool {
+    let binding = input_id
+        .and_then(|index| usize::try_from(index).ok())
+        .and_then(|index| inputs.get(index))
+        .and_then(|input| match input {
+            InputSpec::Number { name, value, .. } => {
+                bound_number_input_paths.get(name).map(|ids| (*ids, *value))
+            }
+            _ => None,
+        });
+    let Some(((view_model_id, property_id), value)) = binding else {
+        return false;
+    };
+    objects.push(Box::new(BindablePropertyNumber {
+        property_value: value,
+    }));
+    objects.push(Box::new(DataBindContext::new(
+        property_keys::BINDABLE_PROPERTY_NUMBER_VALUE as u64,
+        0,
+        encode_id_path(&[view_model_id, property_id]),
+    )));
+    true
 }
 
 fn append_transition_child(

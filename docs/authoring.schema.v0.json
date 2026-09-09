@@ -57,25 +57,50 @@
       "type": "object"
     },
     "BehaviorBlendSpec": {
-      "additionalProperties": false,
-      "properties": {
-        "input": {
-          "type": "string"
-        },
-        "stops": {
-          "items": {
-            "$ref": "#/$defs/BehaviorBlendStopSpec"
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "type": "string"
+            },
+            "stops": {
+              "items": {
+                "$ref": "#/$defs/BehaviorBlendStopSpec"
+              },
+              "maxItems": 1000,
+              "minItems": 2,
+              "type": "array"
+            }
           },
-          "maxItems": 1000,
-          "minItems": 2,
-          "type": "array"
+          "required": [
+            "input",
+            "stops"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "binding": {
+              "type": "string"
+            },
+            "stops": {
+              "items": {
+                "$ref": "#/$defs/BehaviorBlendStopSpec"
+              },
+              "maxItems": 1000,
+              "minItems": 2,
+              "type": "array"
+            }
+          },
+          "required": [
+            "binding",
+            "stops"
+          ],
+          "type": "object"
         }
-      },
-      "required": [
-        "input",
-        "stops"
-      ],
-      "type": "object"
+      ]
     },
     "BehaviorBlendStopSpec": {
       "additionalProperties": false,

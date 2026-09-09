@@ -472,10 +472,9 @@ load.value = 60;
 
 Changing only a synthesized input, including through `render --input`, does not
 change the model condition. Direct blends may also select numeric bindings as
-described below; one-dimensional blend inputs and listener actions still target
+described below, as may one-dimensional blends. Listener actions still target
 explicitly declared machine inputs. Converters, string/enum/trigger model properties,
-model-bound one-dimensional blends, and listener writes to model properties remain
-outside the typed subset.
+and listener writes to model properties remain outside the typed subset.
 
 The official-runtime test compiles this example through the public CLI, proves that
 input-only mutation does not transition, then mutates the model through 59, 60, 90
@@ -528,7 +527,7 @@ Omitted or null gates preserve the previous canonical scene, source map, and com
 
 ## Blend states
 
-A behavior state declares exactly one of `motion`, `blend`, and `direct_blend`. `motion` names an authored motion track. `blend` maps a number input onto at least two motion tracks, each with the input value at which that track is fully applied:
+A behavior state declares exactly one of `motion`, `blend`, and `direct_blend`. `motion` names an authored motion track. `blend` maps either a number input or numeric model binding onto at least two motion tracks, each with the input value at which that track is fully applied:
 
 ```json
 {
@@ -545,9 +544,57 @@ A behavior state declares exactly one of `motion`, `blend`, and `direct_blend`. 
 
 The state lowers to a `blend_state_1d` whose `input` is the lowered input name and whose children are `blend_animation_1d` entries naming the lowered animations. A state with no motion source fails with `missing_state_motion` and a state with multiple sources fails with `ambiguous_state_motion`, both at the state path. `unknown_behavior_input` and `invalid_blend_input` fire at `$.behavior.statecharts[i].states[j].blend.input` when the named input is absent or is not a number input, and `unknown_behavior_motion` at `$.behavior.statecharts[i].states[j].blend.stops[k].motion` for a track that is not defined.
 
-A blend needs between 2 and 1000 stops; a count outside that range fails with `invalid_blend_stops` at `$.behavior.statecharts[i].states[j].blend.stops`. Stop values must strictly increase. Rive's `BlendState1DInstance` binary-searches its children as ascending thresholds, so an out-of-order or repeated value would leave a stop unreachable; it fails with `invalid_blend_stop_order` at `$.behavior.statecharts[i].states[j].blend.stops[k].value`. Each value is narrowed to a 32-bit float before the comparison, because that is the width the emitted `blend_animation_1d` carries and the encoder writes, so two thresholds that differ only below `f32` precision are rejected instead of arriving at the runtime as duplicates. Both checks run on the typed Rust path as well as through the published JSON schema.
+A blend needs between 2 and 1000 stops; a count outside that range fails with `invalid_blend_stops` at `$.behavior.statecharts[i].states[j].blend.stops`. Stop values must strictly increase. Rive's `BlendState1DInstance` binary-searches its children as ascending thresholds, so an out-of-order or repeated value would leave a stop unreachable; it fails with `invalid_blend_stop_order` at `$.behavior.statecharts[i].states[j].blend.stops[k].value`. Each value is narrowed to a 32-bit float before the comparison, because that is the width the emitted `blend_animation_1d` carries and the encoder writes, so two thresholds that differ only below `f32` precision are rejected instead of arriving at the runtime as duplicates. Both checks run on the typed Rust path. The published JSON schema also records the stop-count bounds; ordering is checked by the compiler, not JSON Schema.
 
 Rive mixes the two neighbouring stop animations in sequence rather than as a weighted average, so an input between two stops does not render at the arithmetic midpoint. `tests/authoring_behavior_blend_runtime.rs` drives `examples/authoring/blend-meter.v0.json` at `load` 0, 50, and 100: the stops hold the needle within 3px of x 40 and x 200, and 50 renders it near x 146 rather than at x 120. The mapping stays monotonic; the test asserts that ordering rather than the exact middle position.
+
+### Model-bound one-dimensional blends
+
+Replace `input` with `binding` to drive the same ordered stops from a numeric
+model property:
+
+```json
+{
+  "id": "reading",
+  "blend": {
+    "binding": "model-load",
+    "stops": [
+      { "motion": "calm-track", "value": { "kind": "literal", "value": 0, "unit": "scalar" } },
+      { "motion": "surge-track", "value": { "kind": "literal", "value": 100, "unit": "scalar" } }
+    ]
+  }
+}
+```
+
+Exactly one source is required. Neither, both, null sources and runtime indices are
+rejected by the strict source union. `unknown_behavior_binding` and
+`invalid_blend_binding` report an absent binding or non-number model property at
+`.blend.binding`; invalid model/property declarations retain their own paths.
+The same 2..=1000 stop, scalar expression and emitted-float ordering checks apply.
+Stop values are thresholds, not percentage weights; 0..100 is only this example's
+range. Values outside the outer stops select the nearest endpoint.
+
+A binding used only by a blend is still emitted. Root states, parallel regions,
+direct blends and transition conditions share chart-scoped binding resolution and
+source-map entries. The canonical scene remains a named `blend_state_1d` input
+reference with `view_model_binding`. The builder emits a native
+`BlendState1DViewModel` with its own preceding bindable number/context, rather than
+an input-driven state. No second compiler pass or host animation simulation is used.
+
+The host creates, initializes and binds the model instance as shown in the numeric
+binding example. Changing its number property drives the blend; changing only the
+synthesized input, including through `render --input`, does not. The authored model
+value initializes the synthetic input, not a serialized default model instance.
+
+`examples/authoring/model-blend-1d-panel.v0.json` provides two independent three-stop
+blends, one in a parallel region. Run
+`node tests/playwright/authoring-direct-blend-runtime.js --model-bound --one-dimensional`
+for public-CLI/bundled-runtime verification. Evidence is retained under
+`target/playwright-behavior/model-blend-1d`: exact stop positions, intermediate
+values, clamping, reversal, input-only non-effects and timed exit/resume after a
+model change while inactive. The normal typed-behavior CI artifact retains this
+mode alongside the direct blend proofs. Existing input-only documents preserve
+their JSON and bytes; `authoring_format_version` remains 0.
 
 ## Direct blend states
 
@@ -657,7 +704,7 @@ Every layer is emitted with an entry state at index 0, the authored states from 
 
 Region ids are unique within a statechart; a repeat fails with `duplicate_behavior_region` at `$.behavior.statecharts[i].regions[j].id`. A region id may not match any other id the statechart scopes either. States, transitions, inputs, events, listeners and regions all claim the source-map identity `{statechart}/{id}`, and consumers resolve an entry by first match, so a collision makes that lookup ambiguous; it fails with `behavior_region_id_collision` at the same path. Every state and transition diagnostic listed above applies inside a region under the same `.regions[j]` prefix. The region above is from `examples/authoring/interactive-console.v0.json`, whose other region, `stream`, carries a token across the artboard while layer 0 is still in `standby`. Regions do not require inputs: `examples/authoring/signal-weave.v0.json` declares three layers with no inputs and no transitions between authored states, so each layer plays its own track.
 
-Additive blend states, model-bound one-dimensional blends, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
+Additive blend states, advanced exit timing, and view-model properties beyond boolean and number remain outside the current typed subset and continue under the behavior roadmap. `raw_state_machines` remains available for canonical behavior that is not yet represented by the typed frontend.
 
 ## Raw canonical escapes
 

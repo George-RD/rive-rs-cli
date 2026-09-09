@@ -10,8 +10,10 @@ const {
 } = require("./shared");
 
 const MODEL_BOUND = process.argv.includes("--model-bound");
-const MODE = MODEL_BOUND ? "model-blend" : "direct-blend";
-const FIXTURE = MODEL_BOUND ? "authoring_model_blend" : "authoring_direct_blend";
+const ONE_DIMENSIONAL = process.argv.includes("--one-dimensional");
+assert.ok(!ONE_DIMENSIONAL || MODEL_BOUND, "one-dimensional mode requires --model-bound");
+const MODE = ONE_DIMENSIONAL ? "model-blend-1d" : MODEL_BOUND ? "model-blend" : "direct-blend";
+const FIXTURE = `authoring_${MODE.replaceAll("-", "_")}`;
 const DIRECTORY = path.join(ROOT, "target/playwright-behavior", MODE);
 const SOURCE = path.join(ROOT, "examples/authoring", `${MODE}-panel.v0.json`);
 const PORT = 8129;
@@ -130,8 +132,11 @@ async function sample(page, label, expected) {
     };
   });
   for (const [side, x] of Object.entries(expected)) {
-    assert.ok(Math.abs(measured[side].centerX - x) <= POSITION_TOLERANCE,
-      `${label}: expected ${side} at ${x}, got ${JSON.stringify(measured)}`);
+    const position = measured[side].centerX;
+    const matches = Array.isArray(x)
+      ? position > x[0] && position < x[1]
+      : Math.abs(position - x) <= POSITION_TOLERANCE;
+    assert.ok(matches, `${label}: expected ${side} at ${JSON.stringify(x)}, got ${JSON.stringify(measured)}`);
   }
   const png = path.join(DIRECTORY, `${label}.png`);
   await captureCanvasPng(page, png);
@@ -167,6 +172,10 @@ async function main() {
     }
     for (const [label, left, right, expectedLeft, expectedRight] of [
       ["zero", 0, 0, 40, 40],
+      ...(ONE_DIMENSIONAL ? [
+        ["between-stops", 25, 75, [41, 119], [121, 199]],
+        ["reverse-between-stops", 75, 25, [121, 199], [41, 119]],
+      ] : []),
       ["left-half", 50, 0, 120, 40],
       ["independent", 100, 50, 200, 120],
       ["reversed", 0, 100, 40, 200],
@@ -183,8 +192,17 @@ async function main() {
     }
     await page.evaluate(() => window.__DIRECT_BLEND.reset.fire());
     samples.push(await sample(page, "reset-state", { left: 40, right: 40 }));
+    if (ONE_DIMENSIONAL) {
+      await page.evaluate(() => {
+        window.__DIRECT_BLEND.left.value = 25;
+        window.__DIRECT_BLEND.right.value = 75;
+      });
+      samples.push(await sample(page, "model-change-while-resting", { left: 40, right: 40 }));
+    }
     await page.evaluate(() => window.__DIRECT_BLEND.resume.fire());
-    samples.push(await sample(page, "resume-state", { left: 200, right: 200 }));
+    samples.push(await sample(page, "resume-state", ONE_DIMENSIONAL
+      ? { left: [41, 119], right: [121, 199] }
+      : { left: 200, right: 200 }));
     await page.evaluate(() => {
       window.__DIRECT_BLEND.left.value = 0;
       window.__DIRECT_BLEND.right.value = 0;
@@ -204,7 +222,8 @@ async function main() {
       browser: browser.version(),
     };
     fs.writeFileSync(path.join(DIRECTORY, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-    console.log(`${MODE}: independent weights clamped, reversed, exited and resumed${MODEL_BOUND ? "; model changes, not synthesized inputs, controlled the result" : ""}`);
+    const behavior = ONE_DIMENSIONAL ? "numeric stops interpolated, clamped, reversed, exited and resumed" : "independent weights clamped, reversed, exited and resumed";
+    console.log(`${MODE}: ${behavior}${MODEL_BOUND ? "; model changes, not synthesized inputs, controlled the result" : ""}`);
   } finally {
     if (page) await page.close();
     if (browser) await browser.close();
