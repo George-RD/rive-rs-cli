@@ -20,6 +20,12 @@
       ],
       "type": "object"
     },
+    "BehaviorAlwaysGuardSpec": {
+      "enum": [
+        "always"
+      ],
+      "type": "string"
+    },
     "BehaviorBindingConditionSpec": {
       "additionalProperties": false,
       "properties": {
@@ -695,6 +701,9 @@
     },
     "BehaviorTransitionGuardSpec": {
       "anyOf": [
+        {
+          "$ref": "#/$defs/BehaviorAlwaysGuardSpec"
+        },
         {
           "$ref": "#/$defs/BehaviorTransitionConditionSpec"
         },

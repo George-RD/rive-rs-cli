@@ -25,5 +25,9 @@ fn explicit_always_guard_compiles_a_timed_transition_without_inputs() {
         json!({ "from": 1, "to": 2, "conditions": [], "exit_time": 750 })
     );
     let scene: SceneSpec = serde_json::from_value(lowered.scene).expect("canonical scene");
-    assert!(!compile_scene(&scene, None, 0).expect("canonical compile").is_empty());
+    assert!(
+        !compile_scene(&scene, None, 0)
+            .expect("canonical compile")
+            .is_empty()
+    );
 }

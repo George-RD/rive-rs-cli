@@ -700,9 +700,16 @@ impl BehaviorTransitionConditionSpec {
     }
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum BehaviorAlwaysGuardSpec {
+    Always,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged, deny_unknown_fields)]
 pub enum BehaviorTransitionGuardSpec {
+    Always(BehaviorAlwaysGuardSpec),
     Condition(BehaviorTransitionConditionSpec),
     All {
         #[schemars(length(min = 1, max = 1000))]
@@ -713,6 +720,7 @@ pub enum BehaviorTransitionGuardSpec {
 impl BehaviorTransitionGuardSpec {
     pub(crate) fn conditions(&self) -> &[BehaviorTransitionConditionSpec] {
         match self {
+            Self::Always(_) => &[],
             Self::Condition(condition) => std::slice::from_ref(condition),
             Self::All { all } => all,
         }
@@ -720,7 +728,7 @@ impl BehaviorTransitionGuardSpec {
 
     pub(crate) fn condition_path(&self, transition_path: &str, index: usize) -> String {
         match self {
-            Self::Condition(_) => format!("{transition_path}.when"),
+            Self::Always(_) | Self::Condition(_) => format!("{transition_path}.when"),
             Self::All { .. } => format!("{transition_path}.when.all[{index}]"),
         }
     }
