@@ -234,6 +234,12 @@ changes. The broader behavior todo remains open for its other capabilities.
   production provenance under a separate local namespace, and preserving the
   Verification Lab as the correctness lane without adding an Authoring dependency.
 
+- #245 adds fixed scalar direct-blend weights through the existing AuthoringCompiler
+  and canonical runtime source. Constant contributions no longer require artificial
+  number inputs. Root/region validation, mixed-source ordering, byte compatibility,
+  atomic edits and public-CLI/bundled-runtime evidence remain part of the behavior
+  frontier; its parent todo stays open for additive states and remaining model gaps.
+
 ## Delivered readiness gate for complex AI generation
 
 The gate required all of the following and is satisfied by #174-#186:

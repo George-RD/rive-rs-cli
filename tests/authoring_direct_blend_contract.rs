@@ -299,11 +299,17 @@ fn direct_blend_schema_is_strict_and_matches_the_published_contract() {
     let variants = motion["anyOf"]
         .as_array()
         .expect("exclusive weight sources");
-    assert_eq!(variants.len(), 2);
+    assert_eq!(variants.len(), 3);
     assert_eq!(variants[0]["additionalProperties"], false);
     assert_eq!(variants[0]["required"], json!(["motion", "input"]));
     assert_eq!(variants[1]["additionalProperties"], false);
     assert_eq!(variants[1]["required"], json!(["motion", "binding"]));
+    assert_eq!(variants[2]["additionalProperties"], false);
+    assert_eq!(variants[2]["required"], json!(["motion", "weight"]));
+    assert_eq!(
+        variants[2]["properties"]["weight"]["$ref"],
+        "#/$defs/ScalarExpr"
+    );
     let mut input = document();
     input["behavior"]["statecharts"][0]["states"][0]["direct_blend"]["motions"][0]["input_id"] =
         json!(0);

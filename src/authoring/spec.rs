@@ -581,25 +581,21 @@ impl BehaviorBlendSpec {
 pub enum BehaviorDirectBlendMotionSpec {
     Input { motion: String, input: String },
     Binding { motion: String, binding: String },
+    Weight { motion: String, weight: ScalarExpr },
 }
 
 impl BehaviorDirectBlendMotionSpec {
     pub(crate) fn motion(&self) -> &str {
         match self {
-            Self::Input { motion, .. } | Self::Binding { motion, .. } => motion,
-        }
-    }
-
-    pub(crate) fn source_id(&self) -> &str {
-        match self {
-            Self::Input { input, .. } => input,
-            Self::Binding { binding, .. } => binding,
+            Self::Input { motion, .. }
+            | Self::Binding { motion, .. }
+            | Self::Weight { motion, .. } => motion,
         }
     }
 
     pub(crate) fn binding(&self) -> Option<&str> {
         match self {
-            Self::Input { .. } => None,
+            Self::Input { .. } | Self::Weight { .. } => None,
             Self::Binding { binding, .. } => Some(binding),
         }
     }

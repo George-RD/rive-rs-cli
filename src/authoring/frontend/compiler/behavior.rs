@@ -7,12 +7,15 @@ use crate::builder::{SceneSpec, build_scene};
 use super::super::super::expression::evaluate_expression;
 use super::super::super::lower::{runtime_name, without_asset_sources};
 use super::super::super::spec::{
-    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorInputKind, BehaviorInputSpec,
-    BehaviorListenerActionSpec, BehaviorListenerType, BehaviorModelSpec, BehaviorPropertySpec,
-    BehaviorStateSpec, BehaviorTransitionConditionSpec, BehaviorTransitionSpec, Quantity,
-    SourceMapEntry, Unit,
+    AuthoringDiagnostic, AuthoringError, AuthoringSpec, BehaviorDirectBlendMotionSpec,
+    BehaviorInputKind, BehaviorInputSpec, BehaviorListenerActionSpec, BehaviorListenerType,
+    BehaviorModelSpec, BehaviorPropertySpec, BehaviorStateSpec, BehaviorTransitionConditionSpec,
+    BehaviorTransitionSpec, Quantity, ScalarExpr, SourceMapEntry, Unit,
 };
 use super::MotionTargetIndex;
+
+const DIRECT_BLEND_SOURCE_FIXED: u64 = 1;
+const MAX_DIRECT_BLEND_WEIGHT: f64 = 100.0;
 
 pub(super) struct BehaviorLoweringOutput {
     pub(super) artboard_children: Vec<Value>,
@@ -505,17 +508,35 @@ fn lower_region(
                 let children = blend
                     .motions
                     .iter()
-                    .map(|motion| {
+                    .enumerate()
+                    .map(|(index, motion)| {
                         let animation_name = animation_runtime_name(spec, motion.motion());
-                        json!({
+                        let mut child = json!({
                             "type": "blend_animation_direct",
                             "animation_id": animation_index_by_name.get(animation_name.as_str())
-                                .expect("validated motion has a lowered animation"),
-                            "input_id": input_index_by_id.get(motion.source_id())
-                                .expect("validated direct blend input")
-                        })
+                                .expect("validated motion has a lowered animation")
+                        });
+                        match motion {
+                            BehaviorDirectBlendMotionSpec::Input { input, .. }
+                            | BehaviorDirectBlendMotionSpec::Binding { binding: input, .. } => {
+                                child["input_id"] = json!(
+                                    input_index_by_id
+                                        .get(input.as_str())
+                                        .expect("validated direct blend input")
+                                );
+                            }
+                            BehaviorDirectBlendMotionSpec::Weight { weight, .. } => {
+                                child["blend_source"] = json!(DIRECT_BLEND_SOURCE_FIXED);
+                                child["mix_value"] = json!(evaluate_fixed_blend_weight(
+                                    weight,
+                                    &format!("{state_path}.direct_blend.motions[{index}].weight"),
+                                    &spec.parameters
+                                )?);
+                            }
+                        }
+                        Ok(child)
                     })
-                    .collect::<Vec<_>>();
+                    .collect::<Result<Vec<_>, AuthoringDiagnostic>>()?;
                 json!({ "type": "blend_state_direct", "children": children })
             }
             _ => {
@@ -1125,6 +1146,22 @@ impl StateMotionContext<'_> {
     }
 }
 
+fn evaluate_fixed_blend_weight(
+    weight: &ScalarExpr,
+    path: &str,
+    parameters: &BTreeMap<String, Quantity>,
+) -> Result<f64, AuthoringDiagnostic> {
+    let value = evaluate_expression(weight, path, parameters, Unit::Scalar)?;
+    if !(0.0..=MAX_DIRECT_BLEND_WEIGHT).contains(&value) {
+        return Err(AuthoringDiagnostic::new(
+            path,
+            "invalid_blend_weight",
+            format!("a fixed blend weight must be between 0 and {MAX_DIRECT_BLEND_WEIGHT} percent"),
+        ));
+    }
+    Ok(value)
+}
+
 fn validate_state_motion(
     state: &BehaviorStateSpec,
     state_path: &str,
@@ -1158,7 +1195,21 @@ fn validate_state_motion(
                     format!("motion track '{}' is not defined", motion.motion()),
                 ));
             }
-            context.validate_blend_source(motion.source_id(), motion.binding(), &path, diagnostics);
+            match motion {
+                BehaviorDirectBlendMotionSpec::Input { input, .. } => {
+                    context.validate_blend_source(input, None, &path, diagnostics);
+                }
+                BehaviorDirectBlendMotionSpec::Binding { binding, .. } => {
+                    context.validate_blend_source(binding, Some(binding), &path, diagnostics);
+                }
+                BehaviorDirectBlendMotionSpec::Weight { weight, .. } => {
+                    if let Err(error) =
+                        evaluate_fixed_blend_weight(weight, &format!("{path}.weight"), parameters)
+                    {
+                        diagnostics.push(error);
+                    }
+                }
+            }
         }
         return;
     }

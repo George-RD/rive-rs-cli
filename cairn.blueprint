@@ -82,6 +82,7 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
                 "./tests/authoring_direct_blend_contract.rs",
                 "./tests/authoring_distribute_contract.rs",
                 "./tests/authoring_examples.rs",
+                "./tests/authoring_fixed_blend_contract.rs",
                 "./tests/authoring_font_asset_contract.rs",
                 "./tests/authoring_gradient_contract.rs",
                 "./tests/authoring_grid_contract.rs",
