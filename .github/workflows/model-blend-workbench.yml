@@ -16,29 +16,88 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Execute scoped patch
+        with:
+          key: model-blend-1d-v2
+      - name: Architecture context
+        run: |
+          mkdir -p /tmp/model-blend-evidence
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn context > /tmp/model-blend-evidence/cairn-context.txt
+      - name: Execute scoped patch and publish generated schema
         run: |
           if [ -f .model-blend-patch.py ]; then python3 .model-blend-patch.py; fi
           cargo fmt
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
           git diff --check
-          if ! git diff --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add src tests examples docs meta ROADMAP.md cairn.blueprint
-            git diff --cached --quiet || git commit -m 'feat(authoring): apply model-bound 1d blend slice'
-            git push origin HEAD:agent/authoring-model-blend-1d
-          fi
-      - name: Export source
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests examples docs meta ROADMAP.md cairn.blueprint .github/workflows/ci.yml
+          git diff --cached --quiet || git commit -m 'feat(authoring): apply verified model blend sources and evidence'
+          git push origin HEAD:agent/authoring-model-blend-1d
+      - name: Public contracts and complete Rust suite
+        id: tests
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo test --locked --all-features 2>&1 | tee /tmp/model-blend-evidence/rust-tests.log
+      - name: Clippy
+        id: clippy
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee /tmp/model-blend-evidence/clippy.log
+      - name: Architecture gates
+        id: architecture
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          cairn scan --json | tee /tmp/model-blend-evidence/cairn-scan.json
+          cairn lint --json | tee /tmp/model-blend-evidence/cairn-lint.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Runtime browser dependencies
+        run: |
+          npm install --no-save playwright@1.62.0
+          npx playwright install --with-deps chromium
+      - name: Model-bound and legacy runtime proofs
+        id: runtime
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo build --locked
+          node tests/playwright/authoring-direct-blend-runtime.js --model-bound --one-dimensional 2>&1 | tee /tmp/model-blend-evidence/runtime-1d.log
+          node tests/playwright/authoring-direct-blend-runtime.js --model-bound 2>&1 | tee /tmp/model-blend-evidence/runtime-model-direct.log
+          node tests/playwright/authoring-direct-blend-runtime.js 2>&1 | tee /tmp/model-blend-evidence/runtime-input-direct.log
+      - name: Compare legacy input bytes with pinned pre-change main
+        id: compatibility
+        continue-on-error: true
+        run: |
+          cargo run --locked --quiet -- authoring compile examples/authoring/blend-meter.v0.json -o /tmp/model-blend-evidence/input-current.riv --json > /tmp/model-blend-evidence/input-current.json
+          git fetch origin 74a88084b456318a1192e762751e094766c3e67a
+          git worktree add --detach /tmp/rive-blend-base FETCH_HEAD
+          CARGO_TARGET_DIR="$PWD/target" cargo run --locked --quiet --manifest-path /tmp/rive-blend-base/Cargo.toml -- authoring compile /tmp/rive-blend-base/examples/authoring/blend-meter.v0.json -o /tmp/model-blend-evidence/input-before.riv --json > /tmp/model-blend-evidence/input-before.json
+          cmp /tmp/model-blend-evidence/input-before.riv /tmp/model-blend-evidence/input-current.riv
+          sha256sum /tmp/model-blend-evidence/input-before.riv /tmp/model-blend-evidence/input-current.riv > /tmp/model-blend-evidence/input-compatibility.sha256
+      - name: Export exact source and evidence
         if: always()
         run: |
           mkdir -p /tmp/model-blend-evidence
           git rev-parse HEAD > /tmp/model-blend-evidence/source-head.txt
           git archive --format=tar.gz HEAD > /tmp/model-blend-evidence/source.tar.gz
+          if [ -d target/playwright-behavior ]; then cp -R target/playwright-behavior /tmp/model-blend-evidence/; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: model-blend-source
           path: /tmp/model-blend-evidence/
-      - name: Public blend contracts
-        if: ${{ hashFiles('tests/authoring_model_blend_1d_contract.rs') != '' }}
-        run: cargo test --locked --test authoring_model_blend_1d_contract -- --nocapture
+      - name: Require all gates
+        if: always()
+        run: |
+          test '${{ steps.tests.outcome }}' = success
+          test '${{ steps.clippy.outcome }}' = success
+          test '${{ steps.architecture.outcome }}' = success
+          test '${{ steps.runtime.outcome }}' = success
+          test '${{ steps.compatibility.outcome }}' = success
