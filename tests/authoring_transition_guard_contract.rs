@@ -48,5 +48,9 @@ fn all_guard_lowers_mixed_named_conditions_in_authored_order() {
     assert_eq!(conditions[2]["value"], 60.0);
     assert!(machine["inputs"][0]["view_model_binding"].is_object());
     let scene: SceneSpec = serde_json::from_value(lowered.scene).expect("canonical scene");
-    assert!(!compile_scene(&scene, None, 0).expect("compiled guard").is_empty());
+    assert!(
+        !compile_scene(&scene, None, 0)
+            .expect("compiled guard")
+            .is_empty()
+    );
 }
