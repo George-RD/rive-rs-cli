@@ -1,0 +1,52 @@
+name: Fixed blend workbench
+on:
+  push:
+    branches: [agent/authoring-fixed-blend-weights]
+permissions:
+  contents: write
+concurrency:
+  group: fixed-blend-workbench
+  cancel-in-progress: false
+jobs:
+  workbench:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: fixed-blend-weights
+      - name: Apply scoped changes and format
+        run: |
+          mkdir -p /tmp/fixed-blend-evidence
+          if [ -f .fixed-blend-patch.py ]; then python3 .fixed-blend-patch.py; fi
+          cargo fmt
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests examples docs meta ROADMAP.md cairn.blueprint .github/workflows/ci.yml
+          git diff --cached --quiet || git commit -m 'chore(authoring): format fixed-weight contract and generated schema'
+          git push origin HEAD:agent/authoring-fixed-blend-weights
+      - name: Public fixed-weight contract
+        id: contracts
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo test --locked --test authoring_fixed_blend_contract 2>&1 | tee /tmp/fixed-blend-evidence/contracts.log
+      - name: Retain exact source and logs
+        if: always()
+        run: |
+          mkdir -p /tmp/fixed-blend-evidence
+          git rev-parse HEAD > /tmp/fixed-blend-evidence/source-head.txt
+          git archive --format=tar.gz HEAD > /tmp/fixed-blend-evidence/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fixed-blend-source
+          path: /tmp/fixed-blend-evidence/
+      - name: Require passing contract
+        if: always()
+        run: test '${{ steps.contracts.outcome }}' = success
