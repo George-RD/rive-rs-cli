@@ -1,0 +1,44 @@
+name: Model blend workbench
+on:
+  push:
+    branches: [agent/authoring-model-blend-1d]
+permissions:
+  contents: write
+concurrency:
+  group: model-blend-workbench
+  cancel-in-progress: false
+jobs:
+  workbench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Execute scoped patch
+        run: |
+          if [ -f .model-blend-patch.py ]; then python3 .model-blend-patch.py; fi
+          cargo fmt
+          git diff --check
+          if ! git diff --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add src tests examples docs meta ROADMAP.md cairn.blueprint
+            git diff --cached --quiet || git commit -m 'feat(authoring): apply model-bound 1d blend slice'
+            git push origin HEAD:agent/authoring-model-blend-1d
+          fi
+      - name: Export source
+        if: always()
+        run: |
+          mkdir -p /tmp/model-blend-evidence
+          git rev-parse HEAD > /tmp/model-blend-evidence/source-head.txt
+          git archive --format=tar.gz HEAD > /tmp/model-blend-evidence/source.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-blend-source
+          path: /tmp/model-blend-evidence/
+      - name: Public blend contracts
+        if: ${{ hashFiles('tests/authoring_model_blend_1d_contract.rs') != '' }}
+        run: cargo test --locked --test authoring_model_blend_1d_contract -- --nocapture
