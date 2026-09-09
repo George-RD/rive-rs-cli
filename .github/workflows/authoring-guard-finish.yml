@@ -1,0 +1,69 @@
+name: Authoring guard focused verification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/finish-transition-guards.py
+      - .github/workflows/authoring-guard-finish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'agent/authoring-all-conditions'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Prepare documents and format tests
+        run: |
+          python3 scripts/finish-transition-guards.py
+          cargo fmt
+          node --check tests/playwright/authoring-transition-guard-runtime.js
+          git diff --check
+      - name: Verify public guard contracts
+        run: |
+          set -o pipefail
+          cargo test --locked --test authoring_transition_guard_contract 2>&1 | tee guard-contracts.log
+          cargo clippy --all-targets --all-features -- -D warnings 2>&1 | tee guard-clippy.log
+      - run: npm install --no-save playwright@1.62.0
+      - run: npx playwright install --with-deps chromium
+      - name: Verify official-runtime guards
+        run: |
+          set -o pipefail
+          node tests/playwright/authoring-transition-guard-runtime.js 2>&1 | tee guard-runtime.log
+      - name: Commit verified files and remove temporary runner
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          current=$(git ls-remote origin refs/heads/agent/authoring-all-conditions | cut -f1)
+          test "$current" = "$EXPECTED_HEAD"
+          rm scripts/finish-transition-guards.py .github/workflows/authoring-guard-finish.yml
+          git add tests/authoring_transition_guard_contract.rs docs/authoring-spec-v0.md ROADMAP.md meta/todos/todo.behavior-authoring-compiler.md .github/workflows/ci.yml scripts/finish-transition-guards.py .github/workflows/authoring-guard-finish.yml
+          git diff --cached > guard-finalization.patch
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'test(authoring): verify guards and document the shared behavior path (#247)'
+          git push origin HEAD:refs/heads/agent/authoring-all-conditions
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guard-focused-verification
+          path: |
+            guard-contracts.log
+            guard-clippy.log
+            guard-runtime.log
+            guard-finalization.patch
+            target/playwright-behavior/transition-guards
+          retention-days: 7
