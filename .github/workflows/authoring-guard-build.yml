@@ -1,0 +1,63 @@
+name: Authoring guard development
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/implement-transition-guards.py
+      - .github/workflows/authoring-guard-build.yml
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'agent/authoring-all-conditions'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Prove tracer fails before implementation
+        run: |
+          set -o pipefail
+          if cargo test --locked --test authoring_transition_guard_contract > guard-red.log 2>&1; then
+            cat guard-red.log
+            exit 1
+          fi
+          cat guard-red.log
+          grep -q 'invalid_json' guard-red.log
+      - name: Apply scoped edits and regenerate schema
+        run: |
+          python3 scripts/implement-transition-guards.py
+          cargo fmt
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
+          cargo test --locked --test authoring_transition_guard_contract
+          git diff --check
+          git diff --stat
+      - name: Commit implementation and remove temporary development files
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          current=$(git ls-remote origin refs/heads/agent/authoring-all-conditions | cut -f1)
+          test "$current" = "$EXPECTED_HEAD"
+          rm scripts/implement-transition-guards.py .github/workflows/authoring-guard-build.yml
+          git add src/authoring/spec.rs src/authoring/frontend/compiler/behavior.rs src/authoring/behavior_limits.rs docs/authoring.schema.v0.json cairn.blueprint scripts/implement-transition-guards.py .github/workflows/authoring-guard-build.yml
+          git diff --cached > guard-implementation.patch
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(authoring): lower flat all guards through canonical conditions (#247)'
+          git push origin HEAD:refs/heads/agent/authoring-all-conditions
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guard-development-evidence
+          path: |
+            guard-red.log
+            guard-implementation.patch
+          retention-days: 7
