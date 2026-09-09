@@ -64,11 +64,18 @@ fn fixed_weights_lower_to_native_constants_without_synthetic_inputs() {
 fn fixed_weights_reject_out_of_range_percentages_before_float_narrowing() {
     for value in [-0.001, 100.000001, 101.0] {
         let mut input = document();
-        input["behavior"]["statecharts"][0]["states"][0]["direct_blend"]["motions"][1]["weight"]["value"] = json!(value);
-        let error = lower_authoring_json(&input.to_string()).expect_err("out-of-range fixed weight");
-        assert!(error.diagnostics.iter().any(|diagnostic|
-            diagnostic.code == "invalid_blend_weight"
-                && diagnostic.path == "$.behavior.statecharts[0].states[0].direct_blend.motions[1].weight"
-        ), "{error:?}");
+        input["behavior"]["statecharts"][0]["states"][0]["direct_blend"]["motions"][1]["weight"]
+            ["value"] = json!(value);
+        let error =
+            lower_authoring_json(&input.to_string()).expect_err("out-of-range fixed weight");
+        assert!(
+            error
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == "invalid_blend_weight"
+                    && diagnostic.path
+                        == "$.behavior.statecharts[0].states[0].direct_blend.motions[1].weight"),
+            "{error:?}"
+        );
     }
 }
