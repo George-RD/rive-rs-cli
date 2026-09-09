@@ -89,7 +89,7 @@ fn model_blends_encode_a_native_view_model_consumer_and_binding_context() {
             .iter()
             .any(
                 |field| field.key == property_keys::DATA_BIND_CONTEXT_SOURCE_PATH_IDS
-                    && field.value == PropertyValueRead::Bytes(vec![0, 0])
+                    && field.value == PropertyValueRead::Bytes { length: 2 }
             )
     );
     assert!(
