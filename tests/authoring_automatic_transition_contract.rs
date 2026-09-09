@@ -110,6 +110,8 @@ fn automatic_guards_are_explicit_and_cannot_hide_in_leaf_groups() {
         json!(""),
         json!({}),
         json!({"always":true}),
+        json!({"always":null}),
+        json!({"always":[]}),
         json!({"all":["always"]}),
         json!({"all":[],"always":true}),
     ] {

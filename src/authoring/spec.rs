@@ -700,10 +700,23 @@ impl BehaviorTransitionConditionSpec {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, Serialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum BehaviorAlwaysGuardSpec {
     Always,
+}
+
+impl<'de> Deserialize<'de> for BehaviorAlwaysGuardSpec {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        match value.as_str() {
+            "always" => Ok(Self::Always),
+            _ => Err(serde::de::Error::unknown_variant(&value, &["always"])),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
