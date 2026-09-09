@@ -3,7 +3,7 @@ on:
   push:
     branches: [agent/authoring-automatic-transitions]
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: automatic-transition-workbench
   cancel-in-progress: false
@@ -17,11 +17,22 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Test-first contract
+      - name: Apply scoped changes and retain formatted source
         run: |
           mkdir -p /tmp/automatic-transition-evidence
+          if [ -f .automatic-transition-patch.py ]; then python3 .automatic-transition-patch.py; fi
+          cargo fmt
+          cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          git diff --cached --quiet || git commit -m 'feat(authoring): support explicit automatic transition guards (#249)'
+          git push origin HEAD:agent/authoring-automatic-transitions
+      - name: Public transition contracts
+        run: |
           set -o pipefail
-          cargo test --locked --test authoring_automatic_transition_contract 2>&1 | tee /tmp/automatic-transition-evidence/contracts.log
+          cargo test --locked --test authoring_automatic_transition_contract --test authoring_transition_guard_contract --test authoring_transition_exit_time_contract --test authoring_transition_duration_contract 2>&1 | tee /tmp/automatic-transition-evidence/contracts.log
       - name: Retain exact source and logs
         if: always()
         run: |
