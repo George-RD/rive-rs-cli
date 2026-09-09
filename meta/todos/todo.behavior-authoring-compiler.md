@@ -167,3 +167,28 @@ red/green revisions and runtime provenance. Final exact-head CI/MSRV and separat
 Standards/Spec self-review are recorded on PR #242. This parent remains open for
 additive states, model-bound one-dimensional blends, broader timing, other property
 kinds and conversions.
+
+## Model-bound one-dimensional blend slice (#243)
+
+One-dimensional `blend` states accept an exclusive numeric `binding` source beside
+the existing number `input` form. The same ordered scalar stops, reference/kind
+validation and chart-scoped binding discovery apply to root and parallel regions.
+Bindings are shared with direct blends and conditions without duplicate input slots.
+The canonical builder emits native view-model states with per-consumer bindable
+properties and contexts, using the existing numeric resolver and direct-blend helper.
+Unbound input output and canonical schema remain unchanged. Hosts create, initialize
+and bind model instances; model changes are not copied to synthetic inputs.
+
+Thirteen public contracts cover deterministic lowering/encoding, strict source
+forms, authored errors, stop limits and f32 order, region-only discovery, shared
+consumers, chart offsets, multibyte property indices, legacy input states and atomic
+rollback. `model-blend-1d-panel.v0.json` and the existing browser harness cover exact
+stops, between-stop movement, independence, clamping, reversal, input-only non-effects,
+and timed exit/resume after model changes while inactive. CI retains all three blend
+modes independently, without replacing existing runtime gates.
+
+[One-dimensional model blend evidence](../research/model-blend-1d-authoring.md)
+records test-first failures, native object provenance and verification. Final
+exact-head CI/MSRV and separate Standards/Spec self-review belong on the PR before
+merge. The parent remains open for additive states, broader timing, other model
+property kinds and conversions; this is a bounded continuation, not a new track.

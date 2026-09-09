@@ -55,3 +55,15 @@ An absent or null source selector means input source 0. Unbound input-driven out
 is unchanged. Explicit non-input source selectors are not reinterpreted; in
 particular a fixed mix source 1 keeps its mix value and does not gain a binding.
 The canonical schema and existing binary object types are unchanged.
+
+## Numeric view-model one-dimensional blend bindings
+
+A canonical `blend_state_1d` whose number input has `view_model_binding` consumes
+that model property. Input references by name or index use the same resolved input.
+The builder emits `BindablePropertyNumber`, its `DataBindContext`, then
+`BlendState1DViewModel`, followed by the existing ordered animation children.
+Each native state owns a distinct bindable property; source resolution may be shared
+but importer-owned objects must not be shared across consumers. The finite initial
+value and encoded model/property path reuse the direct-blend helper and resolver.
+Unbound number inputs still emit `BlendState1DInput` with unchanged bytes.
+The canonical schema stays unchanged; hosts initialize and bind model instances.

@@ -201,8 +201,9 @@ lowering pass or encoder is introduced.
 A behavior state declares exactly one of `motion`, `blend`, and `direct_blend`.
 None returns `missing_state_motion` and multiple sources return
 `ambiguous_state_motion`, each at the state path. `blend` is `{"input": <number input id>, "stops": [{"motion": <track id>,
-"value": <scalar expression>}, ...]}` and lowers to a `blend_state_1d` whose children
-are `blend_animation_1d` entries naming the lowered animations.
+"value": <scalar expression>}, ...]}` or the same stops with a numeric `binding`
+instead of `input`. It lowers to a `blend_state_1d` whose children are
+`blend_animation_1d` entries naming the lowered animations.
 `docs/authoring.schema.v0.json` records `minItems` 2 and `maxItems` 1000 on `stops`,
 and the compiler enforces the same bound on the typed path, where no JSON schema runs:
 a count outside it returns `invalid_blend_stops` at `$....states[i].blend.stops`. Stop
@@ -235,8 +236,7 @@ ids inside a region are
 
 Typed behavior validates its lowered scene with file-asset `source` fields removed, the
 same way the visual path does, so a document may declare `font_assets` or `image_assets`
-alongside a statechart. Additive blend states, model-bound one-dimensional blends,
-advanced exit timing, and view-model properties beyond `bool` and `number` are not
+alongside a statechart. Additive blend states, advanced exit timing, and view-model properties beyond `bool` and `number` are not
 exposed by this frontend.
 `stacking`, `continuity`, `waypoint`, `blend`, `direct_blend`, `regions`, `duration_ms`, and `exit_time_ms` are optional and
 their defaults reproduce the previous lowered output, so `authoring_format_version`
@@ -285,3 +285,27 @@ bindings. Model mutation controls the weight independently of the synthesized
 machine input; initialization and binding of the model instance belong to the host.
 No parallel compiler, host-side input mirroring or direct binary encoding is added.
 The same browser harness verifies input-driven and model-bound modes separately.
+
+## Numeric model-bound one-dimensional blends (#243)
+
+`blend` has exactly one source: a chart-local number `input` or a document numeric
+`binding`. Both/neither/null forms and runtime fields fail strict deserialization.
+Unknown bindings and non-number properties report `unknown_behavior_binding` and
+`invalid_blend_binding` at `.blend.binding`. Invalid model/property declarations
+retain their existing authored paths. Stops retain scalar expressions, 2..=1000
+cardinality and strict emitted-f32 ordering, including in parallel regions.
+
+Blend-only uses participate in shared binding discovery. Root/region one-dimensional
+and direct blends and transitions deduplicate bindings per chart, retain actual
+input offsets, and map to the existing compiler-owned scene without a second pass.
+The canonical named-input reference carries a view-model binding; the builder emits
+native model-bound state objects, not synthetic-input synchronization. Each chart
+resolves independently. Model initialization and instance binding remain host work.
+Model changes affect active blends and are observed on re-entry after inactive
+changes; input-only writes do not drive them. Existing input-only bytes remain stable.
+
+Public contracts cover source exclusivity, validation paths, float stop ordering,
+region-only discovery, shared/multi-chart uses, nonzero/multibyte indices,
+deterministic maps/bytes, native encoding and atomic-edit rejection. The three-stop
+panel example and existing browser harness's one-dimensional mode retain CLI/source,
+binary, measured renders and hashes in the typed-behavior runtime artifact.

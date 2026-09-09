@@ -351,7 +351,15 @@ fn model_blend_sources_keep_chart_local_offsets_and_deterministic_maps() {
         }
     }
     assert_eq!(lowered, lower(&input));
-    compile(&lowered.scene);
+    let parsed = parse_riv(&compile(&lowered.scene), &InspectFilter::default()).expect("binary");
+    assert_eq!(
+        parsed
+            .objects
+            .iter()
+            .filter(|object| object.type_key == type_keys::BLEND_STATE_1D_VIEW_MODEL)
+            .count(),
+        2
+    );
 }
 
 #[test]
