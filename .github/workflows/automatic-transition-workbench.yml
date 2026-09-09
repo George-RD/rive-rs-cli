@@ -21,12 +21,14 @@ jobs:
         run: |
           mkdir -p /tmp/automatic-transition-evidence
           if [ -f .automatic-transition-patch.py ]; then python3 .automatic-transition-patch.py; fi
+          git restore .github/workflows/ci.yml
           cargo fmt
           cargo test --locked --test authoring_contract regenerate_published_authoring_schema -- --ignored
           git diff --check
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A -- .automatic-transition-patch.py .github/workflows/ci.yml ROADMAP.md cairn.blueprint docs/authoring-spec-v0.md docs/authoring.schema.v0.json examples/authoring/README.md examples/authoring/automatic-sequence.v0.json meta/todos/todo.behavior-authoring-compiler.md tests/authoring_automatic_transition_contract.rs tests/playwright/authoring-automatic-transition-runtime.js
+          git add -u
+          git add -- examples/authoring/automatic-sequence.v0.json
           git diff --cached --quiet || git commit -m 'test(authoring): retain automatic sequence contracts and runtime proof (#249)'
           git push origin HEAD:agent/authoring-automatic-transitions
       - name: Rust verification
