@@ -17,6 +17,7 @@ canonical `SceneSpec` object graph.
 | `complex-interactive-showcase.v0.json` | Three-state typed interaction gate with two boolean inputs, a reset event, pointer listeners, and bidirectional transitions |
 | `stacking-card.v0.json` | Explicit `back_to_front` stacking on the visual root and on a group |
 | `waypoint-transit.v0.json` | A `through` motion track crossing an interior waypoint without losing speed |
+| `fixed-blend-panel.v0.json` | Constant rest weight with independently controlled direct-blend motions; no artificial foundation input |
 | `blend-meter.v0.json` | A number input driving a 1D blend state across two motion tracks |
 | `interactive-console.v0.json` | Stacking, waypoint continuity, a blend gauge, and three concurrent state-machine layers in one document |
 | `signal-weave.v0.json` | Three statechart regions animating one artboard without any input |
