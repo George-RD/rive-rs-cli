@@ -148,12 +148,13 @@ async function main() {
     await fireModelTrigger(page);
     samples.push(await sample(page, "model-trigger-engaged", ENGAGED_X));
 
-    samples.push(await sample(page, "model-trigger-is-momentary", ENGAGED_X));
+    await fireModelTrigger(page);
+    samples.push(await sample(page, "model-trigger-while-engaged-holds", ENGAGED_X));
 
     await fireMachineTrigger(page);
     samples.push(await sample(page, "machine-trigger-released", RESTING_X));
 
-    samples.push(await sample(page, "released-state-holds", RESTING_X));
+    samples.push(await sample(page, "released-state-does-not-relatch", RESTING_X));
 
     await fireModelTrigger(page);
     samples.push(await sample(page, "model-trigger-re-engaged", ENGAGED_X));
@@ -166,7 +167,7 @@ async function main() {
       browser: browser.version(),
     };
     fs.writeFileSync(path.join(DIRECTORY, "evidence.json"), `${JSON.stringify(evidence, null, 2)}\n`);
-    console.log("model trigger drove the transition, the synthesized input alone did not, and the fired trigger did not latch");
+    console.log("model trigger drove the transition, the synthesized input alone did not, and the consumed trigger did not relatch on return");
   } finally {
     if (page) await page.close();
     if (browser) await browser.close();

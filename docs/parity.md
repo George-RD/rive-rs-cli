@@ -374,3 +374,23 @@ python3 scripts/vision_gate_orchestrator.py
 - [ ] Widen the corpus beyond three reproductions now that the ladder is walked. Tracking:
       [#125](https://github.com/George-RD/rive-rs-cli/issues/125); acceptance: each added official file
       has a pinned manifest entry, reproduction, compare result and site validation coverage.
+- [ ] Give the nine remaining `ViewModelProperty*` objects the inherited `ViewModelComponent` name
+      key instead of `Component` name/parentId, so the official runtime can resolve them by name.
+      `gapType: property-drift`. Tracking:
+      [#252](https://github.com/George-RD/rive-rs-cli/issues/252); acceptance: each object emits only
+      `VIEW_MODEL_COMPONENT_NAME`, a unit test pins each key, committed binaries stay byte-identical,
+      and one official-runtime proof resolves a corrected property through
+      `viewModelByName(...).instance()`.
+- [ ] Reject condition shapes that silently bypass a bound boolean input's view-model binding. An
+      omitted, null, numeric or `op`-only condition on a bound bool input compiles and validates, but
+      emits a condition observing the synthesized machine input, so host model changes never fire the
+      transition. `gapType: property-drift`. Tracking:
+      [#254](https://github.com/George-RD/rive-rs-cli/issues/254); acceptance: each wrong shape fails
+      at the canonical layer naming the input, the baseline bound-boolean output is byte-identical,
+      and unbound boolean conditions are unchanged.
+- [ ] Validate `blend_state_direct` child `blend_source` and give its three values one shared constant
+      group. An authored data-bind source with no preceding bindable property silently adopts another
+      child's weight. `gapType: property-drift`. Tracking:
+      [#255](https://github.com/George-RD/rive-rs-cli/issues/255); acceptance: out-of-range and
+      unbacked data-bind sources fail before encoded output, the four committed blend panels keep
+      their pinned digests, and both modules read the shared constants.

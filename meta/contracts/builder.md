@@ -40,6 +40,23 @@ Unbound numeric inputs and boolean binding binaries retain their existing behavi
 Model instance initialization belongs to the host. No input synchronization or
 conversion is promised.
 
+## Trigger view-model transition bindings
+
+A canonical trigger input accepts optional `view_model_binding` using the same
+`{view_model, property}` form as boolean and number inputs. Omission/null preserves
+the existing unbound path, which still emits `TransitionTriggerCondition`. A trigger
+binding must resolve to a direct trigger property of the named artboard model; a
+missing reference or a non-trigger property fails before encoded output. A condition
+naming a bound trigger input must carry neither `op` nor a non-null `value`, because
+those shapes would emit a condition observing the synthesized input instead of the
+model property. An accepted bound trigger emits `TransitionViewModelCondition`,
+`BindablePropertyTrigger`, its `DataBindContext` using the trigger value property key
+and encoded source path, `TransitionPropertyViewModelComparator`, and
+`TransitionValueTriggerComparator`, reusing the same model/property index resolver as
+numeric transition conditions. Trigger model properties encode the inherited
+ViewModelComponent name field, not Component name/parent fields. Model instance
+initialization belongs to the host. No input synchronization is promised.
+
 ## Numeric view-model direct-blend bindings
 
 An input-source canonical direct-blend child pointing to a number input with

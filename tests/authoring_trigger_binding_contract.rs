@@ -343,3 +343,167 @@ fn canonical_bound_trigger_conditions_accept_an_explicit_null_value() {
     assert!(types.contains(&type_keys::TRANSITION_VALUE_TRIGGER_COMPARATOR));
     assert!(!types.contains(&type_keys::TRANSITION_TRIGGER_CONDITION));
 }
+
+#[test]
+fn bound_trigger_inputs_resolve_chart_local_offsets_across_statecharts() {
+    let mut input = document();
+    input["behavior"]["models"][0]["properties"]
+        .as_array_mut()
+        .expect("properties")
+        .push(json!({ "kind": "bool", "id": "visible", "value": false }));
+    input["behavior"]["bindings"]
+        .as_array_mut()
+        .expect("bindings")
+        .insert(
+            0,
+            json!({ "id": "gate-visible", "model": "gate-model", "property": "visible" }),
+        );
+    input["behavior"]["statecharts"][0]["transitions"] = json!([
+        { "id": "reveal", "from": "resting", "to": "engaged", "when": { "binding": "gate-visible", "equals": true } },
+        { "id": "engage", "from": "engaged", "to": "resting", "when": { "binding": "gate-enabled" } }
+    ]);
+    let mut other = input["behavior"]["statecharts"][0].clone();
+    other["id"] = json!("other");
+    other["transitions"] = json!([
+        { "id": "engage", "from": "resting", "to": "engaged", "when": { "binding": "gate-enabled" } }
+    ]);
+    input["behavior"]["statecharts"]
+        .as_array_mut()
+        .expect("charts")
+        .push(other);
+    let lowered = lower(&input);
+    let machines = lowered.scene["artboard"]["state_machines"]
+        .as_array()
+        .expect("machines");
+    assert_eq!(machines.len(), 2);
+    assert_eq!(machines[0]["inputs"].as_array().expect("inputs").len(), 2);
+    assert_eq!(machines[1]["inputs"].as_array().expect("inputs").len(), 1);
+    let bound = [&machines[0]["inputs"][1], &machines[1]["inputs"][0]];
+    for input in bound {
+        assert_eq!(input["type"], "trigger");
+        assert!(input["view_model_binding"].is_object());
+    }
+    assert_ne!(bound[0]["name"], bound[1]["name"]);
+    assert_eq!(
+        bound[0]["view_model_binding"],
+        bound[1]["view_model_binding"]
+    );
+    assert_eq!(
+        machines[0]["layers"][0]["transitions"][2]["conditions"][0]["input"],
+        bound[0]["name"]
+    );
+    assert_eq!(
+        machines[1]["layers"][0]["transitions"][1]["conditions"][0]["input"],
+        bound[1]["name"]
+    );
+    let binding = lowered
+        .source_map
+        .entries
+        .iter()
+        .find(|entry| entry.authored_id == "gate-enabled")
+        .expect("trigger binding source entry");
+    assert_eq!(
+        binding.scene_paths,
+        vec![
+            "/artboard/state_machines/0/inputs/1",
+            "/artboard/state_machines/1/inputs/0"
+        ]
+    );
+    let types = encoded_type_keys(&lowered.scene);
+    assert!(types.contains(&type_keys::BINDABLE_PROPERTY_TRIGGER));
+    assert!(!types.contains(&type_keys::TRANSITION_TRIGGER_CONDITION));
+}
+
+#[test]
+fn one_trigger_binding_shared_by_a_root_and_a_region_transition_emits_a_single_input() {
+    let mut input = document();
+    input["behavior"]["statecharts"][0]["regions"] = json!([{
+        "id": "pulse",
+        "initial": "resting",
+        "states": [
+            { "id": "resting", "motion": "rest-track" },
+            { "id": "engaged", "motion": "active-track" }
+        ],
+        "transitions": [
+            { "id": "engage", "from": "resting", "to": "engaged", "when": { "binding": "gate-enabled" } }
+        ]
+    }]);
+    let lowered = lower(&input);
+    let machine = &lowered.scene["artboard"]["state_machines"][0];
+    assert_eq!(
+        machine["inputs"].as_array().expect("inputs").len(),
+        1,
+        "{:?}",
+        machine["inputs"]
+    );
+    assert_eq!(machine["inputs"][0]["type"], "trigger");
+    assert!(machine["inputs"][0]["view_model_binding"].is_object());
+    for layer in [0, 1] {
+        assert_eq!(
+            machine["layers"][layer]["transitions"][1]["conditions"][0]["input"],
+            machine["inputs"][0]["name"],
+            "{:?}",
+            machine["layers"][layer]["transitions"]
+        );
+    }
+    let binding = lowered
+        .source_map
+        .entries
+        .iter()
+        .find(|entry| entry.authored_id == "gate-enabled")
+        .expect("trigger binding source entry");
+    assert_eq!(
+        binding.scene_paths,
+        vec!["/artboard/state_machines/0/inputs/0"]
+    );
+    let types = encoded_type_keys(&lowered.scene);
+    assert!(types.contains(&type_keys::BINDABLE_PROPERTY_TRIGGER));
+    assert!(!types.contains(&type_keys::TRANSITION_TRIGGER_CONDITION));
+}
+
+#[test]
+fn an_unbound_trigger_condition_keeps_its_previous_canonical_bytes() {
+    use sha2::{Digest, Sha256};
+    let mut input = document();
+    input["behavior"]["models"] = json!([]);
+    input["behavior"]["bindings"] = json!([]);
+    input["behavior"]["statecharts"][0]["inputs"] = json!([{ "kind": "trigger", "id": "fire" }]);
+    input["behavior"]["statecharts"][0]["transitions"][0]["when"] = json!({ "trigger": "fire" });
+    let bytes = compile(&lower(&input).scene);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(&bytes)),
+        "42b2cc3e9073135f17453dc0a4f167734428cdeac3352aed620336736c4e984a"
+    );
+}
+
+#[test]
+fn the_shipped_trigger_binding_example_lowers_to_a_bound_and_a_declared_trigger_input() {
+    let input: Value = serde_json::from_str(include_str!(
+        "../examples/authoring/trigger-binding.v0.json"
+    ))
+    .expect("trigger binding example");
+    let lowered = lower(&input);
+    let model = &lowered.scene["artboard"]["children"][1];
+    assert_eq!(model["children"][0]["type"], "view_model_property_trigger");
+    let machine = &lowered.scene["artboard"]["state_machines"][0];
+    assert_eq!(machine["inputs"].as_array().expect("inputs").len(), 2);
+    assert_eq!(machine["inputs"][0]["type"], "trigger");
+    assert_eq!(
+        machine["inputs"][0]["view_model_binding"]["property"],
+        model["children"][0]["name"]
+    );
+    assert_eq!(machine["inputs"][1]["type"], "trigger");
+    assert!(machine["inputs"][1].get("view_model_binding").is_none());
+    assert_eq!(
+        machine["layers"][0]["transitions"][1]["conditions"][0]["input"],
+        machine["inputs"][0]["name"]
+    );
+    assert_eq!(
+        machine["layers"][0]["transitions"][2]["conditions"][0]["input"],
+        machine["inputs"][1]["name"]
+    );
+    let types = encoded_type_keys(&lowered.scene);
+    assert!(types.contains(&type_keys::BINDABLE_PROPERTY_TRIGGER));
+    assert!(types.contains(&type_keys::TRANSITION_VIEW_MODEL_CONDITION));
+    assert!(types.contains(&type_keys::TRANSITION_TRIGGER_CONDITION));
+}
