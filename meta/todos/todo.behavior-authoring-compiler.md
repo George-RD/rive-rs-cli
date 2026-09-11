@@ -277,3 +277,76 @@ compiled the tracer and failed with `invalid_json` for the unsupported guard. Ru
 contracts on formatted source `072d2d91d99a20bf191b79650bb4bb38af3fe5ab`.
 Final expanded runtime, exact-head CI and separate Standards/Spec self-review
 are recorded on the pull request for #249. The parent behavior todo remains open.
+
+## Trigger view-model binding slice (#251)
+
+Model properties accept `{"kind": "trigger", "id": ...}` and transitions accept the
+single-field guard `{"binding": ...}` beside the existing boolean, numeric, input,
+trigger-input and `all` forms. A trigger property carries no authored value, so
+there is nothing to initialize on the synthesized input. Kind agreement, unknown
+references and blend-source rejection reuse the existing binding diagnostics at
+their authored paths. Root charts and parallel regions share one discovery and
+lowering path, and a binding with several consumers still emits one input slot.
+
+`InputSpec::Trigger` gains the optional `view_model_binding` already carried by
+the bool and number forms; the canonical builder requires a `ViewModelPropertyTrigger`
+and emits the native `TransitionViewModelCondition` + `BindablePropertyTrigger` +
+`DataBindContext` + `TransitionPropertyViewModelComparator` +
+`TransitionValueTriggerComparator` sequence. Unbound trigger conditions keep
+`TransitionTriggerCondition` and their previous bytes. No new Rive object type,
+type key, property key or lowering pass is introduced.
+
+The runtime proof exposed the same defect class #237 found on the numeric property:
+`ViewModelPropertyTrigger` wrote `COMPONENT_NAME`/`COMPONENT_PARENT_ID` rather than
+`VIEW_MODEL_COMPONENT_NAME`, so the official runtime surfaced the property with an
+empty name and `instance.trigger(name)` returned null. The object now writes the
+view-model component name only, pinned by a unit test. Nine sibling property types
+carry the identical defect; it is tracked in #252 rather than widened into this
+slice, and no committed artifact declares any of them, so committed binaries are
+unchanged.
+
+`tests/authoring_trigger_binding_contract.rs` covers native encoded output, the strict
+property and condition forms, kind-agreement and unknown-reference diagnostics,
+blend-source rejection, region-only discovery, bindings shared across root and region,
+chart-local offsets across two statecharts, the shipped example's lowered shape,
+unbound byte compatibility pinned by digest, deterministic lowering and source-map
+identity, canonical property-kind and resolution failures, and atomic rollback.
+
+A canonical hole found in review is also closed: a condition naming a bound trigger
+input but carrying `op` or a non-null `value` bypassed the bound branch and emitted
+`TransitionValueCondition` or `TransitionBoolCondition`, both of which observe the
+synthesized input rather than the model property. Those shapes are now rejected; an
+explicit null value still compiles unchanged. The same hole exists for bound boolean
+inputs and predates this slice, so it is tracked in #254 rather than widened here.
+
+`tests/playwright/authoring-trigger-binding-runtime.js` compiles
+`examples/authoring/trigger-binding.v0.json` through the public CLI and takes seven
+samples. The artboard has two visible states, so the samples resolve to two distinct
+frames; what each sample establishes is the action that precedes it. Firing the model
+trigger transitions. Firing the synthesized input that backs the binding does nothing,
+while the same `.fire()` call on the declared machine trigger does drive the release,
+so that null result is a real negative rather than a dead call. Firing the model
+trigger again while engaged holds the destination, and the pair returns to `resting`
+and stays there, which a latching trigger could not do, before a further model fire
+re-engages it.
+
+TDD: test-only head `1949dbfa2bd93b4893ccdd7e2caeaca7b67e8e5d` failed eleven of the
+thirteen contracts with `invalid_json` for the unsupported `trigger` property kind.
+The implementation passed the same file. The runtime harness then failed on the
+missing property name before the object fix and passed after it. The added canonical
+guard was likewise pinned by a failing contract before the fix.
+
+`cargo test --locked --all-features` is fail-fast, so it aborts at the first browser
+test in this environment; `--no-fail-fast` is the honest local gate and reports 1145
+passed with 16 failures, all of them browser/render tests that need a Chromium this
+container cannot launch. Those 16 fail identically on the unmodified tree. Final
+exact-head CI/MSRV and separate Standards/Spec self-review are recorded on the pull
+request for #251.
+
+Review also filed #254 (bound boolean conditions silently bypassing their binding)
+and #255 (unvalidated `blend_source` with a split constant group). Both predate this
+slice and are recorded in `docs/parity.md` with `gapType` and acceptance criteria.
+
+The parent todo remains open for additive blend states, advanced exit timing,
+string/enum/colour model properties, converters and listener writes to model
+properties. This is a bounded continuation, not a new track.

@@ -419,13 +419,14 @@ Statechart `inputs` are typed by `kind`. A `bool` input carries a boolean `value
 
 Statecharts also declare named Rive `events` and typed `listeners`. A listener targets either an authored visual ID for pointer interaction or an authored event ID when `listener_type` is `event`; the compiler resolves that semantic target to the generated runtime object name. The supported listener types are `enter`, `exit`, `down`, `up`, `move`, `event`, and `click`. The typed actions are `bool_change`, whose `value` defaults to `true`, `number_change`, which sets a number input from a scalar expression, and `trigger_change`, which fires a trigger. An action kind that does not match the declared kind of the input it names fails with `invalid_listener_input` at `$.behavior.statecharts[i].listeners[j].actions[k].input`.
 
-Transition conditions are an untagged union of five forms:
+Transition conditions are an untagged union of six forms:
 
 - `{"binding": ..., "equals": <bool>}` checks a boolean view-model binding.
 - `{"binding": ..., "compare": ..., "value": <scalar expression>}` checks a numeric view-model binding with the same six comparisons as a number input.
 - `{"input": ..., "equals": <bool>}` checks a boolean input.
 - `{"input": ..., "compare": ..., "value": <scalar expression>}` checks a number input, where `compare` is `equal`, `not_equal`, `greater`, `greater_or_equal`, `less`, or `less_or_equal`.
 - `{"trigger": ...}` fires on a trigger input.
+- `{"binding": ...}` fires on a trigger view-model binding, described below.
 
 The condition form and the input kind must agree. `unknown_behavior_input` fires when the named input is not declared and `invalid_condition_input` when the kinds differ, both at `$.behavior.statecharts[i].transitions[j].when.input`, or `.when.trigger` for the trigger form.
 
@@ -457,7 +458,7 @@ of at least 60:
 }
 ```
 
-An `all` group contains 1–1000 of the existing five condition forms. Conditions
+An `all` group contains 1–1000 of the existing six condition forms. Conditions
 are emitted in authored order and must all hold in the same runtime update.
 Boolean and numeric model bindings, explicit inputs, and triggers can be mixed.
 A trigger is momentary: a trigger fired while another condition is false is not
@@ -562,14 +563,79 @@ load.value = 60;
 Changing only a synthesized input, including through `render --input`, does not
 change the model condition. Direct blends may also select numeric bindings as
 described below, as may one-dimensional blends. Listener actions still target
-explicitly declared machine inputs. Converters, string/enum/trigger model properties,
-and listener writes to model properties remain outside the typed subset.
+explicitly declared machine inputs. Trigger model properties are described below.
+Converters, string, enum and colour model properties, and listener writes to model
+properties remain outside the typed subset.
 
 The official-runtime test compiles this example through the public CLI, proves that
 input-only mutation does not transition, then mutates the model through 59, 60, 90
 and 59 against a threshold of 60. The typed-behavior CI artifact retains authored
 JSON, the compile report/source map, binary, PNGs, measured positions and hashes.
 Both schema versions remain unchanged; published schemas include the new forms.
+
+## Trigger view-model bindings
+
+A model property accepts `{"kind": "trigger", "id": "advance"}`. It carries no
+`value`: a trigger is momentary, so there is nothing to initialize. Supplying one
+is rejected as invalid JSON.
+
+A transition fires on that property with the single-field form `{"binding": ...}`,
+mirroring the input form `{"trigger": ...}`:
+
+```json
+{
+  "id": "engage",
+  "from": "resting",
+  "to": "engaged",
+  "when": { "binding": "gate-advance" }
+}
+```
+
+`binding` alone is the trigger form. The boolean `{"binding", "equals"}` and numeric
+`{"binding", "compare", "value"}` forms are unchanged and keep their meaning. The
+condition form and the bound property kind must agree: a trigger binding over a
+`bool` or `number` property, or a boolean or numeric condition over a trigger
+property, reports `invalid_condition_binding` at `.when.binding`, and an undeclared
+binding reports `unknown_behavior_binding` there. A trigger property is not a
+weight source, so a blend or direct blend that names one reports
+`invalid_blend_binding` at its authored source path.
+
+Root charts and parallel regions share this validation and lowering path, and a
+binding used by several consumers in one statechart still emits one input slot.
+The compiler lowers the property to a `ViewModelPropertyTrigger` and the condition
+to the native `TransitionViewModelCondition` + `BindablePropertyTrigger` +
+`DataBindContext` + `TransitionPropertyViewModelComparator` +
+`TransitionValueTriggerComparator` sequence. An unbound `{"trigger": ...}` condition
+still emits `TransitionTriggerCondition` and its previous bytes. At the canonical
+layer a condition naming a bound trigger input must carry neither `op` nor a non-null
+`value`; either would emit a condition watching the synthesized input instead.
+
+**A bound condition reads the model instance, not the synthesized machine input.**
+As with the boolean and numeric bindings, the host creates, initializes and binds
+its own model instance, and resolves runtime names from the compile report's
+source map:
+
+```javascript
+const instance = runtime.viewModelByName(modelRuntimeName).instance();
+runtime.bindViewModelInstance(instance);
+instance.trigger(propertyRuntimeName).trigger();
+```
+
+Firing the synthesized input instead does not
+transition. String, enum and colour model properties, converters, listener writes to
+model properties, and trigger-driven blend weights remain outside the typed subset.
+
+`examples/authoring/trigger-binding.v0.json` pairs a model trigger with a declared
+machine trigger so each drives one direction of the same pair of states.
+`tests/playwright/authoring-trigger-binding-runtime.js` compiles it through the
+public CLI and retains source, compile report, binary, frames and hashes under
+`target/playwright-behavior/trigger-binding`. Firing the model trigger transitions. Firing the
+synthesized input that backs the binding does nothing, while the same `.fire()` call
+on the declared machine trigger does drive the release, so that null result is a real
+negative rather than a dead call. Firing the model trigger again while already
+engaged holds the destination, and the pair then returns to `resting` and stays
+there, which a latching trigger could not do, before a further model fire re-engages
+it.
 
 ## Transition duration
 

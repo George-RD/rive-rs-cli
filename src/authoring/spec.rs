@@ -387,12 +387,13 @@ pub struct BehaviorModelSpec {
 pub enum BehaviorPropertySpec {
     Bool { id: String, value: bool },
     Number { id: String, value: ScalarExpr },
+    Trigger { id: String },
 }
 
 impl BehaviorPropertySpec {
     pub(crate) fn id(&self) -> &str {
         match self {
-            Self::Bool { id, .. } | Self::Number { id, .. } => id,
+            Self::Bool { id, .. } | Self::Number { id, .. } | Self::Trigger { id } => id,
         }
     }
 
@@ -400,6 +401,7 @@ impl BehaviorPropertySpec {
         match self {
             Self::Bool { .. } => BehaviorInputKind::Bool,
             Self::Number { .. } => BehaviorInputKind::Number,
+            Self::Trigger { .. } => BehaviorInputKind::Trigger,
         }
     }
 }
@@ -681,6 +683,12 @@ pub struct BehaviorTriggerConditionSpec {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct BehaviorTriggerBindingConditionSpec {
+    pub binding: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(untagged)]
 pub enum BehaviorTransitionConditionSpec {
     Binding(BehaviorBindingConditionSpec),
@@ -688,6 +696,7 @@ pub enum BehaviorTransitionConditionSpec {
     Number(BehaviorNumberConditionSpec),
     NumberBinding(BehaviorNumberBindingConditionSpec),
     Trigger(BehaviorTriggerConditionSpec),
+    TriggerBinding(BehaviorTriggerBindingConditionSpec),
 }
 
 impl BehaviorTransitionConditionSpec {
@@ -695,6 +704,9 @@ impl BehaviorTransitionConditionSpec {
         match self {
             Self::Binding(condition) => Some((&condition.binding, BehaviorInputKind::Bool)),
             Self::NumberBinding(condition) => Some((&condition.binding, BehaviorInputKind::Number)),
+            Self::TriggerBinding(condition) => {
+                Some((&condition.binding, BehaviorInputKind::Trigger))
+            }
             _ => None,
         }
     }

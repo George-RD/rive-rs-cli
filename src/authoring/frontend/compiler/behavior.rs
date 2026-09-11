@@ -87,6 +87,9 @@ pub(super) fn lower_behavior(
                         Unit::Scalar,
                     ).map_err(AuthoringError::one)?),
                 ),
+                BehaviorPropertySpec::Trigger { .. } => {
+                    ("view_model_property_trigger", Value::Null)
+                }
             };
             properties.push(json!({ "type": property_type, "name": property_name }));
             property_runtime_by_id.insert(
@@ -218,15 +221,18 @@ pub(super) fn lower_behavior(
             let property = property_runtime_by_id
                 .get(&(binding.model.as_str(), binding.property.as_str()))
                 .expect("validated behavior property");
-            inputs.push(json!({
+            let mut bound_input = json!({
                 "type": property.kind.as_str(),
                 "name": input_name,
-                "value": property.value,
                 "view_model_binding": {
                     "view_model": model_name,
                     "property": property.runtime_name
                 }
-            }));
+            });
+            if !property.value.is_null() {
+                bound_input["value"] = property.value.clone();
+            }
+            inputs.push(bound_input);
 
             let runtime = binding_runtime.entry(binding_index).or_default();
             runtime.0.push(input_name);
@@ -622,6 +628,11 @@ fn lower_region(
                         "input": input_name_by_id
                             .get(condition.trigger.as_str())
                             .expect("validated transition trigger")
+                    }),
+                    BehaviorTransitionConditionSpec::TriggerBinding(condition) => json!({
+                        "input": input_name_by_binding
+                            .get(condition.binding.as_str())
+                            .expect("validated transition binding")
                     }),
                 })
             })
@@ -1336,7 +1347,8 @@ fn validate_condition(
     }
     let (field, id, expected) = match condition {
         BehaviorTransitionConditionSpec::Binding(_)
-        | BehaviorTransitionConditionSpec::NumberBinding(_) => return,
+        | BehaviorTransitionConditionSpec::NumberBinding(_)
+        | BehaviorTransitionConditionSpec::TriggerBinding(_) => return,
         BehaviorTransitionConditionSpec::Input(condition) => {
             ("input", &condition.input, BehaviorInputKind::Bool)
         }

@@ -155,17 +155,18 @@ opacity, width, and height remain separate roadmap slices.
 
 A statechart declares typed inputs as `{"kind": "bool", "id": ..., "value": ...}`,
 `{"kind": "number", "id": ..., "value": <scalar expression>}`, or
-`{"kind": "trigger", "id": ...}`. Transition conditions are an untagged union of five
+`{"kind": "trigger", "id": ...}`. Transition conditions are an untagged union of six
 forms: `{"binding": ..., "equals": ...}`, `{"input": ..., "equals": ...}`,
 `{"input": ..., "compare": ..., "value": <scalar expression>}` where `compare` is
 one of `equal`, `not_equal`, `greater`, `greater_or_equal`, `less`, or
-`less_or_equal`, and `{"trigger": ...}`. The three input forms require a `bool`,
+`less_or_equal`, `{"trigger": ...}`, and `{"binding": ...}`. The three input forms require a `bool`,
 `number`, and `trigger` input respectively: a mismatch returns
 `invalid_condition_input` and an undeclared id returns `unknown_behavior_input`, both
 at `$....transitions[i].when.input` or `$....transitions[i].when.trigger`. The
 `binding` forms instead resolve against `bindings`: `equals` requires a boolean
-property, while `{"binding": ..., "compare": ..., "value": <scalar expression>}`
-requires a number property. A mismatch returns `invalid_condition_binding` and an
+property, `{"binding": ..., "compare": ..., "value": <scalar expression>}` requires
+a number property, and the single-field `{"binding": ...}` requires a trigger
+property. A mismatch returns `invalid_condition_binding` and an
 unknown id returns `unknown_behavior_binding`, both at the authored `.when.binding`.
 Numeric model values and thresholds use document parameters, scalar units and the
 existing finite/f32-survival checks, including unused properties. Each using chart
@@ -236,7 +237,9 @@ ids inside a region are
 
 Typed behavior validates its lowered scene with file-asset `source` fields removed, the
 same way the visual path does, so a document may declare `font_assets` or `image_assets`
-alongside a statechart. Additive blend states, advanced exit timing, and view-model properties beyond `bool` and `number` are not
+alongside a statechart. A model property accepts `{"kind": "trigger", "id": ...}` with no value. Additive
+blend states, advanced exit timing, converters, listener writes to model properties,
+and view-model properties beyond `bool`, `number` and `trigger` are not
 exposed by this frontend.
 `stacking`, `continuity`, `waypoint`, `blend`, `direct_blend`, `regions`, `duration_ms`, and `exit_time_ms` are optional and
 their defaults reproduce the previous lowered output, so `authoring_format_version`

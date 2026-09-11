@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::objects::core::{RiveObject, property_keys};
 use crate::objects::data_binding::{
-    BindablePropertyBoolean, BindablePropertyNumber, DataBindContext,
+    BindablePropertyBoolean, BindablePropertyNumber, BindablePropertyTrigger, DataBindContext,
 };
 use crate::objects::state_machine::{
     AnimationState, AnyState, BlendAnimation, BlendAnimation1D, BlendAnimationDirect, BlendState,
@@ -119,6 +119,7 @@ pub(crate) fn build_state_machines(
         let mut input_name_to_index: HashMap<String, usize> = HashMap::new();
         let mut bound_bool_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
         let mut bound_number_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
+        let mut bound_trigger_input_paths: HashMap<String, (u64, u64)> = HashMap::new();
         if let Some(inputs) = &state_machine.inputs {
             for (input_index, input) in inputs.iter().enumerate() {
                 match input {
@@ -185,8 +186,34 @@ pub(crate) fn build_state_machines(
                         }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
-                    InputSpec::Trigger { name } => {
+                    InputSpec::Trigger {
+                        name,
+                        view_model_binding,
+                    } => {
                         objects.push(Box::new(StateMachineTrigger { name: name.clone() }));
+                        if let Some(binding) = view_model_binding {
+                            let (view_model_id, property_id, property) =
+                                resolve_view_model_binding_ids(
+                                    artboard_children,
+                                    view_model_id_base,
+                                    &binding.view_model,
+                                    &binding.property,
+                                )
+                                .ok_or_else(|| {
+                                    format!(
+                                        "unknown view-model binding referenced by trigger input '{}': '{}.{}'",
+                                        name, binding.view_model, binding.property
+                                    )
+                                })?;
+                            if !matches!(property, ObjectSpec::ViewModelPropertyTrigger { .. }) {
+                                return Err(format!(
+                                    "trigger input '{}' requires a trigger view-model property: '{}.{}'",
+                                    name, binding.view_model, binding.property
+                                ));
+                            }
+                            bound_trigger_input_paths
+                                .insert(name.clone(), (view_model_id, property_id));
+                        }
                         input_name_to_index.insert(name.clone(), input_index);
                     }
                 }
@@ -477,6 +504,18 @@ pub(crate) fn build_state_machines(
                                     })?;
                                 {
                                     let input_id = input_index as u64;
+                                    if bound_trigger_input_paths.contains_key(&condition.input)
+                                        && (condition.op.is_some()
+                                            || condition
+                                                .value
+                                                .as_ref()
+                                                .is_some_and(|value| !value.is_null()))
+                                    {
+                                        return Err(format!(
+                                            "bound trigger input '{}' must not declare a condition op or value",
+                                            condition.input
+                                        ));
+                                    }
                                     let op = condition
                                         .op
                                         .as_deref()
@@ -588,6 +627,27 @@ pub(crate) fn build_state_machines(
                                                     input_id,
                                                     op,
                                                 }));
+                                            } else if let Some(&(view_model_id, property_id)) =
+                                                bound_trigger_input_paths.get(&condition.input)
+                                            {
+                                                objects.push(Box::new(
+                                                    TransitionViewModelCondition { op_value: 0 },
+                                                ));
+                                                objects.push(Box::new(BindablePropertyTrigger {
+                                                    property_value: 0,
+                                                }));
+                                                objects.push(Box::new(DataBindContext::new(
+                                                    property_keys::BINDABLE_PROPERTY_TRIGGER_VALUE
+                                                        as u64,
+                                                    0,
+                                                    encode_id_path(&[view_model_id, property_id]),
+                                                )));
+                                                objects.push(Box::new(
+                                                    TransitionPropertyViewModelComparator,
+                                                ));
+                                                objects.push(Box::new(
+                                                    TransitionValueTriggerComparator { value: 0 },
+                                                ));
                                             } else if input_is_trigger(
                                                 &condition.input,
                                                 state_machine.inputs.as_ref(),

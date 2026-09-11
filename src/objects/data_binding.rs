@@ -624,16 +624,10 @@ impl RiveObject for ViewModelPropertyTrigger {
         type_keys::VIEW_MODEL_PROPERTY_TRIGGER
     }
     fn properties(&self) -> Vec<Property> {
-        vec![
-            Property {
-                key: property_keys::COMPONENT_NAME,
-                value: PropertyValue::String(self.name.clone()),
-            },
-            Property {
-                key: property_keys::COMPONENT_PARENT_ID,
-                value: PropertyValue::UInt(self.parent_id),
-            },
-        ]
+        vec![Property {
+            key: property_keys::VIEW_MODEL_COMPONENT_NAME,
+            value: PropertyValue::String(self.name.clone()),
+        }]
     }
 }
 
@@ -1288,6 +1282,18 @@ mod tests {
             .find(|p| p.key == property_keys::VIEW_MODEL_PROPERTY_TYPE_VALUE)
             .unwrap();
         assert_eq!(type_prop.value, PropertyValue::UInt(3));
+    }
+
+    #[test]
+    fn test_view_model_property_trigger_names_itself_as_a_view_model_component() {
+        let property = ViewModelPropertyTrigger {
+            name: "advance".to_string(),
+            parent_id: 7,
+        };
+        let props = property.properties();
+        assert_eq!(props.len(), 1);
+        assert_eq!(props[0].key, property_keys::VIEW_MODEL_COMPONENT_NAME);
+        assert_eq!(props[0].value, PropertyValue::String("advance".to_string()));
     }
 
     #[test]

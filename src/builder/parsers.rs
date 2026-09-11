@@ -597,7 +597,7 @@ pub(crate) fn condition_op_is_valid(op: &str) -> bool {
 pub(crate) fn input_is_trigger(input_name: &str, inputs: Option<&Vec<InputSpec>>) -> bool {
     if let Some(inputs) = inputs {
         for input in inputs {
-            if let InputSpec::Trigger { name } = input
+            if let InputSpec::Trigger { name, .. } = input
                 && name == input_name
             {
                 return true;

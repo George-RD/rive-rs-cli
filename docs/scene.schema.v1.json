@@ -357,6 +357,16 @@
             "type": {
               "const": "trigger",
               "type": "string"
+            },
+            "view_model_binding": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ViewModelInputBindingSpec"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "required": [
