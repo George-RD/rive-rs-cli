@@ -504,6 +504,18 @@ pub(crate) fn build_state_machines(
                                     })?;
                                 {
                                     let input_id = input_index as u64;
+                                    if bound_trigger_input_paths.contains_key(&condition.input)
+                                        && (condition.op.is_some()
+                                            || condition
+                                                .value
+                                                .as_ref()
+                                                .is_some_and(|value| !value.is_null()))
+                                    {
+                                        return Err(format!(
+                                            "bound trigger input '{}' must not declare a condition op or value",
+                                            condition.input
+                                        ));
+                                    }
                                     let op = condition
                                         .op
                                         .as_deref()

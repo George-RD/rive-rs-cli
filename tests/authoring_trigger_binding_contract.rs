@@ -302,3 +302,44 @@ fn a_failed_statechart_edit_preserves_trigger_binding_identity() {
     assert_eq!(serde_json::to_value(&spec).expect("unchanged"), snapshot);
     assert_eq!(lower_authoring(&spec).expect("still valid"), before);
 }
+
+#[test]
+fn canonical_bound_trigger_conditions_reject_comparison_operators_and_values() {
+    let scene = lower(&document()).scene;
+    for extra in [
+        json!({ "op": "==" }),
+        json!({ "op": ">=" }),
+        json!({ "value": true }),
+        json!({ "value": false }),
+        json!({ "value": 5 }),
+    ] {
+        let mut invalid = scene.clone();
+        let condition = invalid
+            .pointer_mut("/artboard/state_machines/0/layers/0/transitions/1/conditions/0")
+            .expect("bound trigger condition");
+        for (key, value) in extra.as_object().expect("extra fields") {
+            condition[key] = value.clone();
+        }
+        let invalid: SceneSpec = serde_json::from_value(invalid).expect("canonical scene");
+        let error = compile_scene(&invalid, None, 0)
+            .expect_err("a bound trigger condition must not carry an op or value");
+        assert!(error.to_string().contains("trigger"), "{extra}: {error}");
+    }
+}
+
+#[test]
+fn canonical_bound_trigger_conditions_accept_an_explicit_null_value() {
+    let mut scene = lower(&document()).scene;
+    scene["artboard"]["state_machines"][0]["layers"][0]["transitions"][1]["conditions"][0]["value"] =
+        Value::Null;
+    let scene: SceneSpec = serde_json::from_value(scene).expect("canonical scene");
+    let bytes = compile_scene(&scene, None, 0).expect("an absent value must still compile");
+    let types: Vec<_> = parse_riv(&bytes, &InspectFilter::default())
+        .expect("encoded scene")
+        .objects
+        .iter()
+        .map(|object| object.type_key)
+        .collect();
+    assert!(types.contains(&type_keys::TRANSITION_VALUE_TRIGGER_COMPARATOR));
+    assert!(!types.contains(&type_keys::TRANSITION_TRIGGER_CONDITION));
+}
