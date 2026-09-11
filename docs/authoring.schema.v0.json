@@ -501,6 +501,23 @@
             "value"
           ],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "trigger",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "type": "object"
         }
       ]
     },
@@ -696,6 +713,9 @@
         },
         {
           "$ref": "#/$defs/BehaviorTriggerConditionSpec"
+        },
+        {
+          "$ref": "#/$defs/BehaviorTriggerBindingConditionSpec"
         }
       ]
     },
@@ -769,6 +789,18 @@
         "from",
         "to",
         "when"
+      ],
+      "type": "object"
+    },
+    "BehaviorTriggerBindingConditionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "binding": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "binding"
       ],
       "type": "object"
     },

@@ -1518,6 +1518,8 @@ pub enum InputSpec {
     },
     Trigger {
         name: String,
+        #[serde(default)]
+        view_model_binding: Option<ViewModelInputBindingSpec>,
     },
 }
 

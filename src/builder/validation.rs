@@ -237,7 +237,7 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<Spe
                     let name = match input {
                         InputSpec::Number { name, .. } => name,
                         InputSpec::Bool { name, .. } => name,
-                        InputSpec::Trigger { name } => name,
+                        InputSpec::Trigger { name, .. } => name,
                     };
                     if input_names.contains_key(name) {
                         return Err(format!(

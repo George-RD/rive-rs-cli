@@ -155,7 +155,7 @@ fn a_trigger_binding_is_rejected_as_a_blend_weight_source() {
     });
     assert_diagnostic(
         &input,
-        "invalid_blend_input",
+        "invalid_blend_binding",
         "$.behavior.statecharts[0].states[1].blend.binding",
     );
 }
@@ -237,11 +237,11 @@ fn trigger_binding_lowering_is_deterministic_and_keeps_source_map_identity() {
         .iter()
         .find(|entry| entry.authored_id == "gate-model/enabled")
         .expect("trigger property source entry");
+    assert_eq!(property.authored_path, "$.behavior.models[0].properties[0]");
     assert_eq!(
-        property.authored_path,
-        "$.behavior.models[0].properties[0]"
+        property.scene_paths,
+        vec!["/artboard/children/1/children/0"]
     );
-    assert_eq!(property.scene_paths, vec!["/artboard/children/1/children/0"]);
 }
 
 #[test]

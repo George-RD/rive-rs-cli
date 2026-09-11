@@ -10,6 +10,7 @@ canonical `SceneSpec` object graph.
 | `typed-motion.v0.json` | Typed visual composition, relative image asset, poses, and timeline motion |
 | `behavior-binding.v0.json` | Boolean view-model binding driving a named typed statechart |
 | `number-binding.v0.json` | Parameterized numeric view-model threshold with forward and reverse named transitions |
+| `trigger-binding.v0.json` | Momentary trigger view-model property driving one direction of a named state pair |
 | `pointer-statechart.v0.json` | Boolean state-machine input, named event, pointer listener, and input-driven transition |
 | `raw-pulse.v0.json` | The explicit raw SceneSpec escape hatch for unsupported concepts |
 | `complex-static-showcase.v0.json` | A complex static composition built without raw scene, motion, or behavior escapes |
@@ -262,3 +263,20 @@ The runtime test retains six comparison variants and their rendered frames under
 `target/playwright-behavior/automatic-transitions`. Removing `exit_time_ms` makes
 an automatic transition immediately eligible; it does not wait for the motion's
 end. Do not create cycles of ungated automatic transitions.
+
+## Trigger binding
+
+`trigger-binding.v0.json` gives one state pair two independent momentary sources.
+A `trigger` view-model property fires `resting -> engaged` through the binding
+`gate-advance`, and a declared machine trigger input fires `engaged -> resting`.
+Nothing latches: each fire is consumed once.
+
+```sh
+cargo run -- authoring compile examples/authoring/trigger-binding.v0.json -o /tmp/trigger-binding.riv --json
+node tests/playwright/authoring-trigger-binding-runtime.js
+```
+
+The runtime test retains seven samples and their rendered frames under
+`target/playwright-behavior/trigger-binding`. Firing the synthesized input that
+backs the binding does not transition; the host must fire the model property
+through `viewModelByName(...).instance().trigger(name).trigger()`.
