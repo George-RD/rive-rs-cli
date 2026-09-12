@@ -1,4 +1,4 @@
-name: Verify node-child validation for 257
+name: Verify deferred asset resolution for 257
 
 on:
   push:
@@ -25,39 +25,15 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Reproduce the node callback-order failure
+      - name: Add the late-reference and deep-placement regression contracts
         run: |
-          mkdir -p target/node-validation
-          if cargo test --locked --test embedded_compile_contract nested_assets_are_rejected_before_any_resolver_callback > target/node-validation/red.log 2>&1; then
-            echo 'Expected callback-order regression did not reproduce.'
-            exit 1
-          fi
-          grep 'invalid scene must fail before asset resolution' target/node-validation/red.log
-      - name: Correct the pinned traversal and strengthen nested-node coverage
-        run: |
+          mkdir -p target/deferred-assets
           python3 - <<'PY'
           from pathlib import Path
-          from hashlib import sha1
-          p = Path('src/builder/validation.rs')
-          data = p.read_bytes()
-          blob = sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-          assert blob == 'e00056836bf23c3bfc95bd165a24ea98067c6c6c', blob
-          old = '''        ObjectSpec::Node { name, .. } => {
-                      ensure_unique_name(name, object_names)?;
-                  }'''
-          new = '''        ObjectSpec::Node { name, children, .. } => {
-                      ensure_unique_name(name, object_names)?;
-                      if let Some(children) = children {
-                          for child in children {
-                              validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
-                          }
-                      }
-                  }'''
-          text = data.decode()
-          assert text.count(old) == 1, 'unexpected Node validation inventory'
-          p.write_text(text.replace(old, new, 1))
-          tests = Path('tests/embedded_compile_contract.rs')
-          tests.write_text(tests.read_text() + '''
+          p = Path('tests/embedded_compile_contract.rs')
+          text = p.read_text()
+          assert 'fn unresolved_nested_artboards_fail_before_resolver_callbacks' not in text
+          p.write_text(text + '''
 
           #[test]
           fn deeply_nested_node_assets_fail_before_resolver_callbacks() {
@@ -66,9 +42,7 @@ jobs:
                       let mut child = json!({"type": kind, "name": "DeepAsset"});
                       for level in 0..depth {
                           child = json!({
-                              "type": "node",
-                              "name": format!("Node{level}"),
-                              "children": [child]
+                              "type": "node", "name": format!("Node{level}"), "children": [child]
                           });
                       }
                       let scene = serde_json::from_value(json!({
@@ -82,13 +56,84 @@ jobs:
                           }
                       })).expect("nested node scene");
                       let error = compile_scene_with_assets(&scene, options(), &NoReads)
-                          .expect_err("all node descendants validate before resolving assets");
+                          .expect_err("all node descendants build before resolving assets");
                       assert_eq!(error.code(), "invalid-scene");
                       assert!(error.to_string().contains("DeepAsset"), "{error}");
                   }
               }
           }
+
+          #[test]
+          fn unresolved_nested_artboards_fail_before_resolver_callbacks() {
+              for kind in ["nested_artboard", "nested_artboard_leaf", "nested_artboard_layout"] {
+                  for in_node in [false, true] {
+                      let mut child = json!({
+                          "type": kind, "name": "Nested", "source_artboard": "MissingBoard"
+                      });
+                      if in_node {
+                          child = json!({"type": "node", "name": "Parent", "children": [child]});
+                      }
+                      let scene = serde_json::from_value(json!({
+                          "scene_format_version": 1,
+                          "artboards": [
+                              {"name": "First", "width": 64, "height": 64, "children": [
+                                  {"type": "font_asset", "name": "FirstFont", "source": FONT_KEY}
+                              ]},
+                              {"name": "Second", "width": 64, "height": 64, "children": [child]}
+                          ]
+                      })).expect("unknown nested artboard target");
+                      let error = compile_scene_with_assets(&scene, options(), &NoReads)
+                          .expect_err("late reference errors precede resolver calls");
+                      assert_eq!(error.code(), "invalid-scene");
+                      assert!(error.to_string().contains("MissingBoard"), "{error}");
+                  }
+              }
+          }
           ''')
+          PY
+          if cargo test --locked --test embedded_compile_contract unresolved_nested_artboards_fail_before_resolver_callbacks > target/deferred-assets/red.log 2>&1; then
+            echo 'Expected late-reference callback regression did not reproduce.'
+            exit 1
+          fi
+          grep 'invalid scene must fail before asset resolution' target/deferred-assets/red.log
+      - name: Resolve bytes only after the existing canonical graph has built
+        run: |
+          git show dfdf746e923a4935ab1d78c30425588d95bebcd5:src/builder/validation.rs > src/builder/validation.rs
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha1
+          p = Path('src/builder/scene.rs')
+          data = p.read_bytes()
+          blob = sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          assert blob == 'dd4ac4e5bb6ac66505153c0513352456e19496d5', blob
+          text = data.decode()
+          def replace(old, new):
+              global text
+              assert text.count(old) == 1, old[:100]
+              text = text.replace(old, new, 1)
+          replace('use crate::objects::core::RiveObject;', 'use crate::objects::assets::FileAssetContents;\nuse crate::objects::core::RiveObject;')
+          replace('    let mut assets = AssetSession::new(resolver, limits);', '    let mut pending_assets = Vec::new();')
+          replace('''                let contents = embedded_asset_request(child)
+                              .map(|request| assets.resolve(request))
+                              .transpose()?;
+                          append_file_asset(child, &mut objects, contents);''', '''                let request = embedded_asset_request(child);
+                          append_file_asset(child, &mut objects, request.map(|_| Vec::new()));
+                          if let Some(request) = request {
+                              pending_assets.push((objects.len() - 1, request));
+                          }''')
+          replace('''    Ok(objects)
+          }
+
+          fn embedded_asset_request''', '''    let mut assets = AssetSession::new(resolver, limits);
+              for (contents_index, request) in pending_assets {
+                  objects[contents_index] = Box::new(FileAssetContents::new(assets.resolve(request)?));
+              }
+
+              Ok(objects)
+          }
+
+          fn embedded_asset_request''')
+          p.write_text(text)
           roadmap = Path('ROADMAP.md')
           old = '''is in progress on `agent/256-a1-memory-assets`; its [Cairn todo](meta/todos/todo.embedded-memory-assets.md)
           records the implementation and outstanding verification gates. #259 remains blocked
@@ -106,24 +151,24 @@ jobs:
           PY
           cargo fmt
           git diff --check
-      - name: Verify canonical builder, existing authoring and memory contracts
+      - name: Verify source-order safety and every legacy fixture digest
         run: |
           set -o pipefail
-          cargo test --locked --test asset_resolution_contract --test embedded_compile_contract 2>&1 | tee target/node-validation/contracts.log
-          cargo test --locked --lib 2>&1 | tee target/node-validation/library.log
-          cargo clippy --locked --all-targets --all-features -- -D warnings 2>&1 | tee target/node-validation/clippy.log
-      - name: Save verified source changes without keeping a preparation job
+          cargo test --locked --test asset_resolution_contract --test embedded_compile_contract 2>&1 | tee target/deferred-assets/contracts.log
+          cargo test --locked --lib 2>&1 | tee target/deferred-assets/library.log
+          cargo clippy --locked --all-targets --all-features -- -D warnings 2>&1 | tee target/deferred-assets/clippy.log
+      - name: Save the verified source delta without keeping this development job
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/builder/validation.rs tests/embedded_compile_contract.rs ROADMAP.md .github/workflows/agent-257-node-validation.yml
-          git commit -m 'fix(builder): validate node descendants before asset resolution (#257)'
-          git rev-parse HEAD HEAD:src | tee target/node-validation/identity.txt
-          git diff 033a0f814a21b8aa9e1b5ae4eef9daedb243d26d > target/node-validation/fix.patch
+          git add src/builder/validation.rs src/builder/scene.rs tests/embedded_compile_contract.rs ROADMAP.md .github/workflows/agent-257-node-validation.yml
+          git commit -m 'fix(builder): defer asset callbacks until canonical construction succeeds (#257)'
+          git rev-parse HEAD HEAD:src | tee target/deferred-assets/identity.txt
+          git diff 033a0f814a21b8aa9e1b5ae4eef9daedb243d26d > target/deferred-assets/fix.patch
           git push origin HEAD:refs/heads/agent/256-a1-memory-assets
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: issue-257-node-validation
-          path: target/node-validation
+          name: issue-257-deferred-assets
+          path: target/deferred-assets
           retention-days: 14
