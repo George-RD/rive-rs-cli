@@ -41,15 +41,22 @@ def parse_type(text: str) -> dict:
                                          'enum_values': None, 'bits': None,
                                          'animatable': 'A' in flags, 'bindable': 'B' in flags,
                                          'derived': 'D' in flags})
-        elif line.startswith('      accepts: ') and result['properties']:
-            result['properties'][-1]['enum_values'] = line[len('      accepts: '):].split(', ')
-        elif line.startswith('      bits ') and result['properties']:
-            result['properties'][-1]['bits'] = line.split('): ', 1)[-1].split()
+        elif (match := re.fullmatch(r'      accepts: (\S+(?:, \S+)*)', line)) and result['properties']:
+            result['properties'][-1]['enum_values'] = match[1].split(', ')
+        elif (match := re.fullmatch(r'      bits \(.+\): (\w+(?: \w+)*)', line)) and result['properties']:
+            result['properties'][-1]['bits'] = match[1].split()
+        elif re.match(r'      (accepts|bits)\b', line):
+            raise SchemaError('malformed schema fact continuation')
         elif line == 'no matching properties':
             count = 0
         elif match := re.match(r'(\d+) propert(?:y|ies)\.', line):
             count = int(match[1])
-        elif line and not line.startswith(('      ', 'Editor-only properties are hidden;')):
+        elif line.startswith('Editor-only properties are hidden;'):
+            pass
+        elif line.startswith('      ') and result['properties']:
+            # CLI property prose is not republished. Its raw digest is compared by check.
+            pass
+        elif line:
             raise SchemaError('unrecognized schema layout')
     fields = result['properties']
     if count != len(fields) or len({field_identity(field) for field in fields}) != len(fields):

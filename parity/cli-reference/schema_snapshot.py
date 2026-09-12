@@ -129,6 +129,7 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
             or not isinstance(value.get('types'), dict) or not value['types']
             or not isinstance(value.get('provenance'), dict)):
         raise SchemaError('invalid schema snapshot')
+    validate_provenance(value['provenance'])
     validate_metadata(value.get('compiler_metadata'))
     for name, row in value['types'].items():
         if (not isinstance(row, dict) or row.get('name') != name or type(row.get('type_key')) is not int
@@ -151,3 +152,25 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
                 raise SchemaError(f'duplicate snapshot property: {name}')
             identities.add(identity)
     return value
+
+
+def validate_provenance(provenance: dict) -> None:
+    """Require the complete retained capture identity, including discarded text."""
+    def is_hex(value, length):
+        return isinstance(value, str) and re.fullmatch(r'[0-9a-f]{' + str(length) + '}', value)
+
+    if (not is_hex(provenance.get('source_head'), 40)
+            or any(not is_hex(provenance.get(key), 64)
+                   for key in ['lock_sha256', 'recording_sha256', 'raw_output_inventory_sha256'])
+            or any(not isinstance(provenance.get(key), str) or not provenance[key]
+                   for key in ['attribution', 'retention', 'license_scope'])):
+        raise SchemaError('snapshot provenance is missing or invalid')
+    official = provenance.get('official')
+    if (not isinstance(official, dict)
+            or any(not is_hex(official.get(key), 64) for key in ['archive_sha256', 'binary_sha256'])
+            or not is_hex(official.get('pin_source_git_blob'), 40)
+            or any(not isinstance(official.get(key), str) or not official[key]
+                   for key in ['source', 'pin_source', 'version'])
+            or not isinstance(official.get('platform'), list) or len(official['platform']) != 2
+            or not all(isinstance(value, str) and value for value in official['platform'])):
+        raise SchemaError('snapshot official provenance is missing or invalid')

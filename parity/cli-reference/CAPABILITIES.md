@@ -25,10 +25,22 @@ Rust schema-generation guard remains responsible for keeping the published schem
 aligned with production types.
 
 `check` returns 0 when the reviewed schema/compiler metadata is unchanged and the
-retained fixture evidence verifies, 1 for semantic drift, and 2 for invalid or
-stale evidence. The normal workflow runs that check. A failing check is not fixed
+retained fixture evidence verifies, 1 for semantic or candidate-provenance drift,
+and 2 for invalid or stale evidence. The normal workflow runs that check. A failing check is not fixed
 by regenerating a baseline without review. Its JSON names added, removed and
 changed fields; keys, defaults, enum labels and metadata changes remain distinct.
+
+Candidate checks also compare the full capture provenance and compiler-source
+identities. A new capture with a different source head or recording is therefore
+reviewable even when its normalized facts match. The retained manifest must agree
+with the snapshot's source head. Missing compiler or capture provenance is invalid,
+not a clean diff.
+
+The CLI interleaves indented property descriptions with structured facts. Those
+descriptions are not republished. Reserved enum/bit continuations are parsed
+strictly, and every raw output remains covered by the compared inventory digest,
+so changed or newly introduced continuation text cannot silently become a clean
+candidate. Rejecting every indented description would break the pinned corpus.
 
 ## What the stages mean
 
@@ -97,7 +109,7 @@ pin first; replacing the expected input is not itself proof of correctness.
 inherited `Asset.name` (key 203). Bare property-name maps lose a real declaration.
 The normalizer keys by owner and name. Single-property and zero-property schemas
 also use different summary shapes. Tests reproduce those observations. Defaults
-and accepted enum labels are literal facts, not inferred numeric encodings.
+and accepted enum labels remain literal facts, not inferred numeric encodings.
 
 **Compile:** B1's first actual execution failed for a missing Linux `libEGL` library.
 That was a tool prerequisite, not an RML or encoder defect. The corrected reference

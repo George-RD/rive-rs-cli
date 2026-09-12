@@ -85,6 +85,8 @@ def load_baseline() -> dict:
     pin = reference.read_json(directory / 'snapshot.json')
     path = reference.checked_relative(directory, pin['archive'])
     snapshot = read_snapshot(path, pin['archive_sha256'])
+    if pin.get('source_head') != snapshot['provenance']['source_head']:
+        raise SchemaError('manifest source head differs from the retained snapshot')
     lock = reference.read_json(reference.HERE / 'lock.json')
     if (snapshot['provenance'].get('lock_sha256') != reference.digest(reference.HERE / 'lock.json')
             or snapshot['provenance'].get('official', {}).get('archive_sha256') != lock['official']['archive_sha256']):
@@ -189,15 +191,20 @@ def main() -> None:
             changes = schema_changes(baseline['types'], candidate['types'])
             candidate_changes = value_changes(metadata_facts(baseline['compiler_metadata']),
                                               metadata_facts(candidate['compiler_metadata']), 'compiler')
-            provenance_changes = value_changes(baseline['provenance']['official'], candidate['provenance']['official'], 'official')
-            result = {'schema_changes': changes, 'official_changes': provenance_changes,
+            official_changes = value_changes(baseline['provenance']['official'], candidate['provenance']['official'], 'official')
+            provenance_changes = value_changes(baseline['provenance'], candidate['provenance'], 'provenance')
+            candidate_source_changes = value_changes(baseline['compiler_metadata']['provenance'],
+                                                     candidate['compiler_metadata']['provenance'], 'compiler.provenance')
+            result = {'schema_changes': changes, 'official_changes': official_changes,
+                      'provenance_changes': provenance_changes,
+                      'candidate_compiler_source_changes': candidate_source_changes,
                       'candidate_compiler_changes': candidate_changes,
                       'compiler_changes': result['compiler_changes_since_snapshot'],
                       'stale_fixture_evidence': False}
-            changed = bool(changes or provenance_changes or candidate_changes or result['compiler_changes'])
+            changed = bool(changes or provenance_changes or candidate_changes or candidate_source_changes or result['compiler_changes'])
             result['ok'] = not changed
             print(json.dumps(result, indent=2, sort_keys=True) if args.json else
-                  f"Schema changes: {len(changes)}; official pin changes: {len(provenance_changes)}; compiler changes: {len(result['compiler_changes'])}; candidate compiler changes: {len(candidate_changes)}. Evidence is current for its retained source.")
+                  f"Schema changes: {len(changes)}; provenance changes: {len(provenance_changes)}; compiler changes: {len(result['compiler_changes'])}; candidate compiler changes: {len(candidate_changes)}; candidate source changes: {len(candidate_source_changes)}. Evidence is current for its retained source.")
             raise SystemExit(1 if changed else 0)
         print(json.dumps(result, indent=2, sort_keys=True) if args.json else render_text(result))
     except (SchemaError, reference.ReferenceError, OSError, ValueError, KeyError, TypeError, tarfile.TarError) as error:

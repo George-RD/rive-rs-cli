@@ -116,6 +116,35 @@ class CapabilityMutationContract(unittest.TestCase):
         self.assertEqual([row['path'] for row in comparison['candidate_compiler_changes']],
                          ['compiler.registered_types.7'])
 
+    def test_candidate_provenance_drift_cannot_disappear_when_schema_facts_are_unchanged(self):
+        snapshot = read_snapshot(HERE / 'schema-baseline/facts.json.xz')
+        # Captured continuation text is hashed even when it is prose rather than a fact.
+        snapshot['provenance']['raw_output_inventory_sha256'] = 'f' * 64
+        snapshot['compiler_metadata']['provenance']['docs/scene.schema.v1.json'] = 'e' * 64
+        with tempfile.TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / 'candidate.json'
+            candidate.write_text(json.dumps(snapshot))
+            result = self.run_check(HERE, '--candidate', str(candidate))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        comparison = json.loads(result.stdout)
+        self.assertEqual(comparison['schema_changes'], [])
+        self.assertEqual(comparison['candidate_compiler_changes'], [])
+        self.assertEqual([row['path'] for row in comparison['provenance_changes']],
+                         ['provenance.raw_output_inventory_sha256'])
+        self.assertEqual([row['path'] for row in comparison['candidate_compiler_source_changes']],
+                         ['compiler.provenance.docs/scene.schema.v1.json'])
+
+    def test_retained_manifest_must_match_the_snapshot_source_head(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            _, here = self.fixture_checkout(temporary)
+            path = here / 'schema-baseline/snapshot.json'
+            pin = json.loads(path.read_text())
+            pin['source_head'] = 'f' * 40
+            path.write_text(json.dumps(pin))
+            result = self.run_check(here)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn('manifest source head', result.stderr)
+
     def test_changed_source_fixture_invalidates_retained_runtime_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
             _, here = self.fixture_checkout(temporary)

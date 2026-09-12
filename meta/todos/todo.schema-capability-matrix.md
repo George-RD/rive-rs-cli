@@ -39,3 +39,16 @@ CI, external review and merge evidence belong on PR #277; this implementation
 status is not permission to skip those gates. The first retention writer and
 source-archive tooling are removed from the final diff. Normal tests neither
 execute nor download the official CLI. Refresh writes a new candidate only.
+
+
+External review follow-up: Codex reproduced missing candidate compiler metadata
+passing as clean. CodeRabbit also identified incomplete provenance comparison,
+indented continuation ambiguity and a missing positive opt-in test assertion.
+The fixes require complete snapshot inventories/provenance, bind the retained
+manifest source head, compare candidate facts and source identities separately,
+reject malformed enum/bit continuations and test both marker predicates. The CLI's
+actual property descriptions remain excluded from retained facts but included in
+raw-output digest comparison. Rejecting all such prose was not adopted: the pinned
+capture contains 659 distinct description lines. All 351 types were re-normalized
+with identical retained bytes after the stricter parser; no baseline refresh was
+needed. The expanded 70-contract suite and final-head gates are recorded on #277.

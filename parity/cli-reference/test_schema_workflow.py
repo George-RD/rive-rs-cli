@@ -11,6 +11,7 @@ class SchemaWorkflowContract(unittest.TestCase):
         condition = workflow.split('  capture:\n    if: >-\n', 1)[1].split('    runs-on:', 1)[0]
         for guard in ["github.event.action == 'edited' &&", 'github.event.changes.body != null &&',
                       'github.event.pull_request.head.repo.full_name == github.repository &&',
+                      "contains(github.event.pull_request.body, '<!-- run-schema-reference:1.0.2 -->') &&",
                       "github.event_name == 'workflow_dispatch' ||"]:
             self.assertIn(guard, condition)
         self.assertIn('!contains(github.event.changes.body.from', condition)

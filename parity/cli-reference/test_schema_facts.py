@@ -1,6 +1,6 @@
 import unittest
 
-from schema_facts import SchemaError, normalize_type, schema_changes, type_names
+from schema_facts import SchemaError, normalize_type, parse_type, schema_changes, type_names
 
 
 RUNTIME = '''Shape  (typeKey 3)
@@ -64,6 +64,15 @@ class SchemaCaptureShapeContract(unittest.TestCase):
                         RUNTIME.replace('Shape  (typeKey 3)', 'Rectangle  (typeKey 7)')]:
             with self.subTest(invalid=invalid), self.assertRaises(SchemaError):
                 normalize_type(invalid, ALL)
+
+    def test_property_prose_is_not_republished_but_malformed_fact_markers_fail(self):
+        prose = RUNTIME.replace('3 properties.', '      Original test-only property explanation.\n\n3 properties.')
+        self.assertEqual(normalize_type(prose, ALL), normalize_type(RUNTIME, ALL))
+        for line in ['      accepts = first, second', '      accepts: ',
+                     '      bits malformed', '      bits (flags): ']:
+            invalid = RUNTIME.replace('3 properties.', line + '\n\n3 properties.')
+            with self.subTest(line=line), self.assertRaises(SchemaError):
+                parse_type(invalid)
 
     def test_type_list_requires_unique_names_and_a_complete_count(self):
         self.assertEqual(type_names('Shape\nRectangle\n\n2 types.\n'), ['Rectangle', 'Shape'])
