@@ -1,9 +1,9 @@
 # Compile with caller-owned assets
 
-Issue #257 adds an explicit asset source to the existing SceneSpec compiler.
-The implementation and verification status are tracked in the pull request and
-[the Cairn todo](../meta/todos/todo.embedded-memory-assets.md). This document is not
-an assertion that the open draft has passed its merge gates.
+`compile_scene_with_assets` accepts explicit image and font sources without a
+scene directory. It uses the same SceneSpec builder and binary encoder as existing
+CLI and application callers. [The evidence record](../tests/evidence/embedded-assets/README.md)
+separates legacy byte compatibility from official-runtime image/font proof.
 
 ```rust
 use rive_cli::builder::SceneSpec;
@@ -83,11 +83,10 @@ Unknown signatures retain legacy behavior and require runtime validation.
 
 `compile_scene(scene, base_dir, file_id)` keeps its signature and legacy
 `CompileError::Build` error type and `invalid-scene` classification.
-`builder::build_scene` also keeps its
-string-error interface. Both forward through the same resolver-aware builder;
-there is no second scene construction or encoding pipeline. The new compilation
-entry point exposes typed asset diagnostics as `EmbeddedCompileError`, without
-adding variants to the legacy error enum.
+`builder::build_scene` keeps its string-error interface. Both forward through the
+same resolver-aware builder; there is no second scene construction or encoding
+pipeline. The new compilation entry point exposes typed asset diagnostics as
+`EmbeddedCompileError`, without adding variants to the legacy error enum.
 
 `FilesystemAssets` owns path canonicalization, project-root discovery and
 containment. Object construction receives bytes only. The adapter requires an
@@ -110,10 +109,10 @@ path entry, global budgets, validation order, and the successful legacy fixture
 hashes captured before the builder change.
 
 `cargo run --locked --quiet --example embedded_asset_compatibility` writes the
-compatibility manifest to stdout. The committed baseline must be captured with
-the unchanged compiler at `dfdf746e923a4935ab1d78c30425588d95bebcd5`; do not refresh
-it from the implementation merely to make a mismatch pass. Skipped malformed or
-unsupported inputs are listed separately from successful fixture hashes.
+compatibility manifest to stdout. The committed baseline was captured with the
+unchanged compilation path from `dfdf746e923a4935ab1d78c30425588d95bebcd5`;
+do not refresh it from the implementation merely to make a mismatch pass. Skipped
+malformed or unsupported inputs are listed separately from successful hashes.
 
 `tests/embedded_assets_runtime.rs` compiles the image/font scene from memory and
 renders through the bundled official runtime. It compares repeat captures, removes

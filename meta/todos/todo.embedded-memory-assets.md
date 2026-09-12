@@ -6,39 +6,43 @@ created: 2026-09-12
 
 # Embedded A1: caller-owned image and font assets
 
-Execution issue: #257. Parent spec: #256. Branch: `agent/256-a1-memory-assets`.
-The independent reference seed #258 is being implemented in another session and
-is not part of this change. #259 stays blocked until #257 is verified and merged.
+Execution issue: #257. Parent spec: #256. PR: #275.
+Branch: `agent/256-a1-memory-assets`. The independent #258 reference seed belongs
+to another session and is not part of this change. #259 remains blocked until
+#257 is verified and merged.
 
-## Acceptance criteria
+## Implemented
 
-- Compile a SceneSpec with an image and embedded font from caller-owned memory
-  through the canonical builder and encoder, using explicit deterministic options.
-- Existing compilation and builder callers forward through the same implementation;
-  successful SceneSpec and AuthoringSpec fixture hashes, asset order and file IDs
-  remain unchanged.
-- Move filesystem/root/containment policy out of object construction into the host
-  adapter, retaining relative, traversal, symlink, missing and empty contracts.
-- Fail closed with logical asset diagnostics and per-payload/file-total limits.
-  State ownership, repeatability, external-asset and custom-resolver assumptions.
-- Retain positive official-runtime proof that both supplied assets drive visible
-  output, separately from structural and byte-compatibility checks.
-- Pass exact-head Rust, declared MSRV, runtime and Cairn gates; finish separate
-  Standards and Spec reviews. Do not close #256 or unblock #259 on a partial draft.
+The public memory compilation entry, deterministic options and typed asset errors
+use the existing builder and encoder. Both legacy entry points forward through that
+same builder without changing their signatures or adding legacy error variants.
+Image/font ownership, explicit external assets, per-asset and cross-artboard total
+budgets are documented and contract-tested. Filesystem discovery, bounded reads,
+canonicalization and containment live in an adapter, not object construction.
+All file-scoped asset names are validated before any resolver callback.
 
-## Current state
+There is no alternate SceneSpec graph, source-map state, encoder, workspace move,
+RML parser, official CLI dependency, or Yarnling-specific code.
 
-The branch contains an asset-resolution draft and a pinned, branch-only source
-preparation job to work around the unavailable local Git/Rust environment. The
-job must apply the actual builder patch, commit real Rust sources, and run the
-contracts; it is not part of the compiler architecture and must be removed from
-the final PR. There is no runtime dependency on source rewriting or a CI service.
+## Verification record
 
-Completion is not asserted here. The PR records the resulting exact commit,
-checks that actually ran, failures, retained evidence, and both review axes.
+The first preparation run observed a missing-API red test and then passed 29 new
+resolver/compiler contracts. Its independently captured manifest contains 95
+successful legacy SceneSpec/AuthoringSpec fixtures and four explicit skips; every
+successful output remained byte-identical after the compiler wiring.
 
-## Constraints
+Run 34693878309 passed the image/font official-runtime control test and the Rust
+1.88 focused contracts on `5f991ef7665fe6182dcefb9a5489c86ef5664485`. The retained
+[observation](../../tests/evidence/embedded-assets/observation.json) records source,
+asset/runtime/browser identities, frame hashes and measured pixel differences.
+The initial Playwright-executable launch failure is disclosed separately; no
+runtime success is inferred from that attempt.
 
-Keep the single compiler-owned SceneSpec and source-map state. No workspace move,
-RML parser, official CLI dependency, new asset format, or Yarnling-specific code.
-See [the API and verification contract](../../docs/embedded-assets.md).
+A subsequent test-only pixel-iteration change addresses Clippy without weakening
+assertions or changing production sources. Temporary source preparation and
+verification files have been removed. PR #275 carries final exact-head Rust,
+MSRV, browser/runtime and Cairn gates plus separate Standards and Spec self-reviews.
+This todo stays open until those final gates and review findings are resolved.
+
+See [the API contract](../../docs/embedded-assets.md) and
+[the reproduction record](../../tests/evidence/embedded-assets/README.md).

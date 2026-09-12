@@ -67,11 +67,9 @@ fn frame(root: &Path, name: &str, document: Value) -> Vec<u8> {
 fn differences(left: &[u8], right: &[u8], start_y: u32, end_y: u32) -> usize {
     let start = (start_y * WIDTH * 4) as usize;
     let end = (end_y * WIDTH * 4) as usize;
-    left[start..end]
-        .chunks_exact(4)
-        .zip(right[start..end].chunks_exact(4))
-        .filter(|(a, b)| a != b)
-        .count()
+    let (left, _) = left[start..end].as_chunks::<4>();
+    let (right, _) = right[start..end].as_chunks::<4>();
+    left.iter().zip(right).filter(|(a, b)| a != b).count()
 }
 
 #[test]
