@@ -1,0 +1,10 @@
+<Rive version="1" kind="fragment">
+  <Artboard width="128" height="96" name="ReferenceStatic">
+    <Shape x="64" y="48" name="PaintedRectangle">
+      <Rectangle width="44" height="24" originX="0.5" originY="0.5"/>
+      <Fill>
+        <SolidColor colorValue="FF2E8BC0"/>
+      </Fill>
+    </Shape>
+  </Artboard>
+</Rive>

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "archive": "capture.tar.xz",
+  "archive_sha256": "a6b96bae7a039440f1bdafb78ae92dc14c0292fd118a29d09d231c9b1a6bb728",
+  "source_head": "f878465e8d3b493e567d1556130880b84a7ec8df",
+  "workflow_run": 34693899414,
+  "workflow_artifact": 10297913092,
+  "source_zip_sha256": "5433993cac191ce18c70b18af66287e60b272268f8bca127bd97651f4e385958",
+  "retention": "Repacked original artifact files byte-for-byte into a deterministic xz tar; no executable or installation files."
+}
