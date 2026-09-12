@@ -22,7 +22,7 @@ missing login; scripts, shaders, signing and production rights remain untested.
 
 The complete original evidence is committed in `parity/cli-reference/baseline/`
 with independent source/artifact/archive pins and human-readable results.
-42 local Python tests pass, including a no-subprocess check of that actual capture.
+45 local Python tests pass, including a no-subprocess check of that actual capture.
 They do not claim local official CLI, browser, Rust or Cairn execution.
 The source-head CI run 34693872297 and MSRV run 34693872295 passed. Final retention
 commit gates and any fresh exact-head capture are recorded on PR #274 before merge.
@@ -55,3 +55,9 @@ Workflow validation also caught use of `runner.temp` in job-level `env`, where
 GitHub does not expose that context. Output selection now runs in the provisioning
 step via `$GITHUB_ENV`; the contract executes the exact assignment for distinct
 run/attempt IDs and rejects premature runner context usage.
+
+Codex review found two valid guard gaps: title/base-only edits could trigger an
+existing capture marker, and paint-negative comparisons skipped structural checks.
+Capture now requires an actual body-change object; both comparisons require equal
+object counts and zero type deltas. Three new tests failed before these fixes and
+passed afterward. The retained baseline still verifies without modification.

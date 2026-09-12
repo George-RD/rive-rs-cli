@@ -31,3 +31,12 @@ class CaptureWorkflow(unittest.TestCase):
     def test_runner_context_is_not_used_before_job_steps(self):
         header = self.workflow.split('  capture:\n', 1)[1].split('    steps:\n', 1)[0]
         self.assertNotIn('runner.', header)
+
+    def test_capture_requires_an_actual_body_change_before_checking_the_old_marker(self):
+        condition = self.workflow.split("  capture:\n    if: >-\n", 1)[1].split("    runs-on:", 1)[0]
+        guard = "github.event.changes.body != null &&"
+        self.assertIn(guard, condition)
+        self.assertLess(condition.index(guard), condition.index("!contains(github.event.changes.body.from"))
+        self.assertIn("github.event.action == 'edited' &&", condition)
+        self.assertIn("github.event.pull_request.head.repo.full_name == github.repository &&", condition)
+        self.assertIn("github.event_name == 'workflow_dispatch' ||", condition)

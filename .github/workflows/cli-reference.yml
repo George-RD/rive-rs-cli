@@ -22,6 +22,7 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.action == 'edited' &&
+       github.event.changes.body != null &&
        github.event.pull_request.head.repo.full_name == github.repository &&
        contains(github.event.pull_request.body, '<!-- run-official-reference:1.0.2 -->') &&
        !contains(github.event.changes.body.from, '<!-- run-official-reference:1.0.2 -->'))

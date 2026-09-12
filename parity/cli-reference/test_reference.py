@@ -141,6 +141,20 @@ class EvidenceContracts(unittest.TestCase):
         with self.assertRaisesRegex(reference.ReferenceError, "structural difference"):
             reference.check_comparison(self.control, False)
 
+    def test_paint_negative_control_rejects_changed_object_counts(self):
+        self.control["frames"][1]["pixel_difference"] = 8.5
+        self.control["max_pixel_difference"] = 8.5
+        self.control["candidate_object_count"] = 6
+        with self.assertRaisesRegex(reference.ReferenceError, "structural difference"):
+            reference.check_comparison(self.control, True)
+
+    def test_paint_negative_control_rejects_changed_type_composition(self):
+        self.control["frames"][1]["pixel_difference"] = 8.5
+        self.control["max_pixel_difference"] = 8.5
+        self.control["type_deltas"][0]["delta"] = 1
+        with self.assertRaisesRegex(reference.ReferenceError, "structural difference"):
+            reference.check_comparison(self.control, True)
+
     def test_structural_measurements_are_required(self):
         del self.control["type_deltas"]
         with self.assertRaisesRegex(reference.ReferenceError, "no structural measurements"):

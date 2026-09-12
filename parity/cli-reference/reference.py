@@ -116,10 +116,10 @@ def check_comparison(report: dict, changed: bool) -> None:
         raise ReferenceError("identical reference control produced a visible difference")
     if not isinstance(report.get("type_deltas"), list) or not report["type_deltas"]:
         raise ReferenceError("comparison has no structural measurements")
-    if not changed and (report.get("reference_object_count", 0) <= 0
-                        or report.get("reference_object_count") != report.get("candidate_object_count")
-                        or any(row.get("delta") != 0 for row in report.get("type_deltas", []))):
-        raise ReferenceError("identical reference control produced a structural difference")
+    if (report.get("reference_object_count", 0) <= 0
+            or report.get("reference_object_count") != report.get("candidate_object_count")
+            or any(row.get("delta") != 0 for row in report.get("type_deltas", []))):
+        raise ReferenceError("comparison produced a structural difference")
 
 
 def check_render(report: dict, directory: Path, animated: bool) -> list[str]:
