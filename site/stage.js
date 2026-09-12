@@ -7,6 +7,9 @@ const SITE = __dirname;
 
 const PAGE_FILES = [
   "index.html",
+  "text.html",
+  "page.js",
+  "page.css",
   "lab.html",
   "showcase.html",
   "showcase.json",
@@ -168,6 +171,7 @@ function plan() {
   return [
     ...PAGE_FILES.map((name) => [`site/${name}`, name]),
     ...VENDORED,
+    ...["manifest.json", "desktop.v0.json", "desktop.riv", "tablet.v0.json", "tablet.riv", "mobile.v0.json", "mobile.riv"].map(name => [`site/scenes/${name}`, `scenes/${name}`]),
     ...parityFiles(),
     ...showcaseFiles(entries),
   ];

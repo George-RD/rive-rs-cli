@@ -63,7 +63,7 @@ function collectErrors(page, errors) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
     collectErrors(page, errors);
 
-    await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "load" });
+    await page.goto(`http://127.0.0.1:${PORT}/text.html`, { waitUntil: "load" });
     await page.waitForFunction(
       () => document.querySelector(".proof-parcel")?.dataset.playbackReady === "true",
       null,
@@ -116,7 +116,7 @@ function collectErrors(page, errors) {
 
     const phone = await browser.newPage({ viewport: { width: 390, height: 844 } });
     collectErrors(phone, errors);
-    await phone.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "load" });
+    await phone.goto(`http://127.0.0.1:${PORT}/text.html`, { waitUntil: "load" });
     await phone.waitForFunction(
       () => document.querySelector(".proof-parcel")?.dataset.playbackReady === "true",
       null,
@@ -130,7 +130,7 @@ function collectErrors(page, errors) {
     const reduced = await browser.newPage({ viewport: { width: 900, height: 800 } });
     await reduced.emulateMedia({ reducedMotion: "reduce" });
     collectErrors(reduced, errors);
-    await reduced.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "load" });
+    await reduced.goto(`http://127.0.0.1:${PORT}/text.html`, { waitUntil: "load" });
     await reduced.waitForFunction(
       () => document.querySelector(".proof-parcel")?.dataset.playbackReady === "true",
       null,

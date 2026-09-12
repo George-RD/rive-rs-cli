@@ -1,0 +1,33 @@
+name: Rive-generated page
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  page:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: cargo build --locked
+      - run: node site/authoring/build.js --check
+      - run: node --test tests/playwright/rive-page-contract.js
+      - run: npm install --no-save playwright@1.62.0
+      - name: Verify the generated page in Chromium
+        env:
+          RIVE_CHROME: /usr/bin/google-chrome
+        run: node tests/playwright/rive-page-validation.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rive-page-evidence
+          path: target/rive-page-evidence
+          retention-days: 7
