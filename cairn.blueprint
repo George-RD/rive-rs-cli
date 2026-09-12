@@ -115,7 +115,11 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
                 "./tests/authoring_trim_path_contract.rs",
                 "./tests/authoring_validation_contract.rs",
                 "./tests/authoring_weave_runtime.rs",
+                "./tests/asset_resolution_contract.rs",
                 "./tests/compile_contract.rs",
+                "./tests/embedded_compile_contract.rs",
+                "./tests/embedded_assets_runtime.rs",
+                "./tests/evidence/embedded-assets",
                 "./tests/e2e.rs",
                 "./tests/eval_contract.rs",
                 "./tests/eval_interactive_contract.rs",
@@ -137,7 +141,7 @@ System RiveCli "Code-first compiler, verifier, and runtime proof loop for Rive f
 
     Container Delivery "Examples, documentation, assets, and public proof surfaces" id "rive-cli.delivery" {
         Module Examples "Showcase scenes and interactive demo" id "rive-cli.delivery.examples" {
-            path ["./showcase", "./demo", "./examples/authoring"]
+            path ["./showcase", "./demo", "./examples/authoring", "./examples/embedded_asset_compatibility.rs"]
         }
         Module Site "GitHub Pages product and verification lab" id "rive-cli.delivery.site" {
             path "./site"
@@ -194,3 +198,7 @@ rive-cli.verification.rust -> rive-cli.core.validator "Characterizes parsing and
 rive-cli.verification.rust -> rive-cli.intelligence.ai "Enforces AI evaluation contracts"
 rive-cli.verification.rust -> rive-cli.intelligence.authoring "Enforces AuthoringSpec contracts and deterministic examples"
 rive-cli.verification.browser -> rive-cli.interfaces.render "Checks official-runtime and visual behavior"
+
+rive-cli.delivery.examples -> rive-cli.core.compile "Exercises legacy fixture byte compatibility"
+rive-cli.delivery.examples -> rive-cli.core.builder "Parses canonical fixture scenes"
+rive-cli.delivery.examples -> rive-cli.intelligence.authoring "Exercises lowered authoring fixture compatibility"

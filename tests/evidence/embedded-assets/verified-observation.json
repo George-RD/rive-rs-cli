@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "issue": 257,
+  "pull_request": 275,
+  "observed_at": "2026-09-12",
+  "head_commit": "8a762224ed0dc95b6a8c658bf9030a3a9b393e93",
+  "base_commit": "dfdf746e923a4935ab1d78c30425588d95bebcd5",
+  "checkout_commit": "c03400c2e6de9a21babf151c05553af161ade407",
+  "source_tree": "b7b39335e51afc77ac62bc8da7358a20b4497b8d",
+  "runtime_test_blob": "78cf0c24df9f9fb71901b5d2ff6e17210e932537",
+  "workflow_run": 34703777838,
+  "workflow_attempt": 2,
+  "runtime_artifact": {
+    "id": 10301696226,
+    "sha256": "f544ed8bc6834bc3523bbfe819f7f554ead98e2ece229bac884f847185eac66d"
+  },
+  "rust_log_artifact": {
+    "id": 10301541949,
+    "sha256": "3d665c6e031c219380ee755344549413ec4e8e42b9b31b4508aed1427e0c5a2c",
+    "log_sha256": "b951fe47dc6944507062d6ab3674c1408abcb948ca0bb8bc30bd6c14c0e3c6a1"
+  },
+  "rustc": "1.98.1 (48a229cea 2026-09-01)",
+  "browser": "Google Chrome 152.0.7977.82",
+  "command": "RIVE_MEMORY_ASSET_EVIDENCE=target/embedded-assets-runtime cargo test --locked --all-features",
+  "full_rust_suite": {
+    "passed": 1198,
+    "failed": 0,
+    "ignored": 1,
+    "ignored_test": "regenerate_published_authoring_schema"
+  },
+  "focused_asset_contracts_passed": 32,
+  "legacy_fixtures": {
+    "unchanged_successes": 95,
+    "explicit_skips": 4,
+    "baseline_regenerated": false
+  },
+  "runtime_controls": {
+    "comparison_scope": "entire frame; image pixel mask from removed-image control",
+    "compiler_inputs": "SceneSpec and caller-owned memory image/font bytes; no base directory",
+    "font_sha256": "84057e5333c4a4c21a7d1f33ebffd414bfda6f787984ba4f89a6f9b2dcd58580",
+    "frames": [
+      "full/frame_00000.png",
+      "repeat/frame_00000.png",
+      "replacement-image-bytes/frame_00000.png",
+      "without-image/frame_00000.png",
+      "without-text/frame_00000.png",
+      "without-font-bytes/frame_00000.png"
+    ],
+    "image_changed_pixels": 57344,
+    "image_sha256": "f3193818cf4ed8c64e6ae039541d2346f77863e3bd4e43006149699fde04e45b",
+    "missing_font_changed_pixels": 2865,
+    "missing_font_matches_removed_text": true,
+    "repeat_pixels_identical": true,
+    "replacement_image_changed_pixels": 57344,
+    "replacement_image_non_image_pixels_changed": 0,
+    "replacement_image_rgba": [232, 32, 96, 255],
+    "replacement_image_same_scene_and_dimensions": true,
+    "replacement_image_sha256": "4d06be659891fc712b016b87f91d1b64e82bd1ef64bc3c008f597eb6e7a7380c",
+    "runtime_js_sha256": "9bfa2546433e72e7fb6e1cb63d863febe24563ba8644ddbb095518f2ef29b4a7",
+    "runtime_wasm_sha256": "0e018bfd0826a276c4fbefae4d3dd0fe1be127eed10bedce4268f3890e54d47b",
+    "text_changed_pixels": 2865
+  },
+  "file_sha256": {
+    "full/frame_00000.png": "24b30184de5e851d676a5f7752347b62c9accdcede289a09504dedaf692ac8bf",
+    "full/scene.riv": "ab06375e99b2d6d23088ce2f63b67c90cf940efc86834860f975bfeedfb6e3ab",
+    "repeat/frame_00000.png": "24b30184de5e851d676a5f7752347b62c9accdcede289a09504dedaf692ac8bf",
+    "repeat/scene.riv": "ab06375e99b2d6d23088ce2f63b67c90cf940efc86834860f975bfeedfb6e3ab",
+    "replacement-image-bytes/frame_00000.png": "5c28c43b09f9fbca6d30f6258e665fe68c42433f2c05d098f2c5efcc1fa46f8f",
+    "replacement-image-bytes/scene.riv": "b95a389d37d0ca71c7af550186620892a71df0db1459ca2705efa7a398964535",
+    "without-font-bytes/frame_00000.png": "c7633e17b0f898012a9dd6e6e9ae4b3d4849d4f565a4fceb0c19cbfbeedf8e7c",
+    "without-font-bytes/scene.riv": "2ece6ad420e2a5ea171f55d07021563c1f294d3c64bd3e94ae137f59e602dae4",
+    "without-image/frame_00000.png": "ce5755ab1877b3fe98e211b33595f5df55b33be041fd25e4f1bdad2753edbd37",
+    "without-image/scene.riv": "54578d2e795b671022557a32a0420ae06dc0d3dd5c12364dbbd41166ceb79363",
+    "without-text/frame_00000.png": "c7633e17b0f898012a9dd6e6e9ae4b3d4849d4f565a4fceb0c19cbfbeedf8e7c",
+    "without-text/scene.riv": "87ac20b644d2414ecd5ad7c6c0cdba72ecc59b8a7dc8f8ad824f8d7229e9e033"
+  },
+  "independent_artifact_inspection": {
+    "whole_frame_controls_recomputed": true,
+    "full_frame_visually_inspected": true
+  },
+  "limitations": [
+    "Historical observation.json is retained separately; its image-removal control alone did not establish image-buffer identity.",
+    "The first attempt of this same CI run timed out launching Chrome in an existing console runtime test before the memory-asset runtime test; attempt 2 passed without source or assertion changes.",
+    "Workflow artifacts have finite retention. Committed test sources, provenance and digests are retained; this record is not a claim that every checkout reruns a browser.",
+    "Memory compilation receives only SceneSpec, options and supplied buffers. The test host writes Rive/PNG evidence and launches Chrome."
+  ]
+}
