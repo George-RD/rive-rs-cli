@@ -60,3 +60,19 @@ test('authored action targets do not overlap and stay usable at the narrowest su
     }
   }
 });
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+test('sibling page links resolve the moved landing sections', () => {
+  const site = path.resolve(__dirname, '../../site');
+  for (const page of ['lab.html', 'showcase.html']) {
+    const html = fs.readFileSync(path.join(site, page), 'utf8');
+    for (const section of ['workflow', 'for-agents']) {
+      assert.ok(html.includes(`href="text.html#${section}"`), `${page}: ${section}`);
+      assert.ok(fs.readFileSync(path.join(site, 'text.html'), 'utf8').includes(`id="${section}"`));
+    }
+    assert.ok(html.includes('class="back-link" href="text.html"'), `${page}: product story`);
+    assert.ok(!html.includes('index.html#'), `${page}: stale root fragment`);
+  }
+});
