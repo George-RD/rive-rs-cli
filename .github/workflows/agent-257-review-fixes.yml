@@ -1,0 +1,77 @@
+name: Verify 257 review fixes
+
+on:
+  push:
+    branches: [agent/256-a1-memory-assets]
+    paths: ['.agent-257/review-fixes.py']
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: '-D warnings'
+
+jobs:
+  fixes:
+    if: github.repository == 'George-RD/rive-rs-cli' && github.ref == 'refs/heads/agent/256-a1-memory-assets'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Reproduce the premature resolver callback
+        run: |
+          mkdir -p target/agent-257-review
+          if grep -q 'fn nested_assets_are_rejected_before_any_resolver_callback' tests/embedded_compile_contract.rs; then
+            echo 'Refusing to append a duplicate regression test.'
+            exit 1
+          fi
+          cat .agent-257/nested-test.rs >> tests/embedded_compile_contract.rs
+          if cargo test --locked --test embedded_compile_contract nested_assets_are_rejected_before_any_resolver_callback > target/agent-257-review/red.log 2>&1; then
+            echo 'The reported callback-order defect did not reproduce.'
+            exit 1
+          fi
+          grep 'invalid scene must fail before asset resolution' target/agent-257-review/red.log
+      - name: Apply the pinned validator fix and format
+        run: |
+          python3 .agent-257/review-fixes.py
+          cargo fmt
+          git diff --check
+      - name: Save the actual reviewed-source corrections
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/builder/validation.rs tests/embedded_compile_contract.rs tests/embedded_assets_runtime.rs .agent-257
+          git commit -m 'fix(compile): validate asset placement before resolver callbacks (#257)'
+          git rev-parse HEAD | tee target/agent-257-review/tested-head.txt
+          git rev-parse HEAD:src | tee target/agent-257-review/source-tree.txt
+          git diff bb31ebb504f9743b2074eab9c11ca08ec0a4b93f -- src tests > target/agent-257-review/review-fixes.patch
+          git push origin HEAD:refs/heads/agent/256-a1-memory-assets
+      - name: Verify ownership, placement, compatibility and runtime controls
+        env:
+          RIVE_MEMORY_ASSET_EVIDENCE: target/agent-257-review/runtime
+        run: |
+          command -v google-chrome
+          google-chrome --version | tee target/agent-257-review/browser.txt
+          export RIVE_CHROME="$(command -v google-chrome)"
+          set -o pipefail
+          cargo test --locked --test asset_resolution_contract --test embedded_compile_contract --test embedded_assets_runtime -- --nocapture 2>&1 | tee target/agent-257-review/tests.log
+          cargo clippy --locked --all-targets --all-features -- -D warnings 2>&1 | tee target/agent-257-review/clippy.log
+      - name: Verify the focused contracts on Rust 1.88
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          set -o pipefail
+          cargo +1.88.0 test --locked --test asset_resolution_contract --test embedded_compile_contract 2>&1 | tee target/agent-257-review/msrv.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue-257-review-fixes
+          path: target/agent-257-review
+          retention-days: 14
