@@ -4,9 +4,10 @@ import tempfile
 from pathlib import Path
 
 import reference
+from schema_facts import type_names
 
 
-PROBE_TYPES = ("Rectangle", "Shape", "Fill", "SolidColor", "LinearAnimation", "KeyFrameDouble")
+MAX_SCHEMA_TYPES = 1000
 
 
 def capture(binary: Path, archive: Path, output: Path) -> None:
@@ -33,10 +34,12 @@ def capture(binary: Path, archive: Path, output: Path) -> None:
             version = recorder.run("version", reference.OFFLINE_PREFIX + [str(binary), "--version"], reference.ROOT, env)
             reference.verify_version(version.stdout.decode(), lock["official"]["version"])
             result["official"]["version_output"] = version.stdout.decode().strip()
-            recorder.run("types", reference.OFFLINE_PREFIX + [str(binary), "schema", "--list"], reference.ROOT, env)
-            for name in PROBE_TYPES:
-                for suffix, flags in [("runtime", []), ("all", ["--all"]),
-                                      ("animatable", ["--animatable"]), ("bindable", ["--bindable"])]:
+            inventory = recorder.run("types", reference.OFFLINE_PREFIX + [str(binary), "schema", "--list"], reference.ROOT, env)
+            names = type_names(inventory.stdout.decode())
+            if not 0 < len(names) <= MAX_SCHEMA_TYPES:
+                raise reference.ReferenceError("schema inventory exceeds the capture budget")
+            for name in names:
+                for suffix, flags in [("runtime", []), ("all", ["--all"])]:
                     recorder.run(name + "-" + suffix,
                                  reference.OFFLINE_PREFIX + [str(binary), "schema", name] + flags,
                                  reference.ROOT, env)
