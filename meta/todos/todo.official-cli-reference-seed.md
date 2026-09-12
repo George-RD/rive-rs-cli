@@ -1,49 +1,46 @@
 ---
 node: rive-cli.verification.parity
-status: open
+status: done
 created: 2026-09-12
 ---
 
 # B1 — Pinned official CLI reference seed
 
-Execution issue: [#258](https://github.com/George-RD/rive-rs-cli/issues/258).
-Parent: #256. Independent of #257 and compiler extraction. Planning base:
-`dfdf746e923a4935ab1d78c30425588d95bebcd5`.
-
-The adapter under `parity/cli-reference/` wraps the existing public render/compare
-commands. It introduces no parser, renderer, compiler dependency or asset API.
-Default tests are offline contracts; real capture is explicitly opt-in.
+Implemented in [PR #274](https://github.com/George-RD/rive-rs-cli/pull/274) for
+[#258](https://github.com/George-RD/rive-rs-cli/issues/258), parent #256.
+Independent of #257. Planning base: `dfdf746e923a4935ab1d78c30425588d95bebcd5`.
+No compiler, runtime, asset API, shared workflow or #256 changes.
 
 ## Acceptance and evidence
 
-- Pinned source/archive, executable identity and exact reported version: implemented.
-- Original static and transform-animation projects, provenance and command audit: implemented.
-- Isolated no-login/network official commands, immutable capture and bounded claims: implemented.
-- Existing-runtime render/self-comparison/paint-negative adapter: implemented.
-- Successful official builds, inspected outputs and actual runtime evidence: pending execution.
-- Exact-head Rust/MSRV, runtime and Cairn gates: pending execution.
+The actual reference ran at `f878465e8d3b493e567d1556130880b84a7ec8df` in successful
+run 34693899414. CLI 1.0.2 verified/built/inspected both original projects without
+credentials/network; repeated outputs matched. The existing canvas 2.39.1 renderer
+loaded static and animated bytes. Self-comparisons were exact; paint perturbations
+produced 8.59% and 9.28% maximum pixel differences. Both distribution probes reported
+missing login; scripts, shaders, signing and production rights remain untested.
 
-Local Python contract tests passed (36 tests). Behavioral red evidence was observed
-for missing-binary rejection and retaining process launch failures before their
-implementations. Synthetic contract fixtures are not official execution evidence.
-Local Rust and Cairn are unavailable; outbound DNS prevented binary acquisition.
-The separate opt-in workflow provides a reproducible remote execution route.
-The first remote capture at `086a648` (run 34693047769, artifact 10297871878)
-verified the archive/member and built the local CLI, then failed loading the
-official executable because Ubuntu lacked `libEGL.so.1`. No compilation/runtime
-pass was inferred. Provisioning now installs `libegl1 libgles2` explicitly.
-Review red/green also covers missing command/output binding, missing network
-namespace evidence and disagreement between the recorded and observed source head.
-A PR-description bot exposed duplicate capture triggers; opt-in now requires the
-marker to be newly added, not merely present.
+The complete original evidence is committed in `parity/cli-reference/baseline/`
+with independent source/artifact/archive pins and human-readable results.
+40 local Python tests pass, including a no-subprocess check of that actual capture.
+They do not claim local official CLI, browser, Rust or Cairn execution.
+The source-head CI run 34693872297 and MSRV run 34693872295 passed. Final retention
+commit gates and any fresh exact-head capture are recorded on PR #274 before merge.
 
-## Review
+## Decisions and review
 
-Standards self-review: bounded parity adapter, standard library only, explicit
-process boundaries, no comments/docstrings, no production compiler edits.
-Spec self-review: the runtime/retained-artifact acceptance gate is not yet met;
-#258 must remain open and the PR must remain unmerged until actual capture and
-required verification pass. No independent sub-agent review was available.
+The adapter reuses public render/compare commands; no second renderer, parser or
+production dependency. Acquisition/capture is deliberately opt-in. Default tests
+check retained evidence offline; missing/wrong binaries and malformed evidence fail.
+Baselines are immutable historical observations, not silently refreshed output.
 
-Record actual execution and exact-head results here before closing this todo.
-Do not change #256 or the parallel #257 scope to make the checks pass.
+TDD covered missing binaries, retained process failures, evidence/output bindings,
+network-isolation claims, independent expected source heads and the actual raw
+render JSON contract. The baseline contract failed before the capture was retained.
+Earlier runs failed on missing libEGL and an incorrect render JSON assumption;
+actual failures informed fixes and were not counted as successful runtime evidence.
+
+Standards and spec self-review completed. CodeRabbit verified and resolved the
+expected-head finding; the Linux library prerequisite was documented and retained
+based on the actual executable failure. Merge remains subject to fresh exact-head
+CI/review, not this task status alone. See PR #274 for the final verification ledger.

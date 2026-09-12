@@ -11,7 +11,7 @@ public documentation alone is not experimental evidence.
 | Official CLI 1.0.2 | [Rive's cask](https://github.com/rive-app/homebrew-tap/blob/main/Casks/rive-cli.rb), source blob `d9770d76f2439190bec057ec89bdfcc44b0f4024`; exact versioned archive and digest in `lock.json` | Proprietary executable/installation never vendored or uploaded |
 | Existing canvas runtime | `@rive-app/canvas` 2.39.1; MIT as recorded in `assets/README.md`; git blob pins in `lock.json` | Existing assets reused unchanged |
 | Official docs, samples, scaffolded AGENTS.md | [Public docs](https://rive.app/docs/cli/overview); no separate sample/scaffold redistribution grant established in this audit | No samples, full docs or generated guidance copied; command output digests only for audit probes |
-| Candidate compiled outputs and inspection | Derived from the original fixtures, without Rive sample artwork, scripts, fonts or shaders | Retain only after successful execution and provenance review; no distribution-rights claim |
+| Retained compiled outputs, inspection and PNGs | Derived solely from the original fixtures, without Rive sample artwork, scripts, fonts or shaders | Actual successful capture retained for this development test; no claim about signed or commercial distribution rights |
 
 The cask supplies an archive checksum, not a separate executable checksum. The
 runner validates that archive first, hashes its regular `rive` member, matches the
@@ -48,3 +48,18 @@ editor conversion and authenticated distribution are outside this seed.
 Public documentation describes account/network requirements for signed outputs.
 Only the recorded no-credential/offline probe outcomes count as observations in
 this experiment; they do not establish licensing or commercial deployment rights.
+
+## Retained capture review
+
+`baseline/capture.tar.xz` contains the original 87 files from successful run
+34693899414, repacked without changing their contents. The retention scope is
+original RML/config inputs, their unsigned RIV outputs, inspection/build reports,
+PNG captures and command evidence. It includes no executable, installation tree,
+account files, credentials, fonts, Rive sample artwork or copied schema/docs
+output. Audit probes retain only output digests and exit status. The original
+source fixtures and project code use the root MIT license; that does not relicense
+Rive's tools or establish production distribution rights.
+
+[baseline/RESULTS.md](baseline/RESULTS.md) records actual outcomes separately from
+public documentation. Every retained file is inventoried and SHA-256 checked by
+the offline baseline contract, with subprocess execution forbidden.
