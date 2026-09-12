@@ -19,6 +19,10 @@ schema, stable authored identity, source maps, and incremental operation seam.
 
 ## Current implementation frontier
 
+PR #276 is the user-requested Rive-rendered Pages landing page, tracked in
+`meta/todos/todo.rive-generated-page.md`. It uses the existing public compiler
+and stays independent of #257/#258; the lab and showcase keep their own routes.
+
 Authoring delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 Public proof delivery spec: [#198](https://github.com/George-RD/rive-rs-cli/issues/198).
 

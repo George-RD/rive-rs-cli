@@ -1,0 +1,399 @@
+{
+  "format": 1,
+  "generator": "rive-cli authoring compile",
+  "layouts": [
+    {
+      "id": "mobile",
+      "minWidth": 0,
+      "width": 390,
+      "height": 1310,
+      "source": "scenes/mobile.v0.json",
+      "artifact": "scenes/mobile.riv",
+      "sourceSha256": "a38416f6ff115786fde135fba51d87844c7c516f567d3c9b56a327aa7f542461",
+      "artifactSha256": "50cd90600482ea8886cdc8b292c89840ef2fcd2a91c064e7265c215c3fb63df2",
+      "bytes": 80662,
+      "stateMachine": "auth__page__interface__state_machine",
+      "inputs": {
+        "morph": "auth__page__interface__morph__input",
+        "paused": "auth__page__interface__paused__input"
+      },
+      "controls": [
+        {
+          "id": "showcase",
+          "label": "Showcase",
+          "x": 22,
+          "y": 82,
+          "width": 140,
+          "height": 56,
+          "action": "link",
+          "href": "showcase.html"
+        },
+        {
+          "id": "lab",
+          "label": "Verification Lab",
+          "x": 181,
+          "y": 82,
+          "width": 187,
+          "height": 56,
+          "action": "link",
+          "href": "lab.html"
+        },
+        {
+          "id": "github",
+          "label": "GitHub",
+          "x": 280,
+          "y": 20,
+          "width": 88,
+          "height": 56,
+          "action": "link",
+          "href": "https://github.com/George-RD/rive-rs-cli"
+        },
+        {
+          "id": "orbit",
+          "label": "Orbit",
+          "x": 22,
+          "y": 810,
+          "width": 106,
+          "height": 56,
+          "action": "preset",
+          "value": 0
+        },
+        {
+          "id": "weave",
+          "label": "Weave",
+          "x": 138,
+          "y": 810,
+          "width": 106,
+          "height": 56,
+          "action": "preset",
+          "value": 1
+        },
+        {
+          "id": "stack",
+          "label": "Stack",
+          "x": 254,
+          "y": 810,
+          "width": 106,
+          "height": 56,
+          "action": "preset",
+          "value": 2
+        },
+        {
+          "id": "morph",
+          "label": "Blend between Orbit, Weave and Stack",
+          "x": 22,
+          "y": 923,
+          "width": 346,
+          "height": 56,
+          "action": "range",
+          "rail": {
+            "x": 38,
+            "y": 948,
+            "width": 314
+          },
+          "min": 0,
+          "max": 2,
+          "step": 0.01
+        },
+        {
+          "id": "playback",
+          "label": "Pause motion",
+          "x": 22,
+          "y": 986,
+          "width": 168,
+          "height": 56,
+          "action": "playback"
+        },
+        {
+          "id": "replay",
+          "label": "Replay",
+          "x": 200,
+          "y": 986,
+          "width": 168,
+          "height": 56,
+          "action": "replay"
+        },
+        {
+          "id": "source",
+          "label": "View source",
+          "x": 22,
+          "y": 1173,
+          "width": 168,
+          "height": 56,
+          "action": "source"
+        },
+        {
+          "id": "download",
+          "label": ".riv file",
+          "x": 200,
+          "y": 1173,
+          "width": 168,
+          "height": 56,
+          "action": "download"
+        }
+      ]
+    },
+    {
+      "id": "tablet",
+      "minWidth": 620,
+      "width": 780,
+      "height": 1144,
+      "source": "scenes/tablet.v0.json",
+      "artifact": "scenes/tablet.riv",
+      "sourceSha256": "851798d046de61a65ce15fc2f90cc418a270141f1cddd366ce5f63a3519723b0",
+      "artifactSha256": "5ce257c0de644870d31817167dd6871f8f186786745fa23e38a64c4a4e1b1330",
+      "bytes": 80677,
+      "stateMachine": "auth__page__interface__state_machine",
+      "inputs": {
+        "morph": "auth__page__interface__morph__input",
+        "paused": "auth__page__interface__paused__input"
+      },
+      "controls": [
+        {
+          "id": "showcase",
+          "label": "Showcase",
+          "x": 315,
+          "y": 24,
+          "width": 130,
+          "height": 56,
+          "action": "link",
+          "href": "showcase.html"
+        },
+        {
+          "id": "lab",
+          "label": "Verification Lab",
+          "x": 457,
+          "y": 24,
+          "width": 196,
+          "height": 56,
+          "action": "link",
+          "href": "lab.html"
+        },
+        {
+          "id": "github",
+          "label": "GitHub",
+          "x": 665,
+          "y": 24,
+          "width": 96,
+          "height": 56,
+          "action": "link",
+          "href": "https://github.com/George-RD/rive-rs-cli"
+        },
+        {
+          "id": "orbit",
+          "label": "Orbit",
+          "x": 32,
+          "y": 806,
+          "width": 116,
+          "height": 56,
+          "action": "preset",
+          "value": 0
+        },
+        {
+          "id": "weave",
+          "label": "Weave",
+          "x": 158,
+          "y": 806,
+          "width": 116,
+          "height": 56,
+          "action": "preset",
+          "value": 1
+        },
+        {
+          "id": "stack",
+          "label": "Stack",
+          "x": 284,
+          "y": 806,
+          "width": 116,
+          "height": 56,
+          "action": "preset",
+          "value": 2
+        },
+        {
+          "id": "morph",
+          "label": "Blend between Orbit, Weave and Stack",
+          "x": 434,
+          "y": 829,
+          "width": 314,
+          "height": 56,
+          "action": "range",
+          "rail": {
+            "x": 450,
+            "y": 854,
+            "width": 282
+          },
+          "min": 0,
+          "max": 2,
+          "step": 0.01
+        },
+        {
+          "id": "playback",
+          "label": "Pause motion",
+          "x": 32,
+          "y": 902,
+          "width": 177,
+          "height": 56,
+          "action": "playback"
+        },
+        {
+          "id": "replay",
+          "label": "Replay",
+          "x": 219,
+          "y": 902,
+          "width": 177,
+          "height": 56,
+          "action": "replay"
+        },
+        {
+          "id": "source",
+          "label": "View source",
+          "x": 420,
+          "y": 1029,
+          "width": 158,
+          "height": 56,
+          "action": "source"
+        },
+        {
+          "id": "download",
+          "label": ".riv file",
+          "x": 588,
+          "y": 1029,
+          "width": 158,
+          "height": 56,
+          "action": "download"
+        }
+      ]
+    },
+    {
+      "id": "desktop",
+      "minWidth": 980,
+      "width": 1200,
+      "height": 940,
+      "source": "scenes/desktop.v0.json",
+      "artifact": "scenes/desktop.riv",
+      "sourceSha256": "bfd3dc07c94befe2cdf0c09dbe9236cbb912099986fac4123189d79980a40431",
+      "artifactSha256": "0d3b7f894fe87eef149ad7b087dc7a0b621123f5f46b8ca8dce713df777d6454",
+      "bytes": 80679,
+      "stateMachine": "auth__page__interface__state_machine",
+      "inputs": {
+        "morph": "auth__page__interface__morph__input",
+        "paused": "auth__page__interface__paused__input"
+      },
+      "controls": [
+        {
+          "id": "showcase",
+          "label": "Showcase",
+          "x": 735,
+          "y": 24,
+          "width": 130,
+          "height": 56,
+          "action": "link",
+          "href": "showcase.html"
+        },
+        {
+          "id": "lab",
+          "label": "Verification Lab",
+          "x": 877,
+          "y": 24,
+          "width": 196,
+          "height": 56,
+          "action": "link",
+          "href": "lab.html"
+        },
+        {
+          "id": "github",
+          "label": "GitHub",
+          "x": 1085,
+          "y": 24,
+          "width": 96,
+          "height": 56,
+          "action": "link",
+          "href": "https://github.com/George-RD/rive-rs-cli"
+        },
+        {
+          "id": "orbit",
+          "label": "Orbit",
+          "x": 52,
+          "y": 450,
+          "width": 100,
+          "height": 56,
+          "action": "preset",
+          "value": 0
+        },
+        {
+          "id": "weave",
+          "label": "Weave",
+          "x": 162,
+          "y": 450,
+          "width": 100,
+          "height": 56,
+          "action": "preset",
+          "value": 1
+        },
+        {
+          "id": "stack",
+          "label": "Stack",
+          "x": 272,
+          "y": 450,
+          "width": 100,
+          "height": 56,
+          "action": "preset",
+          "value": 2
+        },
+        {
+          "id": "morph",
+          "label": "Blend between Orbit, Weave and Stack",
+          "x": 52,
+          "y": 567,
+          "width": 320,
+          "height": 56,
+          "action": "range",
+          "rail": {
+            "x": 68,
+            "y": 592,
+            "width": 288
+          },
+          "min": 0,
+          "max": 2,
+          "step": 0.01
+        },
+        {
+          "id": "playback",
+          "label": "Pause motion",
+          "x": 52,
+          "y": 642,
+          "width": 155,
+          "height": 56,
+          "action": "playback"
+        },
+        {
+          "id": "replay",
+          "label": "Replay",
+          "x": 217,
+          "y": 642,
+          "width": 155,
+          "height": 56,
+          "action": "replay"
+        },
+        {
+          "id": "source",
+          "label": "View source",
+          "x": 748,
+          "y": 781,
+          "width": 194,
+          "height": 56,
+          "action": "source"
+        },
+        {
+          "id": "download",
+          "label": ".riv file",
+          "x": 952,
+          "y": 781,
+          "width": 194,
+          "height": 56,
+          "action": "download"
+        }
+      ]
+    }
+  ]
+}

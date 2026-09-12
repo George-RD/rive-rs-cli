@@ -4,6 +4,7 @@
 !parity/reproductions/*.riv
 !showcase/*.riv
 !examples/authoring/*.riv
+!site/scenes/*.riv
 .DS_Store
 __pycache__/
 evals/runs/
