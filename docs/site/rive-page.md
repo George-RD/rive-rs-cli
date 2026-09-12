@@ -38,7 +38,9 @@ belong to that host too.
 
 The previous HTML page remains at `text.html`; its existing proof and lifecycle
 checks still run. The new root page has its own generation and browser contracts.
-No-JavaScript or failed WASM/file loads retain ordinary navigation links.
+No-JavaScript or failed WASM/file loads retain ordinary navigation links. The
+page disables the runtime CDN fallback so a failed vendored WASM load is handled
+locally, rather than silently fetching a different binary from a third party.
 
 ## Rebuild and verify
 

@@ -1,6 +1,6 @@
-const { value, scalar, transform, group, rectangle, ellipse, text, fixedTrack } = require('./primitives');
+const { scalar, transform, group, rectangle, ellipse, text, fixedTrack } = require('./primitives');
 
-const colors = { paper: '#F4EFDF', ink: '#20231F', soft: '#55584F', rule: '#C8C0AD', red: '#BC3F28', blue: '#2F6383', pale: '#E8E0CB', white: '#FBF8EF', stage: '#242824', stageSoft: '#C0C8B9' };
+const colors = { paper: '#F4EFDF', ink: '#20231F', soft: '#55584F', rule: '#C8C0AD', red: '#BC3F28', blue: '#2F6383', stage: '#242824', stageSoft: '#C0C8B9' };
 const layouts = [
   { id: 'mobile', minWidth: 0, width: 390, height: 1310, margin: 22, heading: [22, 182, 50], description: [22, 316], stage: [22, 394, 346, 356], presets: [22, 810, 106], slider: [22, 902, 346], transport: [22, 986, 346], source: [22, 1078, 346, 152], footer: 1266 },
   { id: 'tablet', minWidth: 620, width: 780, height: 1144, margin: 32, heading: [32, 154, 60], description: [390, 174], stage: [32, 332, 716, 426], presets: [32, 806, 116], slider: [434, 808, 314], transport: [32, 902, 364], source: [32, 994, 716, 102], footer: 1112 },
@@ -88,7 +88,7 @@ function createPage(layout) {
   add(group('play-label', [label('play-text', 'Play', tx + 16, ty + 18, 16, colors.ink, transportWidth - 20)]));
   button(control('replay', 'Replay', tx + transportWidth + 10, ty, transportWidth, 'replay'));
 
-  const [cx, cy, cw, ch] = layout.source;
+  const [cx, cy, cw] = layout.source;
   add(line('source-rule', cx, cy, cw));
   add(label('source-kicker', 'THIS PAGE IS THE EXAMPLE', cx, cy + 16, 12, colors.blue, cw));
   const code = mobile ? ['authoring compile', 'mobile.v0.json -o mobile.riv'] : ['rive-cli authoring compile', `${layout.id}.v0.json -o ${layout.id}.riv`];

@@ -193,6 +193,7 @@
 
   async function start() {
     if (!global.RivePlayback || !global.rive) throw new Error('animation runtime unavailable');
+    global.rive.RuntimeLoader.setWasmFallbackUrl(null);
     const response = await fetch('scenes/manifest.json', { signal: AbortSignal.timeout(LOAD_TIMEOUT_MS) });
     if (!response.ok) throw new Error(`manifest HTTP ${response.status}`);
     manifest = await response.json();
