@@ -41,8 +41,17 @@ jobs:
       - name: Run Rust tests
         id: tests
         continue-on-error: true
+        env:
+          RIVE_MEMORY_ASSET_EVIDENCE: target/embedded-assets-runtime
         run: |
           set -o pipefail
+          mkdir -p "$RIVE_MEMORY_ASSET_EVIDENCE"
+          export RIVE_CHROME="$(command -v google-chrome)"
+          {
+            git rev-parse HEAD HEAD:src HEAD:tests/embedded_assets_runtime.rs
+            rustc --version
+            "$RIVE_CHROME" --version
+          } > "$RIVE_MEMORY_ASSET_EVIDENCE/environment.txt"
           cargo test --locked --all-features 2>&1 | tee rust-tests.log
       - uses: actions/upload-artifact@v4
         if: always()
@@ -50,6 +59,12 @@ jobs:
           name: rust-test-diagnostics
           path: rust-tests.log
           retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: embedded-assets-runtime-evidence
+          path: target/embedded-assets-runtime
+          retention-days: 14
       - name: Fail when Rust tests failed
         if: steps.tests.outcome == 'failure'
         run: exit 1
