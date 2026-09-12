@@ -56,7 +56,8 @@ fn frame(root: &Path, name: &str, document: Value) -> Vec<u8> {
         background: Some("#000000".to_string()),
         preview: false,
         contact_sheet: false,
-    }).expect("official runtime accepts the compiled file");
+    })
+    .expect("official runtime accepts the compiled file");
     assert_eq!(manifest.frames.len(), 1);
     let image = analyze(&output_dir.join("frame_00000.png")).expect("runtime PNG");
     assert_eq!((image.width, image.height), (WIDTH, HEIGHT));
@@ -66,39 +67,67 @@ fn frame(root: &Path, name: &str, document: Value) -> Vec<u8> {
 fn differences(left: &[u8], right: &[u8], start_y: u32, end_y: u32) -> usize {
     let start = (start_y * WIDTH * 4) as usize;
     let end = (end_y * WIDTH * 4) as usize;
-    left[start..end].chunks_exact(4).zip(right[start..end].chunks_exact(4))
-        .filter(|(a, b)| a != b).count()
+    left[start..end]
+        .chunks_exact(4)
+        .zip(right[start..end].chunks_exact(4))
+        .filter(|(a, b)| a != b)
+        .count()
 }
 
 #[test]
 fn supplied_image_and_font_both_drive_visible_official_runtime_output() {
     let temporary = WorkDir::new("rive-memory-assets-runtime");
     let root = std::env::var_os("RIVE_MEMORY_ASSET_EVIDENCE")
-        .map(PathBuf::from).unwrap_or_else(|| temporary.path().to_path_buf());
+        .map(PathBuf::from)
+        .unwrap_or_else(|| temporary.path().to_path_buf());
     fs::create_dir_all(&root).expect("evidence root");
     let full = frame(&root, "full", document());
     let repeat = frame(&root, "repeat", document());
-    assert_eq!(full, repeat, "memory compilation and rendering are repeatable");
+    assert_eq!(
+        full, repeat,
+        "memory compilation and rendering are repeatable"
+    );
 
     let mut no_image = document();
-    no_image["artboard"]["children"].as_array_mut().expect("children").remove(2);
+    no_image["artboard"]["children"]
+        .as_array_mut()
+        .expect("children")
+        .remove(2);
     let without_image = frame(&root, "without-image", no_image);
 
     let mut no_text = document();
-    no_text["artboard"]["children"].as_array_mut().expect("children").remove(3);
+    no_text["artboard"]["children"]
+        .as_array_mut()
+        .expect("children")
+        .remove(3);
     let without_text = frame(&root, "without-text", no_text);
 
     let mut no_font = document();
-    no_font["artboard"]["children"][0].as_object_mut().expect("font").remove("source");
+    no_font["artboard"]["children"][0]
+        .as_object_mut()
+        .expect("font")
+        .remove("source");
     let without_font = frame(&root, "without-font-bytes", no_font);
 
     let image_pixels = differences(&full, &without_image, 0, TEXT_REGION_START);
     let text_pixels = differences(&full, &without_text, TEXT_REGION_START, HEIGHT);
     let font_pixels = differences(&full, &without_font, TEXT_REGION_START, HEIGHT);
-    assert!(image_pixels > MIN_CHANGED_PIXELS, "embedded image must be visible: {image_pixels}");
-    assert!(text_pixels > MIN_CHANGED_PIXELS, "glyphs must be visible: {text_pixels}");
-    assert_eq!(font_pixels, text_pixels, "without supplied font bytes, the glyphs must disappear");
-    assert_eq!(without_font, without_text, "no unrelated font fallback can reproduce the text");
+    assert!(
+        image_pixels > MIN_CHANGED_PIXELS,
+        "embedded image must be visible: {image_pixels}"
+    );
+    assert!(
+        text_pixels > MIN_CHANGED_PIXELS,
+        "glyphs must be visible: {text_pixels}"
+    );
+    assert_eq!(
+        font_pixels, text_pixels,
+        "without supplied font bytes, the glyphs must disappear"
+    );
+    assert_eq!(
+        without_font, without_text,
+        "no unrelated font fallback can reproduce the text"
+    );
     assert_eq!(differences(&full, &without_font, 0, TEXT_REGION_START), 0);
 
     let summary = json!({
@@ -114,6 +143,9 @@ fn supplied_image_and_font_both_drive_visible_official_runtime_output() {
         "missing_font_matches_removed_text": true,
         "frames": ["full/frame_00000.png", "without-image/frame_00000.png", "without-text/frame_00000.png", "without-font-bytes/frame_00000.png"]
     });
-    fs::write(root.join("evidence.json"), serde_json::to_vec_pretty(&summary).expect("evidence JSON"))
-        .expect("retain runtime evidence");
+    fs::write(
+        root.join("evidence.json"),
+        serde_json::to_vec_pretty(&summary).expect("evidence JSON"),
+    )
+    .expect("retain runtime evidence");
 }

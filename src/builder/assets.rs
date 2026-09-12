@@ -55,7 +55,9 @@ pub enum ResolveError {
     Missing,
     #[error("source could not be read: it is unavailable")]
     Unavailable,
-    #[error("embedding asset files is only supported when generating from a scene file on disk; an explicit base directory is required")]
+    #[error(
+        "embedding asset files is only supported when generating from a scene file on disk; an explicit base directory is required"
+    )]
     BaseDirectoryRequired,
     #[error("asset source must be relative to the scene directory")]
     SourceMustBeRelative,
@@ -98,7 +100,10 @@ impl AssetResolver for MemoryAssets {
         request: AssetRequest<'_>,
         max_bytes: usize,
     ) -> Result<Cow<'a, [u8]>, ResolveError> {
-        let bytes = self.entries.get(request.source).ok_or(ResolveError::Missing)?;
+        let bytes = self
+            .entries
+            .get(request.source)
+            .ok_or(ResolveError::Missing)?;
         if bytes.len() > max_bytes {
             return Err(ResolveError::TooLarge);
         }
@@ -238,14 +243,21 @@ fn detected_kind(bytes: &[u8]) -> Option<AssetKind> {
     const RIFF_SIGNATURE: &[u8] = b"RIFF";
     const WEBP_SIGNATURE: &[u8] = b"WEBP";
     const RIFF_FORMAT_OFFSET: usize = 8;
-    if FONT_SIGNATURES.iter().any(|signature| bytes.starts_with(signature)) {
+    if FONT_SIGNATURES
+        .iter()
+        .any(|signature| bytes.starts_with(signature))
+    {
         return Some(AssetKind::Font);
     }
     let webp = bytes.starts_with(RIFF_SIGNATURE)
         && bytes
             .get(RIFF_FORMAT_OFFSET..)
             .is_some_and(|format| format.starts_with(WEBP_SIGNATURE));
-    if webp || IMAGE_SIGNATURES.iter().any(|signature| bytes.starts_with(signature)) {
+    if webp
+        || IMAGE_SIGNATURES
+            .iter()
+            .any(|signature| bytes.starts_with(signature))
+    {
         return Some(AssetKind::Image);
     }
     None

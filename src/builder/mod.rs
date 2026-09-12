@@ -1,4 +1,5 @@
 mod animations;
+pub mod assets;
 mod objects;
 mod parsers;
 mod references;
@@ -7,8 +8,33 @@ pub(crate) mod spec;
 mod state_machines;
 mod validation;
 
+pub(crate) use scene::build_scene_with_assets;
 pub use scene::{artboard_presets, build_scene};
 pub use spec::SceneSpec;
+
+#[derive(Debug, thiserror::Error, PartialEq, Eq)]
+pub enum BuildError {
+    #[error("{0}")]
+    Build(String),
+    #[error(transparent)]
+    Asset(#[from] assets::AssetError),
+}
+
+impl From<String> for BuildError {
+    fn from(error: String) -> Self {
+        Self::Build(error)
+    }
+}
+
+impl BuildError {
+    pub const fn code(&self) -> &'static str {
+        match self {
+            Self::Build(_) => "invalid-scene",
+            Self::Asset(error) => error.code(),
+        }
+    }
+}
+
 pub fn animatable_properties_for(type_name: &str) -> Vec<&'static str> {
     parsers::animatable_properties_for_object_type(type_name)
 }

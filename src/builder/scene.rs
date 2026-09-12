@@ -6,7 +6,11 @@ use serde::Serialize;
 use crate::objects::artboard::{Artboard, Backboard};
 use crate::objects::core::RiveObject;
 
+use super::BuildError;
 use super::animations::{build_animations, register_interpolators};
+use super::assets::{
+    AssetKind, AssetLimits, AssetRequest, AssetResolver, AssetSession, FilesystemAssets,
+};
 use super::objects::{
     FileAssetKind, SceneContext, append_file_asset, append_object, file_asset, is_file_asset,
 };
@@ -154,7 +158,21 @@ pub fn build_scene(
     spec: &SceneSpec,
     base_dir: Option<&Path>,
 ) -> Result<Vec<Box<dyn RiveObject>>, String> {
+    build_scene_with_assets(
+        spec,
+        &FilesystemAssets::new(base_dir),
+        AssetLimits::default(),
+    )
+    .map_err(|error| error.to_string())
+}
+
+pub(crate) fn build_scene_with_assets(
+    spec: &SceneSpec,
+    resolver: &dyn AssetResolver,
+    limits: AssetLimits,
+) -> Result<Vec<Box<dyn RiveObject>>, BuildError> {
     let indexes = validate_scene_spec(spec)?;
+    let mut assets = AssetSession::new(resolver, limits);
 
     let artboard_specs = resolve_artboards(spec)?;
     let mut artboard_name_to_index: HashMap<String, usize> = HashMap::new();
@@ -168,20 +186,25 @@ pub fn build_scene(
     let mut asset_ids: HashMap<String, (u64, FileAssetKind)> = HashMap::new();
     let mut asset_kinds: Vec<FileAssetKind> = Vec::new();
     let mut next_asset_ordinal: u64 = 0;
-    for (artboard_spec, index) in artboard_specs.iter().zip(&indexes) {
+    for index in &indexes {
         for (asset_name, asset_kind) in &index.assets {
             if asset_ids.contains_key(asset_name) {
                 return Err(format!(
                     "asset '{asset_name}' is declared more than once; Rive stores assets at file scope, so their names must be unique across every artboard"
-                ));
+                ).into());
             }
             asset_ids.insert(asset_name.clone(), (next_asset_ordinal, *asset_kind));
             asset_kinds.push(*asset_kind);
             next_asset_ordinal += 1;
         }
+    }
+    for artboard_spec in &artboard_specs {
         for child in &artboard_spec.children {
             if file_asset(child).is_some() {
-                append_file_asset(child, &mut objects, base_dir)?;
+                let contents = embedded_asset_request(child)
+                    .map(|request| assets.resolve(request))
+                    .transpose()?;
+                append_file_asset(child, &mut objects, contents);
             }
         }
     }
@@ -284,6 +307,30 @@ pub fn build_scene(
     }
 
     Ok(objects)
+}
+
+fn embedded_asset_request(spec: &ObjectSpec) -> Option<AssetRequest<'_>> {
+    match spec {
+        ObjectSpec::ImageAsset {
+            name,
+            source: Some(source),
+            ..
+        } => Some(AssetRequest {
+            name,
+            source,
+            kind: AssetKind::Image,
+        }),
+        ObjectSpec::FontAsset {
+            name,
+            source: Some(source),
+            ..
+        } => Some(AssetRequest {
+            name,
+            source,
+            kind: AssetKind::Font,
+        }),
+        _ => None,
+    }
 }
 
 #[cfg(test)]

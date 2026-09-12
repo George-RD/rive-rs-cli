@@ -14,7 +14,10 @@ fn json_files(directory: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()>
         let path = entry?.path();
         if path.is_dir() {
             json_files(&path, files)?;
-        } else if path.extension().is_some_and(|extension| extension == "json") {
+        } else if path
+            .extension()
+            .is_some_and(|extension| extension == "json")
+        {
             files.push(path);
         }
     }
@@ -55,19 +58,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut digests = BTreeMap::new();
     let mut skipped = Vec::new();
     for path in files {
-        let relative = path.strip_prefix(root)?.to_string_lossy().replace('\\', "/");
+        let relative = path
+            .strip_prefix(root)?
+            .to_string_lossy()
+            .replace('\\', "/");
         match digest_scene(&path)? {
-            Some(digest) => { digests.insert(relative, digest); }
+            Some(digest) => {
+                digests.insert(relative, digest);
+            }
             None => skipped.push(relative),
         }
     }
     if digests.is_empty() {
         return Err("no valid scene fixtures were compiled".into());
     }
-    println!("{}", serde_json::to_string_pretty(&json!({
-        "file_id": FILE_ID,
-        "digests": digests,
-        "skipped": skipped
-    }))?);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "file_id": FILE_ID,
+            "digests": digests,
+            "skipped": skipped
+        }))?
+    );
     Ok(())
 }

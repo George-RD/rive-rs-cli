@@ -32,9 +32,10 @@ impl AssetResolver for FilesystemAssets {
             .as_deref()
             .ok_or(ResolveError::BaseDirectoryRequired)?;
         let source = Path::new(request.source);
-        if source.components().any(|component| {
-            matches!(component, Component::RootDir | Component::Prefix(_))
-        }) {
+        if source
+            .components()
+            .any(|component| matches!(component, Component::RootDir | Component::Prefix(_)))
+        {
             return Err(ResolveError::SourceMustBeRelative);
         }
         let path = base_dir.join(source).canonicalize().map_err(read_error)?;

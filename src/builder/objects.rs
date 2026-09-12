@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::path::{Component, Path, PathBuf};
 
 use crate::objects::artboard::NestedArtboard;
 use crate::objects::assets::{self, AudioAsset, FileAssetContents, FontAsset, ImageAsset};
@@ -123,14 +122,14 @@ pub(crate) fn is_file_asset(spec: &ObjectSpec) -> bool {
 pub(crate) fn append_file_asset(
     spec: &ObjectSpec,
     objects: &mut Vec<Box<dyn RiveObject>>,
-    base_dir: Option<&Path>,
-) -> Result<(), String> {
+    contents: Option<Vec<u8>>,
+) {
     match spec {
         ObjectSpec::ImageAsset {
             name,
             asset_id,
             cdn_base_url,
-            source,
+            ..
         } => {
             let mut asset = ImageAsset::new(name.clone());
             if let Some(v) = asset_id {
@@ -140,13 +139,12 @@ pub(crate) fn append_file_asset(
                 asset.cdn_base_url = v.clone();
             }
             objects.push(Box::new(asset));
-            append_asset_contents(name, source.as_deref(), base_dir, objects)
         }
         ObjectSpec::FontAsset {
             name,
             asset_id,
             cdn_base_url,
-            source,
+            ..
         } => {
             let mut asset = FontAsset::new(name.clone());
             if let Some(v) = asset_id {
@@ -156,7 +154,6 @@ pub(crate) fn append_file_asset(
                 asset.cdn_base_url = v.clone();
             }
             objects.push(Box::new(asset));
-            append_asset_contents(name, source.as_deref(), base_dir, objects)
         }
         ObjectSpec::AudioAsset {
             name,
@@ -171,105 +168,12 @@ pub(crate) fn append_file_asset(
                 asset.cdn_base_url = v.clone();
             }
             objects.push(Box::new(asset));
-            Ok(())
         }
-        _ => Ok(()),
+        _ => return,
     }
-}
-
-const PROJECT_MARKERS: [&str; 3] = ["Cargo.toml", ".git", "package.json"];
-
-fn asset_root(base_dir: &Path) -> PathBuf {
-    let start = std::path::absolute(base_dir).unwrap_or_else(|_| base_dir.to_path_buf());
-    let mut cursor = normalise(&start);
-    loop {
-        if PROJECT_MARKERS
-            .iter()
-            .any(|marker| cursor.join(marker).exists())
-        {
-            return cursor;
-        }
-        if !cursor.pop() {
-            return normalise(&start);
-        }
+    if let Some(bytes) = contents {
+        objects.push(Box::new(FileAssetContents::new(bytes)));
     }
-}
-
-fn normalise(path: &Path) -> PathBuf {
-    let mut out = PathBuf::new();
-    for component in path.components() {
-        match component {
-            Component::ParentDir => {
-                out.pop();
-            }
-            Component::CurDir => {}
-            other => out.push(other),
-        }
-    }
-    out
-}
-
-fn append_asset_contents(
-    asset_name: &str,
-    source: Option<&str>,
-    base_dir: Option<&Path>,
-    objects: &mut Vec<Box<dyn RiveObject>>,
-) -> Result<(), String> {
-    let Some(source) = source else {
-        return Ok(());
-    };
-    let Some(base_dir) = base_dir else {
-        return Err(format!(
-            "asset '{asset_name}' sets 'source', but embedding asset files is only supported when generating from a scene file on disk"
-        ));
-    };
-    let relative = Path::new(source);
-    if relative.is_absolute() {
-        return Err(format!(
-            "asset '{asset_name}' source '{source}' must be relative to the scene file's directory so the scene stays portable"
-        ));
-    }
-    let path = base_dir.join(relative);
-    let resolved = std::path::absolute(&path).unwrap_or_else(|_| path.clone());
-    let root = asset_root(base_dir);
-    let canonical_path = path.canonicalize().map_err(|error| {
-        format!(
-            "asset '{}' source '{}' could not be read from {}: {}",
-            asset_name,
-            source,
-            resolved.display(),
-            error
-        )
-    })?;
-    let canonical_root = root.canonicalize().unwrap_or_else(|_| normalise(&root));
-    if !canonical_path.starts_with(&canonical_root) {
-        return Err(format!(
-            "asset '{}' source '{}' resolves to {}, outside the project rooted at {}",
-            asset_name,
-            source,
-            canonical_path.display(),
-            canonical_root.display()
-        ));
-    }
-    let bytes = std::fs::read(&canonical_path).map_err(|error| {
-        format!(
-            "asset '{}' source '{}' could not be read from {}: {}",
-            asset_name,
-            source,
-            resolved.display(),
-            error
-        )
-    })?;
-    if bytes.is_empty() {
-        return Err(format!(
-            "asset '{}' source '{}' is empty at {}",
-            asset_name,
-            source,
-            resolved.display()
-        ));
-    }
-    objects.push(Box::new(FileAssetContents::new(bytes)));
-    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

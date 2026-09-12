@@ -93,7 +93,10 @@ fn known_image_and_font_signatures_reject_cross_kind_use() {
             .resolve(request("wrong-kind", key, expected))
             .expect_err("detect kind mismatch");
         assert_eq!(error.code(), "asset-kind-mismatch");
-        assert_eq!(error.reason, AssetErrorReason::WrongKind { expected, actual });
+        assert_eq!(
+            error.reason,
+            AssetErrorReason::WrongKind { expected, actual }
+        );
     }
     assert_eq!(session.total_bytes(), 0);
 }
@@ -116,7 +119,10 @@ fn exact_per_asset_and_total_limits_are_inclusive() {
     let assets = memory_assets();
     let mut session = AssetSession::new(
         &assets,
-        AssetLimits { per_asset_bytes: FONT.len(), total_bytes: FONT.len() },
+        AssetLimits {
+            per_asset_bytes: FONT.len(),
+            total_bytes: FONT.len(),
+        },
     );
     assert_eq!(
         session
@@ -132,7 +138,10 @@ fn per_asset_limit_is_reported_with_the_logical_asset() {
     let assets = memory_assets();
     let mut session = AssetSession::new(
         &assets,
-        AssetLimits { per_asset_bytes: FONT.len() - 1, total_bytes: usize::MAX },
+        AssetLimits {
+            per_asset_bytes: FONT.len() - 1,
+            total_bytes: usize::MAX,
+        },
     );
     let error = session
         .resolve(request("font", "font-key", AssetKind::Font))
@@ -147,9 +156,14 @@ fn total_budget_counts_repeated_emitted_assets_not_unique_keys() {
     let assets = memory_assets();
     let mut session = AssetSession::new(
         &assets,
-        AssetLimits { per_asset_bytes: FONT.len(), total_bytes: FONT.len() * 2 - 1 },
+        AssetLimits {
+            per_asset_bytes: FONT.len(),
+            total_bytes: FONT.len() * 2 - 1,
+        },
     );
-    session.resolve(request("first", "font-key", AssetKind::Font)).expect("first font");
+    session
+        .resolve(request("first", "font-key", AssetKind::Font))
+        .expect("first font");
     let error = session
         .resolve(request("second", "font-key", AssetKind::Font))
         .expect_err("second emitted contents exceeds total");
@@ -163,7 +177,10 @@ fn zero_budget_does_not_turn_nonempty_data_into_an_empty_asset() {
     let assets = memory_assets();
     let mut session = AssetSession::new(
         &assets,
-        AssetLimits { per_asset_bytes: FONT.len(), total_bytes: 0 },
+        AssetLimits {
+            per_asset_bytes: FONT.len(),
+            total_bytes: 0,
+        },
     );
     assert_eq!(
         session
@@ -191,10 +208,15 @@ impl AssetResolver for UnboundedResolver {
 
 #[test]
 fn session_enforces_limits_even_when_a_custom_resolver_ignores_them() {
-    let assets = UnboundedResolver { requested_limit: Cell::new(usize::MAX) };
+    let assets = UnboundedResolver {
+        requested_limit: Cell::new(usize::MAX),
+    };
     let mut session = AssetSession::new(
         &assets,
-        AssetLimits { per_asset_bytes: FONT.len(), total_bytes: FONT.len() - 1 },
+        AssetLimits {
+            per_asset_bytes: FONT.len(),
+            total_bytes: FONT.len() - 1,
+        },
     );
     let error = session
         .resolve(request("font", "font-key", AssetKind::Font))
@@ -278,7 +300,11 @@ fn filesystem_adapter_rejects_absolute_sources() {
     let absolute = project.root().join("font.ttf");
     assert_eq!(
         session
-            .resolve(request("font", absolute.to_str().expect("test path"), AssetKind::Font))
+            .resolve(request(
+                "font",
+                absolute.to_str().expect("test path"),
+                AssetKind::Font
+            ))
             .expect_err("absolute source")
             .code(),
         "asset-source-not-relative"
@@ -313,7 +339,10 @@ fn filesystem_adapter_bounds_reads_before_returning_payloads() {
     let base = project.prepare();
     let assets = FilesystemAssets::new(Some(&base));
     let error = assets
-        .resolve(request("font", "../font.ttf", AssetKind::Font), FONT.len() - 1)
+        .resolve(
+            request("font", "../font.ttf", AssetKind::Font),
+            FONT.len() - 1,
+        )
         .expect_err("bounded filesystem read");
     assert_eq!(error, ResolveError::TooLarge);
 }
