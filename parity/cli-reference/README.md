@@ -6,6 +6,21 @@ or network, then exercised their unsigned bytes in the existing canvas 2.39.1
 runtime. Both self-comparisons and paint-perturbed negative controls passed.
 See [baseline/RESULTS.md](baseline/RESULTS.md) for measured results and limitations.
 
+## Inspect capability and schema drift
+
+The [capability report](CAPABILITIES.md) adds the pinned public-schema snapshot for
+#266. It compares existing compiler metadata without rewriting definitions, keeps
+untested families visible and checks fixture evidence before reporting it.
+
+```sh
+python3 parity/cli-reference/capabilities.py report
+python3 parity/cli-reference/capabilities.py report --json
+python3 parity/cli-reference/capabilities.py check --json
+```
+
+The B1 runtime baseline below remains unchanged. A schema declaration, a canonical
+field and a successful runtime fixture are different observations.
+
 ## Check the retained baseline offline
 
 ```sh

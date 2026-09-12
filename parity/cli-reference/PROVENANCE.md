@@ -63,3 +63,21 @@ Rive's tools or establish production distribution rights.
 [baseline/RESULTS.md](baseline/RESULTS.md) records actual outcomes separately from
 public documentation. Every retained file is inventoried and SHA-256 checked by
 the offline baseline contract, with subprocess execution forbidden.
+
+## B2 normalized schema facts
+
+The separate schema capture for #266 ran at source
+`41d8a7969c6db3036f5642496596e86daed5e101`, workflow run 34715128718. It reused
+`lock.json`'s CLI 1.0.2 archive and the existing isolated HOME/network runner.
+All 351 listed types were queried with the normal and `--all` views. The
+[normalized snapshot](schema-baseline/README.md) retains factual type/property
+identities, inheritance, literal defaults, accepted enum labels and flags, with
+source/executable/recording/output-inventory digests. It does not retain property
+explanations, documentation, samples, scaffolds or the proprietary executable.
+
+Attribution remains Rive, Inc. The root MIT license covers our original tooling;
+it does not relicense Rive's tools or establish signing, commercial distribution
+or artwork rights. The original B1 archive still contains audit hashes only.
+The new snapshot is a development compatibility observation, not a replacement
+for its runtime evidence. Synthetic test captures are explicitly named and are
+never retained as actual reference runs.

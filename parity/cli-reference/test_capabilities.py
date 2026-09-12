@@ -27,6 +27,11 @@ class CapabilityCommandContract(unittest.TestCase):
         self.assertEqual(report['summary']['official_types'], 351)
         self.assertIn('3d', report['families'])
         self.assertIn('shaders', report['families'])
+        shape = report['types']['Shape']['official_schema']
+        blend = next(field for field in shape['properties'] if field['name'] == 'blendModeValue')
+        self.assertEqual(blend['key'], 23)
+        self.assertEqual(blend['default_literal'], 'srcOver')
+        self.assertIn('screen', blend['enum_values'])
         shader = report['types']['ShaderAsset']
         self.assertTrue(shader['stages']['declared'])
         for stage in ['parsed', 'lowered', 'encoded', 'runtime_tested', 'semantic_tested']:

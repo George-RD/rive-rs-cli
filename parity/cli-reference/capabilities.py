@@ -123,6 +123,7 @@ def report(snapshot: dict, metadata: dict, evidence: dict) -> dict:
         if family in ('scripting', 'shaders'):
             gaps.append('external-compiler-signing-tool')
         rows[name] = {'family': family, 'official_type_key': official['type_key'],
+                      'official_schema': official,
                       'registered_type_key': registered.get(name),
                       'canonical_name_candidates': matches,
                       'candidate_warning': 'Name similarity is not a confirmed lowering or field mapping.',

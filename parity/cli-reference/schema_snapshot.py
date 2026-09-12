@@ -123,7 +123,8 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
     if len(data) > MAX_SNAPSHOT_BYTES:
         raise SchemaError('snapshot exceeds the size budget')
     value = json.loads(data)
-    if (not isinstance(value, dict) or value.get('schema_version') != SNAPSHOT_VERSION
+    if (not isinstance(value, dict) or type(value.get('schema_version')) is not int
+            or value.get('schema_version') != SNAPSHOT_VERSION
             or not isinstance(value.get('types'), dict) or not value['types']
             or not isinstance(value.get('provenance'), dict)):
         raise SchemaError('invalid schema snapshot')
@@ -135,6 +136,12 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
         for field in row['properties']:
             if (not isinstance(field, dict) or not isinstance(field.get('name'), str)
                     or not isinstance(field.get('owner'), str) or type(field.get('key')) is not int
+                    or not isinstance(field.get('value_type'), str)
+                    or 'default_literal' not in field
+                    or (field['default_literal'] is not None and not isinstance(field['default_literal'], str))
+                    or any(key not in field or (field[key] is not None and
+                           (not isinstance(field[key], list) or not all(isinstance(item, str) for item in field[key])))
+                           for key in ['enum_values', 'bits'])
                     or any(type(field.get(flag)) is not bool for flag in ['animatable', 'bindable', 'derived', 'hidden_without_all'])):
                 raise SchemaError(f'invalid snapshot property: {name}')
             identity = (field['owner'], field['name'])

@@ -1,4 +1,5 @@
 import copy
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -56,6 +57,24 @@ class SchemaSnapshotContract(unittest.TestCase):
             self.assertEqual(read_snapshot(output), result)
             with self.assertRaises(FileExistsError):
                 write_snapshot(output, result)
+
+    def test_candidate_requires_complete_typed_property_facts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            synthetic_capture(root)
+            original = from_capture(root, HEAD)
+            candidate = root / 'candidate.json'
+            mutations = [lambda value: value.update(schema_version=True),
+                         lambda value: value['types']['Shape']['properties'][0].pop('default_literal'),
+                         lambda value: value['types']['Shape']['properties'][0].update(enum_values='srcOver'),
+                         lambda value: value['types']['Shape']['properties'][0].update(default_literal=1),
+                         lambda value: value['types']['Shape']['properties'][0].update(key=True)]
+            for index, mutate in enumerate(mutations):
+                value = copy.deepcopy(original)
+                mutate(value)
+                candidate.write_text(json.dumps(value))
+                with self.subTest(index=index), self.assertRaises(SchemaError):
+                    read_snapshot(candidate)
 
     def test_failed_duplicate_misidentified_or_nonisolated_commands_cannot_become_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:

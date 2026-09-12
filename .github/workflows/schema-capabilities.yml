@@ -17,6 +17,7 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 -m unittest discover -s parity/cli-reference -p 'test_*.py' -v
+      - run: python3 parity/cli-reference/capabilities.py check --json
 
   capture:
     if: >-
@@ -33,13 +34,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Retain the exact public source tree for offline inspection
-        run: git archive HEAD | xz > "$RUNNER_TEMP/capability-source.tar.xz"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: capability-source-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/capability-source.tar.xz
-          retention-days: 7
       - name: Provision the existing pinned reference
         shell: bash
         run: |
