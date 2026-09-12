@@ -6,6 +6,8 @@ use crate::builder::{self, SceneSpec};
 use crate::encoder;
 use crate::objects::core::RiveObject;
 
+pub mod assets;
+
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum CompileError {
     #[error("{0}")]

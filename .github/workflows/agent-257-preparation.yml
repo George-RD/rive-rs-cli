@@ -1,0 +1,102 @@
+name: Prepare and verify 257
+
+on:
+  push:
+    branches: [agent/256-a1-memory-assets]
+    paths: ['.agent-257/prepare.py']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-257-preparation
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: '-D warnings'
+
+jobs:
+  prepare:
+    if: github.repository == 'George-RD/rive-rs-cli' && github.ref == 'refs/heads/agent/256-a1-memory-assets'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Capture unchanged compiler fixture digests
+        run: |
+          mkdir -p tests/evidence/embedded-assets target/agent-257
+          cargo run --locked --quiet --example embedded_asset_compatibility > tests/evidence/embedded-assets/legacy-digests.json
+          git rev-parse HEAD > target/agent-257/preparation-head.txt
+      - name: Confirm the new compiler API contract fails before implementation
+        run: |
+          if cargo test --locked --test embedded_compile_contract --no-run > target/agent-257/red.log 2>&1; then
+            echo 'The pre-implementation API test unexpectedly compiled.'
+            exit 1
+          fi
+          grep -E 'unresolved imports.*(CompileOptions|compile_scene_with_assets)|unresolved import.*(CompileOptions|compile_scene_with_assets)' target/agent-257/red.log
+      - name: Apply the pinned source patch and format
+        run: |
+          python3 .agent-257/prepare.py
+          cargo fmt
+          git diff --check
+      - name: Save the real implementation on the isolated branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src tests examples docs meta cairn.blueprint ROADMAP.md .agent-257
+          git commit -m 'feat(compile): resolve bounded caller-owned image and font bytes (#257)'
+          git rev-parse HEAD | tee target/agent-257/tested-head.txt
+          git diff dfdf746e923a4935ab1d78c30425588d95bebcd5 -- src tests examples docs meta cairn.blueprint ROADMAP.md > target/agent-257/implementation.patch
+          git push origin HEAD:refs/heads/agent/256-a1-memory-assets
+      - name: Verify compatibility and focused contracts
+        run: |
+          set -o pipefail
+          cargo run --locked --quiet --example embedded_asset_compatibility > target/agent-257/current-digests.json
+          diff -u tests/evidence/embedded-assets/legacy-digests.json target/agent-257/current-digests.json
+          cargo test --locked --test asset_resolution_contract --test embedded_compile_contract 2>&1 | tee target/agent-257/contracts.log
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the existing pinned browser harness dependency
+        run: |
+          npm install --no-save playwright@1.62.0
+          npx playwright install --with-deps chromium
+          echo "RIVE_CHROME=$(node -e 'console.log(require("playwright").chromium.executablePath())')" >> "$GITHUB_ENV"
+      - name: Verify both embedded assets through the official runtime
+        env:
+          RIVE_MEMORY_ASSET_EVIDENCE: target/agent-257/runtime
+        run: |
+          set -o pipefail
+          cargo test --locked --test embedded_assets_runtime -- --nocapture 2>&1 | tee target/agent-257/runtime.log
+      - name: Verify all Rust targets
+        run: |
+          set -o pipefail
+          cargo fmt --check
+          cargo clippy --locked --all-targets --all-features -- -D warnings 2>&1 | tee target/agent-257/clippy.log
+          cargo test --locked --all-features 2>&1 | tee target/agent-257/full-tests.log
+      - name: Verify the declared MSRV
+        run: |
+          set -o pipefail
+          rustup toolchain install 1.88.0 --profile minimal
+          cargo +1.88.0 test --locked --test asset_resolution_contract --test embedded_compile_contract 2>&1 | tee target/agent-257/msrv.log
+      - name: Verify Cairn
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/cairn-framework/cairn/releases/download/v0.9.0/cairn-installer.sh | sh
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+          set -o pipefail
+          cairn scan --json | tee target/agent-257/cairn-scan.json
+          cairn lint --json | tee target/agent-257/cairn-lint.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue-257-verification
+          path: target/agent-257
+          retention-days: 14
