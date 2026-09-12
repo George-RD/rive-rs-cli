@@ -1,0 +1,18 @@
+<Rive version="1" kind="fragment">
+  <Artboard width="128" height="96" name="ReferenceAnimated">
+    <Shape x="64" y="48" name="PaintedRectangle" id="0:1">
+      <Rectangle width="44" height="24" originX="0.5" originY="0.5"/>
+      <Fill>
+        <SolidColor colorValue="FF2E8BC0"/>
+      </Fill>
+    </Shape>
+    <LinearAnimation name="QuarterTurn" id="0:2" fps="60" duration="60" loopValue="loop">
+      <KeyedObject objectId="0:1">
+        <KeyedProperty propertyKey="15">
+          <KeyFrameDouble frame="0" value="0" interpolationType="linear"/>
+          <KeyFrameDouble frame="60" value="1.5707963" interpolationType="linear"/>
+        </KeyedProperty>
+      </KeyedObject>
+    </LinearAnimation>
+  </Artboard>
+</Rive>

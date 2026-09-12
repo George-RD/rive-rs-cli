@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "rml_version": "1",
+  "official": {
+    "version": "1.0.2",
+    "platform": [
+      "Linux",
+      "x86_64"
+    ],
+    "source": "https://releases.rive.app/cli/v1.0.2/rive-linux-x64.tar.gz",
+    "archive_sha256": "9c8adbabf7ae6457bc01ea7d75a1f145ba51a99b67a69d9ac2bdcc6cf5363710",
+    "pin_source": "https://github.com/rive-app/homebrew-tap/blob/main/Casks/rive-cli.rb",
+    "pin_source_git_blob": "d9770d76f2439190bec057ec89bdfcc44b0f4024"
+  },
+  "runtime": {
+    "package": "@rive-app/canvas",
+    "version": "2.39.1",
+    "git_blobs": {
+      "assets/rive.js": "8101d700e8fcaefd853190711640167f039ea38f",
+      "assets/rive.wasm": "6cef05c22c7b94fbe3ee1305ee6e5ffb3e01e281",
+      "assets/render-harness.html": "d6b5f8326830614f717aff2431fbc31423764d6e"
+    }
+  },
+  "audit_commands": [
+    [
+      "schema",
+      "Rectangle"
+    ],
+    [
+      "schema",
+      "Shape",
+      "--animatable"
+    ],
+    [
+      "schema",
+      "Fill"
+    ],
+    [
+      "schema",
+      "SolidColor"
+    ],
+    [
+      "schema",
+      "LinearAnimation"
+    ],
+    [
+      "schema",
+      "KeyFrameDouble"
+    ],
+    [
+      "docs",
+      "format"
+    ],
+    [
+      "docs",
+      "--list"
+    ],
+    [
+      "samples",
+      "--path"
+    ],
+    [
+      "--help"
+    ]
+  ],
+  "planning_base": "dfdf746e923a4935ab1d78c30425588d95bebcd5"
+}

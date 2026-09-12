@@ -1,0 +1,80 @@
+name: CLI reference
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s parity/cli-reference -p test_reference.py -v
+
+  capture:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action == 'edited' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.body, '<!-- run-official-reference:1.0.2 -->'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Provision deliberately pinned development tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools="$RUNNER_TEMP/official-reference-tools"
+          mkdir -p "$tools"
+          source=$(python3 -c 'import json; print(json.load(open("parity/cli-reference/lock.json"))["official"]["source"])')
+          expected=$(python3 -c 'import json; print(json.load(open("parity/cli-reference/lock.json"))["official"]["archive_sha256"])')
+          archive="$tools/rive.tar.gz"
+          curl --proto '=https' --tlsv1.2 --fail --location "$source" -o "$archive"
+          echo "$expected  $archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$tools"
+          binary=$(find "$tools" -type f -name rive -print -quit)
+          test -n "$binary"
+          echo "REFERENCE_BINARY=$binary" >> "$GITHUB_ENV"
+          echo "REFERENCE_ARCHIVE=$archive" >> "$GITHUB_ENV"
+          npm install --prefix "$tools/browser" playwright@1.62.0
+          "$tools/browser/node_modules/.bin/playwright" install --with-deps chromium
+          browser=$(node -e "console.log(require('$tools/browser/node_modules/playwright').chromium.executablePath())")
+          echo "REFERENCE_BROWSER=$browser" >> "$GITHUB_ENV"
+      - name: Enable isolated network namespaces on the disposable runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          unshare --user --map-root-user --net -- true
+      - name: Capture original unsigned files and existing-runtime comparisons
+        run: >-
+          python3 parity/cli-reference/reference.py capture
+          --official-cli "$REFERENCE_BINARY"
+          --archive "$REFERENCE_ARCHIVE"
+          --browser "$REFERENCE_BROWSER"
+          --output target/official-reference
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: official-reference-${{ github.event.pull_request.head.sha || github.sha }}
+          path: target/official-reference
+          retention-days: 7
+          if-no-files-found: ignore
