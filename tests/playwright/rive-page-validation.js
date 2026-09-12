@@ -136,11 +136,14 @@ async function main() {
     for (const width of [320, 619, 620, 979, 980, 1440]) {
       await page.setViewportSize({ width, height: 940 });
       await ready(page);
-      await page.waitForFunction(expected => document.querySelector('#page-surface').dataset.layout === expected, width < 620 ? 'mobile' : width < 980 ? 'tablet' : 'desktop');
+      await page.waitForFunction(expected => document.querySelector('#page-surface').dataset.layout === expected && document.querySelector('#page-surface').dataset.state === 'ready', width < 620 ? 'mobile' : width < 980 ? 'tablet' : 'desktop');
       assert.equal(await value(page), 1, 'resize lost shape');
       assert.equal(await page.locator('#page-surface').getAttribute('data-playing'), 'false', 'resize resumed paused motion');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
     }
+    await page.locator('[data-control="playback"]').evaluate(element => { for (let i = 0; i < 10; i += 1) element.click(); });
+    await delay(200);
+    assert.equal(await page.locator('#page-surface').getAttribute('data-playing'), 'false', 'rapid playback toggles left stale playback work');
     await page.getByRole('button', { name: 'Play motion' }).click();
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.waitForFunction(() => document.querySelector('#page-surface').dataset.playing === 'false');

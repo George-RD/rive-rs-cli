@@ -62,7 +62,7 @@ function createPage(layout) {
   for (const [index, name] of ['ORBIT', 'WEAVE', 'STACK'].entries()) {
     add(group(`state-label-${index}`, [label(`state-name-${index}`, name, sx + 22, sy + sh - 43, 15, colors.paper, 160)]));
   }
-  add(label('stage-note', 'Drag to morph', sx + sw - (mobile ? 168 : 192), sy + sh - 41, mobile ? 11 : 13, colors.stageSoft, 180));
+  add(label('stage-note', 'Drag the slider', sx + sw - (mobile ? 168 : 192), sy + sh - 41, mobile ? 11 : 13, colors.stageSoft, 180));
 
   const [px, py, pw] = layout.presets;
   add(label('shape-label', 'Shape', px, py - 29, 15, colors.soft, 120));

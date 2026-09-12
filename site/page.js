@@ -124,7 +124,16 @@
         element.addEventListener('click', () => guarded(async () => {
           if (entry.action === 'preset') await setMorph(entry.value, true);
           if (entry.action === 'playback') { wantsMotion = !wantsMotion; await syncMotion(); }
-          if (entry.action === 'replay') { await timeline.pause(); await timeline.seekToFrame(0); await syncMotion(); announcement.textContent = 'Motion reset.'; }
+          if (entry.action === 'replay') {
+            const current = timeline;
+            await current.pause();
+            if (current !== timeline || disposed) return;
+            await current.setInput(layout.inputs.morph, morph);
+            await current.seekToFrame(0);
+            if (current !== timeline || disposed) return;
+            await syncMotion();
+            announcement.textContent = 'Motion reset.';
+          }
         }));
       }
       controlElements.set(entry.id, element);

@@ -5661,7 +5661,7 @@
       {
         "kind": "text",
         "id": "stage-note",
-        "text": "Drag to morph",
+        "text": "Drag the slider",
         "font": "inter",
         "font_size": {
           "kind": "literal",
