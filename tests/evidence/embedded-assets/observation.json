@@ -1,0 +1,35 @@
+{
+  "issue": 257,
+  "observed_on": "2026-09-12",
+  "tested_commit": "5f991ef7665fe6182dcefb9a5489c86ef5664485",
+  "source_tree": "6ff8b40e885bab78e2665ad1d0feaa43048d149e",
+  "workflow_run": 34693878309,
+  "runtime_artifact": 10297638415,
+  "runtime_artifact_zip_sha256": "a2b6b55421e10617566ce9588319209df14cda380ccf82a89d7b9ce471dfe9ad",
+  "browser": "Google Chrome 152.0.7977.82",
+  "platform": "ubuntu-24.04",
+  "dimensions": [400, 300],
+  "frame": 0,
+  "compiler_inputs": "SceneSpec and caller-owned memory image/font bytes; no base directory",
+  "font_sha256": "84057e5333c4a4c21a7d1f33ebffd414bfda6f787984ba4f89a6f9b2dcd58580",
+  "image_sha256": "f3193818cf4ed8c64e6ae039541d2346f77863e3bd4e43006149699fde04e45b",
+  "runtime_js_sha256": "9bfa2546433e72e7fb6e1cb63d863febe24563ba8644ddbb095518f2ef29b4a7",
+  "runtime_wasm_sha256": "0e018bfd0826a276c4fbefae4d3dd0fe1be127eed10bedce4268f3890e54d47b",
+  "image_changed_pixels": 51200,
+  "text_changed_pixels": 2865,
+  "missing_font_changed_pixels": 2865,
+  "repeat_pixels_identical": true,
+  "missing_font_matches_removed_text": true,
+  "png_sha256": {
+    "full/frame_00000.png": "24b30184de5e851d676a5f7752347b62c9accdcede289a09504dedaf692ac8bf",
+    "without-image/frame_00000.png": "ce5755ab1877b3fe98e211b33595f5df55b33be041fd25e4f1bdad2753edbd37",
+    "without-text/frame_00000.png": "c7633e17b0f898012a9dd6e6e9ae4b3d4849d4f565a4fceb0c19cbfbeedf8e7c",
+    "without-font-bytes/frame_00000.png": "c7633e17b0f898012a9dd6e6e9ae4b3d4849d4f565a4fceb0c19cbfbeedf8e7c"
+  },
+  "limitations": [
+    "This observation identifies its tested commit, not every later commit or platform.",
+    "The first run used a Playwright Chrome executable that exited before DevTools; no file-load or rendering claim is made for that failed run.",
+    "PNG and Rive artifacts have finite workflow retention; the committed test reproduces the controls without depending on those artifacts.",
+    "The runtime test's pixel iteration was subsequently updated for Clippy; production compiler sources were unchanged. Final PR checks cover the updated test."
+  ]
+}

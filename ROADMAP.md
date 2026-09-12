@@ -19,9 +19,14 @@ schema, stable authored identity, source maps, and incremental operation seam.
 
 ## Current implementation frontier
 
-PR #276 is the user-requested Rive-rendered Pages landing page, tracked in
-`meta/todos/todo.rive-generated-page.md`. It uses the existing public compiler
-and stays independent of #257/#258; the lab and showcase keep their own routes.
+Embedding and official-reference spec: [#256](https://github.com/George-RD/rive-rs-cli/issues/256).
+The [execution graph](https://github.com/George-RD/rive-rs-cli/issues/257#issuecomment-5644596712)
+records the stacked PR units and actual blockers. [#257](https://github.com/George-RD/rive-rs-cli/issues/257)
+delivers caller-owned image/font compilation in [PR #275](https://github.com/George-RD/rive-rs-cli/pull/275).
+Its [Cairn todo](meta/todos/todo.embedded-memory-assets.md) records implementation
+and verification evidence. #259 is the next compiler unit once PR #275 is verified
+and merged. #258 remains an independent reference-tooling unit; this compiler
+change does not implement or close it.
 
 Authoring delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 Public proof delivery spec: [#198](https://github.com/George-RD/rive-rs-cli/issues/198).

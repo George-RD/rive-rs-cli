@@ -84,3 +84,24 @@ but importer-owned objects must not be shared across consumers. The finite initi
 value and encoded model/property path reuse the direct-blend helper and resolver.
 Unbound number inputs still emit `BlendState1DInput` with unchanged bytes.
 The canonical schema stays unchanged; hosts initialize and bind model instances.
+
+## Supplied file-asset contents
+
+The resolver-aware path owns one bounded asset session for the complete file.
+The initial structural pass, global asset-name checks and all existing checks in
+canonical object construction precede resolver callbacks. Asset IDs, declaration
+order, descriptors and emitted contents retain the existing order. Repeated source
+keys count each emitted payload against the total, including across artboards.
+
+Source-bearing assets reserve a contents slot while the same object graph is
+constructed. Successful construction is followed by bounded byte resolution into
+those slots, without rebuilding the graph or shifting any index. No unresolved
+slot is returned on either success or error. Existing name-resolution semantics
+are unchanged; no parallel asset-specific validation walk is introduced.
+
+Object construction performs no filesystem or network lookup. Image/font `source`
+values are explicit resolver keys; an absent source preserves an external-asset
+descriptor and does not invoke the resolver. Filesystem root discovery,
+canonicalization, containment and bounded reads belong to `assets::FilesystemAssets`.
+Legacy `build_scene` forwards to the same builder with that adapter and preserves
+its string-error interface.
