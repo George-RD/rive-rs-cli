@@ -27,6 +27,8 @@ jobs:
        !contains(github.event.changes.body.from, '<!-- run-official-reference:1.0.2 -->'))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    env:
+      REFERENCE_OUTPUT: ${{ runner.temp }}/official-reference-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -74,11 +76,11 @@ jobs:
           --official-cli "$REFERENCE_BINARY"
           --archive "$REFERENCE_ARCHIVE"
           --browser "$REFERENCE_BROWSER"
-          --output target/official-reference
+          --output "$REFERENCE_OUTPUT"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: official-reference-${{ github.event.pull_request.head.sha || github.sha }}
-          path: target/official-reference
+          path: ${{ env.REFERENCE_OUTPUT }}
           retention-days: 7
           if-no-files-found: ignore

@@ -22,7 +22,7 @@ missing login; scripts, shaders, signing and production rights remain untested.
 
 The complete original evidence is committed in `parity/cli-reference/baseline/`
 with independent source/artifact/archive pins and human-readable results.
-40 local Python tests pass, including a no-subprocess check of that actual capture.
+41 local Python tests pass, including a no-subprocess check of that actual capture.
 They do not claim local official CLI, browser, Rust or Cairn execution.
 The source-head CI run 34693872297 and MSRV run 34693872295 passed. Final retention
 commit gates and any fresh exact-head capture are recorded on PR #274 before merge.
@@ -44,3 +44,9 @@ Standards and spec self-review completed. CodeRabbit verified and resolved the
 expected-head finding; the Linux library prerequisite was documented and retained
 based on the actual executable failure. Merge remains subject to fresh exact-head
 CI/review, not this task status alone. See PR #274 for the final verification ledger.
+
+A later capture at `763a91a` (run 34694509022) correctly refused the empty
+output directory restored by the Rust cache. The dedicated workflow now writes
+evidence under a run/attempt-specific runner temporary path, outside that cache.
+A failing-then-passing workflow contract locks the capture/upload paths together.
+The immutable baseline and overwrite guard are unchanged.

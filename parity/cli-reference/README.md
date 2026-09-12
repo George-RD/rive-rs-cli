@@ -48,7 +48,8 @@ The separate `CLI reference` workflow provisions the locked archive only on
 workflow dispatch or when a same-repo PR description newly adds
 `<!-- run-official-reference:1.0.2 -->`. An existing marker, bot edit, ordinary PR
 creation or synchronize event does not opt in. Remove and re-add the marker for
-another run. CI uploads only evidence, not the downloaded executable, archive,
+another run. Capture output uses a run-specific temporary directory outside Rust’s cache.
+CI uploads only evidence, not the downloaded executable, archive,
 installation files or isolated HOME. Retain reviewed baselines in Git before
 short-lived CI artifacts expire; do not silently replace an established pin.
 
