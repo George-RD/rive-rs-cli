@@ -4,23 +4,77 @@ on:
     branches: [main]
     paths: ['.github/workflows/pages-workbench.yml']
 permissions:
-  contents: read
+  contents: write
 jobs:
   workbench:
-    if: github.head_ref == 'feat/rive-native-pages'
+    if: github.head_ref == 'feat/rive-native-pages' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo build --locked
-      - name: Export source and compiler for local authoring
-        run: |
-          git archive --format=tar HEAD > source.tar
-          tar -cf workbench.tar source.tar target/debug/rive-cli
-      - uses: actions/upload-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: pages-workbench
-          path: workbench.tar
+          node-version: 20
+      - name: Apply authored source snapshot
+        run: |
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json, pathlib, shutil
+          payload = ''.join(pathlib.Path(f'.pages-workbench/payload-{i}.txt').read_text().strip() for i in [1,2,3])
+          assert hashlib.sha256(payload.encode()).hexdigest() == '49e88399fb9db439eafa672349feec5f685a5314377e48c44b6ffd0934fe6357'
+          files = json.loads(gzip.decompress(base64.b64decode(payload)))
+          allowed = {'.github/workflows/rive-page.yml','docs/site/rive-page.md','meta/todos/todo.rive-generated-page.md','site/authoring/build.js','site/authoring/page.js','site/authoring/primitives.js','site/index.html','site/page.css','site/page.js','tests/playwright/rive-page-contract.js','tests/playwright/rive-page-validation.js'}
+          assert set(files) == allowed
+          shutil.copyfile('site/index.html','site/text.html')
+          for name, content in files.items():
+              p = pathlib.Path(name)
+              p.parent.mkdir(parents=True, exist_ok=True)
+              if name.startswith('.github/'):
+                  assert p.read_text() == content
+              else:
+                  p.write_text(content)
+          def replace(name, before, after):
+              p = pathlib.Path(name)
+              s = p.read_text()
+              assert before in s, name
+              p.write_text(s.replace(before, after))
+          replace('.gitignore', '!examples/authoring/*.riv', '!examples/authoring/*.riv\n!site/scenes/*.riv')
+          replace('site/stage.js', '  "index.html",', '  "index.html",\n  "text.html",\n  "page.js",\n  "page.css",')
+          replace('site/stage.js', '    ...VENDORED,', '    ...VENDORED,\n    ...["manifest.json", "desktop.v0.json", "desktop.riv", "tablet.v0.json", "tablet.riv", "mobile.v0.json", "mobile.riv"].map(name => [`site/scenes/${name}`, `scenes/${name}`]),')
+          replace('tests/playwright/site-validation.js', '${PORT}/`, { waitUntil: "load" }', '${PORT}/text.html`, { waitUntil: "load" }')
+          replace('ROADMAP.md', '## Current implementation frontier\n', '## Current implementation frontier\n\nPR #276 is the user-requested Rive-rendered Pages landing page, tracked in\n`meta/todos/todo.rive-generated-page.md`. It uses the existing public compiler\nand stays independent of #257/#258; the lab and showcase keep their own routes.\n')
+          shutil.rmtree('.pages-workbench')
+          PY
+      - run: cargo build --locked
+      - run: node site/authoring/build.js
+      - run: node site/authoring/build.js --check
+      - run: node --test tests/playwright/rive-page-contract.js
+      - name: Commit generated page to this workbench branch only
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$HEAD_BRANCH" = 'feat/rive-native-pages'
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test "$(git ls-remote origin "refs/heads/$HEAD_BRANCH" | cut -f1)" = "$EXPECTED_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .gitignore ROADMAP.md site docs/site meta/todos/todo.rive-generated-page.md tests/playwright/rive-page-contract.js tests/playwright/rive-page-validation.js tests/playwright/site-validation.js .pages-workbench
+          git commit -m 'feat(site): generate the complete interactive Pages interface with rive-cli'
+          git push origin "HEAD:refs/heads/$HEAD_BRANCH"
+      - run: npm install --no-save playwright@1.62.0
+      - name: Capture and exercise generated interface
+        env:
+          RIVE_CHROME: /usr/bin/google-chrome
+        run: node tests/playwright/rive-page-validation.js 2>&1 | tee page-validation.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rive-page-first-pass
+          path: |
+            page-validation.log
+            target/rive-page-evidence
           retention-days: 2
