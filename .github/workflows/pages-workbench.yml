@@ -1,0 +1,26 @@
+name: Pages workbench
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/pages-workbench.yml']
+permissions:
+  contents: read
+jobs:
+  workbench:
+    if: github.head_ref == 'feat/rive-native-pages'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --locked
+      - name: Export source and compiler for local authoring
+        run: |
+          git archive --format=tar HEAD > source.tar
+          tar -cf workbench.tar source.tar target/debug/rive-cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pages-workbench
+          path: workbench.tar
+          retention-days: 2
