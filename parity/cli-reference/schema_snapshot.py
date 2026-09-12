@@ -131,6 +131,8 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
         raise SchemaError('invalid schema snapshot')
     validate_provenance(value['provenance'])
     validate_metadata(value.get('compiler_metadata'))
+    if set(value) != {'schema_version', 'types', 'provenance', 'compiler_metadata'}:
+        raise SchemaError('unrecognized snapshot members')
     for name, row in value['types'].items():
         if (not isinstance(row, dict) or row.get('name') != name or type(row.get('type_key')) is not int
                 or not isinstance(row.get('inherits'), list) or not isinstance(row.get('properties'), list)):

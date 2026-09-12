@@ -79,6 +79,23 @@ class SchemaSnapshotContract(unittest.TestCase):
                 with self.subTest(index=index), self.assertRaises(SchemaError):
                     read_snapshot(candidate)
 
+    def test_snapshot_rejects_unrecognized_top_level_members(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            synthetic_capture(root)
+            original = from_capture(root, HEAD)
+            original['compiler_metadata'] = read_metadata(reference.ROOT)
+            for suffix in ['.json', '.json.xz']:
+                valid = root / ('valid' + suffix)
+                write_snapshot(valid, original)
+                self.assertEqual(read_snapshot(valid), original)
+                for name, value in [('runtime_tested', True), ('extra', None)]:
+                    candidate = root / (name + suffix)
+                    write_snapshot(candidate, dict(original, **{name: value}))
+                    with self.subTest(name=name, suffix=suffix):
+                        with self.assertRaisesRegex(SchemaError, 'unrecognized snapshot members'):
+                            read_snapshot(candidate)
+
     def test_snapshot_requires_complete_capture_provenance(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
