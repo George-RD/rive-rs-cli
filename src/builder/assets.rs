@@ -59,9 +59,9 @@ pub enum ResolveError {
         "embedding asset files is only supported when generating from a scene file on disk; an explicit base directory is required"
     )]
     BaseDirectoryRequired,
-    #[error("asset source must be relative to the scene directory")]
+    #[error("asset source must be relative to the scene file's directory")]
     SourceMustBeRelative,
-    #[error("asset source resolves outside the project root")]
+    #[error("asset source resolves outside the project rooted at the detected project directory")]
     OutsideProject,
     #[error("source exceeds the requested byte limit")]
     TooLarge,
