@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "archive": "facts.json.xz",
+  "archive_sha256": "cb46f6bd7e1e8636ba7bfc00975ee7a2357ef9bacdb55285982391c3883d8bcf",
+  "source_head": "41d8a7969c6db3036f5642496596e86daed5e101",
+  "workflow_run": 34715128718,
+  "workflow_artifact": 10304268395,
+  "artifact_zip_sha256": "72905a44b8d2a955d7124c9c2b72098b1f0205e472c4d837e967c121dd99828a"
+}
