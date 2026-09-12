@@ -38,12 +38,53 @@ def read_metadata(root: Path) -> dict:
             raise SchemaError('invalid or duplicate canonical object declaration')
         objects[name] = row
     text = registry.read_text()
-    return {'registered_types': registry_table(text, 'type_name'),
+    result = {'registered_types': registry_table(text, 'type_name'),
             'registered_properties': registry_table(text, 'property_name'),
             'canonical': {'objects': objects, 'definitions': definitions},
             'provenance': {str(path.relative_to(root)): reference.digest(path)
                            for path in [registry, schema_path]}}
+    validate_metadata(result)
+    return result
 
 
 def metadata_facts(metadata: dict) -> dict:
     return {key: value for key, value in metadata.items() if key != 'provenance'}
+
+
+def validate_metadata(metadata: dict) -> None:
+    """Validate the complete v1 compiler inventory before it can be reviewed."""
+    required = {'registered_types', 'registered_properties', 'canonical', 'provenance'}
+    if not isinstance(metadata, dict) or set(metadata) != required:
+        raise SchemaError('compiler metadata is missing or incomplete')
+    for section in ['registered_types', 'registered_properties']:
+        table = metadata[section]
+        if (not isinstance(table, dict) or not table
+                or any(not isinstance(key, str) or not re.fullmatch(r'0|[1-9][0-9]{0,4}', key)
+                       or int(key) > 65535 or not isinstance(name, str)
+                       or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', name)
+                       for key, name in table.items())):
+            raise SchemaError(f'compiler metadata has an invalid {section} inventory')
+    canonical = metadata['canonical']
+    if not isinstance(canonical, dict) or set(canonical) != {'objects', 'definitions'}:
+        raise SchemaError('compiler metadata lacks canonical objects or definitions')
+    for section in ['objects', 'definitions']:
+        table = canonical[section]
+        if (not isinstance(table, dict) or not table
+                or any(not isinstance(name, str) or not name or not isinstance(row, dict)
+                       for name, row in table.items())):
+            raise SchemaError(f'compiler metadata has invalid canonical {section}')
+    for name, row in canonical['objects'].items():
+        properties = row.get('properties')
+        if (row.get('type') != 'object' or not isinstance(properties, dict)
+                or not isinstance(properties.get('type'), dict)
+                or properties['type'].get('const') != name):
+            raise SchemaError(f'compiler metadata has an invalid canonical object: {name}')
+    provenance = metadata['provenance']
+    if (not isinstance(provenance, dict) or len(provenance) != 2
+            or 'docs/scene.schema.v1.json' not in provenance
+            or sum(isinstance(name, str) and name.endswith('/generated_registry.rs')
+                   for name in provenance) != 1
+            or any(not isinstance(name, str) or Path(name).is_absolute() or '..' in Path(name).parts
+                   or not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}', digest)
+                   for name, digest in provenance.items())):
+        raise SchemaError('compiler metadata has invalid source provenance')

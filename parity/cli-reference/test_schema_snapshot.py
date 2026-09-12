@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import reference
+from compiler_metadata import read_metadata
 from schema_facts import SchemaError
 from schema_snapshot import from_capture, read_snapshot, write_snapshot
 from test_schema_facts import RUNTIME, ALL
@@ -51,6 +52,7 @@ class SchemaSnapshotContract(unittest.TestCase):
             synthetic_capture(root)
             with patch('subprocess.run', side_effect=AssertionError('offline normalization executed a tool')):
                 result = from_capture(root, HEAD)
+                result['compiler_metadata'] = read_metadata(reference.ROOT)
             self.assertEqual(result['types']['Shape']['type_key'], 3)
             output = root / 'candidate.json.xz'
             write_snapshot(output, result)
@@ -63,6 +65,7 @@ class SchemaSnapshotContract(unittest.TestCase):
             root = Path(temporary)
             synthetic_capture(root)
             original = from_capture(root, HEAD)
+            original['compiler_metadata'] = read_metadata(reference.ROOT)
             candidate = root / 'candidate.json'
             mutations = [lambda value: value.update(schema_version=True),
                          lambda value: value['types']['Shape']['properties'][0].pop('default_literal'),

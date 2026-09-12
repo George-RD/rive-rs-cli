@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 import reference
+from compiler_metadata import validate_metadata
 from schema_facts import SchemaError, normalize_type, type_names
 
 
@@ -128,6 +129,7 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
             or not isinstance(value.get('types'), dict) or not value['types']
             or not isinstance(value.get('provenance'), dict)):
         raise SchemaError('invalid schema snapshot')
+    validate_metadata(value.get('compiler_metadata'))
     for name, row in value['types'].items():
         if (not isinstance(row, dict) or row.get('name') != name or type(row.get('type_key')) is not int
                 or not isinstance(row.get('inherits'), list) or not isinstance(row.get('properties'), list)):

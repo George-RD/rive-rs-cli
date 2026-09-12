@@ -179,20 +179,25 @@ def main() -> None:
             print(f'Candidate written to {args.output}; compare with check --candidate and review before retention.')
             return
         baseline = load_baseline()
+        candidate = baseline
+        if args.command == 'check' and args.candidate:
+            candidate = read_snapshot(args.candidate)
         metadata = read_metadata(reference.ROOT)
         evidence = verified_seed()
         result = report(baseline, metadata, evidence)
         if args.command == 'check':
-            candidate = read_snapshot(args.candidate) if args.candidate else baseline
             changes = schema_changes(baseline['types'], candidate['types'])
+            candidate_changes = value_changes(metadata_facts(baseline['compiler_metadata']),
+                                              metadata_facts(candidate['compiler_metadata']), 'compiler')
             provenance_changes = value_changes(baseline['provenance']['official'], candidate['provenance']['official'], 'official')
             result = {'schema_changes': changes, 'official_changes': provenance_changes,
+                      'candidate_compiler_changes': candidate_changes,
                       'compiler_changes': result['compiler_changes_since_snapshot'],
                       'stale_fixture_evidence': False}
-            changed = bool(changes or provenance_changes or result['compiler_changes'])
+            changed = bool(changes or provenance_changes or candidate_changes or result['compiler_changes'])
             result['ok'] = not changed
             print(json.dumps(result, indent=2, sort_keys=True) if args.json else
-                  f"Schema changes: {len(changes)}; official pin changes: {len(provenance_changes)}; compiler changes: {len(result['compiler_changes'])}. Evidence is current for its retained source.")
+                  f"Schema changes: {len(changes)}; official pin changes: {len(provenance_changes)}; compiler changes: {len(result['compiler_changes'])}; candidate compiler changes: {len(candidate_changes)}. Evidence is current for its retained source.")
             raise SystemExit(1 if changed else 0)
         print(json.dumps(result, indent=2, sort_keys=True) if args.json else render_text(result))
     except (SchemaError, reference.ReferenceError, OSError, ValueError, KeyError, TypeError, tarfile.TarError) as error:

@@ -78,6 +78,44 @@ class CapabilityMutationContract(unittest.TestCase):
                 self.assertEqual([row['path'] for row in changes], [f'Shape.properties.Drawable.blendModeValue.{field_name}'])
         self.assertEqual(baseline.read_bytes(), original)
 
+    def test_candidate_requires_complete_compiler_metadata(self):
+        snapshot = read_snapshot(HERE / 'schema-baseline/facts.json.xz')
+        original = (HERE / 'schema-baseline/facts.json.xz').read_bytes()
+        mutations = [lambda row: row.pop('compiler_metadata'),
+                     lambda row: row.update(compiler_metadata=None),
+                     lambda row: row.update(compiler_metadata={}),
+                     lambda row: row['compiler_metadata'].update(registered_types=[]),
+                     lambda row: row['compiler_metadata']['registered_properties'].update({'23': 23}),
+                     lambda row: row['compiler_metadata']['canonical'].pop('objects'),
+                     lambda row: row['compiler_metadata']['canonical']['objects']['shape'].update(properties={}),
+                     lambda row: row['compiler_metadata'].update(provenance={}),
+                     lambda row: row['compiler_metadata']['provenance'].update({'docs/scene.schema.v1.json': 'not-a-digest'})]
+        with tempfile.TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / 'candidate.json'
+            for index, mutate in enumerate(mutations):
+                changed = copy.deepcopy(snapshot)
+                mutate(changed)
+                candidate.write_text(json.dumps(changed))
+                with self.subTest(index=index):
+                    result = self.run_check(HERE, '--candidate', str(candidate))
+                    self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                    self.assertIn('compiler metadata', result.stderr)
+                    self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual((HERE / 'schema-baseline/facts.json.xz').read_bytes(), original)
+
+    def test_candidate_compiler_drift_is_compared_even_when_current_checkout_is_unchanged(self):
+        snapshot = read_snapshot(HERE / 'schema-baseline/facts.json.xz')
+        snapshot['compiler_metadata']['registered_types']['7'] = 'CandidateRectangle'
+        with tempfile.TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / 'candidate.json'
+            candidate.write_text(json.dumps(snapshot))
+            result = self.run_check(HERE, '--candidate', str(candidate))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        comparison = json.loads(result.stdout)
+        self.assertEqual(comparison['compiler_changes'], [])
+        self.assertEqual([row['path'] for row in comparison['candidate_compiler_changes']],
+                         ['compiler.registered_types.7'])
+
     def test_changed_source_fixture_invalidates_retained_runtime_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
             _, here = self.fixture_checkout(temporary)
