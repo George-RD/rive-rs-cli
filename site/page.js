@@ -19,13 +19,14 @@
   let manifest, layout, timeline, generation = 0, disposed = false;
   let morph = 0, wantsMotion = !reduced.matches, suspended = document.hidden;
   let controlElements = new Map();
-  let resizeFrame = null;
+  let resizeFrame = null, motionGeneration = 0;
 
   function fail(error) {
     if (disposed) return;
     generation += 1;
     timeline?.destroy();
     timeline = null;
+    surface.style.removeProperty('display');
     surface.dataset.state = 'error';
     surface.setAttribute('aria-busy', 'false');
     controls.hidden = true;
@@ -59,11 +60,14 @@
   }
 
   async function syncMotion() {
+    const token = ++motionGeneration;
     const current = timeline;
     if (!current) return;
     const playing = wantsMotion && !suspended;
     await current.pause();
+    if (token !== motionGeneration || current !== timeline || disposed) return;
     await current.setInput(layout.inputs.paused, !wantsMotion);
+    if (token !== motionGeneration || current !== timeline || disposed) return;
     if (playing) await current.play();
     updateSemantics();
   }
@@ -164,13 +168,14 @@
       await current.setInput(layout.inputs.paused, !wantsMotion);
       if (!Object.hasOwn(current.readInputs(), layout.inputs.morph)) throw new Error('generated state machine did not load');
       mountControls();
+      await syncMotion();
+      if (disposed || token !== generation) { current.destroy(); return; }
       surface.dataset.state = 'ready';
       surface.style.removeProperty('display');
       canvas.style.removeProperty('visibility');
       surface.setAttribute('aria-busy', 'false');
       controls.hidden = false;
       fallback.hidden = true;
-      await syncMotion();
     } catch (error) {
       current.destroy();
       if (token === generation) throw error;
@@ -193,7 +198,7 @@
       if (!manifest || disposed || !timeline) return;
       const next = chooseLayout(manifest.layouts, surface.parentElement.clientWidth);
       if (next.id !== layout.id) guarded(() => mount(next));
-      else timeline.resize();
+      else guarded(() => timeline?.resize());
     });
   });
   reduced.addEventListener('change', () => {

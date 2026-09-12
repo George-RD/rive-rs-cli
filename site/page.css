@@ -10,7 +10,7 @@ main { max-width: 1440px; margin: 0 auto; }
 .page-control:focus-visible { outline: 3px solid #2f6383; outline-offset: 4px; }
 .page-control[role="slider"] { touch-action: none; cursor: ew-resize; }
 .accessible-copy { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.page-fallback { padding: 48px 24px; line-height: 1.6; }
+.page-fallback { position: absolute; top: 0; padding: 48px 24px; line-height: 1.6; }
 .page-fallback nav { display: flex; flex-wrap: wrap; gap: 16px 24px; }
 a { color: #2f6383; }
 .text-version { position: fixed; z-index: 10; top: 8px; left: 8px; padding: 12px; background: #fbf8ef; transform: translateY(-150%); }

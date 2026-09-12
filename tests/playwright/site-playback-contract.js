@@ -47,9 +47,11 @@ function playbackHarness(options = {}) {
     }
 
     stateMachineInputs() { return this.inputs; }
-    resizeDrawingSurfaceToCanvas() {}
-    play() {}
-    pause() {}
+    resizeDrawingSurfaceToCanvas() {
+      if (options.resizeDrawsWallClock) this.draw(20000);
+    }
+    play() { this.playing = true; }
+    pause() { this.playing = false; }
     scrub() {}
     drawFrame() {}
     cleanup() { this.cleaned = true; }
@@ -60,7 +62,7 @@ function playbackHarness(options = {}) {
         this.failNextDraw = false;
         throw new Error("draw failed");
       }
-      if (this.lastRenderTime !== 0) this.elapsedMs += timeMs - this.lastRenderTime;
+      if (this.playing && this.lastRenderTime !== 0) this.elapsedMs += timeMs - this.lastRenderTime;
       this.lastRenderTime = timeMs;
       this.triggerCount += this.pendingTriggers;
       this.pendingTriggers = 0;
@@ -219,3 +221,20 @@ test("reduced-motion controls work at frame zero and destruction cancels pending
   await pending;
   assert.deepEqual(canvases[0].rendered, rendered);
 });
+
+for (const fps of [30, 60]) {
+  test(`resize cannot advance a paused state machine or contaminate its next tick at ${fps}fps`, async (t) => {
+    const harness = playbackHarness({ fps, resizeDrawsWallClock: true });
+    t.after(() => harness.cleanup());
+    const { timeline, canvases } = harness;
+    await timeline.ready;
+    await timeline.seekToFrame(30);
+    const elapsed = canvases[0].rendered.elapsedMs;
+    timeline.resize();
+    assert.equal(canvases[0].rendered.elapsedMs, elapsed);
+    assert.equal(timeline.currentFrame, 30);
+    assert.equal(timeline.isPlaying, false);
+    await timeline.seekToFrame(31);
+    assert.ok(Math.abs(canvases[0].rendered.elapsedMs - elapsed - 1000 / fps) < 0.0001);
+  });
+}

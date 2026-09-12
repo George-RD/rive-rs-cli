@@ -188,7 +188,22 @@
     }
 
     function resize() {
-      if (instance && !destroyed) instance.resizeDrawingSurfaceToCanvas();
+      if (!instance || destroyed) return;
+      if (mode !== "stateMachine") {
+        instance.resizeDrawingSurfaceToCanvas();
+        detachScheduledFrame();
+        return;
+      }
+      instance.pause([stateMachine]);
+      detachScheduledFrame();
+      try {
+        instance.resizeDrawingSurfaceToCanvas();
+      } finally {
+        instance.play([stateMachine]);
+        detachScheduledFrame();
+        instance.lastRenderTime = CLOCK_ORIGIN_MS + stepsAdvanced * stepMs;
+      }
+      settleAtCurrentFrame();
     }
 
     async function setInput(name, value) {

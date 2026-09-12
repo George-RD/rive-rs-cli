@@ -65,6 +65,12 @@ async function main() {
       const frozen = await page.locator('#rive-page').screenshot();
       await delay(200);
       assert.deepEqual(await page.locator('#rive-page').screenshot(), frozen, `${name}: reduced motion moved`);
+      const pixelsBeforeResize = await page.locator('#rive-page').evaluate(canvas => canvas.toDataURL());
+      await page.setViewportSize({ width, height: height + 80 });
+      await delay(150);
+      assert.equal(await page.locator('#rive-page').evaluate(canvas => canvas.toDataURL()), pixelsBeforeResize, `${name}: resizing advanced paused artwork`);
+      await page.setViewportSize({ width, height });
+      await delay(150);
       await screenshot(page, name);
       await page.locator('[data-control="weave"]').click();
       await page.waitForFunction(() => document.querySelector('[role="slider"]').getAttribute('aria-valuenow') === '1');
@@ -156,7 +162,10 @@ async function main() {
     await failed.route(blocked, route => route.abort());
     await failed.goto(URL);
     await failed.waitForFunction(() => document.querySelector('#page-surface').dataset.state === 'error', null, { timeout: 22000 });
-    assert.ok(await failed.locator('#page-fallback a[href="text.html"]').isVisible());
+    const link = failed.locator('#page-fallback a[href="text.html"]');
+    assert.ok(await link.isVisible());
+    assert.ok((await link.boundingBox()).y < 844, 'failure navigation is below the fold');
+    await screenshot(failed, blocked.includes('wasm') ? 'failed-wasm' : blocked.includes('manifest') ? 'failed-manifest' : 'failed-artifact');
     await failed.close();
   }
   const nojs = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
