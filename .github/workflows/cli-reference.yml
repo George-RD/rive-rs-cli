@@ -27,8 +27,6 @@ jobs:
        !contains(github.event.changes.body.from, '<!-- run-official-reference:1.0.2 -->'))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    env:
-      REFERENCE_OUTPUT: ${{ runner.temp }}/official-reference-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,6 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "REFERENCE_OUTPUT=$RUNNER_TEMP/official-reference-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
           tools="$RUNNER_TEMP/official-reference-tools"
           mkdir -p "$tools"
           source=$(python3 -c 'import json; print(json.load(open("parity/cli-reference/lock.json"))["official"]["source"])')
