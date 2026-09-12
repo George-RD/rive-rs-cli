@@ -67,7 +67,7 @@ pub(crate) fn validate_artboard_spec(artboard_spec: &ArtboardSpec) -> Result<Spe
 
     let mut object_names: HashSet<String> = HashSet::new();
     for child in &artboard_spec.children {
-        validate_object_spec(child, &mut object_names, &ParentKind::Artboard, true)?;
+        validate_object_spec(child, &mut object_names, &ParentKind::Artboard)?;
     }
     let spec_index = SpecIndex::build(&artboard_spec.children);
     let object_type_keys = &spec_index.type_keys;
@@ -499,20 +499,13 @@ pub(crate) fn validate_object_spec(
     spec: &ObjectSpec,
     object_names: &mut HashSet<String>,
     parent_kind: &ParentKind,
-    is_artboard_child: bool,
 ) -> Result<(), String> {
-    if !is_artboard_child && let Some((name, _)) = super::objects::file_asset(spec) {
-        return Err(format!(
-            "asset '{name}' must be a direct child of an artboard"
-        ));
-    }
-
     match spec {
         ObjectSpec::Shape { name, children, .. } => {
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Shape, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Shape)?;
                 }
             }
         }
@@ -737,7 +730,7 @@ pub(crate) fn validate_object_spec(
                             child_names.insert(name.clone());
                         }
                     }
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
                 if let Some(active_component_name) = active_component
                     && !child_names.contains(active_component_name)
@@ -870,7 +863,7 @@ pub(crate) fn validate_object_spec(
             }
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Fill, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Fill)?;
                 }
             }
         }
@@ -896,7 +889,7 @@ pub(crate) fn validate_object_spec(
             }
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Stroke, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Stroke)?;
                 }
             }
         }
@@ -910,7 +903,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Gradient, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Gradient)?;
                 }
             }
         }
@@ -918,7 +911,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Gradient, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Gradient)?;
                 }
             }
         }
@@ -955,7 +948,7 @@ pub(crate) fn validate_object_spec(
             }
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::PointsPath, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::PointsPath)?;
                 }
             }
         }
@@ -1070,7 +1063,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1078,7 +1071,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Bone, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Bone)?;
                 }
             }
         }
@@ -1086,7 +1079,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Bone, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Bone)?;
                 }
             }
         }
@@ -1094,7 +1087,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Bone, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Bone)?;
                 }
             }
         }
@@ -1152,7 +1145,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1160,7 +1153,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Text, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Text)?;
                 }
             }
         }
@@ -1180,7 +1173,7 @@ pub(crate) fn validate_object_spec(
                             name
                         ));
                     }
-                    validate_object_spec(child, object_names, &ParentKind::TextStyle, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::TextStyle)?;
                 }
             }
         }
@@ -1196,7 +1189,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::LayoutComponent, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::LayoutComponent)?;
                 }
             }
         }
@@ -1207,7 +1200,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::ViewModel, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::ViewModel)?;
                 }
             }
         }
@@ -1355,7 +1348,7 @@ pub(crate) fn validate_object_spec(
             }
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::DashPath, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::DashPath)?;
                 }
             }
         }
@@ -1370,7 +1363,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1379,7 +1372,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1411,7 +1404,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1419,7 +1412,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1430,7 +1423,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1445,7 +1438,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1455,7 +1448,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1468,7 +1461,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1483,7 +1476,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1496,7 +1489,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1526,7 +1519,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1538,7 +1531,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1574,7 +1567,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }
@@ -1583,7 +1576,7 @@ pub(crate) fn validate_object_spec(
             ensure_unique_name(name, object_names)?;
             if let Some(children) = children {
                 for child in children {
-                    validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                    validate_object_spec(child, object_names, &ParentKind::Artboard)?;
                 }
             }
         }

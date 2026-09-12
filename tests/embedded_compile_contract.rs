@@ -332,3 +332,64 @@ fn nested_assets_are_rejected_before_any_resolver_callback() {
         }
     }
 }
+
+#[test]
+fn deeply_nested_node_assets_fail_before_resolver_callbacks() {
+    for depth in [1, 2, 4] {
+        for kind in ["image_asset", "font_asset", "audio_asset"] {
+            let mut child = json!({"type": kind, "name": "DeepAsset"});
+            for level in 0..depth {
+                child = json!({
+                    "type": "node", "name": format!("Node{level}"), "children": [child]
+                });
+            }
+            let scene = serde_json::from_value(json!({
+                "scene_format_version": 1,
+                "artboard": {
+                    "name": "NestedNodes", "width": 64, "height": 64,
+                    "children": [
+                        {"type": "font_asset", "name": "FirstFont", "source": FONT_KEY},
+                        child
+                    ]
+                }
+            }))
+            .expect("nested node scene");
+            let error = compile_scene_with_assets(&scene, options(), &NoReads)
+                .expect_err("all node descendants build before resolving assets");
+            assert_eq!(error.code(), "invalid-scene");
+            assert!(error.to_string().contains("DeepAsset"), "{error}");
+        }
+    }
+}
+
+#[test]
+fn unresolved_nested_artboards_fail_before_resolver_callbacks() {
+    for kind in [
+        "nested_artboard",
+        "nested_artboard_leaf",
+        "nested_artboard_layout",
+    ] {
+        for in_node in [false, true] {
+            let mut child = json!({
+                "type": kind, "name": "Nested", "source_artboard": "MissingBoard"
+            });
+            if in_node {
+                child = json!({"type": "node", "name": "Parent", "children": [child]});
+            }
+            let scene = serde_json::from_value(json!({
+                "scene_format_version": 1,
+                "artboards": [
+                    {"name": "First", "width": 64, "height": 64, "children": [
+                        {"type": "font_asset", "name": "FirstFont", "source": FONT_KEY}
+                    ]},
+                    {"name": "Second", "width": 64, "height": 64, "children": [child]}
+                ]
+            }))
+            .expect("unknown nested artboard target");
+            let error = compile_scene_with_assets(&scene, options(), &NoReads)
+                .expect_err("late reference errors precede resolver calls");
+            assert_eq!(error.code(), "invalid-scene");
+            assert!(error.to_string().contains("MissingBoard"), "{error}");
+        }
+    }
+}

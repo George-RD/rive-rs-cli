@@ -4,6 +4,7 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::objects::artboard::{Artboard, Backboard};
+use crate::objects::assets::FileAssetContents;
 use crate::objects::core::RiveObject;
 
 use super::BuildError;
@@ -172,7 +173,7 @@ pub(crate) fn build_scene_with_assets(
     limits: AssetLimits,
 ) -> Result<Vec<Box<dyn RiveObject>>, BuildError> {
     let indexes = validate_scene_spec(spec)?;
-    let mut assets = AssetSession::new(resolver, limits);
+    let mut pending_assets = Vec::new();
 
     let artboard_specs = resolve_artboards(spec)?;
     let mut artboard_name_to_index: HashMap<String, usize> = HashMap::new();
@@ -201,10 +202,11 @@ pub(crate) fn build_scene_with_assets(
     for artboard_spec in &artboard_specs {
         for child in &artboard_spec.children {
             if file_asset(child).is_some() {
-                let contents = embedded_asset_request(child)
-                    .map(|request| assets.resolve(request))
-                    .transpose()?;
-                append_file_asset(child, &mut objects, contents);
+                let request = embedded_asset_request(child);
+                append_file_asset(child, &mut objects, request.map(|_| Vec::new()));
+                if let Some(request) = request {
+                    pending_assets.push((objects.len() - 1, request));
+                }
             }
         }
     }
@@ -304,6 +306,11 @@ pub(crate) fn build_scene_with_assets(
             .iter()
             .filter(|child| matches!(child, ObjectSpec::ViewModel { .. }))
             .count() as u64;
+    }
+
+    let mut assets = AssetSession::new(resolver, limits);
+    for (contents_index, request) in pending_assets {
+        objects[contents_index] = Box::new(FileAssetContents::new(assets.resolve(request)?));
     }
 
     Ok(objects)
