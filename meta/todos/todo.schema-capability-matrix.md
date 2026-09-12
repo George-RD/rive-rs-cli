@@ -52,3 +52,20 @@ raw-output digest comparison. Rejecting all such prose was not adopted: the pinn
 capture contains 659 distinct description lines. All 351 types were re-normalized
 with identical retained bytes after the stricter parser; no baseline refresh was
 needed. The expanded 70-contract suite and final-head gates are recorded on #277.
+
+Resume review: `0ca6046` rejects unknown top-level snapshot members, including
+misleading runtime-test claims, with JSON/xz regressions. Its 71-test Python suite
+and full repository CI passed, but fresh review found root SceneSpec changes could
+still be omitted. Four public-check mutations reproduced that blind spot: root
+requirements, field constraints, references and an ObjectSpec envelope constraint.
+
+The metadata reader now retains both schema envelopes and requires them in
+candidates. Those four mutations, candidate-only root drift and formatting-only
+controls pass after correction; the 18 capability/snapshot tests ran locally.
+The initial snapshot was deliberately extended using the original hash-verified
+canonical source, adding only the missing root and ObjectSpec envelope. This is
+not an upstream refresh or acceptance of changed production behavior. All official
+facts and prior metadata/provenance are unchanged. The original and completed
+archive hashes and source hash are recorded in `schema-baseline/README.md`.
+The B1 runtime archive remains untouched. Fresh checks and review of this correction
+must pass before merge; the earlier `0ca6046` checks are not substitutes.

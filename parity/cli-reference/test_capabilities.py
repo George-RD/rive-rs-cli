@@ -87,6 +87,10 @@ class CapabilityMutationContract(unittest.TestCase):
                      lambda row: row['compiler_metadata'].update(registered_types=[]),
                      lambda row: row['compiler_metadata']['registered_properties'].update({'23': 23}),
                      lambda row: row['compiler_metadata']['canonical'].pop('objects'),
+                     lambda row: row['compiler_metadata']['canonical'].pop('root'),
+                     lambda row: row['compiler_metadata']['canonical'].update(root=None),
+                     lambda row: row['compiler_metadata']['canonical'].pop('object_spec'),
+                     lambda row: row['compiler_metadata']['canonical'].update(object_spec=None),
                      lambda row: row['compiler_metadata']['canonical']['objects']['shape'].update(properties={}),
                      lambda row: row['compiler_metadata'].update(provenance={}),
                      lambda row: row['compiler_metadata']['provenance'].update({'docs/scene.schema.v1.json': 'not-a-digest'})]
@@ -167,6 +171,53 @@ class CapabilityMutationContract(unittest.TestCase):
             self.assertEqual(changed.returncode, 1, changed.stderr)
             paths = {row['path'] for row in json.loads(changed.stdout)['compiler_changes']}
             self.assertEqual(paths, {'compiler.registered_types.7', 'compiler.registered_types.65500'})
+
+    def test_root_schema_requirements_and_references_are_checked(self):
+        mutations = [
+            ('compiler.canonical.root.required', lambda schema: schema.update(required=[])),
+            ('compiler.canonical.root.properties.scene_format_version.minimum',
+             lambda schema: schema['properties']['scene_format_version'].update(minimum=1)),
+            ('compiler.canonical.root.properties.artboard.anyOf',
+             lambda schema: schema['properties']['artboard']['anyOf'][0].update({'$ref': '#/$defs/Shape'})),
+            ('compiler.canonical.object_spec.additionalProperties',
+             lambda schema: schema['$defs']['ObjectSpec'].update(additionalProperties=False)),
+        ]
+        with tempfile.TemporaryDirectory() as temporary:
+            root, here = self.fixture_checkout(temporary)
+            path = root / 'docs/scene.schema.v1.json'
+            original = json.loads(path.read_text())
+            for expected, mutate in mutations:
+                changed = copy.deepcopy(original)
+                mutate(changed)
+                path.write_text(json.dumps(changed))
+                with self.subTest(path=expected):
+                    result = self.run_check(here)
+                    self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                    self.assertEqual([row['path'] for row in json.loads(result.stdout)['compiler_changes']],
+                                     [expected])
+
+    def test_candidate_root_contract_drift_is_checked(self):
+        snapshot = read_snapshot(HERE / 'schema-baseline/facts.json.xz')
+        snapshot['compiler_metadata']['canonical']['root']['required'] = []
+        with tempfile.TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / 'candidate.json'
+            candidate.write_text(json.dumps(snapshot))
+            result = self.run_check(HERE, '--candidate', str(candidate))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        comparison = json.loads(result.stdout)
+        self.assertEqual(comparison['compiler_changes'], [])
+        self.assertEqual([row['path'] for row in comparison['candidate_compiler_changes']],
+                         ['compiler.canonical.root.required'])
+
+    def test_canonical_schema_formatting_is_not_semantic_drift(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root, here = self.fixture_checkout(temporary)
+            path = root / 'docs/scene.schema.v1.json'
+            original = json.loads(path.read_text())
+            path.write_text(json.dumps(dict(reversed(list(original.items()))), indent=4) + '\n')
+            result = self.run_check(here)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)['compiler_changes'], [])
 
     def test_tampered_snapshot_is_not_accepted_as_new_baseline(self):
         with tempfile.TemporaryDirectory() as temporary:

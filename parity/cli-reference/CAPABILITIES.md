@@ -18,6 +18,13 @@ python3 -m unittest discover -s parity/cli-reference -p 'test_*.py' -v
 JSON includes all normalized official property facts, owner-qualified identities,
 current canonical fields, source digests, declaration differences, family inventory,
 known work and scoped evidence. Output is deterministic for identical inputs.
+The canonical metadata retains the root SceneSpec contract and ObjectSpec envelope
+alongside definitions and indexed variants. Requirements, constraints and references
+at those boundaries are checked, not discarded. Formatting and JSON object-key
+order alone do not change the live-checkout comparison. Missing root or ObjectSpec
+envelopes make a candidate incomplete. The initial snapshot's audited coverage
+correction is documented in [its retention history](schema-baseline/README.md).
+
 The registry reader allows its single authoritative file to move from `src/` into
 `crates/`; a path-only move is not semantic drift. A new unrecognized registry
 format fails rather than silently returning an empty inventory. The existing

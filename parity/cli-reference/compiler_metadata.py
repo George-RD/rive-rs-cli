@@ -30,7 +30,8 @@ def read_metadata(root: Path) -> dict:
     schema_path = root / 'docs/scene.schema.v1.json'
     schema = reference.read_json(schema_path)
     definitions = dict(schema['$defs'])
-    variants = definitions.pop('ObjectSpec')['oneOf']
+    object_spec = definitions.pop('ObjectSpec')
+    variants = object_spec['oneOf']
     objects = {}
     for row in variants:
         name = row['properties']['type']['const']
@@ -40,7 +41,9 @@ def read_metadata(root: Path) -> dict:
     text = registry.read_text()
     result = {'registered_types': registry_table(text, 'type_name'),
             'registered_properties': registry_table(text, 'property_name'),
-            'canonical': {'objects': objects, 'definitions': definitions},
+            'canonical': {'objects': objects, 'definitions': definitions,
+                          'root': {key: value for key, value in schema.items() if key != '$defs'},
+                          'object_spec': {key: value for key, value in object_spec.items() if key != 'oneOf'}},
             'provenance': {str(path.relative_to(root)): reference.digest(path)
                            for path in [registry, schema_path]}}
     validate_metadata(result)
@@ -64,8 +67,12 @@ def validate_metadata(metadata: dict) -> None:
                        for key, name in table.items())):
             raise SchemaError(f'compiler metadata has an invalid {section} inventory')
     canonical = metadata['canonical']
-    if not isinstance(canonical, dict) or set(canonical) != {'objects', 'definitions'}:
-        raise SchemaError('compiler metadata lacks canonical objects or definitions')
+    if not isinstance(canonical, dict) or set(canonical) != {'objects', 'definitions', 'root', 'object_spec'}:
+        raise SchemaError('compiler metadata lacks a complete canonical schema')
+    if (not isinstance(canonical['root'], dict) or not canonical['root']
+            or not isinstance(canonical['object_spec'], dict)
+            or '$defs' in canonical['root'] or 'oneOf' in canonical['object_spec']):
+        raise SchemaError('compiler metadata has invalid canonical schema envelopes')
     for section in ['objects', 'definitions']:
         table = canonical[section]
         if (not isinstance(table, dict) or not table
