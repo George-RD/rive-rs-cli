@@ -53,7 +53,7 @@ class RetainedRecordingContracts(unittest.TestCase):
         for index, argv in enumerate(self.lock["audit_commands"]):
             commands.append(self.command(f"audit-{index:02d}", official + argv, "synthetic audit", retain=False))
         for name, flag in [("publish", "--publish"), ("rev", "--rev=build/probe.rev")]:
-            commands.append(self.command("unauthenticated-" + name, official + [".", flag], "", code=3))
+            commands.append(self.command("unauthenticated-" + name, official + [".", flag], "Not logged in. Run: rive login\n", code=3))
         fixtures = {}
         for name in ["static", "animated"]:
             for filename in ["scene.rml", "rive.yaml"]:
@@ -174,3 +174,18 @@ class RetainedRecordingContracts(unittest.TestCase):
         result = subprocess.CompletedProcess(["rive-cli", "render"], 0, b'{"ok": false}', b"")
         with self.assertRaises(reference.ReferenceError):
             reference.own_json(result)
+
+    def test_authentication_probe_requires_the_missing_login_diagnostic(self):
+        command = self.command_named("unauthenticated-publish")
+        output = b"Invalid project configuration\n"
+        (self.root / command["stdout_file"]).write_bytes(output)
+        command["stdout_sha256"] = hashlib.sha256(output).hexdigest()
+        self.save()
+        with self.assertRaisesRegex(reference.ReferenceError, "missing-login"):
+            reference.verify_recording(self.root, "1" * 40)
+
+    def test_network_error_is_not_proof_of_missing_login(self):
+        self.command_named("unauthenticated-rev")["exit_code"] = 7
+        self.save()
+        with self.assertRaisesRegex(reference.ReferenceError, "missing-login"):
+            reference.verify_recording(self.root, "1" * 40)

@@ -22,7 +22,7 @@ missing login; scripts, shaders, signing and production rights remain untested.
 
 The complete original evidence is committed in `parity/cli-reference/baseline/`
 with independent source/artifact/archive pins and human-readable results.
-45 local Python tests pass, including a no-subprocess check of that actual capture.
+47 local Python tests pass, including a no-subprocess check of that actual capture.
 They do not claim local official CLI, browser, Rust or Cairn execution.
 The source-head CI run 34693872297 and MSRV run 34693872295 passed. Final retention
 commit gates and any fresh exact-head capture are recorded on PR #274 before merge.
@@ -61,3 +61,9 @@ existing capture marker, and paint-negative comparisons skipped structural check
 Capture now requires an actual body-change object; both comparisons require equal
 object counts and zero type deltas. Three new tests failed before these fixes and
 passed afterward. The retained baseline still verifies without modification.
+
+A further Codex finding showed that exit codes alone could mislabel a distribution
+probe failure as missing login. Both live capture and offline verification now
+require exit 3 plus the pinned CLI's specific missing-login diagnostic. Two tests
+reproduced acceptance of unrelated project/network failures before the shared
+check was introduced; all 47 tests and both unchanged captures now verify.

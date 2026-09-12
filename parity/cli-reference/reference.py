@@ -201,6 +201,12 @@ def check_official_build(report: dict, command: str) -> None:
         raise ReferenceError("official compilation reported errors or a different mode despite its exit code")
 
 
+def check_login_restriction(exit_code: int, stdout: bytes, stderr: bytes) -> None:
+    diagnostic = b"Not logged in. Run: rive login"
+    if exit_code != 3 or diagnostic not in stdout.splitlines() + stderr.splitlines():
+        raise ReferenceError("missing-login restriction was not established by the pinned CLI diagnostic")
+
+
 def compile_fragment(recorder: Recorder, binary: Path, project: Path, env: dict, name: str) -> Path:
     verified = recorder.run(name + "-verify", OFFLINE_PREFIX + [str(binary), ".", "--verify", "--format=json"], project, env)
     check_official_build(json.loads(verified.stdout), "verify")
@@ -298,8 +304,9 @@ def verify_recording(directory: Path, expected_head: str) -> dict:
             if command.get("argv", [])[:len(OFFLINE_PREFIX)] != OFFLINE_PREFIX:
                 raise ReferenceError("official command evidence lacks network isolation")
     for label in ["publish", "rev"]:
-        if commands.get("unauthenticated-" + label, {}).get("exit_code") not in [3, 7]:
-            raise ReferenceError("authentication/network restriction is inconclusive")
+        check_login_restriction(commands.get("unauthenticated-" + label, {}).get("exit_code"),
+                                (directory / f"commands/unauthenticated-{label}.stdout").read_bytes(),
+                                (directory / f"commands/unauthenticated-{label}.stderr").read_bytes())
     for name in ["static", "animated"]:
         fixture = recording.get("fixtures", {}).get(name, {})
         for filename in ["scene.rml", "rive.yaml"]:
@@ -404,8 +411,7 @@ def capture(binary: Path, archive: Path, browser: Path, output: Path) -> None:
             for label, flag in [("publish", "--publish"), ("rev", "--rev=build/probe.rev")]:
                 result = recorder.run("unauthenticated-" + label, OFFLINE_PREFIX + [str(binary), ".", flag],
                                       project, env, required=False)
-                if result.returncode not in [3, 7]:
-                    raise ReferenceError(f"{label} restriction was not established; observed exit {result.returncode}")
+                check_login_restriction(result.returncode, result.stdout, result.stderr)
         recording["status"] = "passed"
     except (ReferenceError, OSError, ValueError, KeyError, TypeError) as error:
         recording["failure"] = str(error)
