@@ -8,7 +8,7 @@ not yet retained. Offline contract tests are not runtime evidence. Do not close
 ## Run
 
 Use Linux x86_64, Python 3.11+, Rust, Git, Chromium and `unshare` with user/network
-namespaces enabled. Start from a clean committed checkout. Provision tools before
+namespaces enabled, plus the CLI's Linux shared libraries (Ubuntu: `libegl1 libgles2`). Start from a clean committed checkout. Provision tools before
 the experiment; compilation itself is tested without network or credentials.
 
 Acquire the archive named by `lock.json` from its versioned source. Verify its
@@ -24,7 +24,7 @@ python3 parity/cli-reference/reference.py capture \
   --output target/official-reference
 
 python3 parity/cli-reference/reference.py verify target/official-reference
-python3 -m unittest discover -s parity/cli-reference -p test_reference.py -v
+python3 -m unittest discover -s parity/cli-reference -p 'test_*.py' -v
 ```
 
 `capture` refuses an existing output directory. There is no update-baseline flag.
@@ -34,9 +34,9 @@ the official CLI. Ordinary CI runs only the Python contract tests.
 
 The separate `CLI reference` workflow provisions the exact locked archive only
 when explicitly requested. Use workflow dispatch, or deliberately edit a same-repo
-PR body to add `<!-- run-official-reference:1.0.2 -->`. Remove that marker after the
-run starts to avoid later description edits starting another run. A synchronize
-or ordinary PR creation does not opt in. The workflow retains the evidence, never
+PR body to add `<!-- run-official-reference:1.0.2 -->`. Only adding the marker
+starts a capture: retaining it during a bot/description edit does not. Remove and
+re-add it to request another capture. A synchronize or PR creation does not opt in. The workflow retains the evidence, never
 the downloaded executable, archive, installation files or isolated HOME.
 
 ## What the experiment measures

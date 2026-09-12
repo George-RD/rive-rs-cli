@@ -23,11 +23,19 @@ Default tests are offline contracts; real capture is explicitly opt-in.
 - Successful official builds, inspected outputs and actual runtime evidence: pending execution.
 - Exact-head Rust/MSRV, runtime and Cairn gates: pending execution.
 
-Local Python contract tests passed (27 tests). Behavioral red evidence was observed
+Local Python contract tests passed (36 tests). Behavioral red evidence was observed
 for missing-binary rejection and retaining process launch failures before their
 implementations. Synthetic contract fixtures are not official execution evidence.
 Local Rust and Cairn are unavailable; outbound DNS prevented binary acquisition.
 The separate opt-in workflow provides a reproducible remote execution route.
+The first remote capture at `086a648` (run 34693047769, artifact 10297871878)
+verified the archive/member and built the local CLI, then failed loading the
+official executable because Ubuntu lacked `libEGL.so.1`. No compilation/runtime
+pass was inferred. Provisioning now installs `libegl1 libgles2` explicitly.
+Review red/green also covers missing command/output binding, missing network
+namespace evidence and disagreement between the recorded and observed source head.
+A PR-description bot exposed duplicate capture triggers; opt-in now requires the
+marker to be newly added, not merely present.
 
 ## Review
 

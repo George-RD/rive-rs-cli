@@ -267,7 +267,8 @@ def verify_recording(directory: Path) -> dict:
         commands[name] = command
         for label in ["stdout", "stderr"]:
             path = command.get(label + "_file")
-            if path is not None and (path != f"commands/{name}.{label}" or artifacts.get(path) != command[label + "_sha256"]):
+            if (not name.startswith("audit-") and path is None) or (path is not None and
+                    (path != f"commands/{name}.{label}" or artifacts.get(path) != command[label + "_sha256"])):
                 raise ReferenceError("command evidence is not bound to retained output")
     required = ["head", "worktree", "browser-version", "rust-toolchain", "build-comparison-tool", "official-version"]
     for name in ["static", "animated"]:
@@ -283,6 +284,17 @@ def verify_recording(directory: Path) -> dict:
         command = commands.get(f"audit-{index:02d}", {})
         if command.get("argv", [])[len(OFFLINE_PREFIX) + 1:] != argv:
             raise ReferenceError("missing public command audit evidence")
+    if (directory / "commands/head.stdout").read_text().strip() != recording["source_head"]:
+        raise ReferenceError("recorded source head differs from command evidence")
+    if (directory / "commands/worktree.stdout").read_text().strip():
+        raise ReferenceError("recording was not captured from a clean worktree")
+    if (directory / "commands/official-version.stdout").read_text().strip() != official["version_output"]:
+        raise ReferenceError("recorded version differs from command evidence")
+    for name, command in commands.items():
+        if (name.startswith(("audit-", "official-", "unauthenticated-"))
+                or name.endswith(("-verify", "-compile", "-inspect"))):
+            if command.get("argv", [])[:len(OFFLINE_PREFIX)] != OFFLINE_PREFIX:
+                raise ReferenceError("official command evidence lacks network isolation")
     for label in ["publish", "rev"]:
         if commands.get("unauthenticated-" + label, {}).get("exit_code") not in [3, 7]:
             raise ReferenceError("authentication/network restriction is inconclusive")

@@ -16,14 +16,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - run: python3 -m unittest discover -s parity/cli-reference -p test_reference.py -v
+      - run: python3 -m unittest discover -s parity/cli-reference -p 'test_*.py' -v
 
   capture:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.action == 'edited' &&
        github.event.pull_request.head.repo.full_name == github.repository &&
-       contains(github.event.pull_request.body, '<!-- run-official-reference:1.0.2 -->'))
+       contains(github.event.pull_request.body, '<!-- run-official-reference:1.0.2 -->') &&
+       !contains(github.event.changes.body.from, '<!-- run-official-reference:1.0.2 -->'))
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -50,6 +51,9 @@ jobs:
           tar -xzf "$archive" -C "$tools"
           binary=$(find "$tools" -type f -name rive -print -quit)
           test -n "$binary"
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libegl1 libgles2
+          ldd "$binary"
           echo "REFERENCE_BINARY=$binary" >> "$GITHUB_ENV"
           echo "REFERENCE_ARCHIVE=$archive" >> "$GITHUB_ENV"
           npm install --prefix "$tools/browser" playwright@1.62.0
