@@ -41,7 +41,9 @@ fn replacement_image() -> Vec<u8> {
         encoder.set_color(png::ColorType::Rgba);
         encoder.set_depth(png::BitDepth::Eight);
         let mut writer = encoder.write_header().expect("replacement PNG header");
-        writer.write_image_data(&pixels).expect("replacement PNG pixels");
+        writer
+            .write_image_data(&pixels)
+            .expect("replacement PNG pixels");
     }
     bytes
 }
@@ -100,7 +102,10 @@ fn supplied_image_and_font_both_drive_visible_official_runtime_output() {
     fs::create_dir_all(&root).expect("evidence root");
     let full = frame(&root, "full", document(), IMAGE);
     let repeat = frame(&root, "repeat", document(), IMAGE);
-    assert_eq!(full, repeat, "memory compilation and rendering are repeatable");
+    assert_eq!(
+        full, repeat,
+        "memory compilation and rendering are repeatable"
+    );
 
     let replacement = replacement_image();
     let replaced = frame(&root, "replacement-image-bytes", document(), &replacement);
@@ -135,8 +140,14 @@ fn supplied_image_and_font_both_drive_visible_official_runtime_output() {
     let image_pixels = differences(&full, &without_image, 0, TEXT_REGION_START);
     let text_pixels = differences(&full, &without_text, TEXT_REGION_START, HEIGHT);
     let font_pixels = differences(&full, &without_font, TEXT_REGION_START, HEIGHT);
-    assert!(image_pixels > MIN_CHANGED_PIXELS, "embedded image must be visible: {image_pixels}");
-    assert!(text_pixels > MIN_CHANGED_PIXELS, "glyphs must be visible: {text_pixels}");
+    assert!(
+        image_pixels > MIN_CHANGED_PIXELS,
+        "embedded image must be visible: {image_pixels}"
+    );
+    assert!(
+        text_pixels > MIN_CHANGED_PIXELS,
+        "glyphs must be visible: {text_pixels}"
+    );
     assert_eq!(
         font_pixels, text_pixels,
         "without supplied font bytes, the glyphs must disappear"
