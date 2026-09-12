@@ -1,0 +1,129 @@
+name: Verify node-child validation for 257
+
+on:
+  push:
+    branches: [agent/256-a1-memory-assets]
+    paths: ['.github/workflows/agent-257-node-validation.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: github.repository == 'George-RD/rive-rs-cli' && github.ref == 'refs/heads/agent/256-a1-memory-assets'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      RUSTFLAGS: '-D warnings'
+      CARGO_TERM_COLOR: never
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Reproduce the node callback-order failure
+        run: |
+          mkdir -p target/node-validation
+          if cargo test --locked --test embedded_compile_contract nested_assets_are_rejected_before_any_resolver_callback > target/node-validation/red.log 2>&1; then
+            echo 'Expected callback-order regression did not reproduce.'
+            exit 1
+          fi
+          grep 'invalid scene must fail before asset resolution' target/node-validation/red.log
+      - name: Correct the pinned traversal and strengthen nested-node coverage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha1
+          p = Path('src/builder/validation.rs')
+          data = p.read_bytes()
+          blob = sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+          assert blob == 'e00056836bf23c3bfc95bd165a24ea98067c6c6c', blob
+          old = '''        ObjectSpec::Node { name, .. } => {
+                      ensure_unique_name(name, object_names)?;
+                  }'''
+          new = '''        ObjectSpec::Node { name, children, .. } => {
+                      ensure_unique_name(name, object_names)?;
+                      if let Some(children) = children {
+                          for child in children {
+                              validate_object_spec(child, object_names, &ParentKind::Artboard, false)?;
+                          }
+                      }
+                  }'''
+          text = data.decode()
+          assert text.count(old) == 1, 'unexpected Node validation inventory'
+          p.write_text(text.replace(old, new, 1))
+          tests = Path('tests/embedded_compile_contract.rs')
+          tests.write_text(tests.read_text() + '''
+
+          #[test]
+          fn deeply_nested_node_assets_fail_before_resolver_callbacks() {
+              for depth in [1, 2, 4] {
+                  for kind in ["image_asset", "font_asset", "audio_asset"] {
+                      let mut child = json!({"type": kind, "name": "DeepAsset"});
+                      for level in 0..depth {
+                          child = json!({
+                              "type": "node",
+                              "name": format!("Node{level}"),
+                              "children": [child]
+                          });
+                      }
+                      let scene = serde_json::from_value(json!({
+                          "scene_format_version": 1,
+                          "artboard": {
+                              "name": "NestedNodes", "width": 64, "height": 64,
+                              "children": [
+                                  {"type": "font_asset", "name": "FirstFont", "source": FONT_KEY},
+                                  child
+                              ]
+                          }
+                      })).expect("nested node scene");
+                      let error = compile_scene_with_assets(&scene, options(), &NoReads)
+                          .expect_err("all node descendants validate before resolving assets");
+                      assert_eq!(error.code(), "invalid-scene");
+                      assert!(error.to_string().contains("DeepAsset"), "{error}");
+                  }
+              }
+          }
+          ''')
+          roadmap = Path('ROADMAP.md')
+          old = '''is in progress on `agent/256-a1-memory-assets`; its [Cairn todo](meta/todos/todo.embedded-memory-assets.md)
+          records the implementation and outstanding verification gates. #259 remains blocked
+          until #257 is verified and merged. #258 is an independent reference-tooling unit
+          and can proceed in parallel; this compiler change does not implement or close it.'''
+          new = '''delivers caller-owned image/font compilation in [PR #275](https://github.com/George-RD/rive-rs-cli/pull/275).
+          Its [Cairn todo](meta/todos/todo.embedded-memory-assets.md) records implementation
+          and verification evidence. #259 is the next compiler unit once PR #275 is verified
+          and merged. #258 remains an independent reference-tooling unit; this compiler
+          change does not implement or close it.'''
+          text = roadmap.read_text()
+          assert text.count(old) == 1, 'unexpected roadmap frontier'
+          roadmap.write_text(text.replace(old, new, 1).replace('close it.\n\n\nAuthoring', 'close it.\n\nAuthoring'))
+          Path('.github/workflows/agent-257-node-validation.yml').unlink()
+          PY
+          cargo fmt
+          git diff --check
+      - name: Verify canonical builder, existing authoring and memory contracts
+        run: |
+          set -o pipefail
+          cargo test --locked --test asset_resolution_contract --test embedded_compile_contract 2>&1 | tee target/node-validation/contracts.log
+          cargo test --locked --lib 2>&1 | tee target/node-validation/library.log
+          cargo clippy --locked --all-targets --all-features -- -D warnings 2>&1 | tee target/node-validation/clippy.log
+      - name: Save verified source changes without keeping a preparation job
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/builder/validation.rs tests/embedded_compile_contract.rs ROADMAP.md .github/workflows/agent-257-node-validation.yml
+          git commit -m 'fix(builder): validate node descendants before asset resolution (#257)'
+          git rev-parse HEAD HEAD:src | tee target/node-validation/identity.txt
+          git diff 033a0f814a21b8aa9e1b5ae4eef9daedb243d26d > target/node-validation/fix.patch
+          git push origin HEAD:refs/heads/agent/256-a1-memory-assets
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: issue-257-node-validation
+          path: target/node-validation
+          retention-days: 14
