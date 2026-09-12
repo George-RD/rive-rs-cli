@@ -1,17 +1,18 @@
 ---
 node: rive-cli.core.compile
-status: open
+status: done
 created: 2026-09-12
+completed: 2026-09-12
 ---
 
 # Embedded A1: caller-owned image and font assets
 
-Execution issue: #257. Parent spec: #256. PR: #275.
+Execution issue: #257. Parent spec: #256. Implementation PR: #275.
 Branch: `agent/256-a1-memory-assets`. The independent #258 reference seed belongs
-to another session and is not part of this change. #259 starts after #257 is
-verified and merged.
+to another session and is not part of this change. #259 starts after PR #275 is
+verified and merged; this completion record does not close the parent spec.
 
-## Implemented
+## Delivered
 
 The public memory compilation entry, deterministic options and typed asset errors
 use the existing builder and encoder. Both legacy entry points forward through
@@ -32,29 +33,38 @@ source-map state duplication, or application-specific compiler.
 
 The pre-refactor oracle contains 95 successful legacy SceneSpec/AuthoringSpec
 fixtures and four explicit skips. Every successful output hash is preserved.
+The 32 focused asset contracts cover ownership, errors, limits, filesystem policy,
+byte ordering and invalid-scene rejection before resolver callbacks.
 
-The original observation records a real runtime run but its image-removal control
-alone was insufficient to establish which image bytes were used. The strengthened
-control changes only supplied image bytes, requires exactly the image pixels to
-change to the supplied color, and preserves every other pixel. CI run 34702984571
-passed that runtime test: 57,344 image pixels and 2,865 font-dependent text pixels.
-Its overall run failed the separate nested-asset callback contract; it is not a
-full-suite pass.
+Review exposed two callback-order gaps: invalid nested assets and unknown nested
+artboard targets could reach caller code before late builder errors. A broader
+Node-validation change was tried but rejected before commit because it changed a
+legacy fixture's accepted name handling. The oracle was not refreshed. Deferring
+byte resolution until successful canonical construction fixes both gaps while
+preserving the original validator and name semantics.
 
-Review identified both invalid nested assets and unknown nested-artboard targets
-as paths that could reach a resolver before late builder errors. A broader Node
-validation change was tried but rejected before commit because it changed a legacy
-fixture's accepted name handling. The oracle was not refreshed. Deferring byte
-resolution until successful canonical construction fixes the callback ordering
-without changing those semantics.
+Run 34703563148 reproduced the late-reference failure, then passed all focused
+contracts, the library suite and Clippy on the corrected source committed as
+`8b28800442283eb0eb8a8c6be810f0868426007b`. Its temporary development workflow
+removed itself; no source-rewriting job remains in the product.
 
-Run 34703563148 reproduced the late-reference failure, then passed 32 focused
-resolver/compiler contracts, the library suite and Clippy on the corrected source
-committed as `8b28800442283eb0eb8a8c6be810f0868426007b`. Its temporary development
-workflow removed itself; no source-rewriting job belongs to the final product.
+The original image-removal control was strengthened to vary only supplied image
+bytes while preserving the entire scene and dimensions. In the final observation,
+all 57,344 image pixels take the supplied replacement color and zero other pixels
+change. Withholding font bytes removes exactly the same 2,865 glyph pixels as
+removing text. Repeated captures and binaries match.
 
-Final exact-head full Rust, MSRV, runtime/browser, Cairn and Standards/Spec review
-remain merge gates on PR #275. This todo stays open until those gates are resolved.
+Full CI run 34703777838 attempt 2 passed on
+`8a762224ed0dc95b6a8c658bf9030a3a9b393e93`: 1,198 Rust tests passed, zero failed;
+the sole ignored test is the existing schema-regeneration utility. Formatting,
+Clippy, Rust 1.88, browser/runtime evaluation, visual regression, demo/site and
+Cairn gates passed. Attempt 1 had an existing console-test Chrome launch timeout;
+its retry used unchanged source and assertions. Codex review of this head found
+no major issues after the three earlier findings were addressed.
 
-See [the API contract](../../docs/embedded-assets.md) and
-[the reproduction record](../../tests/evidence/embedded-assets/README.md).
+The final evidence/documentation commit changes neither source nor tests; PR #275
+records its own exact-head checks and separate Standards/Spec author reviews.
+Only merge after those checks pass. The historical and strengthened observations
+remain distinct in the [reproduction record](../../tests/evidence/embedded-assets/README.md)
+and [verified observation](../../tests/evidence/embedded-assets/verified-observation.json).
+See the [public API contract](../../docs/embedded-assets.md).

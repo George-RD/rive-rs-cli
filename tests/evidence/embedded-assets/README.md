@@ -1,7 +1,7 @@
 # Embedded asset evidence
 
-There are two independent proofs here. Neither a structural parse nor a green
-compiler test substitutes for the runtime observation.
+Legacy byte compatibility and official-runtime behavior are independent proofs.
+A structural parse or successful compiler test does not substitute for rendering.
 
 ## Legacy byte compatibility
 
@@ -9,41 +9,65 @@ compiler test substitutes for the runtime observation.
 fixture outputs, with four skipped unsupported/malformed inputs listed separately.
 The oracle was captured before the builder patch in
 [run 34693606141](https://github.com/George-RD/rive-rs-cli/actions/runs/34693606141).
-Preparation commit `95101556b0a2979b0fb46c2af929c62473d7fc1b` still used the
-unchanged compilation/build/encoding path from main
-`dfdf746e923a4935ab1d78c30425588d95bebcd5`.
-The same manifest matched after the implementation was applied. The public
-compiler contract also checks those hashes on every test run.
+Preparation commit `95101556b0a2979b0fb46c2af929c62473d7fc1b` still used the unchanged
+compilation/build/encoding path from main `dfdf746e923a4935ab1d78c30425588d95bebcd5`.
+Every successful hash matches after the implementation and callback-order fixes.
+The public compiler contract checks those hashes on every test run.
 
 Do not regenerate this baseline with the new implementation to hide a mismatch.
 
-## Official-runtime observation
+## Verified image and font byte controls
 
-`observation.json` identifies the exact source tree, browser, runtime/input digests,
-frame hashes and measured controls from
-[run 34693878309](https://github.com/George-RD/rive-rs-cli/actions/runs/34693878309).
-The [runtime artifact](https://github.com/George-RD/rive-rs-cli/actions/runs/34693878309/artifacts/10297638415)
-contains the original PNGs and compiled Rive files. Artifacts have finite retention;
-the test is the reproducible proof, not an external binary dependency.
+[verified-observation.json](verified-observation.json) identifies the tested head,
+actual CI checkout, production source tree, test blob, browser, input/runtime
+hashes and every retained PNG/Rive artifact digest. It records
+[run 34703777838, attempt 2](https://github.com/George-RD/rive-rs-cli/actions/runs/34703777838/attempts/2)
+on `8a762224ed0dc95b6a8c658bf9030a3a9b393e93`. The
+[runtime artifact](https://github.com/George-RD/rive-rs-cli/actions/runs/34703777838/artifacts/10301696226)
+contains the six original captures and compiled Rive files. Its ZIP digest was
+checked after download; the whole-frame controls were independently recomputed
+and the full frame visually inspected.
 
-The full scene shows the Aurora image and text drawn using supplied Inter font
-bytes. Removing the image sprite changes 51,200 pixels in the image region.
-Removing text changes 2,865 pixels in the text region. Withholding the embedded
-font bytes produces exactly the same pixels as removing text, while retaining the
-image. Repeated full captures are identical. The full PNG was visually inspected
-as well as compared numerically.
+The test compiles the same SceneSpec with different supplied image bytes, keeping
+all declarations, consumers and image dimensions unchanged. Exactly 57,344 pixels
+change to the supplied replacement color; every non-image pixel remains identical.
+Removing the image drawable supplies the pixel mask, not the byte-attribution proof.
+Withholding font bytes removes exactly the same 2,865 glyph pixels as removing
+text, while preserving the image. Repeated full captures and binaries match exactly.
+
+The same full Rust run passed 1,198 tests with zero failures. Its single ignored
+test is the existing explicit schema-regeneration utility. All 32 focused asset
+contracts pass. Formatting, Clippy, Rust 1.88, browser/runtime evaluation, visual
+regression, demo/site and Cairn gates also passed for this head. PR #275 records
+verification of the final documentation-only commit separately.
 
 ```sh
 RIVE_MEMORY_ASSET_EVIDENCE=target/embedded-asset-proof \
   cargo test --locked --test embedded_assets_runtime -- --nocapture
 ```
 
-Use a working installed Chromium/Chrome, or set `RIVE_CHROME` explicitly. The first
-preparation attempt pointed at a Playwright download that exited before exposing
-DevTools; it produced no runtime proof. The successful observation used the
-runner-installed Google Chrome without changing the compiler or assertions.
+Use a working installed Chromium/Chrome, or set `RIVE_CHROME` explicitly. The
+ordinary Rust CI job runs this test and retains its artifacts and environment
+identity. The test host writes artifacts and launches a browser; compilation
+receives only SceneSpec, options and caller-owned memory bytes, not a scene path.
+Artifacts have finite retention. The committed tests, input provenance and digests
+remain available after artifact expiry; a retained observation is not a fresh run.
 
-The test harness writes artifacts and launches a browser. The compiler itself
-receives only SceneSpec, options and caller-owned memory assets. Source lookup does
-not read those artifacts or a scene directory. Final exact-head CI, MSRV, Cairn
-and review results are recorded in PR #275 rather than inferred from this snapshot.
+## Historical observations and failed attempts
+
+`observation.json` preserves the first real image/font run, 34693878309. Its
+image-removal control proved image visibility but did not establish which supplied
+image buffer was used. Its image-region count of 51,200 is not the later whole-frame
+byte-attribution result. Use `verified-observation.json` for that stronger proof.
+
+An intermediate test assumed y >= 200 was text-only, but the image extends to
+row 223. The corrected test uses whole-frame controls rather than moving an
+arbitrary boundary or relaxing its assertions. Run 34702984571 passed that stronger
+runtime control but failed a separate callback-order contract, so it is not a
+full-suite pass.
+
+The first attempt of run 34703777838 timed out launching Chrome in an existing
+console-runtime test before reaching the memory-asset test. Attempt 2 passed on
+the unchanged head, without skipping tests, changing timeouts or weakening gates.
+An earlier preparation attempt also had a Playwright browser launch failure;
+neither failed launch is runtime evidence. Successful captures used installed Chrome.
