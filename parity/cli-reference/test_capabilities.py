@@ -219,6 +219,18 @@ class CapabilityMutationContract(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(json.loads(result.stdout)['compiler_changes'], [])
 
+    def test_malformed_compressed_candidate_is_a_validation_error(self):
+        archive = (HERE / 'schema-baseline/facts.json.xz').read_bytes()
+        with tempfile.TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / 'candidate.json.xz'
+            for data in [b'not an xz stream', archive[:len(archive) // 2]]:
+                candidate.write_bytes(data)
+                with self.subTest(size=len(data)):
+                    result = self.run_check(HERE, '--candidate', str(candidate))
+                    self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                    self.assertIn('invalid compressed schema snapshot', result.stderr)
+                    self.assertNotIn('Traceback', result.stderr)
+
     def test_tampered_snapshot_is_not_accepted_as_new_baseline(self):
         with tempfile.TemporaryDirectory() as temporary:
             _, here = self.fixture_checkout(temporary)

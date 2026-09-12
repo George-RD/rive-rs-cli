@@ -96,6 +96,34 @@ class SchemaSnapshotContract(unittest.TestCase):
                         with self.assertRaisesRegex(SchemaError, 'unrecognized snapshot members'):
                             read_snapshot(candidate)
 
+    def test_snapshot_keys_and_inheritance_are_validated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            synthetic_capture(root)
+            original = from_capture(root, HEAD)
+            original['compiler_metadata'] = read_metadata(reference.ROOT)
+            candidate = root / 'candidate.json'
+            mutations = [lambda row: row.update(type_key=-1),
+                         lambda row: row.update(type_key=65536),
+                         lambda row: row['properties'][0].update(key=-1),
+                         lambda row: row['properties'][0].update(key=65536),
+                         lambda row: row.update(inherits=[1]),
+                         lambda row: row.update(inherits=['']),
+                         lambda row: row.update(inherits=['   '])]
+            for index, mutate in enumerate(mutations):
+                value = copy.deepcopy(original)
+                mutate(value['types']['Shape'])
+                candidate.write_text(json.dumps(value))
+                with self.subTest(index=index), self.assertRaises(SchemaError):
+                    read_snapshot(candidate)
+            for boundary in [0, 65535]:
+                value = copy.deepcopy(original)
+                value['types']['Shape']['type_key'] = boundary
+                value['types']['Shape']['properties'][0]['key'] = boundary
+                candidate.write_text(json.dumps(value))
+                with self.subTest(boundary=boundary):
+                    self.assertEqual(read_snapshot(candidate), value)
+
     def test_snapshot_requires_complete_capture_provenance(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

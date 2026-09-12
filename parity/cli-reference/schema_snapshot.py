@@ -119,8 +119,11 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
     if expected_digest is not None and reference.digest(path) != expected_digest:
         raise SchemaError('snapshot digest mismatch; refresh requires review')
     opener = lzma.open if path.suffix == '.xz' else open
-    with opener(path, 'rb') as stream:
-        data = stream.read(MAX_SNAPSHOT_BYTES + 1)
+    try:
+        with opener(path, 'rb') as stream:
+            data = stream.read(MAX_SNAPSHOT_BYTES + 1)
+    except (lzma.LZMAError, EOFError) as error:
+        raise SchemaError('invalid compressed schema snapshot') from error
     if len(data) > MAX_SNAPSHOT_BYTES:
         raise SchemaError('snapshot exceeds the size budget')
     value = json.loads(data)
@@ -135,12 +138,16 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
         raise SchemaError('unrecognized snapshot members')
     for name, row in value['types'].items():
         if (not isinstance(row, dict) or row.get('name') != name or type(row.get('type_key')) is not int
-                or not isinstance(row.get('inherits'), list) or not isinstance(row.get('properties'), list)):
+                or not 0 <= row['type_key'] <= 65535
+                or not isinstance(row.get('inherits'), list)
+                or any(not isinstance(parent, str) or not parent.strip() for parent in row['inherits'])
+                or not isinstance(row.get('properties'), list)):
             raise SchemaError(f'invalid snapshot type: {name}')
         identities = set()
         for field in row['properties']:
             if (not isinstance(field, dict) or not isinstance(field.get('name'), str)
                     or not isinstance(field.get('owner'), str) or type(field.get('key')) is not int
+                    or not 0 <= field['key'] <= 65535
                     or not isinstance(field.get('value_type'), str)
                     or 'default_literal' not in field
                     or (field['default_literal'] is not None and not isinstance(field['default_literal'], str))

@@ -9,12 +9,15 @@ class SchemaWorkflowContract(unittest.TestCase):
     def test_capture_is_read_only_opt_in_and_retains_only_evidence(self):
         workflow = (ROOT / '.github/workflows/schema-capabilities.yml').read_text()
         condition = workflow.split('  capture:\n    if: >-\n', 1)[1].split('    runs-on:', 1)[0]
-        for guard in ["github.event.action == 'edited' &&", 'github.event.changes.body != null &&',
-                      'github.event.pull_request.head.repo.full_name == github.repository &&',
-                      "contains(github.event.pull_request.body, '<!-- run-schema-reference:1.0.2 -->') &&",
-                      "github.event_name == 'workflow_dispatch' ||"]:
-            self.assertIn(guard, condition)
-        self.assertIn('!contains(github.event.changes.body.from', condition)
+        self.assertEqual(
+            ' '.join(condition.split()),
+            "github.event_name == 'workflow_dispatch' || "
+            "(github.event.action == 'edited' && "
+            "github.event.changes.body != null && "
+            "github.event.pull_request.head.repo.full_name == github.repository && "
+            "contains(github.event.pull_request.body, '<!-- run-schema-reference:1.0.2 -->') && "
+            "!contains(github.event.changes.body.from, '<!-- run-schema-reference:1.0.2 -->'))",
+        )
         self.assertIn('contents: read', workflow)
         self.assertNotIn('contents: write', workflow)
         self.assertNotIn('git push', workflow)
