@@ -155,7 +155,6 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
 
 
 def validate_provenance(provenance: dict) -> None:
-    """Require the complete retained capture identity, including discarded text."""
     def is_hex(value, length):
         return isinstance(value, str) and re.fullmatch(r'[0-9a-f]{' + str(length) + '}', value)
 

@@ -118,7 +118,6 @@ class CapabilityMutationContract(unittest.TestCase):
 
     def test_candidate_provenance_drift_cannot_disappear_when_schema_facts_are_unchanged(self):
         snapshot = read_snapshot(HERE / 'schema-baseline/facts.json.xz')
-        # Captured continuation text is hashed even when it is prose rather than a fact.
         snapshot['provenance']['raw_output_inventory_sha256'] = 'f' * 64
         snapshot['compiler_metadata']['provenance']['docs/scene.schema.v1.json'] = 'e' * 64
         with tempfile.TemporaryDirectory() as temporary:

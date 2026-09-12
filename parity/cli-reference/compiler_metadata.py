@@ -52,7 +52,6 @@ def metadata_facts(metadata: dict) -> dict:
 
 
 def validate_metadata(metadata: dict) -> None:
-    """Validate the complete v1 compiler inventory before it can be reviewed."""
     required = {'registered_types', 'registered_properties', 'canonical', 'provenance'}
     if not isinstance(metadata, dict) or set(metadata) != required:
         raise SchemaError('compiler metadata is missing or incomplete')

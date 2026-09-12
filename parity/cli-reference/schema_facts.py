@@ -54,7 +54,6 @@ def parse_type(text: str) -> dict:
         elif line.startswith('Editor-only properties are hidden;'):
             pass
         elif line.startswith('      ') and result['properties']:
-            # CLI property prose is not republished. Its raw digest is compared by check.
             pass
         elif line:
             raise SchemaError('unrecognized schema layout')
