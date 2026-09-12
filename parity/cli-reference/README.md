@@ -23,13 +23,15 @@ python3 parity/cli-reference/reference.py capture \
   --browser /absolute/path/to/chromium \
   --output target/official-reference
 
-python3 parity/cli-reference/reference.py verify target/official-reference
+python3 parity/cli-reference/reference.py verify target/official-reference \
+  --expected-head "$(git rev-parse HEAD)"
 python3 -m unittest discover -s parity/cli-reference -p 'test_*.py' -v
 ```
 
 `capture` refuses an existing output directory. There is no update-baseline flag.
 `verify` only checks retained files and their measurements; it executes no tool and
-makes no claim to have rerun the experiment. Normal Cargo builds/tests do not call
+makes no claim to have rerun the experiment. Supply the independently recorded
+commit SHA for a historical capture; a different expected head is rejected. Normal Cargo builds/tests do not call
 the official CLI. Ordinary CI runs only the Python contract tests.
 
 The separate `CLI reference` workflow provisions the exact locked archive only

@@ -151,14 +151,14 @@ class EvidenceContracts(unittest.TestCase):
             root = Path(directory)
             (root / "recording.json").write_text(json.dumps({"schema_version": 1, "status": "failed"}))
             with self.assertRaisesRegex(reference.ReferenceError, "incomplete"):
-                reference.verify_recording(root)
+                reference.verify_recording(root, "1" * 40)
 
     def test_empty_pass_claim_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "recording.json").write_text(json.dumps({"schema_version": 1, "status": "passed"}))
             with self.assertRaises(reference.ReferenceError):
-                reference.verify_recording(root)
+                reference.verify_recording(root, "1" * 40)
 
     def test_evidence_cannot_escape_recording_directory(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -123,7 +123,7 @@ def check_comparison(report: dict, changed: bool) -> None:
 
 
 def check_render(report: dict, directory: Path, animated: bool) -> list[str]:
-    if report.get("ok") is not True or [row.get("index") for row in report.get("frames", [])] != FRAMES:
+    if report.get("ok", True) is not True or [row.get("index") for row in report.get("frames", [])] != FRAMES:
         raise ReferenceError("runtime evidence has incomplete frame coverage")
     if [report.get("width"), report.get("height"), report.get("scale"), report.get("fps")] != [128, 96, 1, 60]:
         raise ReferenceError("runtime evidence has the wrong viewport")
@@ -176,7 +176,7 @@ class Recorder:
 
 def own_json(result: subprocess.CompletedProcess) -> dict:
     value = json.loads(result.stdout)
-    if not isinstance(value, dict) or value.get("ok") is not True:
+    if not isinstance(value, dict) or value.get("ok", True) is not True:
         raise ReferenceError("rive-cli did not return successful JSON evidence")
     return value
 
@@ -224,10 +224,12 @@ def compile_fragment(recorder: Recorder, binary: Path, project: Path, env: dict,
     return path
 
 
-def verify_recording(directory: Path) -> dict:
+def verify_recording(directory: Path, expected_head: str) -> dict:
     recording = read_json(directory / "recording.json")
     if recording.get("schema_version") != 1 or recording.get("status") != "passed":
         raise ReferenceError("recording is absent, failed, or incomplete; no runtime pass can be inferred")
+    if not re.fullmatch(r"[0-9a-f]{40}", expected_head) or recording.get("source_head") != expected_head:
+        raise ReferenceError("recording does not match the expected source head")
     lock = read_json(HERE / "lock.json")
     if recording.get("lock_sha256") != digest(HERE / "lock.json"):
         raise ReferenceError("recording used a different reference lock")
@@ -388,13 +390,13 @@ def capture(binary: Path, archive: Path, browser: Path, output: Path) -> None:
                 render_dir = output / "renders" / name
                 animation = ["--animation", "QuarterTurn"] if name == "animated" else []
                 result = recorder.run(name + "-render", [str(ours), "render", str(riv), "--frames", "0,15,30",
-                                      "--width", "128", "--height", "96", "--json", "-o", str(render_dir)] + animation,
+                                      "--width", "128", "--height", "96", "--scale", "1", "--json", "-o", str(render_dir)] + animation,
                                       ROOT, render_env)
                 check_render(own_json(result), render_dir, name == "animated")
                 selected = ["--reference-animation", "QuarterTurn", "--candidate-animation", "QuarterTurn"] if animation else []
                 for label, candidate in [("control", riv), ("negative", negative)]:
                     result = recorder.run(name + "-" + label, [str(ours), "compare", str(riv), str(candidate),
-                                          "--frames", "0,15,30", "--width", "128", "--height", "96", "--json"] + selected,
+                                          "--frames", "0,15,30", "--width", "128", "--height", "96", "--scale", "1", "--json"] + selected,
                                           ROOT, render_env)
                     check_comparison(own_json(result), label == "negative")
             project = output / "probes"
@@ -413,7 +415,7 @@ def capture(binary: Path, archive: Path, browser: Path, output: Path) -> None:
                                   for path in sorted(output.rglob("*")) if path.is_file()}
         write_json(output / "recording.json", recording)
     try:
-        verify_recording(output)
+        verify_recording(output, head)
     except (ReferenceError, OSError, ValueError, KeyError, TypeError) as error:
         recording["status"] = "failed"
         recording["failure"] = str(error)
@@ -431,13 +433,14 @@ def main() -> int:
     run.add_argument("--output", type=Path, required=True)
     verify = subcommands.add_parser("verify", help="check retained evidence offline; does not rerun the official CLI")
     verify.add_argument("directory", type=Path)
+    verify.add_argument("--expected-head", required=True)
     args = parser.parse_args()
     try:
         if args.command == "capture":
             capture(args.official_cli.resolve(), args.archive.resolve(), args.browser.resolve(), args.output.resolve())
             print("Reference capture and retained-evidence verification passed.")
         else:
-            verify_recording(args.directory.resolve())
+            verify_recording(args.directory.resolve(), args.expected_head)
             print("Retained evidence verified offline. No official CLI or runtime was executed.")
         return 0
     except (ReferenceError, OSError, ValueError, KeyError, TypeError, tarfile.TarError) as error:

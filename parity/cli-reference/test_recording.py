@@ -1,6 +1,7 @@
 import hashlib
 import json
 import struct
+import subprocess
 import tempfile
 import unittest
 import zlib
@@ -76,7 +77,7 @@ class RetainedRecordingContracts(unittest.TestCase):
                 filename = f"frame-{index}.png"
                 self.put(f"renders/{name}/{filename}", self.png(index if name == "animated" else 0))
                 frames.append({"index": index, "blank": False, "filename": filename})
-            render = {"ok": True, "width": 128, "height": 96, "scale": 1, "fps": 60,
+            render = {"width": 128, "height": 96, "scale": 1, "fps": 60,
                       "animation": "QuarterTurn" if name == "animated" else None, "frames": frames}
             commands.append(self.command(name + "-render", ["/synthetic/rive-cli", "render"], json.dumps(render)))
             for label in ["control", "negative"]:
@@ -105,50 +106,71 @@ class RetainedRecordingContracts(unittest.TestCase):
         return next(command for command in self.recording["commands"] if command["name"] == name)
 
     def test_complete_synthetic_contract_shape_is_accepted_offline(self):
-        reference.verify_recording(self.root)
+        reference.verify_recording(self.root, "1" * 40)
 
     def test_changed_retained_frame_is_rejected(self):
         (self.root / "renders/static/frame-0.png").write_bytes(self.png(90))
         with self.assertRaisesRegex(reference.ReferenceError, "digest mismatch"):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
 
     def test_missing_retained_frame_is_rejected(self):
         (self.root / "renders/static/frame-0.png").unlink()
         with self.assertRaisesRegex(reference.ReferenceError, "unindexed or missing"):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
 
     def test_rehashed_different_original_input_is_rejected(self):
         path = self.root / "projects/static/scene.rml"
         path.write_text(path.read_text().replace("FF2E8BC0", "FFF15A24"))
         self.save()
         with self.assertRaisesRegex(reference.ReferenceError, "committed original fixture"):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
 
     def test_unindexed_extra_file_is_rejected(self):
         self.put("unexpected.bin", b"extra")
         with self.assertRaisesRegex(reference.ReferenceError, "unindexed or missing"):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
 
     def test_failed_command_cannot_be_hidden_behind_successful_output(self):
         self.command_named("static-render")["exit_code"] = 1
         self.save()
         with self.assertRaisesRegex(reference.ReferenceError, "successful command evidence"):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
 
     def test_missing_command_output_binding_is_rejected(self):
         del self.command_named("static-render")["stdout_file"]
         self.save()
         with self.assertRaises(reference.ReferenceError):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
 
     def test_offline_claim_without_network_namespace_is_rejected(self):
         self.command_named("static-compile")["argv"] = ["/synthetic/tools/rive", ".", "--once", "--format=json"]
         self.save()
         with self.assertRaises(reference.ReferenceError):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
 
     def test_source_head_disagreement_is_rejected(self):
         self.recording["source_head"] = "a" * 40
         self.save()
         with self.assertRaises(reference.ReferenceError):
-            reference.verify_recording(self.root)
+            reference.verify_recording(self.root, "1" * 40)
+
+    def test_self_consistent_recording_from_another_head_is_rejected(self):
+        self.recording["source_head"] = "a" * 40
+        command = self.command_named("head")
+        output = b"a" * 40 + b"\n"
+        (self.root / command["stdout_file"]).write_bytes(output)
+        command["stdout_sha256"] = hashlib.sha256(output).hexdigest()
+        self.save()
+        with self.assertRaisesRegex(reference.ReferenceError, "expected source head"):
+            reference.verify_recording(self.root, "1" * 40)
+
+    def test_raw_renderer_manifest_is_not_a_compare_envelope(self):
+        path = self.root / "commands/static-render.stdout"
+        result = subprocess.CompletedProcess(["rive-cli", "render"], 0, path.read_bytes(), b"")
+        report = reference.own_json(result)
+        reference.check_render(report, self.root / "renders/static", False)
+
+    def test_explicit_json_failure_is_never_a_renderer_manifest(self):
+        result = subprocess.CompletedProcess(["rive-cli", "render"], 0, b'{"ok": false}', b"")
+        with self.assertRaises(reference.ReferenceError):
+            reference.own_json(result)
