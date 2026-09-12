@@ -88,8 +88,16 @@ same resolver-aware builder; there is no second scene construction or encoding
 pipeline. The new compilation entry point exposes typed asset diagnostics as
 `EmbeddedCompileError`, without adding variants to the legacy error enum.
 
+The builder completes its existing structural and object-construction checks
+before invoking the resolver. Explicit sources reserve contents positions in that
+same graph, then bounded byte resolution fills them without changing indices.
+No unresolved contents slot can be returned or encoded. Invalid placements and
+late reference failures therefore cannot trigger caller asset-loading side effects.
+Custom resolvers remain responsible for their own effects on otherwise valid
+scenes, including failures partway through resolving several assets.
+
 `FilesystemAssets` owns path canonicalization, project-root discovery and
-containment. Object construction receives bytes only. The adapter requires an
+containment. Object construction performs no asset I/O. The adapter requires an
 explicit base directory. It allows parent-relative sources inside the discovered
 project, rejects absolute/drive-rooted sources and symlink escapes, and never
 falls back after a failed resolution. Its containment check assumes the filesystem
@@ -98,15 +106,17 @@ race-proof filesystem sandbox.
 
 AuthoringSpec still lowers through the existing compiler-owned SceneSpec and
 source-map state. No schema, identity, animation index, RML adapter, workspace
-layout, or consumer-specific compiler is introduced here.
+layout, or consumer-specific compiler is introduced here. Portable crate extraction
+is the subsequent #259 work, not a capability claimed by this API addition.
 
 ## Verification
 
 `tests/asset_resolution_contract.rs` covers resolver ownership, literal lookup,
 limits, diagnostics and filesystem policies. `tests/embedded_compile_contract.rs`
 checks the public memory API, file IDs, asset order, byte equality against the old
-path entry, global budgets, validation order, and the successful legacy fixture
-hashes captured before the builder change.
+path entry, global budgets, validation/callback order, and successful legacy fixture
+hashes captured before the builder change. Invalid nested assets, deep nodes and
+unresolved nested-artboard targets must all fail without a resolver callback.
 
 `cargo run --locked --quiet --example embedded_asset_compatibility` writes the
 compatibility manifest to stdout. The committed baseline was captured with the
@@ -115,9 +125,13 @@ do not refresh it from the implementation merely to make a mismatch pass. Skippe
 malformed or unsupported inputs are listed separately from successful hashes.
 
 `tests/embedded_assets_runtime.rs` compiles the image/font scene from memory and
-renders through the bundled official runtime. It compares repeat captures, removes
-the image, removes the text, and withholds the embedded font bytes. The font-byte
-control must match the removed-text control, while the supplied image remains
-visible. Set `RIVE_MEMORY_ASSET_EVIDENCE` to retain its PNGs, `.riv` artifacts and
-runtime/input digests. A compiled test or successful structural parse alone is
-not runtime proof.
+renders through the bundled official runtime. The image-byte control keeps the
+entire scene and image dimensions fixed and varies only the supplied image buffer.
+Every image pixel must take that buffer's replacement color; every non-image pixel
+must stay identical. The font-byte control must match the removed-text control,
+while the supplied image remains visible. Repeat captures must match exactly.
+
+Set `RIVE_MEMORY_ASSET_EVIDENCE` to retain PNGs, `.riv` artifacts and input/runtime
+digests. The ordinary Rust CI job also retains those artifacts plus source,
+toolchain and browser identity. A compiled test or structural parse alone is not
+runtime proof.
