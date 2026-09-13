@@ -116,5 +116,39 @@ class RetentionCommandContract(unittest.TestCase):
                 self.assertNotIn('Traceback', result.stderr)
 
 
+    def test_initial_retention_rejects_incomplete_or_extended_manifest(self):
+        shutil.rmtree(self.directory(self.base))
+        path = self.directory(self.candidate) / 'snapshot.json'
+        original = self.pin(self.candidate)
+        mutations = [dict(original, runtime_tested=True), dict(original, extension=None)]
+        for key in original:
+            mutations.append({name: value for name, value in original.items() if name != key})
+        for key in ['workflow_run', 'workflow_artifact']:
+            mutations.extend(dict(original, **{key: value}) for value in [True, 0, -1, 1.5, '123', None])
+        for key in ['archive_sha256', 'artifact_zip_sha256']:
+            mutations.extend(dict(original, **{key: value}) for value in ['g' * 64, 'f' * 63, None])
+        mutations.extend([dict(original, source_head='f' * 39),
+                          dict(original, schema_version=True), dict(original, archive='')])
+        for changed in mutations:
+            with self.subTest(changed=changed):
+                reference.write_json(path, changed)
+                result = self.check('--reviewed-change', 'absent:' + self.initial_digest)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+                self.assertEqual(result.stdout, '')
+        reference.write_json(path, original)
+        self.assertEqual(self.check('--reviewed-change', 'absent:' + self.initial_digest).returncode, 0)
+
+    def test_malformed_base_manifest_is_invalid_even_with_matching_archive_exception(self):
+        path = self.directory(self.base) / 'snapshot.json'
+        original = self.pin(self.base)
+        for changed in [dict(original, runtime_tested=True),
+                        {key: value for key, value in original.items() if key != 'workflow_run'}]:
+            with self.subTest(changed=changed):
+                reference.write_json(path, changed)
+                result = self.check('--reviewed-change', self.initial_digest + ':' + self.initial_digest)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+
 if __name__ == '__main__':
     unittest.main()

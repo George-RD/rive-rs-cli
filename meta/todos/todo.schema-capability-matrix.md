@@ -69,3 +69,18 @@ facts and prior metadata/provenance are unchanged. The original and completed
 archive hashes and source hash are recorded in `schema-baseline/README.md`.
 The B1 runtime archive remains untouched. Fresh checks and review of this correction
 must pass before merge; the earlier `0ca6046` checks are not substitutes.
+
+September 13 resume: `a8bab6a` handles malformed/truncated XZ, validates type-key
+ranges and inheritance, and checks the complete opt-in condition. `1ece11a` adds
+pre-change retained-baseline comparison and rejects duplicate JSON members and
+repeated enum/bit facts. Its full CI passed, but manifest validation still accepted
+missing capture fields and arbitrary claims during initial retention.
+
+The manifest reader now requires the exact v1 field set, a valid source head and
+digests, and positive integer capture run/artifact identifiers before evaluating
+any reviewed archive exception. Both base and candidate manifests use this rule.
+Two new public-command regressions exposed 22 false passes before correction;
+all nine retention tests pass afterward. The source modules used locally matched
+their Git blobs, and normalization of the actual capture reproduced the completed
+34,100-byte snapshot and its existing SHA-256. No baseline or production source
+was changed. Final-head verification and external review remain recorded on #277.

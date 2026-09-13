@@ -16,10 +16,17 @@ def read_retained(root: Path):
     if not manifest.is_file():
         raise SchemaError('incomplete retained snapshot')
     pin = decode_json(manifest.read_bytes())
-    if (not isinstance(pin, dict) or type(pin.get('schema_version')) is not int
-            or pin['schema_version'] != SNAPSHOT_VERSION or not isinstance(pin.get('archive'), str)
-            or not isinstance(pin.get('archive_sha256'), str)
-            or not re.fullmatch(r'[0-9a-f]{64}', pin['archive_sha256'])):
+    required = {'schema_version', 'archive', 'archive_sha256', 'source_head',
+                'workflow_run', 'workflow_artifact', 'artifact_zip_sha256'}
+    if (not isinstance(pin, dict) or set(pin) != required
+            or type(pin['schema_version']) is not int or pin['schema_version'] != SNAPSHOT_VERSION
+            or not isinstance(pin['archive'], str) or not pin['archive'].strip()
+            or not isinstance(pin['source_head'], str)
+            or not re.fullmatch(r'[0-9a-f]{40}', pin['source_head'])
+            or any(type(pin[key]) is not int or pin[key] <= 0
+                   for key in ['workflow_run', 'workflow_artifact'])
+            or any(not isinstance(pin[key], str) or not re.fullmatch(r'[0-9a-f]{64}', pin[key])
+                   for key in ['archive_sha256', 'artifact_zip_sha256'])):
         raise SchemaError('invalid retained snapshot manifest')
     path = reference.checked_relative(directory, pin['archive'])
     snapshot = read_snapshot(path, pin['archive_sha256'])
