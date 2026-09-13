@@ -42,8 +42,12 @@ def parse_type(text: str) -> dict:
                                          'animatable': 'A' in flags, 'bindable': 'B' in flags,
                                          'derived': 'D' in flags})
         elif (match := re.fullmatch(r'      accepts: (\S+(?:, \S+)*)', line)) and result['properties']:
+            if result['properties'][-1]['enum_values'] is not None:
+                raise SchemaError('repeated schema fact continuation')
             result['properties'][-1]['enum_values'] = match[1].split(', ')
         elif (match := re.fullmatch(r'      bits \(.+\): (\w+(?: \w+)*)', line)) and result['properties']:
+            if result['properties'][-1]['bits'] is not None:
+                raise SchemaError('repeated schema fact continuation')
             result['properties'][-1]['bits'] = match[1].split()
         elif re.match(r'      (accepts|bits)\b', line):
             raise SchemaError('malformed schema fact continuation')

@@ -18,6 +18,16 @@ jobs:
           persist-credentials: false
       - run: python3 -m unittest discover -s parity/cli-reference -p 'test_*.py' -v
       - run: python3 parity/cli-reference/capabilities.py check --json
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: .schema-base
+          persist-credentials: false
+      - name: Check retained evidence against the pre-change baseline
+        run: >-
+          python3 parity/cli-reference/schema_retention.py
+          --base-root .schema-base
+          --reviewed-change absent:6a879379e557eb45ecbdc4da958aa4032f7b4ca3ebef884ca3426dd79eb8b61f
 
   capture:
     if: >-

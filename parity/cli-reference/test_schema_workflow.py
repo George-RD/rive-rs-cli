@@ -25,6 +25,15 @@ class SchemaWorkflowContract(unittest.TestCase):
         self.assertIn('path: ${{ env.SCHEMA_OUTPUT }}', workflow)
         self.assertIn('persist-credentials: false', workflow)
 
+    def test_retention_gate_uses_the_base_commit_and_explicit_initial_pin(self):
+        workflow = (ROOT / '.github/workflows/schema-capabilities.yml').read_text()
+        normal = workflow.split('  capture:', 1)[0]
+        self.assertIn("ref: ${{ github.event.pull_request.base.sha || github.sha }}", normal)
+        self.assertIn('path: .schema-base', normal)
+        self.assertIn('python3 parity/cli-reference/schema_retention.py', normal)
+        self.assertIn('--base-root .schema-base', normal)
+        self.assertIn('--reviewed-change absent:6a879379e557eb45ecbdc4da958aa4032f7b4ca3ebef884ca3426dd79eb8b61f', normal)
+
     def test_normal_check_uses_retained_evidence_not_official_cli(self):
         workflow = (ROOT / '.github/workflows/schema-capabilities.yml').read_text()
         normal = workflow.split('  capture:', 1)[0]

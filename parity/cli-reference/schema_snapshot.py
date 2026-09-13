@@ -126,7 +126,7 @@ def read_snapshot(path: Path, expected_digest: str | None = None) -> dict:
         raise SchemaError('invalid compressed schema snapshot') from error
     if len(data) > MAX_SNAPSHOT_BYTES:
         raise SchemaError('snapshot exceeds the size budget')
-    value = json.loads(data)
+    value = decode_json(data)
     if (not isinstance(value, dict) or type(value.get('schema_version')) is not int
             or value.get('schema_version') != SNAPSHOT_VERSION
             or not isinstance(value.get('types'), dict) or not value['types']
@@ -182,3 +182,15 @@ def validate_provenance(provenance: dict) -> None:
             or not isinstance(official.get('platform'), list) or len(official['platform']) != 2
             or not all(isinstance(value, str) and value for value in official['platform'])):
         raise SchemaError('snapshot official provenance is missing or invalid')
+
+
+def decode_json(data: bytes):
+    def unique_members(pairs):
+        result = {}
+        for name, value in pairs:
+            if name in result:
+                raise SchemaError(f'duplicate JSON member: {name}')
+            result[name] = value
+        return result
+
+    return json.loads(data, object_pairs_hook=unique_members)
