@@ -1,0 +1,82 @@
+name: Schema capabilities
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s parity/cli-reference -p 'test_*.py' -v
+      - run: python3 parity/cli-reference/capabilities.py check --json
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: .schema-base
+          persist-credentials: false
+      - name: Check retained evidence against the pre-change baseline
+        run: >-
+          python3 parity/cli-reference/schema_retention.py
+          --base-root .schema-base
+          --reviewed-change absent:6a879379e557eb45ecbdc4da958aa4032f7b4ca3ebef884ca3426dd79eb8b61f
+
+  capture:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action == 'edited' &&
+       github.event.changes.body != null &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       contains(github.event.pull_request.body, '<!-- run-schema-reference:1.0.2 -->') &&
+       !contains(github.event.changes.body.from, '<!-- run-schema-reference:1.0.2 -->'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Provision the existing pinned reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "SCHEMA_OUTPUT=$RUNNER_TEMP/schema-reference-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          tools="$RUNNER_TEMP/schema-reference-tools"
+          mkdir -p "$tools"
+          source=$(python3 -c 'import json; print(json.load(open("parity/cli-reference/lock.json"))["official"]["source"])')
+          expected=$(python3 -c 'import json; print(json.load(open("parity/cli-reference/lock.json"))["official"]["archive_sha256"])')
+          archive="$tools/rive.tar.gz"
+          curl --proto '=https' --tlsv1.2 --fail --location "$source" -o "$archive"
+          echo "$expected  $archive" | sha256sum --check --strict
+          tar -xzf "$archive" -C "$tools"
+          binary=$(find "$tools" -type f -name rive -print -quit)
+          test -n "$binary"
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libegl1 libgles2
+          echo "SCHEMA_BINARY=$binary" >> "$GITHUB_ENV"
+          echo "SCHEMA_ARCHIVE=$archive" >> "$GITHUB_ENV"
+          if test -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          unshare --user --map-root-user --net -- true
+      - name: Capture public schema without credentials or network
+        run: >-
+          python3 parity/cli-reference/schema_capture.py
+          --official-cli "$SCHEMA_BINARY"
+          --archive "$SCHEMA_ARCHIVE"
+          --output "$SCHEMA_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: schema-reference-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ env.SCHEMA_OUTPUT }}
+          retention-days: 7
+          if-no-files-found: ignore

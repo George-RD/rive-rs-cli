@@ -22,11 +22,21 @@ schema, stable authored identity, source maps, and incremental operation seam.
 Embedding and official-reference spec: [#256](https://github.com/George-RD/rive-rs-cli/issues/256).
 The [execution graph](https://github.com/George-RD/rive-rs-cli/issues/257#issuecomment-5644596712)
 records the stacked PR units and actual blockers. [#257](https://github.com/George-RD/rive-rs-cli/issues/257)
-delivers caller-owned image/font compilation in [PR #275](https://github.com/George-RD/rive-rs-cli/pull/275).
-Its [Cairn todo](meta/todos/todo.embedded-memory-assets.md) records implementation
-and verification evidence. #259 is the next compiler unit once PR #275 is verified
-and merged. #258 remains an independent reference-tooling unit; this compiler
-change does not implement or close it.
+landed caller-owned image/font compilation in [PR #275](https://github.com/George-RD/rive-rs-cli/pull/275).
+[#258](https://github.com/George-RD/rive-rs-cli/issues/258) landed the independent pinned
+reference in [PR #274](https://github.com/George-RD/rive-rs-cli/pull/274).
+
+[#266](https://github.com/George-RD/rive-rs-cli/issues/266) adds the scoped capability report,
+retained schema and mutation-tested drift check in [PR #277](https://github.com/George-RD/rive-rs-cli/pull/277).
+Its [Cairn record](meta/todos/todo.schema-capability-matrix.md) and
+[developer commands](parity/cli-reference/CAPABILITIES.md) separate schema declarations,
+current compiler metadata and retained fixture evidence. Merge status and exact-head
+gates remain on the PR; this is not an RML implementation or a full-parity claim.
+
+#259 is the next unblocked compiler extraction unit. #267 needs #259 and the already
+merged #258, not completion of the entire reference matrix or Authoring migration.
+#254 is independently selectable before #272 needs it. The #273 integration gate
+still needs its other predecessors. Parents #256 and #175 remain open.
 
 Authoring delivery spec: [#175](https://github.com/George-RD/rive-rs-cli/issues/175).
 Public proof delivery spec: [#198](https://github.com/George-RD/rive-rs-cli/issues/198).
