@@ -161,13 +161,13 @@
           },
           {
             "kind": "frames_differ",
-            "from": 60,
-            "to": 90
+            "from": 35,
+            "to": 45
           },
           {
             "kind": "frames_differ",
-            "from": 90,
-            "to": 120
+            "from": 60,
+            "to": 90
           }
         ]
       }
