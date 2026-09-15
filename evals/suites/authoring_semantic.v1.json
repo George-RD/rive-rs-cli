@@ -38,9 +38,16 @@
       "id": "complex_animated_authoring",
       "input_kind": "authoring_example",
       "input": "examples/authoring/complex-animated-showcase.v0.json",
-      "expected_traits": ["has_animation"],
+      "expected_traits": [
+        "has_animation"
+      ],
       "runtime": {
-        "frames": [0, 42, 78, 119],
+        "frames": [
+          0,
+          42,
+          78,
+          119
+        ],
         "fps": 60.0,
         "width": 960,
         "height": 540,
@@ -79,6 +86,252 @@
             "kind": "frames_differ",
             "from": 78,
             "to": 119
+          }
+        ]
+      }
+    },
+    {
+      "id": "horaxon_switchback_logo",
+      "input_kind": "authoring_example",
+      "input": "examples/authoring/horaxon-switchback-logo.v0.json",
+      "expected_traits": [
+        "has_animation"
+      ],
+      "runtime": {
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120
+        ],
+        "fps": 60.0,
+        "width": 512,
+        "height": 512,
+        "scale": 1,
+        "min_non_blank_frames": 25,
+        "min_distinct_colors": 2
+      },
+      "semantic": {
+        "static_checks": [
+          {
+            "kind": "authored_id_present",
+            "authored_id": "route-2"
+          },
+          {
+            "kind": "authored_id_present",
+            "authored_id": "station"
+          },
+          {
+            "kind": "authored_id_has_runtime_type",
+            "authored_id": "station",
+            "object_type": "rectangle"
+          }
+        ],
+        "animated_checks": [
+          {
+            "kind": "frames_differ",
+            "from": 0,
+            "to": 30
+          },
+          {
+            "kind": "frames_differ",
+            "from": 30,
+            "to": 60
+          },
+          {
+            "kind": "frames_differ",
+            "from": 60,
+            "to": 90
+          },
+          {
+            "kind": "frames_differ",
+            "from": 90,
+            "to": 120
+          }
+        ]
+      }
+    },
+    {
+      "id": "horaxon_crestline_logo",
+      "input_kind": "authoring_example",
+      "input": "examples/authoring/horaxon-crestline-logo.v0.json",
+      "expected_traits": [
+        "has_animation"
+      ],
+      "runtime": {
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120
+        ],
+        "fps": 60.0,
+        "width": 512,
+        "height": 512,
+        "scale": 1,
+        "min_non_blank_frames": 25,
+        "min_distinct_colors": 2
+      },
+      "semantic": {
+        "static_checks": [
+          {
+            "kind": "authored_id_present",
+            "authored_id": "datum"
+          },
+          {
+            "kind": "authored_id_present",
+            "authored_id": "station"
+          },
+          {
+            "kind": "authored_id_has_runtime_type",
+            "authored_id": "station",
+            "object_type": "rectangle"
+          }
+        ],
+        "animated_checks": [
+          {
+            "kind": "frames_differ",
+            "from": 0,
+            "to": 30
+          },
+          {
+            "kind": "frames_differ",
+            "from": 30,
+            "to": 60
+          },
+          {
+            "kind": "frames_differ",
+            "from": 60,
+            "to": 90
+          },
+          {
+            "kind": "frames_differ",
+            "from": 90,
+            "to": 120
+          }
+        ]
+      }
+    },
+    {
+      "id": "horaxon_route_change_logo",
+      "input_kind": "authoring_example",
+      "input": "examples/authoring/horaxon-route-change-logo.v0.json",
+      "expected_traits": [
+        "has_animation"
+      ],
+      "runtime": {
+        "frames": [
+          0,
+          5,
+          10,
+          15,
+          20,
+          25,
+          30,
+          35,
+          40,
+          45,
+          50,
+          55,
+          60,
+          65,
+          70,
+          75,
+          80,
+          85,
+          90,
+          95,
+          100,
+          105,
+          110,
+          115,
+          120
+        ],
+        "fps": 60.0,
+        "width": 512,
+        "height": 512,
+        "scale": 1,
+        "min_non_blank_frames": 25,
+        "min_distinct_colors": 2
+      },
+      "semantic": {
+        "static_checks": [
+          {
+            "kind": "authored_id_present",
+            "authored_id": "route-out"
+          },
+          {
+            "kind": "authored_id_present",
+            "authored_id": "station"
+          },
+          {
+            "kind": "authored_id_has_runtime_type",
+            "authored_id": "station",
+            "object_type": "rectangle"
+          }
+        ],
+        "animated_checks": [
+          {
+            "kind": "frames_differ",
+            "from": 0,
+            "to": 30
+          },
+          {
+            "kind": "frames_differ",
+            "from": 30,
+            "to": 60
+          },
+          {
+            "kind": "frames_differ",
+            "from": 60,
+            "to": 90
+          },
+          {
+            "kind": "frames_differ",
+            "from": 90,
+            "to": 120
           }
         ]
       }
